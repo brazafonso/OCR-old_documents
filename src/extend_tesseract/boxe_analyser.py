@@ -6,6 +6,51 @@ from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
 
+def id_boxes(data_dict,level):
+    '''Numbering boxes of specefic level'''
+    id = 0
+    data_dict['id'] = []
+    for i in range(len(data_dict['text'])):
+        if data_dict['level'][i] == level:
+            data_dict['id'].append(id)
+            id += 1
+        else:
+            data_dict['id'].append(None)
+    return data_dict
+
+
+def find_box_index(data_dict,id):
+    '''Find index of box with id \'id\' in data_dict'''
+    for i in range(len(data_dict['text'])):
+        if data_dict['id'][i] == id:
+            return i
+    return None
+
+def remove_data_dict_index(data_dict,index):
+    '''Remove index from data_dict'''
+    for k in data_dict.keys():
+        data_dict[k].pop(index)
+    return data_dict
+
+def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
+    '''Draw bounding boxes on image of path \'image_path\'\n
+    Return image with bounding boxes'''
+
+    img = cv2.imread(image_path)
+    print('Drawing bounding boxes')
+    n_boxes = len(data_dict['text'])
+    for i in range(n_boxes):
+        if data_dict['level'][i] in draw_levels:
+            # only draw text boxes if confidence is higher than conf
+            if data_dict['level'][i] == 5 and data_dict['conf'][i] < conf:
+                continue
+            (x, y, w, h) = (data_dict['left'][i], data_dict['top'][i], data_dict['width'][i], data_dict['height'][i])
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            if id and data_dict['id'][i]:
+                img = cv2.putText(img, str(data_dict['id'][i]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    
+    return img
+
 
 def order_text_boxes(data_dict):
     '''Order text boxes from left to right and top to bottom, using top and left values\n
@@ -22,8 +67,7 @@ def order_text_boxes(data_dict):
 
 
 def order_line_boxes(lines):
-    '''Order line boxes from left to right and top to bottom, using top and left values\n
-    Return ordered data_dict with only text boxes'''
+    '''Order line boxes from left to right and top to bottom, using top and left values\n'''
     data_dict_ordered = page_tree()
     for line in lines:
         data_dict_ordered.insert(line)
@@ -109,7 +153,10 @@ def analyze_text(data_dict):
             normal_text_size /= 2
         else:
             normal_text_size = lmh
-        
+    
+    print('Left margin:',left_margin_n)
+    print('Right margin:',right_margin_n)
+    print('Lines:',len(lines))
     
     # estimate normal text size
     normal_text_gap = None
@@ -250,20 +297,6 @@ def search_text_img(image_path):
     }
 
 
-def draw_bounding_boxes(data_dict,image_path):
-    '''Draw bounding boxes on image of path \'image_path\'\n
-    Return image with bounding boxes'''
-
-    img = cv2.imread(image_path)
-    print('Drawing bounding boxes')
-    n_boxes = len(data_dict['text'])
-    for i in range(n_boxes):
-        if data_dict['level'][i] == 2:
-            (x, y, w, h) = (data_dict['left'][i], data_dict['top'][i], data_dict['width'][i], data_dict['height'][i])
-            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    
-    return img
-
 
 def simple_article_extraction_page(processed_result):
     '''Do simple article extraction utilizing letter size and column continuity'''
@@ -346,200 +379,78 @@ def simple_article_extraction_page(processed_result):
     return articles_result
 
 
+def block_bound_box_fix(data_dict):
+    '''Fix block bound boxes\n'''
+    i = 0
+    current_box = None
+    boxes_to_check = []
+    boxes_to_check_id = []
+    checked_boxes = []
+    og_len = len([x for x in data_dict['level'] if x == 2])
+    # iterate over all block boxes
+    # if two boxes of the same level are overlaping, delete the inside one
+    # assumes that the inside box is a duplicate of information from outside box
+    while i < len(data_dict['level']):
+        if data_dict['level'][i] == 2:
+            if not current_box:
+                current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
+                current_box['right'] = current_box['left'] + current_box['width']
+                current_box['bottom'] = current_box['top'] + current_box['height']
+                i += 1
+                continue
+            # check if current box is inside another box
+            if data_dict['id'][i] != current_box['id']:
+                compare_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
+                compare_box['right'] = compare_box['left'] + compare_box['width']
+                compare_box['bottom'] = compare_box['top'] + compare_box['height']
 
-# Old method - using word boxes (current uses line boxes + word boxes)
-# def simple_article_extraction_page(processed_result):
-#     '''Do simple article extraction utilizing letter size and column continuity'''
-#     articles_result = []
-#     columns_text = [[] for i in range(processed_result['number_columns'])]
-#     ordered_text = processed_result['ordered_text']
+                # current box inside last box
+                if inside_box(compare_box,current_box):
+                    data_dict = remove_data_dict_index(data_dict,i)
+                    # remove all boxes inside compared block
+                    while i < len(data_dict['level']) and data_dict['level'][i] != 2 :
+                        data_dict = remove_data_dict_index(data_dict,i)
 
-#     # separete text by columns
-#     for i in range(len(ordered_text)):
-#         if int(ordered_text[i]['conf']) > 60 and ordered_text[i]['level'] == 5:
-#             # check column to insert text
-#             for j in range(processed_result['number_columns']):
-#                 # if text within column, add it to column text
-#                 word_box = {
-#                     'left':ordered_text[i]['left'], 
-#                     'top':ordered_text[i]['top'], 
-#                     'right':ordered_text[i]['left']+ordered_text[i]['width'],
-#                     'bottom':ordered_text[i]['top']+ordered_text[i]['height']
-#                 }
-#                 column_box = {
-#                     'left':processed_result['columns'][j][0][0], 
-#                     'top':processed_result['columns'][j][0][1], 
-#                     'right':processed_result['columns'][j][1][0],
-#                     'bottom':processed_result['columns'][j][1][1]
-#                 }
-#                 if inside_box(word_box,column_box):
-#                     columns_text[j].append(ordered_text[i])
-#                     break
+                    if compare_box['id'] in boxes_to_check_id:
+                        boxes_to_check.pop(boxes_to_check_id.index(compare_box['id'])) 
+                        boxes_to_check_id.remove(compare_box['id'])
+                # last box inside current box
+                elif inside_box(current_box,compare_box):
+                    i = find_box_index(data_dict,current_box['id'])
+                    data_dict = remove_data_dict_index(data_dict,i)
+                    # remove all boxes inside current block
+                    while i < len(data_dict['level']) and data_dict['level'][i] != 2 :
+                        data_dict = remove_data_dict_index(data_dict,i)
+                        i += 1
+                    current_box = None
+                else:
+                    if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
+                        boxes_to_check.append(compare_box)
+                        boxes_to_check_id.append(compare_box['id'])
+        i+=1
+        # change box to next one
+        if (i == len(data_dict['level']) and boxes_to_check) or (not current_box and boxes_to_check):
+            i = 0
+            current_box = boxes_to_check.pop(0)
+            boxes_to_check_id.pop(0)
+            checked_boxes.append(current_box['id'])
+
+    print(f'''
+    Initial number of boxes: {og_len}
+    Final number of boxes: {len([x for x in data_dict['level'] if x == 2])}
+    ''')
+    return data_dict
+
+
+def bound_box_fix(data_dict,level):
+    '''Fix bound boxes\n
+    Mainly overlaping boxes'''
+    new_data_dict = {}
+    if level == 2:
+        new_data_dict = block_bound_box_fix(data_dict)
+
+    return new_data_dict
     
-#     # create articles
-#     current_article = {
-#         'title':('',None),
-#         'columns':[],
-#         'higher_height':None,
-#         'lower_height':None,
-#         'text':[]
-#     }
-#     found_article_text = False
-#     for column in range(len(columns_text)):
-#         current_article['columns'].append(column)
-#         current_article['lower_height'] = None
-#         for i in range(len(columns_text[column])):
-
-#             data = columns_text[column][i]
-#             if data['level'] == 5 and data['text'].strip() not in ['']:
-#                 if data['height'] > processed_result['normal_text_size'] and data['word_num'] == 1 and data['par_num'] == 1 and data['line_num'] == 1:
-#                     print('Title:',data)
-#                     # new article title
-#                     if not current_article['title'][0]:
-#                         title = data['text']
-#                         title_height = data['height']
-#                         i += 1
-#                         while data['height'] == title_height:
-#                             data = columns_text[column][i]
-#                             title += data['text']
-#                             i += 1
-#                         current_article['title'] = (title,title_height)
-#                     # new article
-#                     elif current_article['title'][1] < data['height'] and found_article_text:
-#                         articles_result.append(current_article)
-#                         current_article = {
-#                             'title':(data['text'],data['height']),
-#                             'columns':[column],
-#                             'higher_height':None,
-#                             'lower_height':None,
-#                             'text':[]
-#                         }
-#                     # simple subtitle
-#                     else:
-#                         current_article['text'].append(data)
-#                 elif data['height'] == processed_result['normal_text_size']:
-#                     found_article_text = True
-#                     current_article['text'].append(data)
-#                 else:
-#                     current_article['text'].append(data)
-
-#                 if not current_article['higher_height'] or current_article['higher_height'] > data['top']:
-#                     current_article['higher_height'] = data['top']
-#                 if not current_article['lower_height'] or current_article['lower_height'] < data['top']+data['height']:
-#                     current_article['lower_height'] = data['top']+data['height']
-#     # add last article
-#     if current_article['text']:
-#         articles_result.append(current_article)
-
-#     return articles_result
-
-
-
-
-
-# Old method - using word boxes (current uses line boxes + word boxes)
-# def analyze_text(data_dict):
-#     '''Analyse text from data_dict and return text data as dict\n
-#     Tries to find info about normal text size, number of lines and number of columns\n'''
-
-#     normal_text_size = 0
-#     number_columns = 0
-
-#     n_boxes = len(data_dict['text'])
-#     text_sizes_n = {}
-#     left_margin_n = {}
-#     right_margin_n = {}
     
-#     # save text sizes and margins
-#     for i in range(n_boxes):
-#         if int(data_dict['conf'][i]) > 60 and data_dict['level'][i] == 5:
-#             text_size = data_dict['height'][i]
-#             if text_size not in text_sizes_n:
-#                 text_sizes_n[text_size] = 0
-#             text_sizes_n[text_size] += 1
-
-#             left_margin = round(data_dict['left'][i],-1)
-#             if left_margin not in left_margin_n:
-#                 left_margin_n[left_margin] = 0
-#             left_margin_n[left_margin] += 1
-
-#             right_margin = round((data_dict['left'][i] + data_dict['width'][i]),-1)
-#             if right_margin not in right_margin_n:
-#                 right_margin_n[right_margin] = 0
-#             right_margin_n[right_margin] += 1
-    
-#     # estimate normal text size
-#     normal_text_size = max(text_sizes_n, key=text_sizes_n.get)
-#     normal_text_gap = None
-
-#     # estimate normal text gap
-#     for i in range(n_boxes):
-#         # new text block
-#         if data_dict['level'][i] == 2:
-#             last_height = None
-#             line = None
-#             paragraph = None
-#             for j in range(i+1,n_boxes):
-#                 # break if next block
-#                 if data_dict['level'][j] == 2:
-#                     break
-#                 # try to find height difference between two lines of normal text
-#                 if int(data_dict['conf'][j]) > 60 and data_dict['level'][j] == 5 and data_dict['height'][j] == normal_text_size:
-#                     if data_dict['par_num'][j] != paragraph:
-#                         paragraph = data_dict['par_num'][j]
-#                         line = data_dict['line_num'][j]
-                        
-#                     if data_dict['line_num'][j] == line +1:
-#                         normal_text_gap = (data_dict['top'][j] - last_height - normal_text_size)
-#                         break
-
-#                     last_height = data_dict['top'][j]
-#                     line = data_dict['line_num'][j]
-#             if normal_text_gap:
-#                 break
-
-#     # estimate number of lines
-#     highest_normal_text  = None
-#     lowest_normal_text = None
-#     ## find highest and lowest normal text
-#     for i in range(n_boxes):
-#         if int(data_dict['conf'][i]) > 60 and data_dict['height'][i] == normal_text_size:
-#             if not highest_normal_text or data_dict['top'][i] <= highest_normal_text:
-#                 highest_normal_text = data_dict['top'][i]
-#             if not lowest_normal_text or data_dict['top'][i]+normal_text_size >= lowest_normal_text:
-#                 lowest_normal_text = data_dict['top'][i]+normal_text_size
-
-#     number_lines = (lowest_normal_text - highest_normal_text) // (normal_text_size + normal_text_gap)
-
-#     # estimate number of columns
-#     probable_columns = sorted([k for k in sorted(left_margin_n, reverse=True,key=left_margin_n.get) if left_margin_n[k]>=0.45*number_lines])
-#     number_columns = len(probable_columns)
-
-#     columns = []
-
-#     # create columns bounding boxes
-#     for i in range(len(probable_columns)):
-#         if i < len(probable_columns)-1:
-#             # left,top, right, bottom
-#             columns.append(((probable_columns[i],highest_normal_text),(probable_columns[i+1],lowest_normal_text)))
-#         # last column
-#         else:
-#             columns.append(((probable_columns[i],highest_normal_text),(max(right_margin_n.keys()),lowest_normal_text)))
-                
 
 
-#     text = f'''
-#     Normal text size: {normal_text_size}
-#     Max number of lines : {number_lines}
-#     Number of columns: {number_columns}
-#     Columns: {columns}
-# '''
-#     print('Analysed results:',text)
-
-#     return {
-#         'normal_text_size':normal_text_size,
-#         'number_lines':number_lines,
-#         'number_columns':number_columns,
-#         'columns':columns,
-#         'ordered_text':order_text_boxes(data_dict),
-#     }

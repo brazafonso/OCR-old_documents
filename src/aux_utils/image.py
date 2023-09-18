@@ -32,3 +32,11 @@ def inside_box(box,container):
     if box['left'] >= container['left'] and box['right'] <= container['right'] and box['top'] >= container['top'] and box['bottom'] <= container['bottom']:
         return True
     return False
+
+
+def black_and_white(image_path):
+    '''Convert image to black and white'''
+    image = Image.open(image_path)
+    image = image.convert('L')
+    image = image.point(lambda x: 0 if x < 128 else 255, '1')
+    return image
