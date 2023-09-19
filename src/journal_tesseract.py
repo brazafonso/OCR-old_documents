@@ -49,6 +49,46 @@ def save_configs():
     conf_file.close()
 
 
+def update_search_block_og(window,target_image=None):
+    '''GUI - Update search block for original image'''
+    global result_path
+    if target_image and os.path.exists(f'{result_path}/result.json'):
+        data_dict = json.load(open(f'{result_path}/result.json','r'))
+        data_dict = id_boxes(data_dict,2)
+        image = draw_bounding_boxes(data_dict,target_image,[2],id=True)
+        image = Image.fromarray(image)
+        bio = io.BytesIO()
+        image.save(bio, format="png")
+        # get available block ids
+        block_ids = []
+        for i in range(len(data_dict['text'])):
+            if data_dict['level'][i] == 2:
+                block_ids.append(data_dict['id'][i])
+        window['search_block_og'].update(values=block_ids,value=block_ids[0],disabled=False)
+        window['result_img_search_block_og'].update(data=bio.getvalue(),visible=True)
+        window.refresh()
+        window['column_fix_window'].contents_changed()
+
+def update_search_block_fixed(window,target_image=None):
+    '''GUI - Update search block for fixed image'''
+    global result_path
+    if target_image and os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+        data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+        data_dict = id_boxes(data_dict,2)
+        image = draw_bounding_boxes(data_dict,target_image,[2],id=True)
+        image = Image.fromarray(image)
+        bio = io.BytesIO()
+        image.save(bio, format="png")
+        # get available block ids
+        block_ids = []
+        for i in range(len(data_dict['text'])):
+            if data_dict['level'][i] == 2:
+                block_ids.append(data_dict['id'][i])
+        window['search_block_fixed'].update(values=block_ids,value=block_ids[0],disabled=False)
+        window['result_img_search_block_fixed'].update(data=bio.getvalue(),visible=True)
+        window.refresh()
+        window['column_fix_window'].contents_changed()
+
 
 def run_tesseract(image_path):
     '''GUI - Run text search on target image'''
@@ -155,6 +195,7 @@ def run_extract_articles():
             last_t = t
         file.write('\n\n')
     file.close()
+    
 
 
 def main():
@@ -249,6 +290,20 @@ def main():
             sg.Text("Fixed text:",visible=False,key='result_label2_fix'),
             sg.Multiline(size=(50,10),visible=False,key='result_text2_fix',disabled=True),
             sg.Image(filename=None,visible=False,key='result_columns_fix')
+        ],
+        [
+            sg.Text("OG - Search for block:"),
+            sg.Combo(key='search_block_og',values=[],size=(4,4),disabled=True),
+            sg.Button("Search",key='button_search_block_og'),
+            sg.Image(filename=None,visible=False,key='result_img_search_block_og'),
+            sg.Multiline(size=(50,10),visible=False,key='result_text_search_block_og',disabled=True),
+        ],
+        [
+            sg.Text("Fixed - Search for block:"),
+            sg.Combo(key='search_block_fixed',values=[],size=(4,4),disabled=True),
+            sg.Button("Search",key='button_search_block_fixed'),
+            sg.Image(filename=None,visible=False,key='result_img_search_block_fixed'),
+            sg.Multiline(size=(50,10),visible=False,key='result_text_search_block_fixed',disabled=True),
         ]
         
     ]
@@ -280,6 +335,12 @@ def main():
         window['target_image_path'].update(data=bio.getvalue(),visible=True)
         window.refresh()
         window['column_target_image'].contents_changed()
+
+    # update og image (fix tab)
+    update_search_block_og(window,target_image)
+    # update fixed image (fix tab)
+    update_search_block_fixed(window,target_image)
+
 
     scroll_collumn_dict = {
         'Main': 'column_main_window',
@@ -313,6 +374,8 @@ def main():
                 conf['target_image_path'] = target_image
                 save_configs()
                 run_tesseract(target_image)
+                # update og image (fix tab)
+                update_search_block_og(window,target_image)
 
 
         # draw bounding boxes
@@ -422,6 +485,9 @@ def main():
                 window['fix_box_bounds_image_new'].update(data=bio.getvalue(),visible=True)
                 window['button_save_fix_result'].update(visible=True)
                 window.refresh()
+
+                # update fixed image (fix tab)
+                update_search_block_fixed(window,target_image)
             else:
                 sg.popup('No target image selected, or no result data found. Please run text search first.')
         
@@ -474,6 +540,36 @@ def main():
                 window.refresh()
                 window['column_fix_window'].contents_changed()
 
+            else:
+                sg.popup('No result data found. Please run fix first.')
+        
+        # search for block in original image
+        elif event == 'button_search_block_og':
+            if os.path.exists(f'{result_path}/result.json'):
+                data_dict = json.load(open(f'{result_path}/result.json','r'))
+                data_dict = id_boxes(data_dict,2)
+                block_id = values['search_block_og']
+                boxes = get_group_boxes(data_dict,block_id)
+                text = boxes_to_text(boxes)
+                print(text)
+                window['result_text_search_block_og'].update(text,visible=True)
+                window.refresh()
+                window['column_fix_window'].contents_changed()
+            else:
+                sg.popup('No result data found. Please run text search first.')
+
+        # search for block in fixed image
+        elif event == 'button_search_block_fixed':
+            if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+                data_dict = id_boxes(data_dict,2)
+                block_id = values['search_block_fixed']
+                boxes = get_group_boxes(data_dict,block_id)
+                text = boxes_to_text(boxes)
+                print(text)
+                window['result_text_search_block_fixed'].update(text,visible=True)
+                window.refresh()
+                window['column_fix_window'].contents_changed()
             else:
                 sg.popup('No result data found. Please run fix first.')
                 

@@ -1,5 +1,6 @@
 *.csv
 *.jpg
 *.png
+*.json
 docs/jornais/*
 src/results/*

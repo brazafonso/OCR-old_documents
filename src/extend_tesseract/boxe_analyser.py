@@ -6,6 +6,19 @@ from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
 
+
+def boxes_to_text(data_dict,conf=60):
+    '''Convert data_dict to text'''
+    text = ''
+    for i in range(len(data_dict['text'])):
+        if data_dict['level'][i] == 5 and data_dict['conf'][i] > conf:
+            text += data_dict['text'][i] + ' '
+        elif data_dict['level'][i] == 4:
+            text += '\n'
+        elif data_dict['level'][i] == 3:
+            text += '\t'
+    return text
+
 def id_boxes(data_dict,level):
     '''Numbering boxes of specefic level'''
     id = 0
@@ -25,6 +38,12 @@ def find_box_index(data_dict,id):
         if data_dict['id'][i] == id:
             return i
     return None
+
+def append_box(data_dict,box):
+    '''Append box to data_dict'''
+    for k in data_dict.keys():
+        data_dict[k].append(box[k])
+    return data_dict
 
 def remove_data_dict_index(data_dict,index):
     '''Remove index from data_dict'''
@@ -47,9 +66,32 @@ def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
             (x, y, w, h) = (data_dict['left'][i], data_dict['top'][i], data_dict['width'][i], data_dict['height'][i])
             img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
             if id and data_dict['id'][i]:
-                img = cv2.putText(img, str(data_dict['id'][i]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                img = cv2.putText(img, str(data_dict['id'][i]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     
     return img
+
+
+def get_group_boxes(data_dict,id):
+    '''Get all boxes from the group of box with id \'id\'\n'''
+    group_boxes = {k:[] for k in data_dict.keys()}
+    parent_box = None
+    for i in range(len(data_dict['text'])):
+        current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
+        if not parent_box:
+            if data_dict['id'][i] == id:
+                parent_box = current_box
+                append_box(group_boxes,parent_box)
+        # within group
+        else:
+            # child of box
+            if data_dict['level'][i] > parent_box['level']:
+                child_box = current_box
+                append_box(group_boxes,child_box)
+            # end of group
+            else:
+                break
+    return group_boxes
+
 
 
 def order_text_boxes(data_dict):
@@ -398,13 +440,13 @@ def block_bound_box_fix(data_dict):
                 current_box['bottom'] = current_box['top'] + current_box['height']
                 i += 1
                 continue
-            # check if current box is inside another box
+            # check if boxes are within each other
             if data_dict['id'][i] != current_box['id']:
                 compare_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                 compare_box['right'] = compare_box['left'] + compare_box['width']
                 compare_box['bottom'] = compare_box['top'] + compare_box['height']
 
-                # current box inside last box
+                # compared box inside current box
                 if inside_box(compare_box,current_box):
                     data_dict = remove_data_dict_index(data_dict,i)
                     # remove all boxes inside compared block
@@ -414,14 +456,14 @@ def block_bound_box_fix(data_dict):
                     if compare_box['id'] in boxes_to_check_id:
                         boxes_to_check.pop(boxes_to_check_id.index(compare_box['id'])) 
                         boxes_to_check_id.remove(compare_box['id'])
-                # last box inside current box
+                # current box inside compared box
                 elif inside_box(current_box,compare_box):
                     i = find_box_index(data_dict,current_box['id'])
                     data_dict = remove_data_dict_index(data_dict,i)
+
                     # remove all boxes inside current block
                     while i < len(data_dict['level']) and data_dict['level'][i] != 2 :
                         data_dict = remove_data_dict_index(data_dict,i)
-                        i += 1
                     current_box = None
                 else:
                     if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
@@ -434,6 +476,7 @@ def block_bound_box_fix(data_dict):
             current_box = boxes_to_check.pop(0)
             boxes_to_check_id.pop(0)
             checked_boxes.append(current_box['id'])
+
 
     print(f'''
     Initial number of boxes: {og_len}
