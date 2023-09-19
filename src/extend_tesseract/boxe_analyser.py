@@ -1,3 +1,4 @@
+import re
 import pytesseract
 import cv2
 import jellyfish
@@ -5,6 +6,8 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
+
+
 
 
 def boxes_to_text(data_dict,conf=60):
@@ -49,6 +52,20 @@ def remove_data_dict_index(data_dict,index):
     '''Remove index from data_dict'''
     for k in data_dict.keys():
         data_dict[k].pop(index)
+    return data_dict
+
+def remove_data_dict_group(data_dict,index,removed_amount=False):
+    '''Remove group from data_dict'''
+    level = data_dict['level'][index]
+    data_dict = remove_data_dict_index(data_dict,index)
+    removed_counter = 1
+    while data_dict['level'][index] > level:
+        data_dict = remove_data_dict_index(data_dict,index)
+        removed_counter += 1
+    # return removed amount
+    if removed_amount:
+        return data_dict,removed_counter
+    
     return data_dict
 
 def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
@@ -421,7 +438,16 @@ def simple_article_extraction_page(processed_result):
     return articles_result
 
 
-def block_bound_box_fix(data_dict):
+def update_index_greater_id(data_dict,value,id):
+    '''Update index of boxes with id greater than \'id\' in data_dict'''
+    for i in range(len(data_dict)):
+        if data_dict[i]['id'] and data_dict[i]['index'] and data_dict[i]['id'] > id:
+            data_dict[i]['index'] += value
+    return data_dict
+
+
+
+def block_bound_box_fix(data_dict,image_info):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -435,47 +461,58 @@ def block_bound_box_fix(data_dict):
     while i < len(data_dict['level']):
         if data_dict['level'][i] == 2:
             if not current_box:
-                current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
-                current_box['right'] = current_box['left'] + current_box['width']
-                current_box['bottom'] = current_box['top'] + current_box['height']
-                i += 1
+                group_boxes = get_group_boxes(data_dict,data_dict['id'][i])
+                if (not is_empty_box(group_boxes)) or is_delimeter(group_boxes,image_info):
+                    current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
+                    current_box['right'] = current_box['left'] + current_box['width']
+                    current_box['bottom'] = current_box['top'] + current_box['height']
+                    current_box['index'] = i
+                    i+=1
+                else:
+                    data_dict = remove_data_dict_group(data_dict,i)
                 continue
             # check if boxes are within each other
             if data_dict['id'][i] != current_box['id']:
                 compare_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                 compare_box['right'] = compare_box['left'] + compare_box['width']
                 compare_box['bottom'] = compare_box['top'] + compare_box['height']
+                compare_box['index'] = i
 
                 # compared box inside current box
                 if inside_box(compare_box,current_box):
-                    data_dict = remove_data_dict_index(data_dict,i)
-                    # remove all boxes inside compared block
-                    while i < len(data_dict['level']) and data_dict['level'][i] != 2 :
-                        data_dict = remove_data_dict_index(data_dict,i)
-
-                    if compare_box['id'] in boxes_to_check_id:
+                    data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
+                    if compare_box['id'] in boxes_to_check_id: 
+                        boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,compare_box['id'])
                         boxes_to_check.pop(boxes_to_check_id.index(compare_box['id'])) 
                         boxes_to_check_id.remove(compare_box['id'])
                 # current box inside compared box
                 elif inside_box(current_box,compare_box):
                     i = find_box_index(data_dict,current_box['id'])
-                    data_dict = remove_data_dict_index(data_dict,i)
-
-                    # remove all boxes inside current block
-                    while i < len(data_dict['level']) and data_dict['level'][i] != 2 :
-                        data_dict = remove_data_dict_index(data_dict,i)
+                    data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
+                    boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
                     current_box = None
                 else:
                     if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
                         boxes_to_check.append(compare_box)
                         boxes_to_check_id.append(compare_box['id'])
+            print([x['index'] for x in boxes_to_check])
         i+=1
         # change box to next one
         if (i == len(data_dict['level']) and boxes_to_check) or (not current_box and boxes_to_check):
-            i = 0
-            current_box = boxes_to_check.pop(0)
-            boxes_to_check_id.pop(0)
-            checked_boxes.append(current_box['id'])
+            current_box = None
+            # get next not empty block
+            while not current_box and boxes_to_check:
+                current_box = boxes_to_check.pop(0)
+                i = current_box['index']
+                group_boxes = get_group_boxes(data_dict,current_box['id'])
+                boxes_to_check_id.pop(0)
+                checked_boxes.append(current_box['id'])
+                # check if box is empty
+                # remove if true
+                if is_empty_box(group_boxes) and not is_delimeter(group_boxes,image_info):
+                    data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
+                    boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
+                    current_box = None
 
 
     print(f'''
@@ -485,15 +522,32 @@ def block_bound_box_fix(data_dict):
     return data_dict
 
 
-def bound_box_fix(data_dict,level):
+def bound_box_fix(data_dict,level,image_info):
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_data_dict = {}
     if level == 2:
-        new_data_dict = block_bound_box_fix(data_dict)
+        new_data_dict = block_bound_box_fix(data_dict,image_info)
 
     return new_data_dict
     
     
+def is_empty_box(data_dict,conf=60):
+    '''Check if box group is empty'''
+    text = ''
+    for i in range(len(data_dict['text'])):
+        if data_dict['level'][i] == 5 and data_dict['conf'][i] > conf:
+            text += data_dict['text'][i]
+    if re.match(r'^\s*$',text):
+        return True
+    return False
+
+def is_delimeter(data_dict,image_info):
+    '''Check if box group is a delimeter'''
+    if is_empty_box(data_dict):
+        parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
+        if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
+            return True
+    return False
 
 

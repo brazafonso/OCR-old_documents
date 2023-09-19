@@ -34,9 +34,33 @@ def inside_box(box,container):
     return False
 
 
+def intercept_box(box1,box2):
+    '''Check if box intercepts container'''
+    intercept_vertical = (box1['top'] >= box2['bottom'] and box1['bottom'] <= box2['bottom']) or (box1['top'] >= box2['top'] and box1['bottom'] <= box2['top'])
+    intercept_horizontal = (box1['left'] <= box2['right'] and box1['right'] >= box2['right']) or (box1['left'] <= box2['left'] and box1['right'] >= box2['left'])
+    if intercept_horizontal and intercept_vertical:
+        return True
+    return False
+
+def box_is_smaller(box1,box2):
+    '''Check if box1 is smaller than box2'''
+    if (box1['right'] - box1['left']) * (box1['bottom'] - box1['top']) < (box2['right'] - box2['left']) * (box2['bottom'] - box2['top']):
+        return True
+    return False
+
+
 def black_and_white(image_path):
     '''Convert image to black and white'''
     image = Image.open(image_path)
     image = image.convert('L')
     image = image.point(lambda x: 0 if x < 128 else 255, '1')
     return image
+
+
+def get_image_info(image_path):
+    '''Get image info'''
+    image = Image.open(image_path)
+    return {
+        'width':image.width,
+        'height':image.height
+    }

@@ -477,7 +477,7 @@ def main():
                 window['fix_box_bounds_image_og'].update(data=bio.getvalue(),visible=True)
                 window.refresh()
 
-                data_dict = bound_box_fix(data_dict,box_level)
+                data_dict = bound_box_fix(data_dict,box_level,get_image_info(target_image))
                 image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
                 bio = io.BytesIO()
                 pil_img = Image.fromarray(image)
@@ -499,6 +499,9 @@ def main():
                 result_dict_file.close()
                 image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
                 cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+
+                # update fixed image (fix tab)
+                update_search_block_fixed(window,target_image)
 
         # show fix results
         elif event == 'button_result_fix':
