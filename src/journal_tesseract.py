@@ -90,15 +90,11 @@ def update_search_block_fixed(window,target_image=None):
         window['column_fix_window'].contents_changed()
 
 
-def run_tesseract(image_path):
-    '''GUI - Run text search on target image'''
-    global result_path,conf
 
-    results = search_text_img(image_path)
-    data_dict = results['data_dict']
-    data_text = results['data_text']
-    data_pdf = results['data_pdf']
-    data_xml = results['data_xml']
+def save_results(data_dict,image_path):
+    '''Saves results gathered from data_dict to files'''
+    global result_path
+
     img = draw_bounding_boxes(data_dict,image_path)
     # create result files
 
@@ -114,17 +110,34 @@ def run_tesseract(image_path):
     df = pd.DataFrame(data_dict)
     df.to_csv(result_csv_file)
     result_csv_file.close()
+    
+    # save result processed data
+    data_processed = analyze_text(data_dict)
+    result_file = open(f'{result_path}/result_processed.json','w')
+    json.dump(data_processed,result_file,indent=4)
+    result_file.close()
+
+
+def run_tesseract(image_path):
+    '''GUI - Run text search on target image'''
+    global result_path,conf
+
+    results = search_text_img(image_path)
+    data_dict = results['data_dict']
+    data_text = results['data_text']
+    data_pdf = results['data_pdf']
+    data_xml = results['data_xml']
+    
+    # save results
+
+    # save results from data_dict
+    save_results(data_dict,image_path)
 
     # save result simple text
     result_file = open(f'{result_path}/result.txt','w')
     result_file.write(data_text)
     result_file.close()
 
-    # save result processed data
-    data_processed = analyze_text(data_dict)
-    result_file = open(f'{result_path}/result_processed.json','w')
-    json.dump(data_processed,result_file,indent=4)
-    result_file.close()
 
     # save result pdf and xml
     result_pdf = open(f'{result_path}/result.pdf','wb')
@@ -304,6 +317,9 @@ def main():
             sg.Button("Search",key='button_search_block_fixed'),
             sg.Image(filename=None,visible=False,key='result_img_search_block_fixed'),
             sg.Multiline(size=(50,10),visible=False,key='result_text_search_block_fixed',disabled=True),
+        ],
+        [
+            sg.Button("Overwrite original result",key='button_overwrite_original_result')
         ]
         
     ]
@@ -364,6 +380,8 @@ def main():
                 bio = io.BytesIO()
                 image.save(bio, format="png")
                 window['target_image_path'].update(data=bio.getvalue(),visible=True)
+                # update og image (fix tab)
+                update_search_block_og(window,target_image)
                 window.refresh()
 
         # use tesseract to search for text in image
@@ -573,6 +591,15 @@ def main():
                 window['result_text_search_block_fixed'].update(text,visible=True)
                 window.refresh()
                 window['column_fix_window'].contents_changed()
+            else:
+                sg.popup('No result data found. Please run fix first.')
+        
+        elif event == 'button_overwrite_original_result':
+            if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+                save_results(data_dict,target_image)
+                run_tesseract_results(window)
+
             else:
                 sg.popup('No result data found. Please run fix first.')
                 

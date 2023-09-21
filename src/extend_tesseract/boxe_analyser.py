@@ -59,7 +59,7 @@ def remove_data_dict_group(data_dict,index,removed_amount=False):
     level = data_dict['level'][index]
     data_dict = remove_data_dict_index(data_dict,index)
     removed_counter = 1
-    while data_dict['level'][index] > level:
+    while index < len(data_dict['level']) and data_dict['level'][index] > level:
         data_dict = remove_data_dict_index(data_dict,index)
         removed_counter += 1
     # return removed amount
@@ -263,17 +263,17 @@ def analyze_text(data_dict):
     # create columns bounding boxes
     for i in range(len(probable_columns)):
         if i < len(probable_columns)-1:
-            left = probable_columns[i]*0.95
-            right = probable_columns[i+1]*1.05
-            top = highest_normal_text*0.95
-            bottom = lowest_normal_text*1.05
+            left = probable_columns[i]*0.98
+            right = probable_columns[i+1]*1.02
+            top = highest_normal_text*0.98
+            bottom = lowest_normal_text*1.02
             columns.append(((left,top),(right,bottom)))
         # last column
         else:
-            left = probable_columns[i]*0.95
-            right = max(right_margin_n.keys())*1.05
-            top = highest_normal_text*0.95
-            bottom = lowest_normal_text*1.05
+            left = probable_columns[i]*0.98
+            right = max(right_margin_n.keys())*1.02
+            top = highest_normal_text*0.98
+            bottom = lowest_normal_text*1.02
             columns.append(((left,top),(right,bottom)))
                 
 
@@ -462,7 +462,7 @@ def block_bound_box_fix(data_dict,image_info):
         if data_dict['level'][i] == 2:
             if not current_box:
                 group_boxes = get_group_boxes(data_dict,data_dict['id'][i])
-                if (not is_empty_box(group_boxes)) or is_delimeter(group_boxes,image_info):
+                if (not is_empty_box(group_boxes)) or is_delimeter(group_boxes):
                     current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                     current_box['right'] = current_box['left'] + current_box['width']
                     current_box['bottom'] = current_box['top'] + current_box['height']
@@ -495,7 +495,6 @@ def block_bound_box_fix(data_dict,image_info):
                     if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
                         boxes_to_check.append(compare_box)
                         boxes_to_check_id.append(compare_box['id'])
-            print([x['index'] for x in boxes_to_check])
         i+=1
         # change box to next one
         if (i == len(data_dict['level']) and boxes_to_check) or (not current_box and boxes_to_check):
@@ -509,7 +508,7 @@ def block_bound_box_fix(data_dict,image_info):
                 checked_boxes.append(current_box['id'])
                 # check if box is empty
                 # remove if true
-                if is_empty_box(group_boxes) and not is_delimeter(group_boxes,image_info):
+                if is_empty_box(group_boxes) and not is_delimeter(group_boxes):
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
                     current_box = None
@@ -542,12 +541,19 @@ def is_empty_box(data_dict,conf=60):
         return True
     return False
 
-def is_delimeter(data_dict,image_info):
-    '''Check if box group is a delimeter'''
+# def is_delimeter(data_dict,image_info):
+#     '''Check if box group is a delimeter'''
+#     if is_empty_box(data_dict):
+#         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
+#         if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
+#             return True
+#     return False
+
+
+def is_delimeter(data_dict):
+    '''Check if box group is a delimter'''
     if is_empty_box(data_dict):
         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
-        if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
+        if parent_box['width'] >= parent_box['height']*4 or parent_box['height'] >= parent_box['width']*4:
             return True
     return False
-
-
