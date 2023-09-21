@@ -340,7 +340,7 @@ def search_text_img(image_path):
 
     img = Image.open(image_path)
     print('Using tesseract')
-    data_dict = pytesseract.image_to_data(img, output_type=Output.DICT,lang='por',config='--psm 4')
+    data_dict = pytesseract.image_to_data(img, output_type=Output.DICT,lang='por')
     data_text = pytesseract.image_to_string(img,lang='por')
     data_pdf = pytesseract.image_to_pdf_or_hocr(img, extension='pdf',lang='por')
     data_xml = pytesseract.image_to_alto_xml(img,lang='por')

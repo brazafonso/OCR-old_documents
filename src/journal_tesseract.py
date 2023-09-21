@@ -211,7 +211,7 @@ def main():
     # main window layout
     main_layout = [
         [
-            sg.FileBrowse(file_types=(("IMG Files", "*.jpg"),),initial_folder=f'{current_path}/../docs/jornais/',button_text="Choose Image",key='browse_file',target='target_input'),
+            sg.FileBrowse(file_types=(("IMG Files", "*.jpg"),("IMG Files", "*.png")),initial_folder=f'{current_path}/../docs/jornais/',button_text="Choose Image",key='browse_file',target='target_input'),
             sg.Input(default_text='' if not conf['target_image_path'] else conf['target_image_path'],key='target_input',enable_events=True),
             sg.Button("Search Text",key='button_tesseract')
         ],
