@@ -48,11 +48,18 @@ def append_box(data_dict,box):
         data_dict[k].append(box[k])
     return data_dict
 
+def update_data_dict_index(data_dict,index,box):
+    '''Update index of data_dict'''
+    for k in data_dict.keys():
+        data_dict[k][index] = box[k]
+    return data_dict 
+
 def remove_data_dict_index(data_dict,index):
     '''Remove index from data_dict'''
     for k in data_dict.keys():
         data_dict[k].pop(index)
     return data_dict
+
 
 def remove_data_dict_group(data_dict,index,removed_amount=False):
     '''Remove group from data_dict'''
@@ -491,12 +498,23 @@ def block_bound_box_fix(data_dict,image_info):
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
                     current_box = None
+                # boxes intersect (with same level, so as to be able to merge seemlessly)
+                elif intersects_box(current_box,compare_box) and same_level_box(current_box,compare_box):
+                    intersect_area = intersect_area_box(current_box,compare_box)
+                    # update boxes so that they don't intersect
+                    # smaller box is reduced
+                    if box_is_smaller(current_box,compare_box):
+                        current_box = remove_box_area(current_box,intersect_area)
+                        data_dict = update_data_dict_index(data_dict,current_box['index'],current_box)
+                    else:
+                        compare_box = remove_box_area(compare_box,intersect_area)
+                        data_dict = update_data_dict_index(data_dict,compare_box['index'],compare_box)
                 else:
                     if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
                         boxes_to_check.append(compare_box)
                         boxes_to_check_id.append(compare_box['id'])
         i+=1
-        # change box to next one
+        # change current box to next one
         if (i == len(data_dict['level']) and boxes_to_check) or (not current_box and boxes_to_check):
             current_box = None
             # get next not empty block
