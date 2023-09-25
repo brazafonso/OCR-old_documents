@@ -1,0 +1,196 @@
+\glsdefs@newdocentry{gcd}%
+{%
+name={\acronymfont {\glsentryshort {gcd}}},%
+sort={MDC},%
+type={acronym},%
+first={MDC},%
+firstplural={MDCs},%
+text={MDC},%
+plural={MDCs},%
+description={Máximo Divisor Comum},%
+descriptionplural={Máximo Divisor Comum},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Máximo Divisor Comum},%
+longplural={Máximo Divisor Comums},%
+short={MDC},%
+shortplural={MDCs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{lcm}%
+{%
+name={\acronymfont {\glsentryshort {lcm}}},%
+sort={MMC},%
+type={acronym},%
+first={MMC},%
+firstplural={MMCs},%
+text={MMC},%
+plural={MMCs},%
+description={Mínimo múltiplo comum},%
+descriptionplural={Mínimo múltiplo comum},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Mínimo múltiplo comum},%
+longplural={Mínimo múltiplo comums},%
+short={MMC},%
+shortplural={MMCs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{maths}%
+{%
+name={matemática},%
+sort={matemática},%
+type={main},%
+first={matemática},%
+firstplural={matemáticas},%
+text={matemática},%
+plural={matemáticas},%
+description={Matemática é o que os matemáticos fazem},%
+descriptionplural={Matemática é o que os matemáticos fazem},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={},%
+longplural={},%
+short={},%
+shortplural={},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{latex}%
+{%
+name={latex},%
+sort={latex},%
+type={main},%
+first={latex},%
+firstplural={latexs},%
+text={latex},%
+plural={latexs},%
+description={É uma linguagem especialmente adequada para documentos científicos},%
+descriptionplural={É uma linguagem especialmente adequada para documentos científicos},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={},%
+longplural={},%
+short={},%
+shortplural={},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{formula}%
+{%
+name={fórmula},%
+sort={fórmula},%
+type={main},%
+first={fórmula},%
+firstplural={fórmulas},%
+text={fórmula},%
+plural={fórmulas},%
+description={Expressão matemática},%
+descriptionplural={Expressão matemática},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={},%
+longplural={},%
+short={},%
+shortplural={},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{rpd}%
+{%
+name={\acronymfont {\glsentryshort {rpd}}},%
+sort={RPD},%
+type={acronym},%
+first={RPD},%
+firstplural={RPDs},%
+text={RPD},%
+plural={RPDs},%
+description={Relatório de Pré-Dissertação},%
+descriptionplural={Relatório de Pré-Dissertação},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Relatório de Pré-Dissertação},%
+longplural={Relatório de Pré-Dissertaçãos},%
+short={RPD},%
+shortplural={RPDs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{eda}%
+{%
+name={\acronymfont {\glsentryshort {eda}}},%
+sort={EA},%
+type={acronym},%
+first={EA},%
+firstplural={EAs},%
+text={EA},%
+plural={EAs},%
+description={Estado da Arte},%
+descriptionplural={Estado da Arte},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Estado da Arte},%
+longplural={Estado da Artes},%
+short={EA},%
+shortplural={EAs},%
+counter={page},%
+parent={},%
+%
+}%
+

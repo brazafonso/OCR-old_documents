@@ -1,0 +1,122 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{dissertation}
+\makeglossaries
+\makeindex
+
+%\logo{EAAD}{Escola de Arquitetura, Arte e Design}{}
+%\logoB{EAAD}{Escola de Arquitetura, Arte e Design}{}
+
+%\logo{EC}{Escola de Ciências}{}
+%\logoB{EC}{Escola de Ciências}{}
+
+%\logo{ED}{Escola de Direito}{}
+%\logoB{ED}{Escola de Direito}{}
+
+\logo{EE}{Escola de Engenharia}{}
+\logoB{EE}{Escola de Engenharia}{}
+
+%\logo{EEG}{Escola de Economia e Gestão}{}
+%\logoB{EEG}{SEscola de Economia e Gestão}{}
+
+%\logo{ELACH}{Escola de Letras, Artes e Ciências Humanas}{}
+%\logoB{ELACH}{Escola de Letras, Artes e Ciências Humanas}{}
+
+%\logo{EM}{Escola de Medicina}{}
+%\logoB{EM}{Escola de Medicina}{}
+
+%\logo{EP}{Escola de Psicologia}{}
+%\logoB{EP}{Escola de Psicologia}{}
+
+%\logo{ESE}{Escola Superior de Enfermagem}{}
+%\logoB{ESE}{Escola Superior de Enfermagem}{}
+
+%\logo{I3Bs}{Instituto de Investigação em Biomateriais,}{Biodegradáveis e Biomiméticos}
+%\logoB{I3Bs}{Instituto de Investigação em Biomateriais,}{Biodegradáveis e Biomiméticos}
+
+%\logo{ICS}{Instituto de Ciências Sociais}{}
+%\logoB{ICS}{Instituto de Ciências Sociais}{}
+
+%\logo{IE}{Instituto de Educação}{}
+%\logoB{IE}{Instituto de Educação}{}
+
+\author{Nome completo do autor}
+
+\titleA{Título Título Título Título Título Título}
+\titleB{Título Título Título Título Título}
+\titleC{Título Título Título Título}
+
+\masters{Mestrado em Engenharia Informática}
+%\area{Área de especialização}
+\supervisor{Nome do Orientador}
+\cosupervisor{Nome do Coorientador}
+
+\begin{document}
+\setlength{\parindent}{0em}
+
+%-- Covers
+\input{covers/Covers}
+
+%-- Document setup
+\newgeometry{right=25mm, left=25mm, top=25mm, bottom=25mm}
+\pagenumbering{roman}
+
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{1.5em}
+
+%-- Preamble
+\input{preamble/Copyright}
+\input{preamble/Acknowledgements}
+\input{preamble/StatementofIntegrity}
+\input{preamble/Abstract}
+
+\phantomsection
+\tableofcontents
+
+\cleardoublepage
+\listoffigures
+
+% List of tables
+\listoftables
+\clearpage
+
+% Acronyms
+\printglossary[type=\acronymtype,nonumberlist, title={Acrónimos}]
+
+% Glossary
+\printglossary[title={Glossário}, nonumberlist]
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+%-- Dissertation 
+\part{Material Introdutório}
+
+\input{chapters/Introduction}
+\input{chapters/StateOfTheArt}
+\input{chapters/ProblemAndChallenges}
+
+\part{\textit{Core} da Dissertação}
+
+\input{chapters/Contribution}
+\input{chapters/Applications}
+\input{chapters/ConclusionsAndFutureWork}
+\input{chapters/PlannedSchedule}
+
+\renewcommand{\baselinestretch}{1}
+\bibliographystyle{plainnat}
+\bibliography{dissertation}
+\printindex
+
+\appendix
+\renewcommand\chaptername{Apêndice}
+
+\part{Apêndices}
+
+\input{appendices/SupportWork}
+\input{appendices/DetailsOfResults}
+\input{appendices/Listings}
+\input{appendices/Tooling}
+
+\input{covers/BackCover}
+
+\end{document}
