@@ -10,7 +10,7 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
-from extend_tesseract.boxe_analyser import *
+from extend_tesseract.box_analyser import *
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 result_path = f'{current_path}/results'

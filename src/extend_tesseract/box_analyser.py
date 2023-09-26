@@ -505,9 +505,13 @@ def block_bound_box_fix(data_dict,image_info):
                     # smaller box is reduced
                     if box_is_smaller(current_box,compare_box):
                         current_box = remove_box_area(current_box,intersect_area)
+                        current_box['height'] = current_box['bottom'] - current_box['top']
+                        current_box['width'] = current_box['right'] - current_box['left']
                         data_dict = update_data_dict_index(data_dict,current_box['index'],current_box)
                     else:
                         compare_box = remove_box_area(compare_box,intersect_area)
+                        compare_box['height'] = compare_box['bottom'] - compare_box['top']
+                        compare_box['width'] = compare_box['right'] - compare_box['left']
                         data_dict = update_data_dict_index(data_dict,compare_box['index'],compare_box)
                 else:
                     if compare_box['id'] not in checked_boxes and compare_box['id'] not in boxes_to_check_id:
