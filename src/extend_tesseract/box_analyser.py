@@ -8,6 +8,32 @@ from aux_utils.page_tree import *
 from aux_utils.image import *
 
 
+def is_empty_box(data_dict,conf=60):
+    '''Check if box group is empty'''
+    text = ''
+    for i in range(len(data_dict['text'])):
+        if data_dict['level'][i] == 5 and data_dict['conf'][i] > conf:
+            text += data_dict['text'][i]
+    if re.match(r'^\s*$',text):
+        return True
+    return False
+
+# def is_delimeter(data_dict,image_info):
+#     '''Check if box group is a delimeter'''
+#     if is_empty_box(data_dict):
+#         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
+#         if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
+#             return True
+#     return False
+
+
+def is_delimeter(data_dict):
+    '''Check if box group is a delimter'''
+    if is_empty_box(data_dict):
+        parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
+        if parent_box['width'] >= parent_box['height']*4 or parent_box['height'] >= parent_box['width']*4:
+            return True
+    return False
 
 
 def boxes_to_text(data_dict,conf=60):
@@ -555,30 +581,98 @@ def bound_box_fix(data_dict,level,image_info):
 
     return new_data_dict
     
-    
-def is_empty_box(data_dict,conf=60):
-    '''Check if box group is empty'''
-    text = ''
+
+def estimate_journal_header(data_dict,image_info):
+    '''Estimate journal header blocks and dimensions\n
+    Main focus on pivoting using potential delimiters'''
+
+    header = None
+    # get delimiter blocks
+    delimiters = []
     for i in range(len(data_dict['text'])):
-        if data_dict['level'][i] == 5 and data_dict['conf'][i] > conf:
-            text += data_dict['text'][i]
-    if re.match(r'^\s*$',text):
-        return True
-    return False
+        # delimiter block
+        if data_dict['level'][i] == 2 and is_delimeter(get_group_boxes(data_dict,data_dict['id'][i],i)):
+            bottom = data_dict['top'][i] + data_dict['height'][i]
+            # above half of image
+            if data_dict['top'][i] < image_info['height']*0.5 and bottom < image_info['height']*0.5:
+                delimiters.append({k:v for k in data_dict.keys() for v in [data_dict[k][i]]})
+    
+    if delimiters:
+        header = {
+        'left':None,
+        'top':None,
+        'width':None,
+        'height':None,
+        'right':None,
+        'bottom':None,
+        'boxes':[]
+    }
+        
+        # get widthest delimeter
+        widthest_delimiter = sorted(delimiters,key=lambda x: x['width'])[-1]
+        
+        # update header
+        header['left'] = widthest_delimiter['left']
+        header['right'] = widthest_delimiter['left'] + widthest_delimiter['width']
+        header['top'] = widthest_delimiter['top']
+        header['bottom'] = widthest_delimiter['top'] + widthest_delimiter['height']
 
-# def is_delimeter(data_dict,image_info):
-#     '''Check if box group is a delimeter'''
-#     if is_empty_box(data_dict):
-#         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
-#         if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
-#             return True
-#     return False
+        # get header boxes
+        header_boxes = []
+        for i in range(len(data_dict['text'])):
+            # delimiter block above delimiter
+            if data_dict['level'][i] == 2 and( data_dict['top'][i] + data_dict['height'][i]) < widthest_delimiter['top']:
+                group = get_group_boxes(data_dict,data_dict['id'][i],i)
+                header_boxes.append(group)
+                block_right = data_dict['left'][i] + data_dict['width'][i]
+                # update header info
+                if header['left'] > data_dict['left'][i]:
+                    header['left'] = data_dict['left'][i]
+                if header['top'] > data_dict['top'][i]:
+                    header['top'] = data_dict['top'][i]
+                if header['right'] < block_right:
+                    header['right'] = block_right
+        
+        header['width'] = header['right'] - header['left']
+        header['height'] = header['bottom'] - header['top']
+
+    return header
+
+def estimate_journal_columns(data_dict,image_info,header=None):
+    '''Estimate journal columns blocks and dimensions\n
+    Main focus on pivoting using potential delimiters'''
+    columns = []
+
+    return columns
+
+    
+def estimate_journal_template(data_dict,image_info):
+    '''Tries to estimate a journal's template, such as header and different columns'''
+    # get header boxes
+    header = estimate_journal_header(data_dict,image_info)
+    # get columns
+    columns = estimate_journal_columns(data_dict,image_info,header)
+
+    return {
+        'header':header,
+        'columns':columns
+    }
 
 
-def is_delimeter(data_dict):
-    '''Check if box group is a delimter'''
-    if is_empty_box(data_dict):
-        parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
-        if parent_box['width'] >= parent_box['height']*4 or parent_box['height'] >= parent_box['width']*4:
-            return True
-    return False
+def draw_journal_template(journal_data,image_path):
+    '''Draw bounding boxes on journal image of path \'image_path\'\n'''
+
+    img = cv2.imread(image_path)
+
+    # draw header
+    if journal_data['header']:
+        header = journal_data['header']
+        (x, y, w, h) = (header['left'], header['top'], header['width'], header['height'])
+        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    
+    # draw columns
+    for column in journal_data['columns']:
+        (x, y, w, h) = (column['left'], column['top'], column['width'], column['height'])
+        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+
+    return img

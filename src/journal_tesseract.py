@@ -258,6 +258,10 @@ def main():
             sg.Image(filename=None,visible=False,key='bounding_boxes_image'),
         ],
         [
+            sg.Button("Draw journal template",key='button_journal_template'),
+            sg.Image(filename=None,visible=False,key='journal_template_image'),
+        ],
+        [
             sg.Button("Close",key='button_close')
         ]
     ]
@@ -468,6 +472,22 @@ def main():
             if target_image:
                 image = black_and_white(target_image)
                 image.save('test_bw.jpg')
+            else:
+                sg.popup('No target image selected')
+        
+        elif event == 'button_journal_template':
+            if os.path.exists(f'{result_path}/fixed/result_fixed.json') and target_image:
+                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+                image_info = get_image_info(target_image)
+                journal = estimate_journal_template(data_dict,image_info)
+                img = draw_journal_template(journal,target_image)
+                cv2.imwrite(f'{result_path}//journal_template.jpg',img)
+                img = Image.fromarray(img)
+                bio = io.BytesIO()
+                img.save(bio,format='png')
+                window['journal_template_image'].update(data=bio.getvalue(),visible=True)
+                window.refresh()
+                
             else:
                 sg.popup('No target image selected')
 
