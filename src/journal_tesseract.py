@@ -517,6 +517,8 @@ def main():
                 result_dict_file.close()
                 image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
                 cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+                csv = pd.DataFrame(data_dict)
+                csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
 
                 # update fixed image (fix tab)
                 update_search_block_fixed(window,target_image)

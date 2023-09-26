@@ -95,7 +95,7 @@ def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
     return img
 
 
-def get_group_boxes(data_dict,id):
+def get_group_boxes(data_dict,id,i=0):
     '''Get all boxes from the group of box with id \'id\'\n'''
     group_boxes = {k:[] for k in data_dict.keys()}
     parent_box = None
@@ -467,8 +467,9 @@ def block_bound_box_fix(data_dict,image_info):
     # assumes that the inside box is a duplicate of information from outside box
     while i < len(data_dict['level']):
         if data_dict['level'][i] == 2:
-            if not current_box:
-                group_boxes = get_group_boxes(data_dict,data_dict['id'][i])
+            # get current box to analyse
+            if not current_box and data_dict['id'][i] not in checked_boxes:
+                group_boxes = get_group_boxes(data_dict,data_dict['id'][i],i)
                 if (not is_empty_box(group_boxes)) or is_delimeter(group_boxes):
                     current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                     current_box['right'] = current_box['left'] + current_box['width']
@@ -480,6 +481,7 @@ def block_bound_box_fix(data_dict,image_info):
                 continue
             # check if boxes are within each other
             if data_dict['id'][i] != current_box['id']:
+                print('Comparing boxes',current_box['id'],data_dict['id'][i])
                 compare_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                 compare_box['right'] = compare_box['left'] + compare_box['width']
                 compare_box['bottom'] = compare_box['top'] + compare_box['height']
@@ -525,7 +527,7 @@ def block_bound_box_fix(data_dict,image_info):
             while not current_box and boxes_to_check:
                 current_box = boxes_to_check.pop(0)
                 i = current_box['index']
-                group_boxes = get_group_boxes(data_dict,current_box['id'])
+                group_boxes = get_group_boxes(data_dict,current_box['id'],i)
                 boxes_to_check_id.pop(0)
                 checked_boxes.append(current_box['id'])
                 # check if box is empty
@@ -534,6 +536,7 @@ def block_bound_box_fix(data_dict,image_info):
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
                     current_box = None
+                i = 0
 
 
     print(f'''
