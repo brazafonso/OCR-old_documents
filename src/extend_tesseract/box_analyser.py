@@ -7,6 +7,14 @@ from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
 
+def tesseract_convert_to_box(data_dict,index):
+    '''Convert tesseract box into box dict'''
+    box = {}
+    for k in data_dict.keys():
+        box[k] = data_dict[k][index]
+    box['right'] = box['left'] + box['width']
+    box['bottom'] = box['top'] + box['height']
+    return box
 
 def is_empty_box(data_dict,conf=60):
     '''Check if box group is empty'''
@@ -98,7 +106,14 @@ def remove_data_dict_group(data_dict,index,removed_amount=False):
     # return removed amount
     if removed_amount:
         return data_dict,removed_counter
-    
+    return data_dict
+
+def remove_data_dict_amount(data_dict,amount,index=0):
+    '''Remove amount from data_dict'''
+    i = 0
+    while i < amount and len(data_dict['text']) > 0:
+        data_dict = remove_data_dict_index(data_dict,index)
+        i += 1
     return data_dict
 
 def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
@@ -121,11 +136,11 @@ def draw_bounding_boxes(data_dict,image_path,draw_levels=[2],conf=60,id=False):
     return img
 
 
-def get_group_boxes(data_dict,id,i=0):
+def get_group_boxes(data_dict,id,index=0):
     '''Get all boxes from the group of box with id \'id\'\n'''
     group_boxes = {k:[] for k in data_dict.keys()}
     parent_box = None
-    for i in range(len(data_dict['text'])):
+    for i in range(index,len(data_dict['text'])):
         current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
         if not parent_box:
             if data_dict['id'][i] == id:
@@ -413,7 +428,7 @@ def simple_article_extraction_page(processed_result):
                 'right':processed_result['columns'][j][1][0],
                 'bottom':processed_result['columns'][j][1][1]
             }
-            if inside_box(line_box,column_box):
+            if is_inside_box(line_box,column_box):
                 columns_text[j].append(ordered_lines[i])
                 break
     
@@ -514,14 +529,14 @@ def block_bound_box_fix(data_dict,image_info):
                 compare_box['index'] = i
 
                 # compared box inside current box
-                if inside_box(compare_box,current_box):
+                if is_inside_box(compare_box,current_box):
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     if compare_box['id'] in boxes_to_check_id: 
                         boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,compare_box['id'])
                         boxes_to_check.pop(boxes_to_check_id.index(compare_box['id'])) 
                         boxes_to_check_id.remove(compare_box['id'])
                 # current box inside compared box
-                elif inside_box(current_box,compare_box):
+                elif is_inside_box(current_box,compare_box):
                     i = find_box_index(data_dict,current_box['id'])
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
@@ -580,6 +595,55 @@ def bound_box_fix(data_dict,level,image_info):
         new_data_dict = block_bound_box_fix(data_dict,image_info)
 
     return new_data_dict
+
+
+def get_delimiter_blocks(data_dict,search_area=None,orientation=None):
+    '''Get delimiter blocks\n
+    If search area is given, only returns blocks within that area'''
+    delimiters = []
+    for i in range(len(data_dict['text'])):
+        # delimiter block
+        if data_dict['level'][i] == 2 and is_delimeter(get_group_boxes(data_dict,data_dict['id'][i],i)):
+            valid = True
+            # check for restrictions
+            if search_area or orientation:
+                delimiter_box = {
+                    'left':data_dict['left'][i],
+                    'top':data_dict['top'][i],
+                    'right':data_dict['left'][i] + data_dict['width'][i],
+                    'bottom':data_dict['top'][i] + data_dict['height'][i],
+                    'width':data_dict['width'][i],
+                    'height':data_dict['height'][i]
+                }
+                if search_area and not is_inside_box(delimiter_box,search_area):
+                    valid = False
+                if orientation and get_box_orientation(delimiter_box) != orientation:
+                    valid = False
+            # no search area
+            if valid:
+                delimiters.append({k:v for k in data_dict.keys() for v in [data_dict[k][i]]})
+    return delimiters
+
+def join_aligned_delimiters(delimiters,orientation='horizontal'):
+    '''Join aligned delimiters\n'''
+    aligned_delimiters = []
+    for delimiter in delimiters:
+        delimiter_box = delimiter
+        delimiter_box['right'] = delimiter_box['left'] + delimiter_box['width']
+        delimiter_box['bottom'] = delimiter_box['top'] + delimiter_box['height']
+        if not aligned_delimiters:
+            aligned_delimiters.append(delimiter_box)
+        else:
+            joined = False
+            for aligned in aligned_delimiters:
+                if is_aligned(delimiter_box,aligned,orientation):
+                    aligned = join_boxes(aligned,delimiter_box)
+                    joined = True
+                    break
+            if not joined:
+                aligned_delimiters.append(delimiter_box)
+    return aligned_delimiters
+
     
 
 def estimate_journal_header(data_dict,image_info):
@@ -587,61 +651,112 @@ def estimate_journal_header(data_dict,image_info):
     Main focus on pivoting using potential delimiters'''
 
     header = None
+
     # get delimiter blocks
-    delimiters = []
-    for i in range(len(data_dict['text'])):
-        # delimiter block
-        if data_dict['level'][i] == 2 and is_delimeter(get_group_boxes(data_dict,data_dict['id'][i],i)):
-            bottom = data_dict['top'][i] + data_dict['height'][i]
-            # above half of image
-            if data_dict['top'][i] < image_info['height']*0.5 and bottom < image_info['height']*0.5:
-                delimiters.append({k:v for k in data_dict.keys() for v in [data_dict[k][i]]})
+    search_area = {
+        'left':0,
+        'top':0,
+        'right':image_info['width'],
+        'bottom':image_info['height']*0.5 # only search in top half of image
+    }
+    delimiters = get_delimiter_blocks(data_dict,search_area=search_area)
+
     
     if delimiters:
-        header = {
-        'left':None,
-        'top':None,
-        'width':None,
-        'height':None,
-        'right':None,
-        'bottom':None,
-        'boxes':[]
-    }
-        
         # get widthest delimeter
         widthest_delimiter = sorted(delimiters,key=lambda x: x['width'])[-1]
         
-        # update header
-        header['left'] = widthest_delimiter['left']
-        header['right'] = widthest_delimiter['left'] + widthest_delimiter['width']
-        header['top'] = widthest_delimiter['top']
-        header['bottom'] = widthest_delimiter['top'] + widthest_delimiter['height']
+        # widder than treshold
+        if widthest_delimiter['width'] >= image_info['width']*0.3:
+            header = {
+            'left':None,
+            'top':None,
+            'width':None,
+            'height':None,
+            'right':None,
+            'bottom':None,
+            'boxes':[]
+            }
+                
+            # update header
+            header['left'] = widthest_delimiter['left']
+            header['right'] = widthest_delimiter['left'] + widthest_delimiter['width']
+            header['top'] = widthest_delimiter['top']
+            header['bottom'] = widthest_delimiter['top'] + widthest_delimiter['height']
 
-        # get header boxes
-        header_boxes = []
-        for i in range(len(data_dict['text'])):
-            # delimiter block above delimiter
-            if data_dict['level'][i] == 2 and( data_dict['top'][i] + data_dict['height'][i]) < widthest_delimiter['top']:
-                group = get_group_boxes(data_dict,data_dict['id'][i],i)
-                header_boxes.append(group)
-                block_right = data_dict['left'][i] + data_dict['width'][i]
-                # update header info
-                if header['left'] > data_dict['left'][i]:
-                    header['left'] = data_dict['left'][i]
-                if header['top'] > data_dict['top'][i]:
-                    header['top'] = data_dict['top'][i]
-                if header['right'] < block_right:
-                    header['right'] = block_right
-        
-        header['width'] = header['right'] - header['left']
-        header['height'] = header['bottom'] - header['top']
+            # get header boxes
+            header_boxes = []
+            for i in range(len(data_dict['text'])):
+                # delimiter block above delimiter
+                if data_dict['level'][i] == 2 and( data_dict['top'][i] + data_dict['height'][i]) < widthest_delimiter['top']:
+                    group = get_group_boxes(data_dict,data_dict['id'][i],i)
+                    header_boxes.append(group)
+                    block_right = data_dict['left'][i] + data_dict['width'][i]
+                    # update header info
+                    if header['left'] > data_dict['left'][i]:
+                        header['left'] = data_dict['left'][i]
+                    if header['top'] > data_dict['top'][i]:
+                        header['top'] = data_dict['top'][i]
+                    if header['right'] < block_right:
+                        header['right'] = block_right
+            
+            header['width'] = header['right'] - header['left']
+            header['height'] = header['bottom'] - header['top']
 
     return header
 
-def estimate_journal_columns(data_dict,image_info,header=None):
+
+
+
+
+def estimate_journal_columns(data_dict,image_info,header=None,footer=None):
     '''Estimate journal columns blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
     columns = []
+    # defining margins of search area
+    upper_margin = 0
+    lower_margin = image_info['height']
+    if header:
+        upper_margin = header['bottom']
+    if footer:
+        lower_margin = footer['top']
+
+    # get delimiter blocks
+    search_area = {
+        'left':0,
+        'top':upper_margin,
+        'right':image_info['width'],
+        'bottom':lower_margin
+    }
+    delimiters = get_delimiter_blocks(data_dict,search_area=search_area,orientation='vertical')
+
+    if delimiters:
+        # joint aligned delimiters
+        column_delimiters = join_aligned_delimiters(delimiters,orientation='vertical')
+        right_margin = {
+            'left':image_info['width'],
+            'top':upper_margin,
+            'right':image_info['width'],
+            'bottom':lower_margin
+        }
+        column_delimiters.append(right_margin)
+        # sort delimiters
+        column_delimiters = sorted(column_delimiters,key=lambda x: x['left'])
+        # estimate column boxes
+        for i in range(len(column_delimiters)):
+            left = 0
+            if i > 0:
+                left = column_delimiters[i-1]['right']
+            column_box = {
+                'left':left,
+                'top':upper_margin,
+                'right':column_delimiters[i]['right'],
+                'bottom':lower_margin,
+                'width':column_delimiters[i]['right'] - left,
+                'height':lower_margin - upper_margin
+            }
+            columns.append(column_box)
+    
 
     return columns
 
@@ -650,8 +765,10 @@ def estimate_journal_template(data_dict,image_info):
     '''Tries to estimate a journal's template, such as header and different columns'''
     # get header boxes
     header = estimate_journal_header(data_dict,image_info)
+    #TODO: get footer boxes
+    footer = None
     # get columns
-    columns = estimate_journal_columns(data_dict,image_info,header)
+    columns = estimate_journal_columns(data_dict,image_info,header,footer)
 
     return {
         'header':header,

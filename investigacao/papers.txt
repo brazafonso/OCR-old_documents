@@ -1,0 +1,8 @@
+An Overview of the Tesseract OCR Engine - https://ieeexplore.ieee.org/document/4376991
+Deep Statistical Analysis of OCR Errors for Effective Post-OCR Processing - https://ieeexplore.ieee.org/document/8791206
+Image Preprocessing for Improving OCR Accuracy - https://ieeexplore.ieee.org/document/4283429
+DE-GAN: A Conditional Generative Adversarial Network for Document Enhancement - https://ieeexplore.ieee.org/document/9187695
+Digitization of Data from Invoice using OCR - https://ieeexplore.ieee.org/document/9754117
+OCR performance prediction using cross-OCR alignment - https://ieeexplore.ieee.org/document/7333823
+Error Correction with In-domain Training across Multiple OCR System Outputs - https://ieeexplore.ieee.org/document/6065393
+Performance Evaluation and Benchmarking of Six-Page Segmentation Algorithms - https://ieeexplore.ieee.org/document/4407728

@@ -50,7 +50,7 @@ def same_level_box(box1,box2):
     return False
 
 
-def inside_box(box,container):
+def is_inside_box(box,container):
     '''Check if box is inside container'''
     if box['left'] >= container['left'] and box['right'] <= container['right'] and box['top'] >= container['top'] and box['bottom'] <= container['bottom']:
         return True
@@ -98,7 +98,7 @@ def intersect_area_box(box1,box2):
 def remove_box_area(box,area):
     '''Remove area from box (only if intersect)'''
     intersect = intersects_box(box,area)
-    inside = inside_box(box,area)
+    inside = is_inside_box(box,area)
     if intersect and not inside:
         # Remove area from box
         ## area to the right
@@ -138,3 +138,40 @@ def get_image_info(image_path):
         'width':image.width,
         'height':image.height
     }
+
+
+def get_box_orientation(box):
+    '''Get box orientation'''
+    if box['width'] > box['height']:
+        return 'horizontal'
+    elif box['width'] < box['height']:
+        return 'vertical'
+    else:
+        return 'square'
+    
+def is_aligned(box1,box2,orientation='horizontal',error_margin=0.1):
+    '''Check if boxes are aligned'''
+    if orientation == 'horizontal':
+        if abs(1 - box1['top']/box2['top']) <= error_margin:
+            return True
+    elif orientation == 'vertical':
+        if abs(1 - box1['left']/box2['left']) <= error_margin:
+            return True
+    return False
+
+
+def join_boxes(box1,box2):
+    '''Join two boxes'''
+    box = {
+        'left':0,
+        'right':0,
+        'top':0,
+        'bottom':0
+    }
+    box['left'] = min(box1['left'],box2['left'])
+    box['right'] = max(box1['right'],box2['right'])
+    box['top'] = min(box1['top'],box2['top'])
+    box['bottom'] = max(box1['bottom'],box2['bottom'])
+    box['height'] = box['bottom'] - box['top']
+    box['width'] = box['right'] - box['left']
+    return box

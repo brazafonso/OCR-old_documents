@@ -258,6 +258,10 @@ def main():
             sg.Image(filename=None,visible=False,key='bounding_boxes_image'),
         ],
         [
+            sg.Button("Draw journal delimiters",key='button_draw_journal_delimiters'),
+            sg.Image(filename=None,visible=False,key='journal_delimiters_image'),
+        ],
+        [
             sg.Button("Draw journal template",key='button_journal_template'),
             sg.Image(filename=None,visible=False,key='journal_template_image'),
         ],
@@ -472,6 +476,29 @@ def main():
             if target_image:
                 image = black_and_white(target_image)
                 image.save('test_bw.jpg')
+            else:
+                sg.popup('No target image selected')
+        
+        elif event == 'button_draw_journal_delimiters':
+            if os.path.exists(f'{result_path}/result.json') and target_image:
+                data_dict = json.load(open(f'{result_path}/result.json','r'))
+                image_info = get_image_info(target_image)
+                data_dict = id_boxes(data_dict,2)
+                new_data_dict = {k:[] for k in data_dict.keys()}
+                for i in range(len(data_dict['text'])):
+                    if data_dict['level'][i] == 2:
+                        group = get_group_boxes(data_dict,data_dict['id'][i],i)
+                        if is_delimeter(group):
+                            for k in new_data_dict.keys():
+                                new_data_dict[k] += group[k]
+                img = draw_bounding_boxes(new_data_dict,target_image)
+                cv2.imwrite(f'{result_path}//journal_delimiters.jpg',img)
+                img = Image.fromarray(img)
+                bio = io.BytesIO()
+                img.save(bio,format='png')
+                window['journal_delimiters_image'].update(data=bio.getvalue(),visible=True)
+                window.refresh()
+                
             else:
                 sg.popup('No target image selected')
         
