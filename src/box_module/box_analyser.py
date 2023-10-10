@@ -26,8 +26,8 @@ def is_empty_box(data_dict,conf=60):
         return True
     return False
 
-# def is_delimeter(data_dict,image_info):
-#     '''Check if box group is a delimeter'''
+# def is_delimiter(data_dict,image_info):
+#     '''Check if box group is a delimiter'''
 #     if is_empty_box(data_dict):
 #         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
 #         if (parent_box['width'] >= image_info['width']*0.5 and parent_box['height'] <= image_info['height']*0.1) or (parent_box['height'] >= image_info['height']*0.5 and parent_box['width'] <= image_info['width']*0.1):
@@ -35,7 +35,7 @@ def is_empty_box(data_dict,conf=60):
 #     return False
 
 
-def is_delimeter(data_dict):
+def is_delimiter(data_dict):
     '''Check if box group is a delimter'''
     if is_empty_box(data_dict):
         parent_box = {k:v for k in data_dict.keys() for v in [data_dict[k][0]]}
@@ -511,7 +511,7 @@ def block_bound_box_fix(data_dict,image_info):
             # get current box to analyse
             if not current_box and data_dict['id'][i] not in checked_boxes:
                 group_boxes = get_group_boxes(data_dict,data_dict['id'][i],i)
-                if (not is_empty_box(group_boxes)) or is_delimeter(group_boxes):
+                if (not is_empty_box(group_boxes)) or is_delimiter(group_boxes):
                     current_box = {k:v for k in data_dict.keys() for v in [data_dict[k][i]]}
                     current_box['right'] = current_box['left'] + current_box['width']
                     current_box['bottom'] = current_box['top'] + current_box['height']
@@ -573,7 +573,7 @@ def block_bound_box_fix(data_dict,image_info):
                 checked_boxes.append(current_box['id'])
                 # check if box is empty
                 # remove if true
-                if is_empty_box(group_boxes) and not is_delimeter(group_boxes):
+                if is_empty_box(group_boxes) and not is_delimiter(group_boxes):
                     data_dict,removed_amount = remove_data_dict_group(data_dict,i,removed_amount=True)
                     boxes_to_check = update_index_greater_id(boxes_to_check,-removed_amount,current_box['id'])
                     current_box = None
@@ -603,7 +603,7 @@ def get_delimiter_blocks(data_dict,search_area=None,orientation=None):
     delimiters = []
     for i in range(len(data_dict['text'])):
         # delimiter block
-        if data_dict['level'][i] == 2 and is_delimeter(get_group_boxes(data_dict,data_dict['id'][i],i)):
+        if data_dict['level'][i] == 2 and is_delimiter(get_group_boxes(data_dict,data_dict['id'][i],i)):
             valid = True
             # check for restrictions
             if search_area or orientation:
@@ -663,7 +663,7 @@ def estimate_journal_header(data_dict,image_info):
 
     
     if delimiters:
-        # get widthest delimeter
+        # get widthest delimiter
         widthest_delimiter = sorted(delimiters,key=lambda x: x['width'])[-1]
         
         # widder than treshold

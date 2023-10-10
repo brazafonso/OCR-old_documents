@@ -1,0 +1,181 @@
+\documentclass{article}
+
+% Packages for mathematical symbols and equations
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+% Set page margins
+\usepackage[margin=1in]{geometry}
+
+
+% Commands
+% Define \resizeHeight command
+\newcommand{\resizeHeight}[2][1em]{\resizebox{!}{#1}{#2}}
+
+
+
+% Set document title, author, and date
+\title{Box Module}
+\author{Gonçalo Afonso}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+In this document, we will formalize the box module created for OCR engine result generalization and further analysis 
+and processing of these boxes.
+
+\section{Box Module}
+
+\subsection{Box}
+
+A box represents a container element for a region in a document. Each container may include other containers of lower levels, 
+with the lowest being a text container.
+
+\begin{itemize}
+    \item $\mathbf{level}$ : text level of the box. $\{ 1:\text{page}, 2:\text{block}, 3:\text{paragraph}, 4:\text{line}, 5:\text{word} \}$
+
+    \item $\mathbf{page\_num}$ : only meaningful when multiple pages are processed.
+
+    \item $\mathbf{block\_num}$ : block identifier in which box is inserted
+
+    \item $\mathbf{line\_num}$ : line identifier in which box is inserted
+
+    \item $\mathbf{left}$ : leftmost horizontal value of the box, relative to the left border
+
+    \item $\mathbf{right}$ : rightmost horizontal value of the box, relative to the left border
+
+    \item $\mathbf{top}$ : topmost vertical value of the box, relative to the upper border
+
+    \item $\mathbf{bottom}$ : bottommost vertical value of the box, relative to the upper border
+
+    \item $\mathbf{width}$ : width of the box
+
+    \item $\mathbf{height}$ : heigth of the box
+
+    \item $\mathbf{text}$ : text recognized inside the box
+
+    \item $\mathbf{conf}$ : level of confidence in the text
+
+    \item $\mathbf{type}$ : type of box. $[\text{'delimiter'},\text{'image'},\text{'text'}]$
+
+    \item $\mathbf{word\_num}$ : word identifier (applicable if level is word)
+\end{itemize}
+
+
+\subsection{Functions}
+
+\begin{itemize}
+\renewcommand\labelitemi{}  % Remove bullets from this list
+    \item \resizeHeight{$\mathbf{tesseract\_convert\_to\_box}$ : $ Dict \rightarrow [Box] $}
+
+    Turns a dictionary of tesseract results into a list of boxes.
+    
+    \item \resizeHeight{$\mathbf{is\_empty\_box}$ : $ [Box] \rightarrow Bool $}
+    
+    Checks if a box group is empty. Every box of level 5 (word) has to be empty for a positive result.
+
+    \item \resizeHeight{$\mathbf{is\_delimiter}$ : $ [Box] \rightarrow Bool $}
+    
+    Checks if a box group is a delimiter. A delimiter is an empty box group that follows the rule:
+
+    \begin{equation}
+        p\_box['width'] \geq p\_box['height'] \times 4 \lor p\_box['height'] \geq p\_box['width'] \times 4
+    \end{equation}
+    where $p\_box$ is the parent box of the box group.
+
+    \item \resizeHeight{$\mathbf{boxes\_to\_text}$ : $ [Box] \rightarrow Str $}
+    
+    Converts a box group into a string. The string is the concatenation of the text of each box in the group.
+
+    \item \resizeHeight{$\mathbf{append\_box}$ : $ ([Box],Box) \rightarrow [Box] $}
+    
+    Appends a box to a box group.
+
+    \item \resizeHeight{$\mathbf{remove\_box}$ : $ ([Box],Index) \rightarrow [Box] $}
+    
+    Removes a box in index $Index$ from a box group.
+
+    \item \resizeHeight{$\mathbf{update\_box}$ : $ ([Box],Index,Box) \rightarrow [Box] $}
+    
+    Updates a box in index $Index$ from a box group with a new box.
+
+    \item \resizeHeight{$\mathbf{draw\_bounding\_boxes}$ : }
+    
+    \resizeHeight[0.9em]{$ ([Box],image\_path:Str,draw\_levels:[Int],id:Bool) \rightarrow img:MatLike $}
+    
+    Draws bounding boxes in an image. The image is loaded from $image\_path$ and the bounding boxes are drawn in the image according with boxes group given and the 
+    levels in $draw\_levels$. If $id$ is true, the id of each box is also drawn in the image.
+
+    \item \resizeHeight{$\mathbf{get\_group\_boxes}$ : $ ([Box],id:Str,index:Int) \rightarrow [Box] $}
+    
+    Gets a box group from a box group. The box group is identified by the $id$ and the $index$.
+
+    \item \resizeHeight{$\mathbf{line\_mean\_height}$ : $ [Box] \rightarrow Float $}
+    
+    Calculates the mean height of a line.
+
+    \item \resizeHeight{$\mathbf{is\_normal\_text\_size}$ :}
+    
+    \resizeHeight[0.9em]{$ (normal\_text\_size:Float,line:[Box] | line\_height:Float,range:Float) \rightarrow Float $}
+    
+    Checks if a line is normal text size. A line is normal text size if the mean height of the line is within the range of the normal text size.
+    Range is by default 0.3.
+
+    \item \resizeHeight{$\mathbf{analyze\_text}$ : $ [Box] \rightarrow Dict $}
+    
+    Analyzes a box group. The analysis result returns the value of $normal\_text\_size$, $normal\_text\_gap$, $number\_lines$, $number\_columns$ and $columns$.
+
+    \item \resizeHeight{$\mathbf{improve\_bounds}$ : $ [Box] \rightarrow [Box] $}
+    
+    Improves the bounds of a box group. \resizeHeight{Not yet finished}.
+
+    \item \resizeHeight{$\mathbf{search\_text\_img\_tesseract}$ : $ img\_path:Str \rightarrow Dict $}
+    
+    Searches text in an image using tesseract. The result is a dictionary with bounding boxes.
+
+    \item \resizeHeight{$\mathbf{simple\_article\_extraction\_page}$ : $ [Box] \rightarrow [Article] $}
+    
+    Extracts articles from a page. \resizeHeight{Not yet finished}.
+
+    \item \resizeHeight{$\mathbf{block\_box\_fix}$ : $ [Box] \rightarrow [Box] $}
+    
+    Fixes the blocks boxes in  box group. Eliminates empty, non delimiter boxes and eliminates intersections.
+
+    \item \resizeHeight{$\mathbf{get\_delimiter\_blocks}$ :}
+    
+    \resizeHeight[0.9em]{$ ([Box],search_area: Simple\_Box,orientation:Str) \rightarrow [Box] $}
+    
+    Gets the delimiter blocks in a box group. The delimiter blocks are the blocks that are delimiters and are inside the search area and respect the given orientation.
+    
+    \item \resizeHeight{$\mathbf{join\_aligned\_delimiters}$ : $ (delimiters:[Box],orientation:Str) \rightarrow [Box] $}
+    
+    Joins aligned delimiters. The delimiters are aligned if they have the same horizontal or vertical value within a range ($is\_aligned$ for further reading), depending on the orientation.
+
+    \item \resizeHeight{$\mathbf{estimate\_journal\_header}$ : $ ([Box],image\_info:Dict) \rightarrow Simple\_Box $}
+    
+    Estimates the journal header using its box group.
+    The header is estimated by finding the blocks that are delimiters and follow the rule:
+    \begin{equation}
+        delimiter['bottom'] \geq image\_info['bottom'] \times 0.5 \land delimiter['width'] \geq image\_info['width'] \times 0.3
+    \end{equation}
+
+    \item \resizeHeight{$\mathbf{estimate\_journal\_columns}$ : }
+    
+    \resizeHeight[0.9em]{$ ([Box],image\_info:Dict,header: Simple\_Box ?, footer: Simple\_Box ?) \rightarrow [Simple\_Box] $}
+    
+    Estimates the journal columns using its box group.
+    The columns are estimated by finding the blocks that are vertical delimiters and are within the area between the header and the footer if they exist (ortherwise within the page). 
+
+    \item \resizeHeight{$\mathbf{estimate\_journal\_template}$ : $ ([Box],image\_info:Dict) \rightarrow Dict $}
+    
+    Estimates the journal template using its box group. Returns a dictionary with the header and the columns.
+\end{itemize}
+
+
+
+
+\end{document}

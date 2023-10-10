@@ -10,7 +10,7 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
-from extend_tesseract.box_analyser import *
+from box_module.box_analyser import *
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 result_path = f'{current_path}/results'
@@ -488,7 +488,7 @@ def main():
                 for i in range(len(data_dict['text'])):
                     if data_dict['level'][i] == 2:
                         group = get_group_boxes(data_dict,data_dict['id'][i],i)
-                        if is_delimeter(group):
+                        if is_delimiter(group):
                             for k in new_data_dict.keys():
                                 new_data_dict[k] += group[k]
                 img = draw_bounding_boxes(new_data_dict,target_image)

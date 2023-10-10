@@ -31,4 +31,4 @@ While with tesseract the result is a dictionary of lists of each parameter, this
 
 - **conf** : level of confidence in the text
 
-- **type** : type of box. ['delimeter','image','text']
+- **type** : type of box. ['delimiter','image','text']

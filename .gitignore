@@ -6,3 +6,5 @@ docs/jornais/*
 src/results/*
 docs/tese/progresso.txt
 src/conf/conf.json
+*.log
+*.pyc
