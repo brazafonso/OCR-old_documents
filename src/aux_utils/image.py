@@ -1,4 +1,27 @@
+import cv2
 from PIL import Image
+from ocr_box_module.ocr_box import OCR_Box
+
+
+def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=60,id=False):
+    '''Draw bounding boxes on image of type MatLike from cv2\n
+    Return image with bounding boxes'''
+
+    img = cv2.imread(image_path)
+    box_stack = [ocr_results]
+    while box_stack:
+        current_node = box_stack.pop()
+        if current_node.level in draw_levels:
+            # only draw text boxes if confidence is higher than conf
+            if current_node.level == 5 and current_node.conf < conf:
+                continue
+            (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            if id and current_node.id:
+                img = cv2.putText(img, str(current_node.id), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        for child in current_node.children:
+            box_stack.append(child)
+    return img
 
 
 def get_concat_h(im1, im2,margin=0):
@@ -26,101 +49,6 @@ def concatentate_columns(columns):
             image = get_concat_h(image,column,15)
     return image
 
-def within_vertical_boxes(box1,box2):
-    '''Check if boxes are within each other vertically'''
-    if box1['top'] >= box2['top'] and box1['bottom'] <= box2['bottom']:
-        return True
-    elif box2['top'] >= box1['top'] and box2['bottom'] <= box1['bottom']:
-        return True
-    return False
-
-def within_horizontal_boxes(box1,box2):
-    '''Check if boxes are within each other horizontally'''
-    if box1['left'] <= box2['left'] and box1['right'] >= box2['right']:
-        return True
-    elif box2['left'] <= box1['left'] and box2['right'] >= box1['right']:
-        return True
-    return False
-
-
-def same_level_box(box1,box2):
-    '''Check if two boxes are in the same level (horizontal and/or vertical)'''
-    if within_horizontal_boxes(box1,box2) or within_vertical_boxes(box1,box2):
-        return True
-    return False
-
-
-def is_inside_box(box,container):
-    '''Check if box is inside container'''
-    if box['left'] >= container['left'] and box['right'] <= container['right'] and box['top'] >= container['top'] and box['bottom'] <= container['bottom']:
-        return True
-    return False
-
-
-def intersects_box(box1,box2):
-    '''Check if box intersects another box'''
-    intercept_vertical = (box1['top'] <= box2['top'] and box1['bottom'] >= box2['top']) or (box2['top'] <= box1['top'] and box2['bottom'] >= box1['top'])
-    intercept_horizontal = (box1['left'] <= box2['right'] and box1['right'] >= box2['left']) or (box1['left'] <= box2['right'] and box1['right'] >= box2['right'])
-    if intercept_horizontal and intercept_vertical:
-        return True
-    return False
-
-def intersect_area_box(box1,box2):
-    '''Get intersect area box between two boxes'''
-    area_box = {
-        'left':0,
-        'right':0,
-        'top':0,
-        'bottom':0
-    }
-    
-    if box1['left'] <= box2['left']:
-        area_box['left'] = box2['left']
-    else:
-        area_box['left'] = box1['left']
-
-    if box1['right'] >= box2['right']:
-        area_box['right'] = box2['right']
-    else:
-        area_box['right'] = box1['right']
-
-    if box1['top'] <= box2['top']:
-        area_box['top'] = box2['top']
-    else:
-        area_box['top'] = box1['top']
-
-    if box1['bottom'] >= box2['bottom']:
-        area_box['bottom'] = box2['bottom']
-    else:
-        area_box['bottom'] = box1['bottom']
-    return area_box
-
-def remove_box_area(box,area):
-    '''Remove area from box (only if intersect)'''
-    intersect = intersects_box(box,area)
-    inside = is_inside_box(box,area)
-    if intersect and not inside:
-        # Remove area from box
-        ## area to the right
-        if area['right'] > box['right']:
-            box['right'] = area['left']
-        ## area to the left
-        if area['left'] < box['left']:
-            box['left'] = area['right']
-        ## area to the top
-        if area['top'] > box['top']:
-            box['bottom'] = area['top']
-        ## area to the bottom
-        if area['bottom'] < box['bottom']:
-            box['top'] = area['bottom']
-    return box
-    
-
-def box_is_smaller(box1,box2):
-    '''Check if box1 is smaller than box2'''
-    if (box1['right'] - box1['left']) * (box1['bottom'] - box1['top']) < (box2['right'] - box2['left']) * (box2['bottom'] - box2['top']):
-        return True
-    return False
 
 
 def black_and_white(image_path):
@@ -140,38 +68,4 @@ def get_image_info(image_path):
     }
 
 
-def get_box_orientation(box):
-    '''Get box orientation'''
-    if box['width'] > box['height']:
-        return 'horizontal'
-    elif box['width'] < box['height']:
-        return 'vertical'
-    else:
-        return 'square'
-    
-def is_aligned(box1,box2,orientation='horizontal',error_margin=0.1):
-    '''Check if boxes are aligned'''
-    if orientation == 'horizontal':
-        if abs(1 - box1['top']/box2['top']) <= error_margin:
-            return True
-    elif orientation == 'vertical':
-        if abs(1 - box1['left']/box2['left']) <= error_margin:
-            return True
-    return False
 
-
-def join_boxes(box1,box2):
-    '''Join two boxes'''
-    box = {
-        'left':0,
-        'right':0,
-        'top':0,
-        'bottom':0
-    }
-    box['left'] = min(box1['left'],box2['left'])
-    box['right'] = max(box1['right'],box2['right'])
-    box['top'] = min(box1['top'],box2['top'])
-    box['bottom'] = max(box1['bottom'],box2['bottom'])
-    box['height'] = box['bottom'] - box['top']
-    box['width'] = box['right'] - box['left']
-    return box

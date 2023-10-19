@@ -10,7 +10,10 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
-from box_module.box_analyser import *
+from ocr_box_module.ocr_box import *
+from ocr_box_module.ocr_box_analyser import *
+from ocr_engines.engine_utils import tesseract_search_img
+
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 result_path = f'{current_path}/results'
@@ -19,19 +22,11 @@ conf = {}
 
 
 
-'''Tesseract levels:
-1 - page
-2 - block
-3 - paragraph
-4 - line
-5 - word'''
-
-
 def read_configs():
     '''Read program configs from config.json'''
     global current_path,conf
-    if os.path.exists(f'{current_path}/conf/conf.json'):
-        conf_file = open(f'{current_path}/conf/conf.json','r')
+    if os.path.exists(f'{current_path}/config/conf.json'):
+        conf_file = open(f'{current_path}/config/conf.json','r')
         conf = json.load(conf_file)
         conf_file.close()
         if not os.path.exists(conf['target_image_path']):
@@ -44,7 +39,7 @@ def read_configs():
 def save_configs():
     '''Save program configs to config.json'''
     global current_path,conf
-    conf_file = open(f'{current_path}/conf/conf.json','w')
+    conf_file = open(f'{current_path}/config/conf.json','w')
     json.dump(conf,conf_file,indent=4)
     conf_file.close()
 
@@ -53,17 +48,14 @@ def update_search_block_og(window,target_image=None):
     '''GUI - Update search block for original image'''
     global result_path
     if target_image and os.path.exists(f'{result_path}/result.json'):
-        data_dict = json.load(open(f'{result_path}/result.json','r'))
-        data_dict = id_boxes(data_dict,2)
-        image = draw_bounding_boxes(data_dict,target_image,[2],id=True)
+        ocr_results = OCR_Box(f'{result_path}/result.json')
+        ocr_results.id_boxes([2])
+        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
         image = Image.fromarray(image)
         bio = io.BytesIO()
         image.save(bio, format="png")
         # get available block ids
-        block_ids = []
-        for i in range(len(data_dict['text'])):
-            if data_dict['level'][i] == 2:
-                block_ids.append(data_dict['id'][i])
+        block_ids = [block.id for block in ocr_results.get_boxes_level(2)]
         window['search_block_og'].update(values=block_ids,value=block_ids[0],disabled=False)
         window['result_img_search_block_og'].update(data=bio.getvalue(),visible=True)
         window.refresh()
@@ -73,17 +65,14 @@ def update_search_block_fixed(window,target_image=None):
     '''GUI - Update search block for fixed image'''
     global result_path
     if target_image and os.path.exists(f'{result_path}/fixed/result_fixed.json'):
-        data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
-        data_dict = id_boxes(data_dict,2)
-        image = draw_bounding_boxes(data_dict,target_image,[2],id=True)
+        ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+        ocr_results.id_boxes([2])
+        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
         image = Image.fromarray(image)
         bio = io.BytesIO()
         image.save(bio, format="png")
         # get available block ids
-        block_ids = []
-        for i in range(len(data_dict['text'])):
-            if data_dict['level'][i] == 2:
-                block_ids.append(data_dict['id'][i])
+        block_ids = [block.id for block in ocr_results.get_boxes_level(2)]
         window['search_block_fixed'].update(values=block_ids,value=block_ids[0],disabled=False)
         window['result_img_search_block_fixed'].update(data=bio.getvalue(),visible=True)
         window.refresh()
@@ -91,28 +80,28 @@ def update_search_block_fixed(window,target_image=None):
 
 
 
-def save_results(data_dict,image_path):
-    '''Saves results gathered from data_dict to files'''
+def save_results(ocr_results:OCR_Box,image_path:str):
+    '''Saves results gathered from ocr_results to files'''
     global result_path
-
-    img = draw_bounding_boxes(data_dict,image_path)
+    img = draw_bounding_boxes(ocr_results,image_path)
     # create result files
 
     # create result image
     cv2.imwrite(f'{result_path}/result.jpg',img)
 
+    
     # save result data
     result_dict_file = open(f'{result_path}/result.json','w')
-    json.dump(data_dict,result_dict_file,indent=4)
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
     result_csv_file = open(f'{result_path}/result.csv','w')
-    df = pd.DataFrame(data_dict)
+    df = pd.DataFrame(ocr_results.to_dict())
     df.to_csv(result_csv_file)
     result_csv_file.close()
     
     # save result processed data
-    data_processed = analyze_text(data_dict)
+    data_processed = analyze_text(ocr_results)
     result_file = open(f'{result_path}/result_processed.json','w')
     json.dump(data_processed,result_file,indent=4)
     result_file.close()
@@ -122,16 +111,16 @@ def run_tesseract(image_path):
     '''GUI - Run text search on target image'''
     global result_path,conf
 
-    results = search_text_img(image_path)
-    data_dict = results['data_dict']
+    results = tesseract_search_img(image_path)
+    ocr_results = results['ocr_results']
     data_text = results['data_text']
     data_pdf = results['data_pdf']
     data_xml = results['data_xml']
     
     # save results
 
-    # save results from data_dict
-    save_results(data_dict,image_path)
+    # save results from ocr_results
+    save_results(ocr_results,image_path)
 
     # save result simple text
     result_file = open(f'{result_path}/result.txt','w')
@@ -148,7 +137,7 @@ def run_tesseract(image_path):
     result_xml.write(data_xml)
     result_xml.close()
 
-    del results
+
 
 def run_tesseract_results(window):
     '''GUI - Show results of text search on target image'''
@@ -183,7 +172,7 @@ def run_tesseract_results(window):
 def run_extract_articles():
     '''GUI - Extract articles from text search results'''
     processed_result = json.load(open(f'{result_path}/result_processed.json','r'))
-    extracted_articles = simple_article_extraction_page(processed_result)
+    extracted_articles = []#simple_article_extraction_page(processed_result)
 
     file = open(f'{result_path}/extracted_articles.json','w')
     json.dump(extracted_articles,file,indent=4)
@@ -407,9 +396,9 @@ def main():
         # draw bounding boxes
         elif event == 'draw_bounding_boxes':
             if os.path.exists(f'{result_path}/result.json') and target_image:
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
+                ocr_results = OCR_Box(f'{result_path}/result.json')
                 box_level = values['draw_bounding_boxes_level']
-                image = draw_bounding_boxes(data_dict,target_image,[box_level])
+                image = draw_bounding_boxes(ocr_results,target_image,[box_level])
                 bio = io.BytesIO()
                 pil_img = Image.fromarray(image)
                 pil_img.save(bio,format='png')
@@ -435,30 +424,30 @@ def main():
         # test ordering
         elif event == 'button_test_ordering':
             if os.path.exists(f'{result_path}/result.json'):
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
-                data_dict_ordered = order_text_boxes(data_dict)
-                for i in range(len(data_dict_ordered)):
-                    print(data_dict_ordered[i]['text'])
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                # ocr_results_ordered = order_text_boxes(ocr_results)
+                # for i in range(len(ocr_results_ordered)):
+                #     print(ocr_results_ordered[i]['text'])
         
         # test ordering tree
         elif event == 'button_test_ordering_tree':
             if os.path.exists(f'{result_path}/result.json'):
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
-                data_dict_ordered = order_text_boxes(data_dict)
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                # ocr_results_ordered = order_text_boxes(ocr_results)
 
         elif event == 'button_test_improve_bounds':
             if os.path.exists(f'{result_path}/result.json'):
                 window['progress_text'].update(visible=True)
 
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
-                data_dict = improve_bounds_precision(data_dict,target_image if target_image else f'{result_path}/result.jpg','progress_text',window)
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                ocr_results = improve_bounds_precision(ocr_results,target_image if target_image else f'{result_path}/result.jpg','progress_text',window)
 
                 new_result_file = open(f'{result_path}/result_improved.json','w')
-                json.dump(data_dict,new_result_file,indent=4)
+                json.dump(ocr_results,new_result_file,indent=4)
                 new_result_file.close()
 
                 new_result_file_csv = open(f'{result_path}/result_improved.csv','w')
-                df = pd.DataFrame(data_dict)
+                df = pd.DataFrame(ocr_results)
                 df.to_csv(new_result_file_csv)
                 new_result_file_csv.close()
 
@@ -466,10 +455,10 @@ def main():
 
         elif event == 'button_test_alt_analyse':
             if os.path.exists(f'{result_path}/result.json'):
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
-                data_dict = analyze_text(data_dict)
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                ocr_results = analyze_text(ocr_results)
                 new_result_file = open(f'{result_path}/result_processed_alt.json','w')
-                json.dump(data_dict,new_result_file,indent=4)
+                json.dump(ocr_results,new_result_file,indent=4)
                 new_result_file.close()
 
         elif event == 'button_test_black_and_white':
@@ -481,17 +470,15 @@ def main():
         
         elif event == 'button_draw_journal_delimiters':
             if os.path.exists(f'{result_path}/result.json') and target_image:
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                ocr_results.id_boxes([2])
                 image_info = get_image_info(target_image)
-                data_dict = id_boxes(data_dict,2)
-                new_data_dict = {k:[] for k in data_dict.keys()}
-                for i in range(len(data_dict['text'])):
-                    if data_dict['level'][i] == 2:
-                        group = get_group_boxes(data_dict,data_dict['id'][i],i)
-                        if is_delimiter(group):
-                            for k in new_data_dict.keys():
-                                new_data_dict[k] += group[k]
-                img = draw_bounding_boxes(new_data_dict,target_image)
+                # get delimiters
+                delimiters = ocr_results.get_delimiters()
+                page = OCR_Box(ocr_results.get_boxes_level(0)[0]) 
+                for delimiter in delimiters:
+                    page.add_child(delimiter)
+                img = draw_bounding_boxes(page,target_image)
                 cv2.imwrite(f'{result_path}//journal_delimiters.jpg',img)
                 img = Image.fromarray(img)
                 bio = io.BytesIO()
@@ -504,9 +491,9 @@ def main():
         
         elif event == 'button_journal_template':
             if os.path.exists(f'{result_path}/fixed/result_fixed.json') and target_image:
-                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+                ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
                 image_info = get_image_info(target_image)
-                journal = estimate_journal_template(data_dict,image_info)
+                journal = estimate_journal_template(ocr_results,image_info)
                 img = draw_journal_template(journal,target_image)
                 cv2.imwrite(f'{result_path}//journal_template.jpg',img)
                 img = Image.fromarray(img)
@@ -532,18 +519,18 @@ def main():
         # fix box bounds
         elif event == 'fix_box_bounds':
             if target_image and os.path.exists(f'{result_path}/result.json'):
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
+                ocr_results = OCR_Box(f'{result_path}/result.json')
                 box_level = values['fix_box_bounds_level']
-                data_dict = id_boxes(data_dict,box_level)
-                image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
+                ocr_results.id_boxes([box_level])
+                image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
                 bio = io.BytesIO()
                 pil_img = Image.fromarray(image)
                 pil_img.save(bio,format='png')
                 window['fix_box_bounds_image_og'].update(data=bio.getvalue(),visible=True)
                 window.refresh()
 
-                data_dict = bound_box_fix(data_dict,box_level,get_image_info(target_image))
-                image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
+                ocr_results = bound_box_fix(ocr_results,box_level,get_image_info(target_image))
+                image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
                 bio = io.BytesIO()
                 pil_img = Image.fromarray(image)
                 pil_img.save(bio,format='png')
@@ -558,13 +545,13 @@ def main():
         
         # save fix result
         elif event == 'button_save_fix_result':
-            if data_dict:
+            if ocr_results:
                 result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
-                json.dump(data_dict,result_dict_file,indent=4)
+                json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                 result_dict_file.close()
-                image = draw_bounding_boxes(data_dict,target_image,[box_level],id=True)
+                image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
                 cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
-                csv = pd.DataFrame(data_dict)
+                csv = pd.DataFrame(ocr_results.to_dict())
                 csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
 
                 # update fixed image (fix tab)
@@ -580,8 +567,8 @@ def main():
                 window['result_img_fix'].update(data=bio.getvalue(),visible=True)
                 
                 #update original text
-                original_data = json.load(open(f'{result_path}/result.json','r'))
-                lines = get_line_boxes(original_data)
+                original_data = OCR_Box(f'{result_path}/result.json')
+                lines = original_data.get_boxes_level(4)
                 lines = order_line_boxes(lines)
                 original_text = ''
                 for line in lines:
@@ -591,8 +578,8 @@ def main():
 
 
                 #update result text
-                result_data = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
-                lines = get_line_boxes(result_data)
+                result_data = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                lines = result_data.get_boxes_level(4)
                 lines = order_line_boxes(lines)
                 result_text = ''
                 for line in lines:
@@ -616,11 +603,10 @@ def main():
         # search for block in original image
         elif event == 'button_search_block_og':
             if os.path.exists(f'{result_path}/result.json'):
-                data_dict = json.load(open(f'{result_path}/result.json','r'))
-                data_dict = id_boxes(data_dict,2)
+                ocr_results = OCR_Box(f'{result_path}/result.json')
+                ocr_results.id_boxes([2])
                 block_id = values['search_block_og']
-                boxes = get_group_boxes(data_dict,block_id)
-                text = boxes_to_text(boxes)
+                text = ocr_results.to_text()
                 print(text)
                 window['result_text_search_block_og'].update(text,visible=True)
                 window.refresh()
@@ -631,11 +617,13 @@ def main():
         # search for block in fixed image
         elif event == 'button_search_block_fixed':
             if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
-                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
-                data_dict = id_boxes(data_dict,2)
+                ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                ocr_results.id_boxes([2])
                 block_id = values['search_block_fixed']
-                boxes = get_group_boxes(data_dict,block_id)
-                text = boxes_to_text(boxes)
+                fixed_box = ocr_results.get_box_id(block_id,2)
+                text = ''
+                if fixed_box:
+                    text = fixed_box.to_text()
                 print(text)
                 window['result_text_search_block_fixed'].update(text,visible=True)
                 window.refresh()
@@ -645,8 +633,8 @@ def main():
         
         elif event == 'button_overwrite_original_result':
             if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
-                data_dict = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
-                save_results(data_dict,target_image)
+                ocr_results = json.load(open(f'{result_path}/fixed/result_fixed.json','r'))
+                save_results(ocr_results,target_image)
                 run_tesseract_results(window)
 
             else:

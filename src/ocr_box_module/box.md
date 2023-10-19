@@ -11,6 +11,8 @@ While with tesseract the result is a dictionary of lists of each parameter, this
 
 - **block_num** : block identifier in which box is inserted
 
+- **par_num** : paragraph identifier in which box is inserted
+
 - **line_num** : line identifier in which box is inserted
 
 - **word_num** : word identifier (applicable if level is word)
