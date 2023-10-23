@@ -10,6 +10,11 @@ class OCR_Box:
     
 
     def __init__(self,*args):
+        '''Initialize OCR_Box object\n
+        Available constructors:\n
+        OCR_Box(level:int, page_num:int, block_num:int, par_num:int, line_num:int, word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None)\n
+        OCR_Box(json_list:list[dict])\n
+        OCR_Box(json_file:str)\n'''
         self.level = None # 1 = page, 2 = block, 3 = paragraph, 4 = line, 5 = word
         self.page_num = None
         self.block_num = None

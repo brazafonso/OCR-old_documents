@@ -11,6 +11,10 @@ class Box:
     height = None
 
     def __init__(self, *args):
+        '''Initialize Box object\n
+        Available constructors:\n
+        Box(left:int, right:int, top:int, bottom:int)\n
+        Box(json_dict:dict)\n'''
         if len(args) == 1:
             self.load_json(args[0])
         else:

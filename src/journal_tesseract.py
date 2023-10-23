@@ -168,35 +168,6 @@ def run_tesseract_results(window):
         window['result_columns'].update(data=bio2.getvalue(),visible=True)
     window.refresh()
 
-
-def run_extract_articles():
-    '''GUI - Extract articles from text search results'''
-    processed_result = json.load(open(f'{result_path}/result_processed.json','r'))
-    extracted_articles = []#simple_article_extraction_page(processed_result)
-
-    file = open(f'{result_path}/extracted_articles.json','w')
-    json.dump(extracted_articles,file,indent=4)
-    file.close()
-
-    file = open(f'{result_path}/extracted_articles.txt','w')
-    # write articles to file in plain text, keeping some indentation
-    for article in extracted_articles:
-        file.write(f'|{article["title"][0]}|\n\n')
-        last_t = None
-        for t in article['text']:
-            if last_t:
-                if last_t['par_num'] != t['par_num'] or last_t['block_num'] != t['block_num']:
-                    last_t = None
-                    file.write('\n')
-                else:
-                    if last_t['line_num'] != t['line_num']:
-                        file.write('\n')
-                    else:
-                        file.write(' ')
-            file.write(f'{t["text"]}')
-            last_t = t
-        file.write('\n\n')
-    file.close()
     
 
 
@@ -220,15 +191,6 @@ def main():
         [
             sg.Text('Target: '),
             sg.Column(column_target,scrollable=True,size=(800,500),key='column_target_image')
-        ],
-        [
-            sg.Button("Extract articles",key='button_extract_articles')
-        ],
-        [
-            sg.Button("Test ordering",key='button_test_ordering')
-        ],
-        [
-            sg.Button("Test ordering tree",key='button_test_ordering_tree')
         ],
         [
             sg.Button("Test improve bounds precision",key='button_test_improve_bounds'),
@@ -414,26 +376,6 @@ def main():
             window['button_hide_draw_bounding_boxes'].update(visible=False)
             window.refresh()
 
-        # basic article extraction
-        elif event == 'button_extract_articles':
-            if os.path.exists(f'{result_path}/result_processed.json'):
-                run_extract_articles()
-            else:
-                sg.popup('No result data found. Please run text search first.')
-
-        # test ordering
-        elif event == 'button_test_ordering':
-            if os.path.exists(f'{result_path}/result.json'):
-                ocr_results = OCR_Box(f'{result_path}/result.json')
-                # ocr_results_ordered = order_text_boxes(ocr_results)
-                # for i in range(len(ocr_results_ordered)):
-                #     print(ocr_results_ordered[i]['text'])
-        
-        # test ordering tree
-        elif event == 'button_test_ordering_tree':
-            if os.path.exists(f'{result_path}/result.json'):
-                ocr_results = OCR_Box(f'{result_path}/result.json')
-                # ocr_results_ordered = order_text_boxes(ocr_results)
 
         elif event == 'button_test_improve_bounds':
             if os.path.exists(f'{result_path}/result.json'):
@@ -566,34 +508,10 @@ def main():
                 image.save(bio, format="png")
                 window['result_img_fix'].update(data=bio.getvalue(),visible=True)
                 
-                #update original text
-                original_data = OCR_Box(f'{result_path}/result.json')
-                lines = original_data.get_boxes_level(4)
-                lines = order_line_boxes(lines)
-                original_text = ''
-                for line in lines:
-                    for box in line['boxes']:
-                        original_text += box['text'] + ' '
-                    original_text += '\n'
-
-
-                #update result text
-                result_data = OCR_Box(f'{result_path}/fixed/result_fixed.json')
-                lines = result_data.get_boxes_level(4)
-                lines = order_line_boxes(lines)
-                result_text = ''
-                for line in lines:
-                    for box in line['boxes']:
-                        result_text += box['text'] + ' '
-                    result_text += '\n'
                 
-                open(f'{result_path}/fixed/original_text.txt','w').write(original_text)
-                open(f'{result_path}/fixed/result_fixed.txt','w').write(result_text)
 
                 window['result_label_fix'].update(visible=True)
-                window['result_text_fix'].update(original_text,visible=True)
                 window['result_label2_fix'].update(visible=True)
-                window['result_text2_fix'].update(result_text,visible=True)
                 window.refresh()
                 window['column_fix_window'].contents_changed()
 

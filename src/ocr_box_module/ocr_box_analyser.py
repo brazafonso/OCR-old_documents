@@ -10,28 +10,6 @@ from aux_utils.box import *
 from ocr_box_module.ocr_box import *
 
 
-# def order_text_boxes(ocr_results):
-#     '''Order text boxes from left to right and top to bottom, using top and left values\n
-#     Return ordered ocr_results with only text boxes'''
-#     ocr_results_ordered = page_tree()
-#     for ocr_box in ocr_results:
-#         # only text boxes
-#         if ocr_box.level == 5 and ocr_box.text.strip() != '':
-#             ocr_results_ordered.insert(ocr_box)
-
-#     #ocr_results_ordered.pretty_print()
-#     return ocr_results_ordered.to_list()
-
-
-def order_line_boxes(lines):
-    '''Order line boxes from left to right and top to bottom, using top and left values\n'''
-    ocr_results_ordered = page_tree()
-    for line in lines:
-        ocr_results_ordered.insert(line)
-
-    #ocr_results_ordered.pretty_print()
-    return ocr_results_ordered.to_list()
-
 
 
 def analyze_text(ocr_results:OCR_Box):
@@ -144,8 +122,7 @@ def analyze_text(ocr_results:OCR_Box):
         'normal_text_gap':normal_text_gap,
         'number_lines':number_lines,
         'number_columns':number_columns,
-        'columns':columns,
-        #'ordered_lines':order_line_boxes(lines),
+        'columns':columns
     }
 
 
@@ -180,89 +157,6 @@ def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
 
 
 
-
-
-
-
-# def simple_article_extraction_page(processed_result):
-#     '''Do simple article extraction utilizing letter size and column continuity'''
-#     articles_result = []
-#     columns_text = [[] for i in range(processed_result['number_columns'])]
-#     ordered_lines = processed_result['ordered_lines']
-
-#     # separete text by columns
-#     for i in range(len(ordered_lines)):
-#         # check column to insert text
-#         for j in range(processed_result['number_columns']):
-#             # if text within column, add it to column text
-#             line_box = {
-#                 'left':ordered_lines[i].left, 
-#                 'top':ordered_lines[i].top, 
-#                 'right':ordered_lines[i].left+ordered_lines[i].width,
-#                 'bottom':ordered_lines[i].top+ordered_lines[i].height
-#             }
-#             column_box = {
-#                 'left':processed_result['columns'][j][0][0], 
-#                 'top':processed_result['columns'][j][0][1], 
-#                 'right':processed_result['columns'][j][1][0],
-#                 'bottom':processed_result['columns'][j][1][1]
-#             }
-#             if line_box.box.is_inside_box(column_box.box):
-#                 columns_text[j].append(ordered_lines[i])
-#                 break
-    
-#     # create articles
-#     current_article = {
-#         'title':('',None),
-#         'columns':[],
-#         'higher_height':None,
-#         'lower_height':None,
-#         'text':[]
-#     }
-#     found_article_text = False
-#     for column in range(len(columns_text)):
-#         current_article['columns'].append(column)
-#         current_article['lower_height'] = None
-#         for i in range(len(columns_text[column])):
-
-#             line = columns_text[column][i]
-#             if not is_normal_text_size(processed_result['normal_text_size'],line_height=line['line_mean_height']) and line['par_num'] == 1 and line['line_num'] == 1:
-#                 title = ' '.join([ocr_box.text for ocr_box in line['boxes']])
-#                 title_height = line['line_mean_height']
-#                 # new article title
-#                 if title.strip() and not current_article['title'][0]:
-#                     current_article['title'] = (title,title_height)
-#                 # new article
-#                 elif title.strip() and current_article['title'][1] < title_height and found_article_text:
-#                     articles_result.append(current_article)
-
-#                     current_article = {
-#                         'title':(title,title_height),
-#                         'columns':[column],
-#                         'higher_height':None,
-#                         'lower_height':None,
-#                         'text':[]
-#                     }
-#                 # simple subtitle
-#                 else:
-#                     current_article['text'] += line['boxes']
-            
-#             elif is_normal_text_size(processed_result['normal_text_size'],line_height=line['line_mean_height']):
-#                 found_article_text = True
-#                 current_article['text'] += line['boxes']
-#             else:
-#                 current_article['text'] += line['boxes']
-
-#             if not current_article['higher_height'] or current_article['higher_height'] > line['top']:
-#                 current_article['higher_height'] = line['top']
-#             if not current_article['lower_height'] or current_article['lower_height'] < line['top']+line['height']:
-#                 current_article['lower_height'] = line['top']+line['height']
-
-#     # add last article
-#     if current_article['text']:
-#         articles_result.append(current_article)
-
-#     return articles_result
 
 
 def update_index_greater_id(ocr_results,value,id):
