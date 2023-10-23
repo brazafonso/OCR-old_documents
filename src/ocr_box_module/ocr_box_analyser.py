@@ -10,48 +10,6 @@ from aux_utils.box import *
 from ocr_box_module.ocr_box import *
 
 
-
-# def is_empty_box(ocr_results,conf=60):
-#     '''Check if box group is empty'''
-#     text = ''
-#     for i in range(len(ocr_results)):
-#         if ocr_results[i].level == 5 and ocr_results[i].conf > conf:
-#             text += ocr_results[i].text
-#     if re.match(r'^\s*$',text):
-#         return True
-#     return False
-
-
-# def is_delimiter(ocr_results):
-#     '''Check if box group is a delimter'''
-#     if is_empty_box(ocr_results):
-#         ocr_box = ocr_results[0]
-#         if ocr_box.box.width >= ocr_box.box.height*4 or ocr_box.box.height >= ocr_box.box.width*4:
-#             return True
-#     return False
-
-
-# def boxes_to_text(ocr_results,conf=60):
-#     '''Convert ocr_results to text'''
-#     text = ''
-#     for i in range(len(ocr_results)):
-#         if ocr_results[i].level == 5 and ocr_results[i].conf > conf:
-#             text += ocr_results[i].text + ' '
-#         elif ocr_results[i].level == 4:
-#             text += '\n'
-#         elif ocr_results[i].level == 3:
-#             text += '\t'
-#     return text
-
-
-# def find_box_id(ocr_results,id):
-#     '''Find index of box with id \'id\' in ocr_results'''
-#     for i in range(len(ocr_results['text'])):
-#         if ocr_results[i].id == id:
-#             return i
-#     return None
-
-
 # def order_text_boxes(ocr_results):
 #     '''Order text boxes from left to right and top to bottom, using top and left values\n
 #     Return ordered ocr_results with only text boxes'''
@@ -74,17 +32,6 @@ def order_line_boxes(lines):
     #ocr_results_ordered.pretty_print()
     return ocr_results_ordered.to_list()
 
-
-
-# def is_normal_text_size(normal_text_size,line=None,line_height=None,range=0.3):
-#     '''Check if line height is within normal text size range'''
-#     if line:
-#         lmh = line_mean_height(line)
-#     elif line_height:
-#         lmh = line_height
-#     if lmh >= normal_text_size*(1-range) and lmh <= normal_text_size*(1+range):
-#         return True
-#     return False
 
 
 def analyze_text(ocr_results:OCR_Box):
@@ -508,7 +455,6 @@ def estimate_journal_columns(ocr_results,image_info,header=None,footer=None):
     if delimiters:
         # joint aligned delimiters
         column_delimiters = join_aligned_delimiters(delimiters,orientation='vertical')
-        print('Delimiters:',column_delimiters)
         right_margin = Box(image_info['width'],image_info['width'],upper_margin,lower_margin)
         column_delimiters.append(right_margin)
         # sort delimiters
@@ -521,7 +467,6 @@ def estimate_journal_columns(ocr_results,image_info,header=None,footer=None):
             column_box = Box(left,column_delimiters[i].right,upper_margin,lower_margin)
             columns.append(column_box)
     
-    print('Columns:',columns)
     return columns
 
     

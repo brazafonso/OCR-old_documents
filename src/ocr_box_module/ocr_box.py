@@ -193,17 +193,17 @@ class OCR_Box:
             i += 1
         return empty
     
-    def is_delimiter(self):
+    def is_delimiter(self,conf:int=0):
         '''Check if box is delimiter'''
-        if self.level == 2 and self.is_empty():
+        if self.level == 2 and self.is_empty(conf):
             if self.box.width >= self.box.height*4 or self.box.height >= self.box.width*4:
                 return True
         return False
 
-    def get_delimiters(self,search_area:Box=None,orientation:str=None):
+    def get_delimiters(self,search_area:Box=None,orientation:str=None,conf:int=0):
         '''Get delimiters in ocr_results'''
         delimiters = []
-        if self.is_delimiter():
+        if self.is_delimiter(conf):
             valid = True
             if search_area and not self.box.is_inside_box(search_area):
                 valid = False
@@ -212,7 +212,7 @@ class OCR_Box:
             if valid:
                 delimiters.append(self)
         for child in self.children:
-            delimiters += child.get_delimiters()
+            delimiters += child.get_delimiters(search_area,orientation,conf)
         return delimiters
     
 
@@ -237,55 +237,3 @@ class OCR_Box:
         else:
             for child in self.children:
                 child.remove_box_id(id,level)
-
-    
-        
-    
-        
-
-
-# def remove_box_index(ocr_results:list[OCR_Box],index:int):
-#     '''Remove box in ocr_results with index'''
-#     return ocr_results.pop(index)
-
-
-# def remove_boxes_group(ocr_results:list[OCR_Box],index:int,removed_amount:bool=False):
-#     '''Remove boxes group in ocr_results'''
-#     level = ocr_results[index].level
-#     removed_amount = 1
-#     ocr_results.pop(index)
-#     while index < len(ocr_results) and ocr_results[index].level > level:
-#         ocr_results.pop(index)
-#         removed_amount += 1
-
-#     if removed_amount:
-#         return ocr_results,removed_amount
-#     return ocr_results
-
-
-# def get_group_boxes(ocr_results:list[OCR_Box],index:int):
-#     '''Get group boxes in ocr_results'''
-#     level = ocr_results[index].level
-#     group_boxes = [ocr_results[index]]
-#     index += 1
-#     while index < len(ocr_results) and ocr_results[index].level > level:
-#         group_boxes.append(ocr_results[index])
-#         index += 1
-#     return group_boxes
-
-
-
-# def line_mean_height(line:OCR_Box):
-#     '''Return mean height of line'''
-#     return sum([ocr_box.box.height for ocr_box in line]) / len(line)
-
-
-# def ocr_boxes_to_json(ocr_results:list[OCR_Box]):
-#     '''Save ocr_results to json file'''
-#     return [ocr.to_json() for ocr in ocr_results]
-
-# def json_to_ocr_boxes(path:str):
-#     '''Load ocr_results from json file'''
-#     with open(path,'r') as f:
-#         ocr_results = json.load(f)
-#     return [OCR_Box(ocr) for ocr in ocr_results]
