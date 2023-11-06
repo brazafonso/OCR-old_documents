@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''Journal tesseract - A simple tesseract based text search for journal pages for article extraction'''
+'''Old Structured Document OCR - Main program'''
 import io
 import cv2
 import os
