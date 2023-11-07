@@ -184,7 +184,7 @@ class OCR_Box:
         '''Check if text size is in range'''
         mean_height = mean_height
         if not mean_height:
-            mean_height = self.get_mean_height()
+            mean_height = self.calculate_mean_height()
         if mean_height >= text_size*(1-range) and mean_height <= text_size*(1+range):
             return True
         return False

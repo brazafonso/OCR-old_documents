@@ -159,96 +159,11 @@ def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
 
 
 
-def update_index_greater_id(ocr_results,value,id):
-    '''Update index of boxes with id greater than \'id\' in ocr_results'''
-    for i in range(len(ocr_results)):
-        if ocr_results[i].id and ocr_results[i].index and ocr_results[i].id > id:
-            ocr_results[i].index += value
-    return ocr_results
 
 
 
-def block_bound_box_fix(ocr_results,image_info):
-    '''Fix block bound boxes\n'''
-    i = 0
-    current_box = None
-    blocks = ocr_results.get_boxes_level(2)
-    boxes_to_check = {}
-    checked_boxes = []
-    og_len = len(blocks)
-    # iterate over all block boxes
-    # if two boxes of the same level are overlaping, delete the inside one
-    # assumes that the inside box is a duplicate of information from outside box
-    while i< len(blocks):
-        # get current box to analyse
-        if not current_box and blocks[i].id not in checked_boxes:
-            if (not blocks[i].is_empty()) or blocks[i].is_delimiter():
-                current_box = blocks[i]
-                i+=1
-            else:
-                ocr_results.remove_box_id(blocks[i].id)
-                blocks.pop(i)
-            continue
-        # check if boxes are within each other
-        if current_box and blocks[i].id != current_box.id:
-            #print('Comparing boxes',current_box.id,blocks[i].id)
-            compare_box = blocks[i]
-
-            # compared box inside current box
-            if compare_box.box.is_inside_box(current_box.box):
-                ocr_results.remove_box_id(compare_box.id)
-                if compare_box.id in boxes_to_check: 
-                    del boxes_to_check[compare_box.id]
-            # current box inside compared box
-            elif current_box.box.is_inside_box(compare_box.box):
-                ocr_results.remove_box_id(current_box.id)
-                current_box = None
-            # boxes intersect (with same level, so as to be able to merge seemlessly)
-            elif current_box.box.intersects_box(compare_box.box) and current_box.box.same_level_box(compare_box.box):
-                intersect_area = current_box.box.intersect_area_box(compare_box.box)
-                # update boxes so that they don't intersect
-                # smaller box is reduced
-                if current_box.box.box_is_smaller(compare_box.box):
-                    current_box.box.remove_box_area(intersect_area)
-                else:
-                    compare_box.box.remove_box_area(intersect_area)
-            else:
-                if compare_box.id not in checked_boxes and compare_box.id not in boxes_to_check:
-                    boxes_to_check[compare_box.id] = compare_box
-        i+=1
-        # change current box to next one
-        if (i == len(blocks) and boxes_to_check) or (not current_box and boxes_to_check):
-            current_box = None
-            keys = list(boxes_to_check.keys())
-            # get next not empty block
-            while not current_box and boxes_to_check:
-                id = keys.pop(0)
-                current_box = boxes_to_check[id]
-                del boxes_to_check[id]
-                checked_boxes.append(current_box.id)
-                # check if box is empty
-                # remove if true
-                if current_box.is_empty() and not current_box.is_delimiter():
-                    ocr_results.remove_box_id(current_box.id)
-                    current_box = None
-                i = 0
 
 
-    print(f'''
-    Initial number of boxes: {og_len}
-    Final number of boxes: {len(ocr_results.get_boxes_level(2))}
-    ''')
-    return ocr_results
-
-
-def bound_box_fix(ocr_results,level,image_info):
-    '''Fix bound boxes\n
-    Mainly overlaping boxes'''
-    new_ocr_results = {}
-    if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results,image_info)
-
-    return new_ocr_results
 
 
 def join_aligned_delimiters(delimiters:list[OCR_Box],orientation='horizontal'):
@@ -273,14 +188,14 @@ def join_aligned_delimiters(delimiters:list[OCR_Box],orientation='horizontal'):
 
     
 
-def estimate_journal_header(ocr_results,image_info):
+def estimate_journal_header(ocr_results:OCR_Box,image_info:Box):
     '''Estimate journal header blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
 
     header = None
 
     # get delimiter blocks
-    search_area = Box(0,image_info['width'],0,image_info['height']*0.5) 
+    search_area = Box(0,image_info.width,0,image_info.height*0.5) 
     delimiters = ocr_results.get_delimiters(search_area=search_area)
 
     
@@ -289,7 +204,7 @@ def estimate_journal_header(ocr_results,image_info):
         widthest_delimiter = sorted(delimiters,key=lambda x: x.box.width)[-1]
         
         # widder than treshold
-        if widthest_delimiter.box.width >= image_info['width']*0.3:
+        if widthest_delimiter.box.width >= image_info.width*0.3:
             header = {
             'left':None,
             'top':None,
@@ -330,26 +245,26 @@ def estimate_journal_header(ocr_results,image_info):
 
 
 
-def estimate_journal_columns(ocr_results,image_info,header=None,footer=None):
+def estimate_journal_columns(ocr_results,image_info:Box,header=None,footer=None):
     '''Estimate journal columns blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
     columns = []
     # defining margins of search area
     upper_margin = 0
-    lower_margin = image_info['height']
+    lower_margin = image_info.height
     if header:
         upper_margin = header.bottom
     if footer:
         lower_margin = footer.top
 
     # get delimiter blocks
-    search_area = Box(0,image_info['width'],upper_margin,lower_margin)
+    search_area = Box(0,image_info.width,upper_margin,lower_margin)
     delimiters = ocr_results.get_delimiters(search_area=search_area,orientation='vertical')
 
     if delimiters:
         # joint aligned delimiters
         column_delimiters = join_aligned_delimiters(delimiters,orientation='vertical')
-        right_margin = Box(image_info['width'],image_info['width'],upper_margin,lower_margin)
+        right_margin = Box(image_info.width,image_info.width,upper_margin,lower_margin)
         column_delimiters.append(right_margin)
         # sort delimiters
         column_delimiters = sorted(column_delimiters,key=lambda x: x.left)
@@ -395,4 +310,25 @@ def draw_journal_template(journal_data,image_path):
         (x, y, w, h) = (column.left, column.top, column.width, column.height)
         img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
+    return img
+
+
+def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=60,id=False):
+    '''Draw bounding boxes on image of type MatLike from cv2\n
+    Return image with bounding boxes'''
+
+    img = cv2.imread(image_path)
+    box_stack = [ocr_results]
+    while box_stack:
+        current_node = box_stack.pop()
+        if current_node.level in draw_levels:
+            # only draw text boxes if confidence is higher than conf
+            if current_node.level == 5 and current_node.conf < conf:
+                continue
+            (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            if id and current_node.id:
+                img = cv2.putText(img, str(current_node.id), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        for child in current_node.children:
+            box_stack.append(child)
     return img

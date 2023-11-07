@@ -12,6 +12,7 @@ from aux_utils.page_tree import *
 from aux_utils.image import *
 from ocr_box_module.ocr_box import *
 from ocr_box_module.ocr_box_analyser import *
+from ocr_box_module.ocr_box_fix import *
 from ocr_engines.engine_utils import tesseract_search_img
 
 
@@ -193,10 +194,6 @@ def main():
             sg.Column(column_target,scrollable=True,size=(800,500),key='column_target_image')
         ],
         [
-            sg.Button("Test improve bounds precision",key='button_test_improve_bounds'),
-            sg.Text(progress,key='progress_text',visible=False),
-        ],
-        [
             sg.Button("Test alternative analyse text",key='button_test_alt_analyse'),
         ],
         [
@@ -375,25 +372,6 @@ def main():
             window['bounding_boxes_image'].update(visible=False)
             window['button_hide_draw_bounding_boxes'].update(visible=False)
             window.refresh()
-
-
-        elif event == 'button_test_improve_bounds':
-            if os.path.exists(f'{result_path}/result.json'):
-                window['progress_text'].update(visible=True)
-
-                ocr_results = OCR_Box(f'{result_path}/result.json')
-                ocr_results = improve_bounds_precision(ocr_results,target_image if target_image else f'{result_path}/result.jpg','progress_text',window)
-
-                new_result_file = open(f'{result_path}/result_improved.json','w')
-                json.dump(ocr_results,new_result_file,indent=4)
-                new_result_file.close()
-
-                new_result_file_csv = open(f'{result_path}/result_improved.csv','w')
-                df = pd.DataFrame(ocr_results)
-                df.to_csv(new_result_file_csv)
-                new_result_file_csv.close()
-
-                window['progress_text'].update(visible=False)
 
         elif event == 'button_test_alt_analyse':
             if os.path.exists(f'{result_path}/result.json'):
