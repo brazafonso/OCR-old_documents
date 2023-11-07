@@ -290,7 +290,8 @@ def estimate_journal_template(ocr_results,image_info):
 
     return {
         'header':header,
-        'columns':columns
+        'columns':columns,
+        'footer':footer
     }
 
 

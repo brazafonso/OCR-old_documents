@@ -242,3 +242,15 @@ class OCR_Box:
         else:
             for child in self.children:
                 child.remove_box_id(id,level)
+
+
+    def get_boxes_in_area(self,area:Box,level:int=2)->list['OCR_Box']:
+        '''Get boxes in area'''
+        boxes = []
+        if area:
+            if self.level == level and self.box.is_inside_box(area):
+                boxes.append(self)
+            elif self.level < level:
+                for child in self.children:
+                    boxes += child.get_boxes_in_area(area)
+        return boxes

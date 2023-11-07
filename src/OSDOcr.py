@@ -10,6 +10,7 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.page_tree import *
 from aux_utils.image import *
+from ocr_box_module.information_extraction import journal_template_to_text
 from ocr_box_module.ocr_box import *
 from ocr_box_module.ocr_box_analyser import *
 from ocr_box_module.ocr_box_fix import *
@@ -180,7 +181,6 @@ def main():
             sg.Image(filename=None,visible=False,key='target_image_path')
         ]
     ]
-    progress = ''
 
     # main window layout
     main_layout = [
@@ -212,6 +212,9 @@ def main():
         [
             sg.Button("Draw journal template",key='button_journal_template'),
             sg.Image(filename=None,visible=False,key='journal_template_image'),
+        ],
+        [
+            sg.Button("Seperate template text",key='button_journal_template_text')
         ],
         [
             sg.Button("Close",key='button_close')
@@ -410,17 +413,57 @@ def main():
                 sg.popup('No target image selected')
         
         elif event == 'button_journal_template':
-            if os.path.exists(f'{result_path}/fixed/result_fixed.json') and target_image:
-                ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
-                image_info = get_image_info(target_image)
-                journal = estimate_journal_template(ocr_results,image_info)
-                img = draw_journal_template(journal,target_image)
-                cv2.imwrite(f'{result_path}//journal_template.jpg',img)
-                img = Image.fromarray(img)
-                bio = io.BytesIO()
-                img.save(bio,format='png')
-                window['journal_template_image'].update(data=bio.getvalue(),visible=True)
-                window.refresh()
+            if target_image:
+                if os.path.exists(f'{result_path}/fixed/result_fixed.json') or os.path.exists(f'{result_path}/result.json'):
+                    # create fixed result file
+                    if not os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                        ocr_results = OCR_Box(f'{result_path}/result.json')
+                        ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
+                        result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
+                        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+                        result_dict_file.close()
+                        image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
+                        cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+                        csv = pd.DataFrame(ocr_results.to_dict())
+                        csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
+                        
+                    # draw journal template
+                    ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                    image_info = get_image_info(target_image)
+                    journal = estimate_journal_template(ocr_results,image_info)
+                    img = draw_journal_template(journal,target_image)
+                    cv2.imwrite(f'{result_path}//journal_template.jpg',img)
+                    img = Image.fromarray(img)
+                    bio = io.BytesIO()
+                    img.save(bio,format='png')
+                    window['journal_template_image'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+                
+            else:
+                sg.popup('No target image selected')
+        
+        elif event == 'button_journal_template_text':
+            if target_image:
+                if os.path.exists(f'{result_path}/fixed/result_fixed.json') or os.path.exists(f'{result_path}/result.json'):
+                    # create fixed result file
+                    if not os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                        ocr_results = OCR_Box(f'{result_path}/result.json')
+                        ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
+                        result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
+                        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+                        result_dict_file.close()
+                        image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
+                        cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+                        csv = pd.DataFrame(ocr_results.to_dict())
+                        csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
+                    
+                    ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                    image_info = get_image_info(target_image)
+                    journal_template = estimate_journal_template(ocr_results,image_info)
+                    text = journal_template_to_text(journal_template,ocr_results)
+                    text_file = open(f'{result_path}/journal_template_text.txt','w')
+                    text_file.write(text)
+                    text_file.close()
                 
             else:
                 sg.popup('No target image selected')
@@ -502,7 +545,10 @@ def main():
                 ocr_results = OCR_Box(f'{result_path}/result.json')
                 ocr_results.id_boxes([2])
                 block_id = values['search_block_og']
-                text = ocr_results.to_text()
+                original_box = ocr_results.get_box_id(block_id,2)
+                text = ''
+                if original_box:
+                    text = original_box.to_text()
                 print(text)
                 window['result_text_search_block_og'].update(text,visible=True)
                 window.refresh()
