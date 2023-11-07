@@ -21,7 +21,7 @@ def tesseract_search_img(image_path:str)->dict:
     print('Text search over')
     
     return {
-        'ocr_results':tesseract_convert_to_box(data_dict),
+        'ocr_results':tesseract_convert_to_ocrbox(data_dict),
         'data_text':data_text,
         'data_pdf':data_pdf,
         'data_xml':data_xml
@@ -43,7 +43,7 @@ def tesseract_convert_index_to_box(data_dict:dict,index:int)->OCR_Box:
     return ocr_box
 
 
-def tesseract_convert_to_box(data_dict:dict)->OCR_Box:
+def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Box:
     '''Convert tesseract results into ocr_box'''
     document = OCR_Box({'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,'box':Box(0,0,0,0),'text':'','conf':-1})
     box_stack = [document]

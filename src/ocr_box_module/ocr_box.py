@@ -15,7 +15,7 @@ class OCR_Box:
         OCR_Box(level:int, page_num:int, block_num:int, par_num:int, line_num:int, word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None)\n
         OCR_Box(json_list:list[dict])\n
         OCR_Box(json_file:str)\n'''
-        self.level = None # 1 = page, 2 = block, 3 = paragraph, 4 = line, 5 = word
+        self.level = None # 0 = document, 1 = page, 2 = block, 3 = paragraph, 4 = line, 5 = word
         self.page_num = None
         self.block_num = None
         self.par_num = None
@@ -25,7 +25,7 @@ class OCR_Box:
         self.text = None 
         self.conf = None
         self.id = None
-        self.type = None
+        self.type = None # type of box (text, image ,delimiter, table, etc)
         self.children = []
         self.parent = None
         if len(args) == 1:
@@ -173,7 +173,7 @@ class OCR_Box:
     
     def calculate_mean_height(self):
         '''Get mean height of group boxes'''
-        line_sum = self.box.height
+        line_sum = 0
         count = 1
         for child in self.children:
             line_sum += child.calculate_mean_height()

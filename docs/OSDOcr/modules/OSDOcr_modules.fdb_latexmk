@@ -1,8 +1,8 @@
 # Fdb version 3
-["pdflatex"] 1696972447 "/mnt/d/uni/5ano/OCR-old_documents/docs/box_module/box_module.tex" "box_module.pdf" "box_module" 1696972450
+["pdflatex"] 1699379360 "/mnt/d/uni/5ano/OCR-old_documents/docs/OSDOcr/modules/OSDOcr_modules.tex" "OSDOcr_modules.pdf" "OSDOcr_modules" 1699379360
   "/etc/texmf/web2c/texmf.cnf" 1696967788 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/home/brazafonso/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk" 1696968221 11524 7aaad81cf57fcac48ae9ae7f48b70f38 ""
-  "/mnt/d/uni/5ano/OCR-old_documents/docs/box_module/box_module.tex" 1696972448 7379 789c86c19d47d80676c0e0569591046c ""
+  "/mnt/d/uni/5ano/OCR-old_documents/docs/OSDOcr/modules/OSDOcr_modules.tex" 1699379350 7398 d652a1e4e004e3508b742013802cd6de ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1246382020 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
@@ -64,9 +64,9 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1644012257 39432 7155514e09a3d69036fac785183a21c2 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1696967793 75955 f78456fd1308dc295dc476a68e28d85b ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1696967794 1405651 685e8ce9e9257146fefd5e41d55f66ad ""
-  "box_module.aux" 1696972450 428 ca0e0d772639b5b92a08cfd1a88ccf06 "pdflatex"
-  "box_module.tex" 1696972448 7379 789c86c19d47d80676c0e0569591046c ""
+  "OSDOcr_modules.aux" 1699379362 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "OSDOcr_modules.tex" 1699379350 7398 d652a1e4e004e3508b742013802cd6de ""
   (generated)
-  "box_module.aux"
-  "box_module.log"
-  "box_module.pdf"
+  "OSDOcr_modules.aux"
+  "OSDOcr_modules.log"
+  "OSDOcr_modules.pdf"
