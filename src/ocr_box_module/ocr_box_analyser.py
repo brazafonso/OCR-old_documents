@@ -8,6 +8,7 @@ from aux_utils.page_tree import *
 from aux_utils.image import *
 from aux_utils.box import *
 from ocr_box_module.ocr_box import *
+import math
 
 
 
@@ -21,7 +22,7 @@ def analyze_text(ocr_results:OCR_Box):
     left_margin_n = {}
     right_margin_n = {}
 
-    normal_text_size = None
+    line_sizes = []
     
     # save text sizes and margins
     for line in lines:
@@ -37,16 +38,25 @@ def analyze_text(ocr_results:OCR_Box):
 
         lmh = line.calculate_mean_height()
         line.mean_height = lmh
-        if normal_text_size:
-            normal_text_size += lmh
-            normal_text_size /= 2
-        else:
-            normal_text_size = lmh
+        line_sizes.append(lmh)
+
     
-    print('Left margin:',left_margin_n)
-    print('Right margin:',right_margin_n)
-    print('Lines:',len(lines))
     
+    # estimate normal text size
+    # calculate until good standard deviation is found
+    ## normal text size average
+    normal_text_size = sum(line_sizes)/len(line_sizes)
+    ## normal text size standard deviation
+    normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
+    while normal_text_size_std > normal_text_size*2:
+        # remove outliers (greatest value)
+        line_sizes.remove(max(line_sizes))
+        # recalculate normal text size
+        normal_text_size = sum(line_sizes)/len(line_sizes)
+        # recalculate normal text size standard deviation
+        normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
+
+
     # estimate normal text size
     normal_text_gap = None
 
@@ -107,15 +117,6 @@ def analyze_text(ocr_results:OCR_Box):
             columns.append(((left,top),(right,bottom)))
                 
 
-
-    text = f'''
-    Normal text size: {normal_text_size}
-    Normal text gap: {normal_text_gap}
-    Max number of lines : {number_lines}
-    Number of columns: {number_columns}
-    Columns: {columns}
-'''
-    print('Analysed results:',text)
 
     return {
         'normal_text_size':normal_text_size,

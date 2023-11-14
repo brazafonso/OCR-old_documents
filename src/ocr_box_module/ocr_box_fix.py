@@ -1,7 +1,7 @@
 from ocr_box_module.ocr_box import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Box,image_info:Box):
+def block_bound_box_fix(ocr_results:OCR_Box):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -79,6 +79,6 @@ def bound_box_fix(ocr_results:OCR_Box,level:int,image_info:Box):
     Mainly overlaping boxes'''
     new_ocr_results = {}
     if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results,image_info)
+        new_ocr_results = block_bound_box_fix(ocr_results)
 
     return new_ocr_results

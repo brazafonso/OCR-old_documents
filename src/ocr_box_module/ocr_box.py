@@ -21,7 +21,7 @@ class OCR_Box:
         self.par_num = None
         self.line_num = None
         self.word_num = None
-        self.box = None # info about box size and position on page
+        self.box = Box(0,0,0,0) # info about box size and position on page
         self.text = None 
         self.conf = None
         self.id = None
@@ -50,6 +50,7 @@ class OCR_Box:
 
     def init(self, level:int, page_num:int, block_num:int, par_num:int, line_num:int, 
                  word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None):
+        '''Initialize OCR_Box object'''
         self.level = level
         self.page_num = page_num
         self.block_num = block_num
@@ -75,16 +76,16 @@ class OCR_Box:
         for i in range(1,len(json_list)):
             current_node = node_stack[-1]
             node = OCR_Box(json_list[i])
-            if json_list[i]['level'] == current_node.level + 1:
+            if node.level == current_node.level + 1:
                 current_node.add_child(node)
                 node_stack.append(node)
-            elif json_list[i]['level'] == current_node.level:
+            elif node.level == current_node.level:
                 node_stack.pop()
                 current_node = node_stack[-1]
                 current_node.add_child(node)
                 node_stack.append(node)
             else:
-                while json_list[i]['level'] != current_node.level + 1:
+                while node.level != current_node.level + 1:
                     node_stack.pop()
                     current_node = node_stack[-1]
                 current_node.add_child(node)
@@ -133,8 +134,10 @@ class OCR_Box:
 
 
     def add_child(self, child):
+        '''Add child to ocr_results'''
         child.parent = self
         self.children.append(child)
+        self.box.join(child.box)
 
     def id_boxes(self,level:list[int]=[2],ids:dict=None):
         '''Id boxes in ocr_results'''
@@ -171,13 +174,17 @@ class OCR_Box:
                     group_boxes += child.get_boxes_level(level)
         return group_boxes
     
-    def calculate_mean_height(self):
+    def calculate_mean_height(self,level:int=5)->float:
         '''Get mean height of group boxes'''
         line_sum = 0
-        count = 1
-        for child in self.children:
-            line_sum += child.calculate_mean_height()
+        count = 0
+        if self.level == level:
+            line_sum += self.box.height
             count += 1
+        elif self.level < level:
+            for child in self.children:
+                line_sum += child.calculate_mean_height(level)
+                count += 1
         return line_sum / count
     
     def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.3):
@@ -206,7 +213,8 @@ class OCR_Box:
         return False
 
     def get_delimiters(self,search_area:Box=None,orientation:str=None,conf:int=0):
-        '''Get delimiters in ocr_results'''
+        '''Get delimiters in ocr_results\n
+        Delimiters are boxes with level 2 and empty text'''
         delimiters = []
         if self.is_delimiter(conf):
             valid = True
@@ -216,8 +224,9 @@ class OCR_Box:
                 valid = False
             if valid:
                 delimiters.append(self)
-        for child in self.children:
-            delimiters += child.get_delimiters(search_area,orientation,conf)
+        elif self.level < 2:
+            for child in self.children:
+                delimiters += child.get_delimiters(search_area,orientation,conf)
         return delimiters
     
 
@@ -245,12 +254,16 @@ class OCR_Box:
 
 
     def get_boxes_in_area(self,area:Box,level:int=2)->list['OCR_Box']:
-        '''Get boxes in area'''
+        '''Get boxes in area\n
+        If level is -1, get all boxes in area'''
         boxes = []
         if area:
-            if self.level == level and self.box.is_inside_box(area):
+            if (level == -1 or self.level == level )and self.box.is_inside_box(area):
                 boxes.append(self)
-            elif self.level < level:
+            elif self.level < level or level == -1:
                 for child in self.children:
-                    boxes += child.get_boxes_in_area(area)
+                    boxes += child.get_boxes_in_area(area,level)
         return boxes
+    
+
+
