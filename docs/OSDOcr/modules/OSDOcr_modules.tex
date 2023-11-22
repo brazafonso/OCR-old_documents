@@ -1,5 +1,35 @@
 \documentclass{article}
 
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+
 % Packages for mathematical symbols and equations
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -131,6 +161,58 @@ with the lowest being a word container. Based on a n-ary tree structure.
     
     Analyzes a box group. The analysis result returns the value of $normal\_text\_size$, $normal\_text\_gap$, $number\_lines$, $number\_columns$ and $columns$.
 
+    \textbf{Algorithm:}
+
+    \begin{lstlisting}[language=Python, caption=analyze\_text algorithm]
+
+    # get lines
+    lines = OCR_Box.get_box_level(4)
+
+    # save line sizes and margins
+    line_sizes = []
+    left_margin_n = {}
+    right_margin_n = {}
+    for line in lines:
+        * save line size
+        * save left margin
+        * save right margin
+
+    # estimate normal text size
+    # calculate until good standard deviation is found
+    while deviation > normal_text_size*2:
+        * remove outlier
+        * recalculate normal_text_size and deviation
+
+
+    # estimate normal text gap
+    for line in lines:
+        if lines are in sequence and of normal text size:
+            * save text gap
+    
+    normal_text_gap = sum(text_gaps)/len(text_gaps)
+
+    # estimate number of lines per column
+    number_lines = (highest_normal_text_size - lowest_normal_text_size) / normal_text_gap
+
+    # estimate number of columns
+    number_columns = sort number of left margins, if value is close to number_lines, 
+                    then it is a column
+
+    # create columns bounding boxes
+    columns = []
+    for column in number_columns:
+        if first:
+            box = Box(left_border,first_margin,highest_normal_text_size,lowest_normal_text_size)
+        else:
+            box = Box(previous_margin,margin,highest_normal_text_size,lowest_normal_text_size)
+
+    return {'normal_text_size':normal_text_size,
+            'normal_text_gap':normal_text_gap,
+            'number_lines':number_lines,
+            'number_columns':number_columns,
+            'columns':columns}
+    \end{lstlisting}
+
 
     \item \resizeHeight{$\mathbf{draw\_bounding\_boxes}$ : }
     
@@ -148,12 +230,54 @@ with the lowest being a word container. Based on a n-ary tree structure.
         delimiter['bottom'] \geq image\_info['bottom'] \times 0.5 \land delimiter['width'] \geq image\_info['width'] \times 0.3
     \end{equation}
 
+    \textbf{Algorithm:}
+
+    \begin{lstlisting}[language=Python, caption=estimate\_journal\_header algorithm]
+
+        # get horizontal delimiters
+        delimiters = OCR_Box.get_delimiters(upper_half_image,'horizontal')
+
+        delimiters = sort delimiters by width
+
+        widest_delimiter = delimiters[0]
+        if widest delimiter is 30% of image width or more:
+
+            * calculate header area
+            return header_area
+
+    \end{lstlisting}
+
     \item \resizeHeight{$\mathbf{estimate\_journal\_columns}$ : }
     
     \resizeHeight[0.9em]{$ (OCR\_Box,image\_info:Dict,header: Box ?, footer: Box ?) \rightarrow [Box] $}
     
     Estimates the journal columns using its box group.
     The columns are estimated by finding the blocks that are vertical delimiters and are within the area between the header and the footer if they exist (ortherwise within the page). 
+
+    \textbf{Algorithm:}
+
+    \begin{lstlisting}[language=Python, caption=estimate\_journal\_columns algorithm]
+
+        # get potential column delimiters
+        delimiters = OCR_Box.get_delimiters(body_area,'vertical')
+
+        # clean/join delimiters
+        delimiters = join_aligned_delimiters(delimiters)
+
+        # sort delimiters from left to right
+        delimiters = sort delimiters by left
+
+        # estimate column boxes
+        for delimiter in delimiters:
+            if first:
+                column = Box(left_border,delimiter['left'],top_body,bottom_body)
+            else:
+                column = Box(previous_margin,delimiter['left'],top_body,bottom_body)
+
+        return columns
+
+    \end{lstlisting}
+
 
     \item \resizeHeight{$\mathbf{estimate\_journal\_template}$ : $ (OCR\_Box,image\_info:Dict) \rightarrow Dict $}
     
@@ -175,6 +299,34 @@ with the lowest being a word container. Based on a n-ary tree structure.
 
     Fixes the blocks boxes in  box group. Eliminates empty, non delimiter boxes and eliminates intersections.
 
+    \textbf{Algorithm:}
+    \begin{lstlisting}[language=Python, caption=block\_box\_fix algorithm]
+
+        # get blocks
+        blocks = OCR_Box.get_box_level(2)
+
+        
+        for block in blocks:
+            * choose current block to analyse if no current block
+            ** if block is empty and not delimiter:
+                * remove block
+            
+            * check current block for intersections
+            ** if intersection:
+                * treat intersection by separating blocks
+            
+            * check for inner blocks
+            ** if inner blocks:
+                * keep outer block if inner blocks are empty and not delimiters
+
+            * if last block check for current block:
+                ** if blocks to check:
+                    *** choose next current block
+
+        return blocks
+        
+    \end{lstlisting}
+
     \item \resizeHeight{$\mathbf{join\_aligned\_delimiters}$ : $ (delimiters:[OCR\_Box],orientation:Str) \rightarrow [OCR\_Box] $}
     
     Joins aligned delimiters. The delimiters are aligned if they have the same horizontal or vertical value within a range ($is\_aligned$ for further reading), depending on the orientation.
@@ -187,9 +339,43 @@ with the lowest being a word container. Based on a n-ary tree structure.
 \begin{itemize}
     \renewcommand\labelitemi{}  % Remove bullets from this list
 
-    \item \resizeHeight{$\mathbf{simple\_article\_extraction\_page}$ : $ OCR\_Box \rightarrow [Article] $}
+    \item \resizeHeight{$\mathbf{journal\_template\_to\_text}$ : $ (journal\_teamplate,OCR\_Box) \rightarrow str $}
     
-    Extracts articles from a page. \resizeHeight{Not yet finished}.
+    Converts ocr_results to text using journal_template.
+
+    \textbf{Algorithm:}
+    \begin{lstlisting}[language=Python, caption=journal\_template\_to\_text algorithm]
+
+        # Treat header
+        header_ boxes = journal_template['header']
+        text = header_boxes.to_text()
+
+        # Treat columns
+        for column in journal_template['columns']:
+            # separate column in articles
+            * get article delimiters
+            * get article boxes
+            * create article
+            ** analyse article text (analyse\_text)
+            ** search for potential article atributes
+            *** title
+            *** author
+            *** body
+
+
+        # Add articles to text
+        for article in articles:
+            * add article text to text
+
+        # Treat footer
+        footer_boxes = journal_template['footer']
+        text += footer_boxes.to_text()
+
+
+
+
+        return text
+    \end{lstlisting}
 \end{itemize}
 
 \section{Output Converter Module}

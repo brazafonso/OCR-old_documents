@@ -6,3 +6,16 @@ Digitization of Data from Invoice using OCR - https://ieeexplore.ieee.org/docume
 OCR performance prediction using cross-OCR alignment - https://ieeexplore.ieee.org/document/7333823
 Error Correction with In-domain Training across Multiple OCR System Outputs - https://ieeexplore.ieee.org/document/6065393
 Performance Evaluation and Benchmarking of Six-Page Segmentation Algorithms - https://ieeexplore.ieee.org/document/4407728
+
+estrutracao de jornais:
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9833047
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5277572
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1263250
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8999273
+
+
+** procurar: algoritmos de ordenaçao de caixas
+https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - Naive
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9413256 - ML
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7351614 - Grafo

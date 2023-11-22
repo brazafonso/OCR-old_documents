@@ -24,6 +24,7 @@ class Article:
         self.body = None
         self.bounding_box = None
         self.original_ocr_box = None
+        self.metadata = None
         # single arg (OCR_Box)
         if len(args) == 1:
             if isinstance(args[0],OCR_Box):
