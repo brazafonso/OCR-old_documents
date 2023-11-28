@@ -8,11 +8,45 @@ Error Correction with In-domain Training across Multiple OCR System Outputs - ht
 Performance Evaluation and Benchmarking of Six-Page Segmentation Algorithms - https://ieeexplore.ieee.org/document/4407728
 
 estrutracao de jornais:
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9833047
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5277572
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1263250
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8999273
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9833047 - 2021
+    * processo de remoção de imagens do jornal, seguido da remoção de delimitadores; permite a identificação das linhas brancas
+    de separação entre artigos
+    * uso de ML apenas para tratamento de imagem
+    * resultados muito bons para jornais bastante complexos, embora quantidade de casos de teste muito reduzido (~250)
+        ** algoritmos a estudar:
+            * Douglas-Peucker algorithm
+            * Otsu binarization
+            * Hough line
+            * RLSA 
+            * Sobel X
+        ** referencias a varios artigos sobre limpeza e melhoria de imagens com danos causados por idade e má digitalização
+
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009 - 2014
+    * forte uso de ML para a indetificação segmentação de artigos num jornal
+    * imagens utilizadas nao tem em conta danos de idade
+    * utilizacao de processamento de imagem para remocao de delimitadores numa fase inicial e criacao dos diferentes blocos
+    de texto e imagem
+    * utilizacao de numero compacto mas logico de parametrosna funcao de labeling dos blocos, incluindo imagens
+    * potencial de adaptabilidade para diferentes layouts, visto nao seguir heuristicas especificas
+    * resultados bons, mas sob um datasete muito reduzido (~45)
+    ** bastantes referencias a artigos sobre estado da arte, assim como uso de tecnologias ja criadas
+    no projeto
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5277572 - 2009
+    * da google
+    * relativamente desatualizado, utiliza heuristicas e tecnicas sem uso de ML
+    * supostamente utilizado num grande numero de jornais mas sem grande detalhe sobre os resultados
+    sem ser 90% de eficacia na segmentacao e 80% no OCR (se apenas nos exemplos do artigo ou no total nao é explicito)
+    ** algoritmos a estudar:
+        * image binarization
+        * morphological grayscale reconstruction
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8999273 - 2019
+    * completamente focado em ML
+    * uso de CNN com mascara
+    * resultados que ajudariam na segementação do jornal, mas seriam necessitariam ainda de serem
+    processados localmente
+    * modulo generalista, agnostico de linguagens
+    * dataset nao muito grande (~840)
+    
 
 
 ** procurar: algoritmos de ordenaçao de caixas

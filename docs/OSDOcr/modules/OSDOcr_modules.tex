@@ -1,33 +1,7 @@
 \documentclass{article}
 
-\usepackage{listings}
-\usepackage{xcolor}
-
-\definecolor{codegreen}{rgb}{0,0.6,0}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codepurple}{rgb}{0.58,0,0.82}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
-
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2
-}
-
-\lstset{style=mystyle}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 
 % Packages for mathematical symbols and equations
@@ -50,6 +24,7 @@
 \date{\today}
 
 \begin{document}
+
 
 \maketitle
 
@@ -110,7 +85,7 @@ with the lowest being a word container. Based on a n-ary tree structure.
     where $box$ is the OCR box`s Box instance.
 
 
-    \item \resizeHeight{$\mathbf{get\box\_id}$ : $ (OCR\_Box ,id:Str,level:Int) \rightarrow OCR\_Box  $}
+    \item \resizeHeight{$\mathbf{get\_box\_id}$ : $ (OCR\_Box ,id:Str,level:Int) \rightarrow OCR\_Box  $}
     
     Finds a box container, within higher level box, or itself. The box container is identified by the $id$ and the $level$.
 
@@ -154,6 +129,123 @@ with the lowest being a word container. Based on a n-ary tree structure.
 
 \section{OCR Analysis Module}
 
+\begin{algorithm}
+    \caption{Analyze Text}
+    \begin{algorithmic}[1]
+    \Function{}{$\text{ocr\_results}: \text{OCR\_Box}$}
+
+    \State $\text{lines} \gets \text{ocr\_results.get\_boxes\_level}(4)$
+    
+        \For{$\text{line} \text{ in } \text{lines}$}
+            \State get line size
+            \State get left margin and increase left margin count
+            \State get right margin and increase right margin count
+        \EndFor
+    
+
+        \State $\text{normal\_text\_size} \gets$ line size average
+        \State $\text{normal\_text\_size\_std} \gets$ line size standard deviation
+    
+        \While{$\text{normal\_text\_size\_std} > \text{normal\_text\_size} \times 2$}
+            \State remove outlier
+            \State recalculate normal\_text\_size and normal\_text\_size\_std    
+        \EndWhile
+    
+    
+        \For{$\text{line} \text{ in } \text{lines}$}
+            \If{ line is in sequence and of normal text size:}
+                \State save normal text gap
+            \EndIf
+        \EndFor
+
+        \State $\text{normal\_text\_gap} \gets$ normal text gap average
+    
+        \For{$\text{line} \text{ in } \text{lines}$}
+            \If{ line is of normal text size:}
+                \If{line is above highest normal text:}
+                    \State save highest normal text
+                \EndIf
+                \If{ line is below lowest normal text:}
+                    \State save lowest normal text
+                \EndIf
+            \EndIf
+        \EndFor
+    
+        \State $\text{number\_lines} \gets (\text{highest\_normal\_text} - \text{lowest\_normal\_text}) / \text{normal\_text\_gap}$
+        \State $\text{probable\_columns} \gets$ most common left margin values
+
+        \For{$i \text{ in range}(\text{len}(\text{probable\_columns}))$}
+            \If{ last box}
+                \State $\text{column} \gets$ left margin value to image right margin
+            \Else
+                \State $\text{column} \gets$ left margin value to next left margin value
+            \EndIf
+        \EndFor
+    
+        \State \textbf{return} \{
+            \text{normal\_text\_size},
+            \text{normal\_text\_gap},
+            \text{number\_lines},
+            \text{number\_columns},
+            \text{columns}
+        \}
+    \EndFunction
+    \end{algorithmic}
+    \end{algorithm}
+
+
+% \begin{algorithm}
+%     \caption{Analyze Text}\label{alg:cap}
+%     \begin{algorithmic}
+
+%     $lines = OCR\_Box.get\_box\_level(4)$ \Comment{get lines}
+
+%     % \Comment{ save line sizes and margins}
+%     % line_sizes = []
+%     % left_margin_n = {}
+%     % right_margin_n = {}
+%     % for line in lines:
+%     %     \Comment{ save line size}
+%     %     \Comment{ save left margin}
+%     %     \Comment{ save right margin}
+
+%     % \Comment{ estimate normal text size}
+%     % \Comment{ calculate until good standard deviation is found}
+%     % while deviation > normal_text_size*2:
+%     %     \Comment{ remove outlier}
+%     %     \Comment{ recalculate normal_text_size and deviation}
+
+
+%     % \Comment{ estimate normal text gap}
+%     % for line in lines:
+%     %     if lines are in sequence and of normal text size:
+%     %         \Comment{ save text gap}
+    
+%     % normal_text_gap = sum(text_gaps)/len(text_gaps)
+
+%     % \Comment{ estimate number of lines per column}
+%     % number_lines = (highest_normal_text_size - lowest_normal_text_size) / normal_text_gap
+
+%     % \Comment{ estimate number of columns}
+%     % number_columns = sort number of left margins, if value is close to number_lines, 
+%     %                 then it is a column
+
+%     % \Comment{ create columns bounding boxes}
+%     % columns = []
+%     % for column in number_columns:
+%     %     if first:
+%     %         box = Box(left_border,first_margin,highest_normal_text_size,lowest_normal_text_size)
+%     %     else:
+%     %         box = Box(previous_margin,margin,highest_normal_text_size,lowest_normal_text_size)
+
+%     % return {'normal_text_size':normal_text_size,
+%     %         'normal_text_gap':normal_text_gap,
+%     %         'number_lines':number_lines,
+%     %         'number_columns':number_columns,
+%     %         'columns':columns}
+%     \end{algorithmic}
+% \end{algorithm}
+
 \begin{itemize}
     \renewcommand\labelitemi{}  % Remove bullets from this list
 
@@ -161,57 +253,7 @@ with the lowest being a word container. Based on a n-ary tree structure.
     
     Analyzes a box group. The analysis result returns the value of $normal\_text\_size$, $normal\_text\_gap$, $number\_lines$, $number\_columns$ and $columns$.
 
-    \textbf{Algorithm:}
-
-    \begin{lstlisting}[language=Python, caption=analyze\_text algorithm]
-
-    # get lines
-    lines = OCR_Box.get_box_level(4)
-
-    # save line sizes and margins
-    line_sizes = []
-    left_margin_n = {}
-    right_margin_n = {}
-    for line in lines:
-        * save line size
-        * save left margin
-        * save right margin
-
-    # estimate normal text size
-    # calculate until good standard deviation is found
-    while deviation > normal_text_size*2:
-        * remove outlier
-        * recalculate normal_text_size and deviation
-
-
-    # estimate normal text gap
-    for line in lines:
-        if lines are in sequence and of normal text size:
-            * save text gap
     
-    normal_text_gap = sum(text_gaps)/len(text_gaps)
-
-    # estimate number of lines per column
-    number_lines = (highest_normal_text_size - lowest_normal_text_size) / normal_text_gap
-
-    # estimate number of columns
-    number_columns = sort number of left margins, if value is close to number_lines, 
-                    then it is a column
-
-    # create columns bounding boxes
-    columns = []
-    for column in number_columns:
-        if first:
-            box = Box(left_border,first_margin,highest_normal_text_size,lowest_normal_text_size)
-        else:
-            box = Box(previous_margin,margin,highest_normal_text_size,lowest_normal_text_size)
-
-    return {'normal_text_size':normal_text_size,
-            'normal_text_gap':normal_text_gap,
-            'number_lines':number_lines,
-            'number_columns':number_columns,
-            'columns':columns}
-    \end{lstlisting}
 
 
     \item \resizeHeight{$\mathbf{draw\_bounding\_boxes}$ : }
@@ -230,22 +272,20 @@ with the lowest being a word container. Based on a n-ary tree structure.
         delimiter['bottom'] \geq image\_info['bottom'] \times 0.5 \land delimiter['width'] \geq image\_info['width'] \times 0.3
     \end{equation}
 
-    \textbf{Algorithm:}
+    % \begin{algorithmic}[1]
 
-    \begin{lstlisting}[language=Python, caption=estimate\_journal\_header algorithm]
+    %     \Comment{ get horizontal delimiters}
+    %     delimiters = OCR_Box.get_delimiters(upper_half_image,'horizontal')
 
-        # get horizontal delimiters
-        delimiters = OCR_Box.get_delimiters(upper_half_image,'horizontal')
+    %     delimiters = sort delimiters by width
 
-        delimiters = sort delimiters by width
+    %     widest_delimiter = delimiters[0]
+    %     if widest delimiter is 30% of image width or more:
 
-        widest_delimiter = delimiters[0]
-        if widest delimiter is 30% of image width or more:
+    %         \Comment{ calculate header area}
+    %         return header_area
 
-            * calculate header area
-            return header_area
-
-    \end{lstlisting}
+    % \end{algorithmic}
 
     \item \resizeHeight{$\mathbf{estimate\_journal\_columns}$ : }
     
@@ -254,29 +294,27 @@ with the lowest being a word container. Based on a n-ary tree structure.
     Estimates the journal columns using its box group.
     The columns are estimated by finding the blocks that are vertical delimiters and are within the area between the header and the footer if they exist (ortherwise within the page). 
 
-    \textbf{Algorithm:}
 
-    \begin{lstlisting}[language=Python, caption=estimate\_journal\_columns algorithm]
+    % \begin{algorithmic}[1]
+    %     \Comment{ get potential column delimiters}
+    %     delimiters = OCR_Box.get_delimiters(body_area,'vertical')
 
-        # get potential column delimiters
-        delimiters = OCR_Box.get_delimiters(body_area,'vertical')
+    %     \Comment{ clean/join delimiters}
+    %     delimiters = join_aligned_delimiters(delimiters)
 
-        # clean/join delimiters
-        delimiters = join_aligned_delimiters(delimiters)
+    %     \Comment{ sort delimiters from left to right}
+    %     delimiters = sort delimiters by left
 
-        # sort delimiters from left to right
-        delimiters = sort delimiters by left
+    %     \Comment{ estimate column boxes}
+    %     for delimiter in delimiters:
+    %         if first:
+    %             column = Box(left_border,delimiter['left'],top_body,bottom_body)
+    %         else:
+    %             column = Box(previous_margin,delimiter['left'],top_body,bottom_body)
 
-        # estimate column boxes
-        for delimiter in delimiters:
-            if first:
-                column = Box(left_border,delimiter['left'],top_body,bottom_body)
-            else:
-                column = Box(previous_margin,delimiter['left'],top_body,bottom_body)
+    %     return columns
 
-        return columns
-
-    \end{lstlisting}
+    % \end{algorithmic}
 
 
     \item \resizeHeight{$\mathbf{estimate\_journal\_template}$ : $ (OCR\_Box,image\_info:Dict) \rightarrow Dict $}
@@ -299,33 +337,32 @@ with the lowest being a word container. Based on a n-ary tree structure.
 
     Fixes the blocks boxes in  box group. Eliminates empty, non delimiter boxes and eliminates intersections.
 
-    \textbf{Algorithm:}
-    \begin{lstlisting}[language=Python, caption=block\_box\_fix algorithm]
+    % \begin{algorithmic}[1]
 
-        # get blocks
-        blocks = OCR_Box.get_box_level(2)
+    %     \Comment{ get blocks}
+    %     blocks = OCR_Box.get_box_level(2)
 
         
-        for block in blocks:
-            * choose current block to analyse if no current block
-            ** if block is empty and not delimiter:
-                * remove block
+    %     for block in blocks:
+    %         \Comment{ choose current block to analyse if no current block}
+    %         \Comment{* if block is empty and not delimiter:}
+    %             \Comment{ remove block}
             
-            * check current block for intersections
-            ** if intersection:
-                * treat intersection by separating blocks
+    %         \Comment{ check current block for intersections}
+    %         \Comment{* if intersection:}
+    %             \Comment{ treat intersection by separating blocks}
             
-            * check for inner blocks
-            ** if inner blocks:
-                * keep outer block if inner blocks are empty and not delimiters
+    %         \Comment{ check for inner blocks}
+    %         \Comment{* if inner blocks:}
+    %             \Comment{ keep outer block if inner blocks are empty and not delimiters}
 
-            * if last block check for current block:
-                ** if blocks to check:
-                    *** choose next current block
+    %         \Comment{ if last block check for current block:}
+    %             \Comment{* if blocks to check:}
+    %                 \Comment{** choose next current block}
 
-        return blocks
+    %     return blocks
         
-    \end{lstlisting}
+    % \end{algorithmic}
 
     \item \resizeHeight{$\mathbf{join\_aligned\_delimiters}$ : $ (delimiters:[OCR\_Box],orientation:Str) \rightarrow [OCR\_Box] $}
     
@@ -343,39 +380,37 @@ with the lowest being a word container. Based on a n-ary tree structure.
     
     Converts ocr_results to text using journal_template.
 
-    \textbf{Algorithm:}
-    \begin{lstlisting}[language=Python, caption=journal\_template\_to\_text algorithm]
+    % \begin{algorithmic}[1]
+    %     \Comment{ Treat header}
+    %     header_ boxes = journal_template['header']
+    %     text = header_boxes.to_text()
 
-        # Treat header
-        header_ boxes = journal_template['header']
-        text = header_boxes.to_text()
-
-        # Treat columns
-        for column in journal_template['columns']:
-            # separate column in articles
-            * get article delimiters
-            * get article boxes
-            * create article
-            ** analyse article text (analyse\_text)
-            ** search for potential article atributes
-            *** title
-            *** author
-            *** body
+    %     \Comment{ Treat columns}
+    %     for column in journal_template['columns']:
+    %         \Comment{ separate column in articles}
+    %         \Comment{ get article delimiters}
+    %         \Comment{ get article boxes}
+    %         \Comment{ create article}
+    %         \Comment{* analyse article text (analyse\_text)}
+    %         \Comment{* search for potential article atributes}
+    %         \Comment{** title}
+    %         \Comment{** author}
+    %         \Comment{** body}
 
 
-        # Add articles to text
-        for article in articles:
-            * add article text to text
+    %     \Comment{ Add articles to text}
+    %     for article in articles:
+    %         \Comment{ add article text to text}
 
-        # Treat footer
-        footer_boxes = journal_template['footer']
-        text += footer_boxes.to_text()
+    %     \Comment{ Treat footer}
+    %     footer_boxes = journal_template['footer']
+    %     text += footer_boxes.to_text()
 
 
 
 
-        return text
-    \end{lstlisting}
+    %     return text
+    % \end{algorithmic}
 \end{itemize}
 
 \section{Output Converter Module}
