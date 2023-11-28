@@ -139,16 +139,34 @@ class OCR_Box:
         self.children.append(child)
         self.box.join(child.box)
 
-    def id_boxes(self,level:list[int]=[2],ids:dict=None):
-        '''Id boxes in ocr_results'''
+    def id_boxes(self,level:list[int]=[2],ids:dict=None,delimiters:bool=True,area:Box=None):
+        '''Id boxes in ocr_results
+        
+        Args:
+            level (list[int], optional): Levels to id. Defaults to [2].
+            ids (dict, optional): Dict that saves the current id for each level. Defaults to None.
+            delimiters (bool, optional): If true, only id delimiters. Defaults to True.
+            area (Box, optional): Area to id boxes. Defaults to None.'''
         if not ids:
             ids = {l:0 for l in level}
         if self.level in level:
-            self.id = ids[self.level]
-            ids[self.level] += 1
-        for child in self.children:
-            child.id_boxes(level,ids)
+            if (delimiters or not self.is_delimiter()) and (not area or self.box.is_inside_box(area)):
+                self.id = ids[self.level]
+                ids[self.level] += 1
+        if self.level < max(level):
+            for child in self.children:
+                child.id_boxes(level,ids,delimiters,area)
 
+    def clean_ids(self,level:list[int]=[2]):
+        '''Clean ids in ocr_results
+        
+        Args:
+            level (list[int], optional): Levels to clean. Defaults to [2].'''
+        if self.level in level:
+            self.id = None
+        if self.level < max(level):
+            for child in self.children:
+                child.clean_ids(level)
 
     def get_box_id(self,id:int=0,level:int=2):
         '''Get box with id and level in ocr_results'''

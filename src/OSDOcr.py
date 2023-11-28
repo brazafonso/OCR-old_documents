@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 '''Old Structured Document OCR - Main program'''
 import io
+import shutil
 import cv2
 import os
 import json
@@ -176,6 +177,10 @@ def run_tesseract_results(window):
 def main():
     global conf,current_path
 
+    # create results folder
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+
     column_target = [
         [
             sg.Image(filename=None,visible=False,key='target_image_path')
@@ -215,6 +220,11 @@ def main():
         ],
         [
             sg.Button("Seperate template text",key='button_journal_template_text')
+        ],
+        [
+            sg.Button("Calculate reading order",key='button_calculate_reading_order'),
+            sg.Image(filename=None,visible=False,key='initial_reading_order_image'),
+            sg.Image(filename=None,visible=False,key='reading_order_image'),
         ],
         [
             sg.Button("Close",key='button_close')
@@ -348,11 +358,26 @@ def main():
             target_image = values['target_input']
             print('Target:',target_image)
             if  target_image and target_image.strip() != '' and target_image.endswith(('jpg','png')):
+                # clean results folder files
+                if os.path.exists(result_path):
+                    files = os.listdir(result_path)
+                    for file in files:
+                        # if is dir, delete dir
+                        if os.path.isdir(f'{result_path}/{file}'):
+                            shutil.rmtree(f'{result_path}/{file}')
+                        else:
+                            os.remove(f'{result_path}/{file}')
+
                 conf['target_image_path'] = target_image
                 save_configs()
                 run_tesseract(target_image)
                 # update og image (fix tab)
                 update_search_block_og(window,target_image)
+
+                # create fixed result folder
+                if not os.path.exists(f'{result_path}/fixed'):
+                    os.makedirs(f'{result_path}/fixed')
+                
 
 
         # draw bounding boxes
@@ -422,7 +447,7 @@ def main():
                         result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
-                        image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
+                        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
                         cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
@@ -452,7 +477,7 @@ def main():
                         result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
-                        image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
+                        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
                         cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
@@ -467,6 +492,54 @@ def main():
                 
             else:
                 sg.popup('No target image selected')
+        
+        elif event == 'button_calculate_reading_order':
+            if target_image:
+                if os.path.exists(f'{result_path}/fixed/result_fixed.json') or os.path.exists(f'{result_path}/result.json'):
+                    # create fixed result file
+                    if not os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                        ocr_results = OCR_Box(f'{result_path}/result.json')
+                        ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
+                        result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
+                        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+                        result_dict_file.close()
+                        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+                        cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+                        csv = pd.DataFrame(ocr_results.to_dict())
+                        csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
+                    
+                    ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+
+                    image_info = get_image_info(target_image)
+                    journal_template = estimate_journal_template(ocr_results,image_info)
+                    columns_area = image_info
+                    columns_area.remove_box_area(journal_template['header'])
+                    columns_area.remove_box_area(journal_template['footer'])
+                    print('header',journal_template['header'])
+                    print('footer',journal_template['footer'])
+                    print(columns_area)
+                    # draw initial reading order
+                    ocr_results.clean_ids()
+                    ocr_results.id_boxes([2],{2:1},False,columns_area)
+                    image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+                    cv2.imwrite(f'{result_path}/initial_reading_order.jpg',image)
+                    image = Image.fromarray(image)
+                    bio = io.BytesIO()
+                    image.save(bio,format='png')
+                    window['initial_reading_order_image'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+                    
+                    reading_order = calculate_reading_order_naive(ocr_results,columns_area)
+
+                    # draw reading order
+                    image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
+                    cv2.imwrite(f'{result_path}/reading_order.jpg',image)
+                    image = Image.fromarray(image)
+                    bio = io.BytesIO()
+                    image.save(bio,format='png')
+                    window['reading_order_image'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+
 
     ########################################
     # Results tab

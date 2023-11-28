@@ -220,7 +220,7 @@ def estimate_journal_header(ocr_results:OCR_Box,image_info:Box):
             header['left'] = widthest_delimiter.box.left
             header['right'] = widthest_delimiter.box.left + widthest_delimiter.box.width
             header['top'] = widthest_delimiter.box.top
-            header['bottom'] = widthest_delimiter.box.top + widthest_delimiter.box.height
+            header['bottom'] = widthest_delimiter.box.top
 
             # get header boxes
             header_boxes = []
@@ -237,6 +237,9 @@ def estimate_journal_header(ocr_results:OCR_Box,image_info:Box):
                         header['top'] = block.box.top
                     if header['right'] < block_right:
                         header['right'] = block_right
+            
+            if header['top'] >= header['bottom']:
+                header['bottom'] = widthest_delimiter.box.bottom
             
             header = Box(header['left'],header['right'],header['top'],header['bottom'])
 
@@ -325,12 +328,206 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
         current_node = box_stack.pop()
         if current_node.level in draw_levels:
             # only draw text boxes if confidence is higher than conf
-            if current_node.level == 5 and current_node.conf < conf:
-                continue
-            (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
-            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            if id and current_node.id:
-                img = cv2.putText(img, str(current_node.id), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+            if id and current_node.id or not id:
+                if current_node.level == 5 and current_node.conf < conf:
+                    continue
+                (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
+                img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                
+                if id and current_node.id:
+                    img = cv2.putText(img, str(current_node.id), (round(x+0.1*w), round(y+0.3*h)), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 6)
         for child in current_node.children:
             box_stack.append(child)
     return img
+
+
+
+
+
+def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
+    '''Calculate reading order of OCR_Box of block level.
+
+    Order left to right, top to bottom.
+
+    Naive approach: only takes into account boxes position, not taking into account context such as article group\n'''
+
+    # id blocks
+    ocr_results.clean_ids()
+    ocr_results.id_boxes([2],{2:1},False,area)
+
+    # get blocks
+    if area:
+        blocks = ocr_results.get_boxes_in_area(area,2)
+    else:
+        blocks = ocr_results.get_boxes_level(2)
+
+    # remove delimiter blocks
+    non_del_blocks = [block for block in blocks if not block.is_delimiter()]
+
+    blocks = non_del_blocks.copy()
+    # order map
+    # for each block, list of blocks that come after it
+    order_map = {block.id:[] for block in blocks}
+
+
+
+
+    # first block
+    ## leftmost highest block
+    blocks.sort(key=lambda x: x.box.left)
+    leftmost_block_value = blocks[0].box.left
+    leftmost_blocks = [block for block in blocks if block.box.left == leftmost_block_value]
+    leftmost_blocks.sort(key=lambda x: x.box.top)
+    leftmost_block = leftmost_blocks[0]
+
+    # get highest leftmost block
+    blocks.sort(key=lambda x: x.box.top)
+    highest_block_value = blocks[0].box.top
+    top_blocks = [block for block in blocks if block.box.top == highest_block_value]
+    top_blocks.sort(key=lambda x: x.box.left)
+    top_block = top_blocks[0]
+
+    # if leftmost block is much lower than top block, choose top block
+    if leftmost_block.box.top > top_block.box.top + area.height*0.2:
+        current_block = top_block
+    # highest block horizontally aligned with leftmost block (directly above it)
+    elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
+        current_block = top_block
+    else:
+        current_block = leftmost_block
+
+    blocks.remove(current_block)
+    # calculate order map
+    while blocks:
+        if current_block:
+            print('Current block:',current_block.id)
+            # compare with other blocks
+            for block in blocks:
+                # block is aligned with current block vertically
+                if block.box.within_vertical_boxes(current_block.box,range=0.2):
+                    # block is to the right of current block
+                    if block.box.left >= current_block.box.left:
+                        # current block not in block's order map
+                        if current_block.id not in order_map[block.id]:
+                            order_map[current_block.id].append(block.id)
+                # block is below current block
+                elif block.box.top > current_block.box.top:
+                    # current block not in block's order map
+                    if current_block.id not in order_map[block.id]:
+                        order_map[current_block.id].append(block.id)
+            
+            # get next block
+            ## search for vertically aligned blocks bellow current block
+            ## if none found, search for highest leftmost block
+            next_block = None
+            potential_next_blocks = []
+            for block in blocks:
+                # block is below current block
+                if block.box.top > current_block.box.top:
+                    # block is aligned with current block horizontally
+                    if block.box.within_horizontal_boxes(current_block.box,range=0.2):
+                        potential_next_blocks.append(block)
+            
+            if potential_next_blocks:
+                print('Potential next blocks:',[block.id for block in potential_next_blocks])
+                # get leftmost highest block
+                potential_next_blocks.sort(key=lambda x: x.box.left)
+                leftmost_block_value = potential_next_blocks[0].box.left
+                leftmost_blocks = [block for block in potential_next_blocks if block.box.left == leftmost_block_value]
+                leftmost_blocks.sort(key=lambda x: x.box.top)
+                leftmost_block = leftmost_blocks[0]
+                
+                # get highest leftmost block
+                potential_next_blocks.sort(key=lambda x: x.box.top)
+                highest_block_value = potential_next_blocks[0].box.top
+                top_blocks = [block for block in potential_next_blocks if block.box.top == highest_block_value]
+                top_blocks.sort(key=lambda x: x.box.left)
+                top_block = top_blocks[0]
+
+                # if leftmost block is much lower than top block, choose top block
+                if leftmost_block.box.top > top_block.box.top + area.height*0.2:
+                    next_block = top_block
+                # highest block horizontally aligned with leftmost block (directly above it)
+                elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
+                    next_block = top_block
+                else:
+                    next_block = leftmost_block
+
+
+
+            if not next_block:
+                print('No next block found',current_block.id)
+                # get leftmost highest block
+                blocks.sort(key=lambda x: x.box.left)
+                leftmost_block_value = blocks[0].box.left
+                leftmost_blocks = [block for block in blocks if block.box.left == leftmost_block_value] 
+                leftmost_blocks.sort(key=lambda x: x.box.top)
+                leftmost_block = leftmost_blocks[0]
+
+                # get highest leftmost block
+                # get highest leftmost block
+                blocks.sort(key=lambda x: x.box.top)
+                highest_block_value = blocks[0].box.top
+                top_blocks = [block for block in blocks if block.box.top == highest_block_value]
+                top_blocks.sort(key=lambda x: x.box.left)
+                top_block = top_blocks[0]
+
+                # if leftmost block is much lower than top block, choose top block
+                if leftmost_block.box.top > top_block.box.top + area.height*0.2:
+                    next_block = top_block
+                # highest block horizontally aligned with leftmost block (directly above it)
+                elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
+                    next_block = top_block
+                else:
+                    next_block = leftmost_block
+
+
+            
+            if next_block:
+                blocks.remove(next_block)
+                # if next block is not in current_block's order map, add it
+                if next_block.id not in order_map[current_block.id]:
+                    order_map[current_block.id].append(next_block.id)
+                current_block = next_block
+            else:
+                current_block = None
+        else:
+            break
+    
+    print('Order map:',order_map)
+
+    # order map to list
+    order_list = []
+    while len(order_list) < len(order_map):
+        # get first block
+        # no blocks before it in order_map, that are not already in order_list
+        first_block = None
+        for block in order_map:
+            if block not in order_list:
+                potential_first_block = block
+                valid = True
+                for other_blocks in order_map:
+                    # potential first block in other block's order map
+                    if potential_first_block in order_map[other_blocks]:
+                        # other block not in order list
+                        if other_blocks not in order_list:
+                            valid = False
+                            break
+                if valid:
+                    first_block = potential_first_block
+                    break
+
+        # add blocks to order_list
+        order_list.append(first_block)
+
+    # change blocks id to order
+    for block in non_del_blocks:
+        block.id = order_list.index(block.id) +1
+
+    return ocr_results
+
+
+
+            
+    
+

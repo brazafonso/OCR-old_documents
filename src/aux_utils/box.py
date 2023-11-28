@@ -60,19 +60,34 @@ class Box:
             'height':self.height
         }
     
-    def within_vertical_boxes(self,box):
-        '''Check if boxes are within each other vertically'''
-        if self.top >= box.top and self.bottom <= box.bottom:
+    def within_vertical_boxes(self,box,range=0):
+        '''Check if boxes are within each other vertically, considering a range'''
+        # avoid division by zero
+        topmost = min(self.top,box.top)
+        toplest = max(self.top,box.top)
+        bottommost = max(self.bottom,box.bottom)
+        bottomlest = min(self.bottom,box.bottom)
+
+        # check if self is within box with range
+        if (topmost == toplest or self.top <= box.top or abs(1 - toplest/topmost) <= range) and (bottommost == bottomlest or self.bottom >= box.bottom or abs(1 - bottomlest/bottommost) <= range):
             return True
-        elif box.top >= self.top and box.bottom <= self.bottom:
+        elif (topmost == toplest or box.top <= self.top or abs(1 - toplest/topmost) <= range) and (bottommost == bottomlest or box.bottom >= self.bottom or abs(1 - bottomlest/bottommost) <= range):
             return True
         return False
+            
 
-    def within_horizontal_boxes(self,box):
-        '''Check if boxes are within each other horizontally'''
-        if self.left <= box.left and self.right >= box.right:
+    def within_horizontal_boxes(self,box,range=0):
+        '''Check if boxes are within each other horizontally, considering a range'''
+        # avoid division by zero
+        leftmost = min(self.left,box.left)
+        leftlest = max(self.left,box.left)
+        rightmost = max(self.right,box.right)
+        rightlest = min(self.right,box.right)
+
+        # check if self is within box with range
+        if (leftmost == leftlest or self.left <= box.left or abs(1 - leftlest/leftmost) <= range) and (rightmost == rightlest or self.right >= box.right or abs(1 - rightlest/rightmost) <= range):
             return True
-        elif box.left <= self.left and box.right >= self.right:
+        elif (leftmost == leftlest or box.left <= self.left or abs(1 - leftlest/leftmost) <= range) and (rightmost == rightlest or box.right >= self.right or abs(1 - rightlest/rightmost) <= range):
             return True
         return False
 
@@ -126,25 +141,27 @@ class Box:
 
     def remove_box_area(self,area):
         '''Remove area from box (only if intersect)'''
-        intersect = self.intersects_box(area)
-        inside = self.is_inside_box(area)
-        if intersect and not inside:
-            # Remove area from box
-            ## area to the right
-            if area.right > self.right:
-                self.right = area.left
-            ## area to the left
-            if area.left < self.left:
-                self.left = area.right
-            ## area to the top
-            if area.top > self.top:
-                self.bottom = area.top
-            ## area to the bottom
-            if area.bottom < self.bottom:
-                self.top = area.bottom
-            # Update width and height
-            self.width = self.right - self.left
-            self.height = self.bottom - self.top
+        if area:
+            intersect = self.intersects_box(area)
+            inside = self.is_inside_box(area)
+            if intersect and not inside:
+                above = area.top >= self.top
+                to_left = area.left <= self.left
+
+                # Remove area from box
+                if not above and area.left <= self.left:
+                    self.left = area.right
+                elif not above and area.right >= self.right:
+                    self.right = area.left
+                elif above and area.bottom <= self.bottom:
+                    self.top = area.bottom
+                elif not above and area.top >= self.top:
+                    self.bottom = area.top
+
+
+                # Update width and height
+                self.width = self.right - self.left
+                self.height = self.bottom - self.top
         
 
     def box_is_smaller(self,box):
@@ -167,10 +184,18 @@ class Box:
     def is_aligned(self,box:'Box',orientation='horizontal',error_margin=0.1):
         '''Check if boxes are aligned'''
         if orientation == 'horizontal':
-            if abs(1 - self.top/box.top) <= error_margin:
+            high = max(self.top,box.top)
+            low = min(self.top,box.top)
+            if low == high:
+                return True
+            if abs(1 - low/high) <= error_margin:
                 return True
         elif orientation == 'vertical':
-            if abs(1 - self.left/box.left) <= error_margin:
+            high = max(self.left,box.left)
+            low = min(self.left,box.left)
+            if low == high:
+                return True
+            if abs(1 - low/high) <= error_margin:
                 return True
         return False
     
