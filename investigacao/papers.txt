@@ -26,7 +26,7 @@ https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009 - 2014
     * imagens utilizadas nao tem em conta danos de idade
     * utilizacao de processamento de imagem para remocao de delimitadores numa fase inicial e criacao dos diferentes blocos
     de texto e imagem
-    * utilizacao de numero compacto mas logico de parametrosna funcao de labeling dos blocos, incluindo imagens
+    * utilizacao de numero compacto mas logico de parametros na funcao de labeling dos blocos, incluindo imagens
     * potencial de adaptabilidade para diferentes layouts, visto nao seguir heuristicas especificas
     * resultados bons, mas sob um datasete muito reduzido (~45)
     ** bastantes referencias a artigos sobre estado da arte, assim como uso de tecnologias ja criadas

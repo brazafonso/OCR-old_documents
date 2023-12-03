@@ -342,6 +342,49 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
 
 
 
+def next_top_block(blocks:list[OCR_Box]):
+    '''Get next top block\n
+    Estimates block with best potential to be next top block\n
+    Uses top and leftmos blocks for reference\n'''
+    next_block = None
+    if blocks:
+        # get top blocks
+        blocks.sort(key=lambda x: x.box.top)
+        highest_block_value = blocks[0].box.top
+        next_block = blocks[0]
+        top_blocks = [block for block in blocks if block.box.top == highest_block_value]
+
+        # get bocks within vertical range of top blocks
+        potential_top_blocks = []
+        for block in blocks:
+            for top_block in top_blocks:
+                if block.box.within_vertical_boxes(top_block.box,range=0.2):
+                    potential_top_blocks.append(block)
+                    break
+
+        print('Potential top blocks:',[block.id for block in potential_top_blocks])
+        
+        if potential_top_blocks:
+            # get leftmost block
+            potential_top_blocks.sort(key=lambda x: x.box.left)
+            leftmost_block= potential_top_blocks[0]
+            next_block = potential_top_blocks[0]
+            # get blocks within horizontal range of leftmost blocks
+            potential_top_blocks = []
+            for block in blocks:
+                if block.box.within_horizontal_boxes(leftmost_block.box,range=0.2):
+                    potential_top_blocks.append(block)
+                    break
+
+            print('Potential top blocks:',[block.id for block in potential_top_blocks])
+
+            if potential_top_blocks:
+                # get highest block
+                potential_top_blocks.sort(key=lambda x: x.box.top)
+                next_block = potential_top_blocks[0]
+
+    return next_block
+    
 
 
 def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
@@ -373,28 +416,9 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
 
 
     # first block
-    ## leftmost highest block
-    blocks.sort(key=lambda x: x.box.left)
-    leftmost_block_value = blocks[0].box.left
-    leftmost_blocks = [block for block in blocks if block.box.left == leftmost_block_value]
-    leftmost_blocks.sort(key=lambda x: x.box.top)
-    leftmost_block = leftmost_blocks[0]
-
-    # get highest leftmost block
-    blocks.sort(key=lambda x: x.box.top)
-    highest_block_value = blocks[0].box.top
-    top_blocks = [block for block in blocks if block.box.top == highest_block_value]
-    top_blocks.sort(key=lambda x: x.box.left)
-    top_block = top_blocks[0]
-
-    # if leftmost block is much lower than top block, choose top block
-    if leftmost_block.box.top > top_block.box.top + area.height*0.2:
-        current_block = top_block
-    # highest block horizontally aligned with leftmost block (directly above it)
-    elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
-        current_block = top_block
-    else:
-        current_block = leftmost_block
+    ## best block between the top blocks and the leftmost blocks
+    current_block = next_top_block(blocks)
+    
 
     blocks.remove(current_block)
     # calculate order map
@@ -457,29 +481,7 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
 
             if not next_block:
                 print('No next block found',current_block.id)
-                # get leftmost highest block
-                blocks.sort(key=lambda x: x.box.left)
-                leftmost_block_value = blocks[0].box.left
-                leftmost_blocks = [block for block in blocks if block.box.left == leftmost_block_value] 
-                leftmost_blocks.sort(key=lambda x: x.box.top)
-                leftmost_block = leftmost_blocks[0]
-
-                # get highest leftmost block
-                # get highest leftmost block
-                blocks.sort(key=lambda x: x.box.top)
-                highest_block_value = blocks[0].box.top
-                top_blocks = [block for block in blocks if block.box.top == highest_block_value]
-                top_blocks.sort(key=lambda x: x.box.left)
-                top_block = top_blocks[0]
-
-                # if leftmost block is much lower than top block, choose top block
-                if leftmost_block.box.top > top_block.box.top + area.height*0.2:
-                    next_block = top_block
-                # highest block horizontally aligned with leftmost block (directly above it)
-                elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
-                    next_block = top_block
-                else:
-                    next_block = leftmost_block
+                next_block = next_top_block(blocks)
 
 
             
