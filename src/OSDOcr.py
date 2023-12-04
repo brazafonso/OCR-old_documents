@@ -384,6 +384,7 @@ def main():
         elif event == 'draw_bounding_boxes':
             if os.path.exists(f'{result_path}/result.json') and target_image:
                 ocr_results = OCR_Box(f'{result_path}/result.json')
+                ocr_results = categorize_boxes(ocr_results)
                 box_level = values['draw_bounding_boxes_level']
                 image = draw_bounding_boxes(ocr_results,target_image,[box_level])
                 bio = io.BytesIO()
@@ -509,6 +510,7 @@ def main():
                         csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
                     
                     ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                    ocr_results = categorize_boxes(ocr_results)
 
                     image_info = get_image_info(target_image)
                     journal_template = estimate_journal_template(ocr_results,image_info)

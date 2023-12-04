@@ -284,4 +284,32 @@ class OCR_Box:
         return boxes
     
 
+    def type_color(self)->(int,int,int):
+        '''Get block color, in rgb value, based on type
+        
+        Colors:
+            - text: yellow
+            - image: black
+            - title: red
+            - delimiter: blue
+            - caption : white
+            - other: green'''
+        
+        if self.type == 'text':
+            return (255,255,0)
+        elif self.type == 'image':
+            return (0,0,0)
+        elif self.type == 'title':
+            return (255,0,0)
+        elif self.type == 'delimiter':
+            return (0,0,255)
+        elif self.type == 'caption':
+            return (255,255,255)
+        else:
+            return (0,255,0)
+            
+            
+        
+    
+
 

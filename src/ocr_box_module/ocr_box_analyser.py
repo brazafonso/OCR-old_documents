@@ -332,10 +332,11 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
                 if current_node.level == 5 and current_node.conf < conf:
                     continue
                 (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
-                img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                color = current_node.type_color()
+                img = cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
                 
                 if id and current_node.id:
-                    img = cv2.putText(img, str(current_node.id), (round(x+0.1*w), round(y+0.3*h)), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 6)
+                    img = cv2.putText(img, str(current_node.id), (round(x+0.1*w), round(y+0.3*h)), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255,0,0), 6)
         for child in current_node.children:
             box_stack.append(child)
     return img
@@ -529,6 +530,54 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
     return ocr_results
 
 
+
+
+def categorize_boxes(ocr_results:OCR_Box):
+    '''Categorize blocks into different types
+    
+    Types:
+    - 1: Delimiter
+    - 2: Title
+    - 3: Caption
+    - 4: Text
+    - 5: Image
+    - 6: Table
+    - 7: Other
+    '''
+
+    # analyze boxes
+    box_analysis = analyze_text(ocr_results)
+
+    # get blocks
+    blocks = ocr_results.get_boxes_level(2)
+
+    # categorize blocks
+    for block in blocks:
+        # empty block
+        if block.is_empty():
+            if block.is_delimiter():
+                block.type = 'delimiter'
+            else:
+                block.type = 'other'
+            ## TODO: categorize empty such as images
+        # non empty block
+        else:
+            if block.is_text_size(box_analysis['normal_text_size']):
+                # text block
+                block.type = 'text'
+            # greater than normal text size
+            elif block.calculate_mean_height() > box_analysis['normal_text_size']:
+                # title block
+                block.type = 'title'
+            # smaller than normal text size
+            elif block.calculate_mean_height() < box_analysis['normal_text_size']:
+                # caption block
+                block.type = 'caption'
+            else:
+                # other
+                block.type = 'other'
+
+    return ocr_results
 
             
     
