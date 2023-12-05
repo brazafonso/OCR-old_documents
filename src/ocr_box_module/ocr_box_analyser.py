@@ -363,7 +363,6 @@ def next_top_block(blocks:list[OCR_Box]):
                     potential_top_blocks.append(block)
                     break
 
-        print('Potential top blocks:',[block.id for block in potential_top_blocks])
         
         if potential_top_blocks:
             # get leftmost block
@@ -377,7 +376,6 @@ def next_top_block(blocks:list[OCR_Box]):
                     potential_top_blocks.append(block)
                     break
 
-            print('Potential top blocks:',[block.id for block in potential_top_blocks])
 
             if potential_top_blocks:
                 # get highest block
@@ -455,28 +453,7 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
             
             if potential_next_blocks:
                 print('Potential next blocks:',[block.id for block in potential_next_blocks])
-                # get leftmost highest block
-                potential_next_blocks.sort(key=lambda x: x.box.left)
-                leftmost_block_value = potential_next_blocks[0].box.left
-                leftmost_blocks = [block for block in potential_next_blocks if block.box.left == leftmost_block_value]
-                leftmost_blocks.sort(key=lambda x: x.box.top)
-                leftmost_block = leftmost_blocks[0]
-                
-                # get highest leftmost block
-                potential_next_blocks.sort(key=lambda x: x.box.top)
-                highest_block_value = potential_next_blocks[0].box.top
-                top_blocks = [block for block in potential_next_blocks if block.box.top == highest_block_value]
-                top_blocks.sort(key=lambda x: x.box.left)
-                top_block = top_blocks[0]
-
-                # if leftmost block is much lower than top block, choose top block
-                if leftmost_block.box.top > top_block.box.top + area.height*0.2:
-                    next_block = top_block
-                # highest block horizontally aligned with leftmost block (directly above it)
-                elif leftmost_block.box.within_horizontal_boxes(top_block.box,range=0.2):
-                    next_block = top_block
-                else:
-                    next_block = leftmost_block
+                next_block = next_top_block(potential_next_blocks)
 
 
 
@@ -523,11 +500,248 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
         # add blocks to order_list
         order_list.append(first_block)
 
+    print('Order list:',order_list)
     # change blocks id to order
     for block in non_del_blocks:
         block.id = order_list.index(block.id) +1
 
+    # change delimiter id to 0
+    for block in [block for block in ocr_results.get_boxes_level(2) if block.type == 'delimiter']:
+        block.id = 0
+
     return ocr_results
+
+
+
+def next_top_block_context(blocks:list[OCR_Box],current_block:OCR_Box=None):
+    '''Get next top block
+    
+    Estimates block with best potential to be next top block, using context such as block type as reference
+    
+    If current_block is given, uses it as further reference'''
+
+    next_block = None
+    current_block_type = None
+    if current_block:
+        current_block_type = current_block.type
+
+    non_delimiters = [block for block in blocks if block.type != 'delimiter']
+    if non_delimiters:
+        # if no current block, get title blocks
+        if not current_block_type:
+            print('No current block, getting title blocks')
+            title_blocks = [block for block in blocks if block.type == 'title']
+            if title_blocks:
+                # get best title block
+                next_block = next_top_block(title_blocks)
+            else: 
+                # remove text blocks with start_text=False
+                potential_blocks = [block for block in non_delimiters if not (block.type == 'text' and block.start_text == False)]
+                next_block = next_top_block(potential_blocks)
+
+        # block title
+        ## search for blocks bellow title block, different from title
+        ## if none found try other types of block (other, image, caption)
+        elif current_block_type == 'title':
+            print('Current block is title')
+            # get text blocks
+            bellow_blocks = [block for block in non_delimiters if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.3)]
+            if bellow_blocks:
+                print('Bellow blocks found',[block.id for block in bellow_blocks])
+                # get best text block
+                bellow_block = next_top_block(bellow_blocks)
+                print('Bellow block:',bellow_block.id)
+                if bellow_block and bellow_block.type != 'title':
+                    next_block = bellow_block
+
+        # block text
+        ## if current block has unfinished text, search for text blocks bellow current block with start_text=False
+        ## if none found, search for text blocks to the right of current block with start_text=False
+        ## if none found, search for text blocks directly bellow current block
+        ### if delimiter found, search for text blocks to the right of block and within delimiter's horizontal range
+        elif current_block_type == 'text':
+            print('Current block is text',current_block.id,current_block.start_text,current_block.end_text)
+            # get text blocks
+            text_blocks = [block for block in blocks if block.type == 'text']
+            bellow_blocks = [block for block in blocks if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.1)]
+            bellow_block = None
+            if bellow_blocks:
+                # get top block
+                bellow_blocks.sort(key=lambda x: x.box.top)
+                bellow_block = bellow_blocks[0]
+            ## text not finished
+            if current_block.end_text == False:
+                print('Text not finished')
+                ## if bellow block is delimiter, search to the right of block and within delimiter's horizontal range
+                if bellow_block and bellow_block.type == 'delimiter' and bellow_block.box.get_box_orientation() == 'horizontal':
+                    print('Bellow block is delimiter',bellow_block.id)
+                    potential_blocks = [block for block in text_blocks if  block.box.top < bellow_block.box.top and block.box.within_horizontal_boxes(bellow_block.box,range=0.3)]
+                    if potential_blocks:
+                        # get top block
+                        ## TODO: may lack title context
+                        next_block = next_top_block(potential_blocks)
+                ## if bellow block is not delimiter, search for text blocks bellow current block with start_text=False
+                ### if text block is found with start_text=True before a block with start_text=False, search for text blocks to the right of block with start_text=False
+                #### TODO: title context could be helpful
+                elif bellow_block:
+                    print('Bellow block is not delimiter')
+                    #### TODO: dont ignore non text blocks
+                    bellow_blocks = [block for block in text_blocks if block.box.top > current_block.box.top and block.box.within_horizontal_boxes(current_block.box,range=0.3)]
+                    if bellow_blocks:
+                        # get top block
+                        bellow_block = next_top_block(bellow_blocks)
+                        # if bellow block has start_text=False
+                        if bellow_block.start_text == False:
+                            # get text blocks to the right of current block with start_text=False
+                            next_block = bellow_block
+                        # else search to the right
+                        else:
+                            ## choose block to the right if it has start_text=False
+                            potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3)]
+                            next_block = next_top_block(potential_blocks)
+                            ## else search for text blocks bellow current block
+                            if next_block and next_block.start_text == True:
+                                next_block = next_top_block(bellow_blocks)
+
+                    # no blocks bellow current block, search to the right
+                    else:
+                        potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3) and block.start_text == False]
+                        next_block = next_top_block(potential_blocks)
+                else:
+                    potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3) and block.start_text == False]
+                    next_block = next_top_block(potential_blocks)
+            ## text finished
+            ### if bellow block is delimiter, search to the right of block and within delimiter's horizontal range
+            ### TODO: title context could be helpful to decide if search to the right
+            else:
+                print('Text finished')
+                if bellow_block:
+                    print('Bellow block:',bellow_block.id)
+                    # if bellow is type text
+                    if bellow_block.type == 'text':
+                        # if start_text=True, is next block
+                        if bellow_block.start_text == True:
+                            next_block = bellow_block
+                    # next block is bellow block
+                    else:
+                        next_block = bellow_block
+
+                # no blocks bellow current block
+                else:
+                    potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3)]
+                    next_block = next_top_block(potential_blocks)
+
+        # image block
+        ## search for caption blocks bellow current block
+        elif current_block_type == 'image':
+            print('Current block is image')
+            # get caption blocks
+            caption_blocks = [block for block in blocks if block.type == 'caption' and block.box.top > current_block.box.top]
+            if caption_blocks:
+                # get best caption block
+                next_block = next_top_block(caption_blocks)
+                
+        if not next_block or next_block.type == 'delimiter' and non_delimiters:
+            print('No next block found',current_block.id if current_block else None)
+            next_block = next_top_block(non_delimiters)
+        
+    return next_block
+
+
+
+
+
+def calculate_reading_order_naive_context(ocr_results:OCR_Box,area:Box=None):
+    '''Calculate reading order of OCR_Box of block level.
+
+    Order left to right, top to bottom.
+
+    Naive approach: only takes into account boxes position, not taking into account context such as article group
+    
+    Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n'''
+
+    # id blocks
+    # ocr_results.clean_ids()
+    # ocr_results.id_boxes([2],{2:1},False,area)
+
+    # get blocks
+    if area:
+        o_blocks = ocr_results.get_boxes_in_area(area,2)
+    else:
+        o_blocks = ocr_results.get_boxes_level(2)
+
+
+    blocks = o_blocks.copy()
+    # order map
+    # for each block, list of blocks that come after it
+    order_map = {block.id:[] for block in blocks if block.type != 'delimiter'}
+
+
+    # first block
+    ## best block between the top blocks and the leftmost blocks
+    current_block = next_top_block_context(blocks)
+    
+
+    blocks.remove(current_block)
+    # calculate order map
+    while blocks:
+        if current_block:
+            print('Current block:',current_block.id,current_block.type)
+            next_block = next_top_block_context(blocks,current_block)
+            if next_block:
+                print('Next block:',next_block.id)
+                if next_block.id in order_map:
+                    blocks.remove(next_block)
+                    # if next block is not in current_block's order map, add it
+                    if next_block.id not in order_map[current_block.id]:
+                        order_map[current_block.id].append(next_block.id)
+                        
+                current_block = next_block
+            else:
+                current_block = None
+            
+        else:
+            break
+    
+    print('Order map:',order_map)
+
+    # order map to list
+    order_list = []
+    while len(order_list) < len(order_map):
+        # get first block
+        # no blocks before it in order_map, that are not already in order_list
+        first_block = None
+        for block in order_map:
+            if block not in order_list:
+                potential_first_block = block
+                valid = True
+                for other_blocks in order_map:
+                    # potential first block in other block's order map
+                    if potential_first_block in order_map[other_blocks]:
+                        # other block not in order list
+                        if other_blocks not in order_list:
+                            valid = False
+                            break
+                if valid:
+                    first_block = potential_first_block
+                    break
+
+        # add blocks to order_list
+        order_list.append(first_block)
+
+    print ('Order list:',order_list)
+    
+    # change blocks id to order
+    for block in [block for block in ocr_results.get_boxes_level(2) if block.type != 'delimiter' and block.id]:
+        block.id = order_list.index(block.id) +1
+
+    # change delimiter id to 0
+    for block in [block for block in ocr_results.get_boxes_level(2) if block.type == 'delimiter']:
+        block.id = len(order_list) +1
+    
+    return ocr_results
+
+
 
 
 
@@ -577,6 +791,18 @@ def categorize_boxes(ocr_results:OCR_Box):
                 # other
                 block.type = 'other'
 
+            # text characteristics
+            block_text = block.to_text().strip()
+            # if first character is lower case, starts with lower case
+            if not block_text[0].isupper() and not re.match(r'^-\s*[A-Z]',block_text):
+                block.start_text = False
+            else:
+                block.start_text = True
+            # if last character is punctuation, ends text
+            if block_text[-1] in ['.','!','?']:
+                block.end_text = True
+            else:
+                block.end_text = False
     return ocr_results
 
             

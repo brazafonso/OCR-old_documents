@@ -28,6 +28,8 @@ class OCR_Box:
         self.type = None # type of box (text, image ,delimiter, table, etc)
         self.children = []
         self.parent = None
+        self.start_text = None
+        self.end_text = None
         if len(args) == 1:
             # from args list
             if isinstance(args[0],list):

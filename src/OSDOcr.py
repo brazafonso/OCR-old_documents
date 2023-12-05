@@ -227,6 +227,11 @@ def main():
             sg.Image(filename=None,visible=False,key='reading_order_image'),
         ],
         [
+            sg.Button("Calculate reading order | context",key='button_calculate_reading_order_context'),
+            sg.Image(filename=None,visible=False,key='initial_reading_order_image_context'),
+            sg.Image(filename=None,visible=False,key='reading_order_image_context'),
+        ],
+        [
             sg.Button("Close",key='button_close')
         ]
     ]
@@ -540,6 +545,54 @@ def main():
                     bio = io.BytesIO()
                     image.save(bio,format='png')
                     window['reading_order_image'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+
+        elif event == 'button_calculate_reading_order_context':
+            if target_image:
+                if os.path.exists(f'{result_path}/fixed/result_fixed.json') or os.path.exists(f'{result_path}/result.json'):
+                    # create fixed result file
+                    if not os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                        ocr_results = OCR_Box(f'{result_path}/result.json')
+                        ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
+                        result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
+                        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+                        result_dict_file.close()
+                        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+                        cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+                        csv = pd.DataFrame(ocr_results.to_dict())
+                        csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
+                    
+                    ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                    ocr_results = categorize_boxes(ocr_results)
+
+                    image_info = get_image_info(target_image)
+                    journal_template = estimate_journal_template(ocr_results,image_info)
+                    columns_area = image_info
+                    columns_area.remove_box_area(journal_template['header'])
+                    columns_area.remove_box_area(journal_template['footer'])
+                    print('header',journal_template['header'])
+                    print('footer',journal_template['footer'])
+                    print(columns_area)
+                    # draw initial reading order
+                    ocr_results.clean_ids()
+                    ocr_results.id_boxes([2],{2:1},True,columns_area)
+                    image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+                    cv2.imwrite(f'{result_path}/initial_reading_order_context.jpg',image)
+                    image = Image.fromarray(image)
+                    bio = io.BytesIO()
+                    image.save(bio,format='png')
+                    window['initial_reading_order_image_context'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+                    
+                    reading_order = calculate_reading_order_naive_context(ocr_results,columns_area)
+
+                    # draw reading order
+                    image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
+                    cv2.imwrite(f'{result_path}/reading_order_context.jpg',image)
+                    image = Image.fromarray(image)
+                    bio = io.BytesIO()
+                    image.save(bio,format='png')
+                    window['reading_order_image_context'].update(data=bio.getvalue(),visible=True)
                     window.refresh()
 
 
