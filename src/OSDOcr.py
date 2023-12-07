@@ -5,6 +5,7 @@ import shutil
 import cv2
 import os
 import json
+import argparse
 import pandas as pd
 import PySimpleGUI as sg
 from pytesseract import Output
@@ -22,6 +23,15 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 result_path = f'{current_path}/results'
 
 conf = {}
+
+
+def process_args():
+    '''Process command line arguments'''
+    parser = argparse.ArgumentParser(description='Old Structured Document OCR - Main program')
+    parser.add_argument('-t','--test',action='store_true',help='Run tests')
+    args = parser.parse_args()
+    return args
+
 
 
 
@@ -726,5 +736,39 @@ def main():
 
 if __name__ == '__main__':
     read_configs()
-    main()
+    args = process_args()
+    # test mode
+    if args.test:
+        # get fixed results
+        if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+            ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+        else:
+            ocr_results = OCR_Box(f'{result_path}/result.json')
+            ocr_results = bound_box_fix(ocr_results,2,None)
+            ocr_results = categorize_boxes(ocr_results)
+            ocr_results.id_boxes([2])
+            result_dict_file = open(f'{result_path}/fixed/result_fixed.json','w')
+            json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+            result_dict_file.close()
+            image = draw_bounding_boxes(ocr_results,f'{result_path}/result.jpg',[2],id=True)
+            cv2.imwrite(f'{result_path}/fixed/result_fixed.jpg',image)
+            csv = pd.DataFrame(ocr_results.to_dict())
+            csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
+        
+        # get journal template
+        image_info = get_image_info(f'{result_path}/fixed/result_fixed.jpg')
+        journal_template = estimate_journal_template(ocr_results,image_info)
+        columns_area = image_info
+        columns_area.remove_box_area(journal_template['header'])
+        columns_area.remove_box_area(journal_template['footer'])
+
+        orcer_results = categorize_boxes(ocr_results)
+
+        # run topologic_order
+        topologic_order(ocr_results,columns_area)
+
+
+    # normal mode - open GUI
+    else:
+        main()
 

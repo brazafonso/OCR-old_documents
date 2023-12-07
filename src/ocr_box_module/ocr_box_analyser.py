@@ -13,9 +13,17 @@ import math
 
 
 
-def analyze_text(ocr_results:OCR_Box):
+def analyze_text(ocr_results:OCR_Box)->dict:
     '''Analyse text from ocr_results and return text data as dict\n
-    Tries to find info about normal text size, number of lines and number of columns\n'''
+    Tries to find info about normal text size, number of lines and number of columns\n
+    
+    ### Result dict:
+    - normal_text_size: average size of normal text
+    - normal_text_gap: average gap between normal text lines
+    - number_lines: estimated number of lines
+    - number_columns: estimated number of columns
+    - columns: list of columns bounding boxes\n
+    '''
     number_columns = 0
 
     lines = ocr_results.get_boxes_level(4)
@@ -343,25 +351,28 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
 
 
 
-def next_top_block(blocks:list[OCR_Box]):
+def next_top_block(blocks:list[OCR_Box],origin:Box=Box(0,0,0,0)):
     '''Get next top block\n
     Estimates block with best potential to be next top block\n
-    Uses top and leftmos blocks for reference\n'''
+    Uses top and leftmost blocks for reference\n'''
     next_block = None
     if blocks:
+        potential_top_block = None
+        potential_leftmost_block = None
+
         # get top blocks
         blocks.sort(key=lambda x: x.box.top)
         highest_block_value = blocks[0].box.top
         next_block = blocks[0]
         top_blocks = [block for block in blocks if block.box.top == highest_block_value]
 
-        # get bocks within vertical range of top blocks
+        # get blocks within vertical range of top blocks
         potential_top_blocks = []
+        potential_top_blocks += top_blocks
         for block in blocks:
             for top_block in top_blocks:
-                if block.box.within_vertical_boxes(top_block.box,range=0.2):
+                if block.box.within_vertical_boxes(top_block.box,range=0.05):
                     potential_top_blocks.append(block)
-                    break
 
         
         if potential_top_blocks:
@@ -372,15 +383,43 @@ def next_top_block(blocks:list[OCR_Box]):
             # get blocks within horizontal range of leftmost blocks
             potential_top_blocks = []
             for block in blocks:
-                if block.box.within_horizontal_boxes(leftmost_block.box,range=0.2):
+                if block.box.within_horizontal_boxes(leftmost_block.box,range=0.05):
                     potential_top_blocks.append(block)
-                    break
 
 
             if potential_top_blocks:
                 # get highest block
                 potential_top_blocks.sort(key=lambda x: x.box.top)
                 next_block = potential_top_blocks[0]
+                potential_top_block = potential_top_blocks[0]
+        
+        # get leftmost blocks
+        blocks.sort(key=lambda x: x.box.left)
+        leftmost_block_value = blocks[0].box.left
+
+        # get blocks within horizontal range of leftmost blocks
+        potential_leftmost_blocks = []
+        leftmost_blocks = [block for block in blocks if block.box.left == leftmost_block_value]
+
+        for block in blocks:
+            for leftmost_block in leftmost_blocks:
+                if block.box.within_horizontal_boxes(leftmost_block.box,range=0.05):
+                    potential_leftmost_blocks.append(block)
+
+        if potential_leftmost_blocks:
+            # get top block
+            potential_leftmost_blocks.sort(key=lambda x: x.box.top)
+            next_block = potential_leftmost_blocks[0]
+            potential_leftmost_block = potential_leftmost_blocks[0]
+
+        if potential_leftmost_block and potential_top_block:
+            # get block with least distance to top left corner
+            leftmost_distance = math.sqrt(((origin.left-potential_leftmost_block.box.left)**2)+((origin.top-potential_leftmost_block.box.top)**2))
+            top_distance = math.sqrt(((origin.left-potential_top_block.box.left)**2)+((origin.top-potential_top_block.box.top)**2))
+            if leftmost_distance < top_distance:
+                next_block = potential_leftmost_block
+            else:
+                next_block = potential_top_block
 
     return next_block
     
@@ -806,5 +845,129 @@ def categorize_boxes(ocr_results:OCR_Box):
     return ocr_results
 
             
-    
 
+def topologic_order(ocr_results:OCR_Box,area:Box=None):
+    '''Generate topologic order of blocks\n'''
+
+    # get blocks
+    if area:
+        blocks = ocr_results.get_boxes_in_area(area,2)
+    else:
+        blocks = ocr_results.get_boxes_level(2)
+    non_delimiters = [block for block in blocks if block.type != 'delimiter']
+
+    # order map
+    # for each block, list of blocks that come after it
+    order_map = {block.id:[] for block in non_delimiters}
+
+
+    # calculate order map
+
+    # first block
+    current_block = next_top_block(non_delimiters)
+    context_box = current_block.box
+
+    order_chosen = []
+
+    for block in non_delimiters:
+        if current_block:
+            print('Current block:',current_block.id,current_block.type)
+            order_chosen.append(current_block.id)
+            # block is before every block under it
+            # block is before every block directly to the right of it
+            potential_before_blocks = [b for b in non_delimiters if context_box.within_horizontal_boxes(b.box,range=0.2)]
+            bellow_block = get_block_bellow(current_block,non_delimiters)
+            if bellow_block:
+                if bellow_block not in potential_before_blocks:
+                    potential_before_blocks.append(bellow_block)
+
+            # block is before every block under it
+            for before_block in potential_before_blocks:
+                # if before block is not in order map, and current block is not in before block's order map
+                # and before block not in topoligical order greater than current block
+                if before_block.id not in order_map[current_block.id] and current_block.id not in order_map[before_block.id] and before_block.id not in order_chosen:
+                    order_map[current_block.id].append(before_block.id)
+            
+
+            # get next block
+            next_block = None
+            # check blocks added to order map, giving context of greatest width
+            if order_map[current_block.id]:
+                potential_next_blocks = [b for b in non_delimiters if b.id in order_map[current_block.id] and b.id not in order_chosen]
+                print('Potential next blocks:',[block.id for block in potential_next_blocks])
+                next_block = next_top_block(potential_next_blocks,current_block.box)
+                if block.box.width > context_box.width:
+                    context_box = block.box
+
+            # if no block added to order map, get next top block
+            if not next_block:
+                print('No next block found',current_block.id)
+                not_chosen = [block for block in non_delimiters if block.id not in order_chosen]
+                next_block = next_top_block(not_chosen)
+                if next_block:
+                    # if next block, current block is before it
+                    order_map[current_block.id].append(next_block.id)
+                    context_box = next_block.box
+            
+            current_block = None
+            if next_block:
+                current_block = next_block
+
+        else:
+            break
+
+    print('Order map:')
+
+    for block in order_chosen:
+        print(block,sorted(order_map[block]))
+
+    # order map to list
+    order_list = []
+    while len(order_list) < len(order_map):
+        # get first block
+        # no blocks before it in order_map, that are not already in order_list
+        first_block = None
+        for block in order_map:
+            if block not in order_list:
+                potential_first_block = block
+                valid = True
+                for other_blocks in order_map:
+                    # potential first block in other block's order map
+                    if potential_first_block in order_map[other_blocks]:
+                        # other block not in order list
+                        if other_blocks not in order_list:
+                            valid = False
+                            break
+                if valid:
+                    first_block = potential_first_block
+                    break
+
+        # add blocks to order_list
+        order_list.append(first_block)
+
+    print('Order list:',order_list)
+
+
+
+def get_block_bellow(block:OCR_Box,blocks:list[OCR_Box]):
+    '''Get block bellow\n
+    Get block bellow block, lowest distance, and intersecting with extension of block\n'''
+
+    # extend block vertically
+    block_extended = block.box.copy()
+    block_extended.top = 0
+    block_extended.bottom = 1000000
+
+    # get blocks bellow block
+    bellow_blocks = [b for b in blocks if b.box.top > block.box.top and b.box.intersects_box(block_extended)]
+    shortest_distance = None
+    bellow_block = None
+
+    # get block with shortest distance
+    for b in bellow_blocks:
+        distance = math.sqrt((block.box.left-b.box.left)**2 + (block.box.top-b.box.top)**2)
+        if not shortest_distance or distance < shortest_distance:
+            shortest_distance = distance
+            bellow_block = b
+
+    return bellow_block

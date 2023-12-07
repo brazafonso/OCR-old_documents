@@ -117,7 +117,9 @@ class OCR_Box:
         if not result:
             result = {k:[] for k in self.__dict__.keys()}
         for k in self.__dict__.keys():
-            if k != 'box':
+            if k in ['mean_height']:
+                continue
+            if k not in ['box']:
                 result[k].append(getattr(self,k))
             else:
                 result[k].append(self.box.to_dict())
@@ -125,7 +127,12 @@ class OCR_Box:
             child.to_dict(result)
         return result
 
-    
+    def copy(self):
+        '''Copy OCR_Box object'''
+        return OCR_Box(self.level,self.page_num,self.block_num,self.par_num,self.line_num,self.word_num,self.box,self.text,self.conf,self.id,self.type)
+            
+        
+
     def __str__(self):
         return f'OCR_Box(level={self.level},page_num={self.page_num},block_num={self.block_num},par_num={self.par_num},line_num={self.line_num},word_num={self.word_num},box={self.box},text={self.text},conf={self.conf},id={self.id})'
 
@@ -145,10 +152,10 @@ class OCR_Box:
         '''Id boxes in ocr_results
         
         Args:
-            level (list[int], optional): Levels to id. Defaults to [2].
-            ids (dict, optional): Dict that saves the current id for each level. Defaults to None.
-            delimiters (bool, optional): If true, only id delimiters. Defaults to True.
-            area (Box, optional): Area to id boxes. Defaults to None.'''
+            * level (list[int], optional): Levels to id. Defaults to [2].
+            * ids (dict, optional): Dict that saves the current id for each level. Defaults to None.
+            * delimiters (bool, optional): If False, only id non delimiters. Defaults to True.
+            * area (Box, optional): Area to id boxes. Defaults to None.'''
         if not ids:
             ids = {l:0 for l in level}
         if self.level in level:
@@ -218,12 +225,9 @@ class OCR_Box:
     
     def is_empty(self,conf:int=0):
         '''Check if box is empty'''
-        empty = re.match(r'^\s*$',self.text)
-        i = 0
-        while empty and i < len(self.children):
-            empty = self.children[i].is_empty(conf)
-            i += 1
-        return empty
+        text = self.to_text(conf).strip()
+        empty = re.match(r'^\s*$',text)
+        return empty != None
     
     def is_delimiter(self,conf:int=0):
         '''Check if box is delimiter'''
@@ -310,8 +314,8 @@ class OCR_Box:
         else:
             return (0,255,0)
             
-            
-        
+
+
     
 
 

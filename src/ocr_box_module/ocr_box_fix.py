@@ -1,10 +1,12 @@
 from ocr_box_module.ocr_box import *
+from ocr_box_module.ocr_box_analyser import *
 from aux_utils.box import Box
 
 def block_bound_box_fix(ocr_results:OCR_Box):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
+    text_analysis = analyze_text(ocr_results)
     blocks = ocr_results.get_boxes_level(2)
     boxes_to_check = {}
     checked_boxes = []
@@ -62,8 +64,10 @@ def block_bound_box_fix(ocr_results:OCR_Box):
                 # check if box is empty
                 # remove if true
                 if current_box.is_empty() and not current_box.is_delimiter():
-                    ocr_results.remove_box_id(current_box.id)
-                    current_box = None
+                    # if potential image (big box) dont remove
+                    if not current_box.box.height > text_analysis['normal_text_size']*3:
+                        ocr_results.remove_box_id(current_box.id)
+                        current_box = None
                 i = 0
 
 

@@ -37,6 +37,9 @@ class Box:
         self.width = json_dict['width']
         self.height = json_dict['height']
 
+    def copy(self):
+        return Box(self.left,self.right,self.top,self.bottom)
+
     def __str__(self):
         return f'left:{self.left} right:{self.right} top:{self.top} bottom:{self.bottom}'
 
