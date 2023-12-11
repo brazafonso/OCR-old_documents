@@ -865,21 +865,21 @@ def topologic_order(ocr_results:OCR_Box,area:Box=None):
 
     # first block
     current_block = next_top_block(non_delimiters)
-    context_box = current_block.box
+    parent_block = None
 
     order_chosen = []
 
     for block in non_delimiters:
         if current_block:
             print('Current block:',current_block.id,current_block.type)
+            print('Parent block:',parent_block.id if parent_block else None)
             order_chosen.append(current_block.id)
             # block is before every block under it
             # block is before every block directly to the right of it
-            potential_before_blocks = [b for b in non_delimiters if context_box.within_horizontal_boxes(b.box,range=0.2)]
-            bellow_block = get_block_bellow(current_block,non_delimiters)
-            if bellow_block:
-                if bellow_block not in potential_before_blocks:
-                    potential_before_blocks.append(bellow_block)
+            potential_before_blocks = [b for b in non_delimiters if current_block.box.intersects_box(b.box,extend_vertical=True) and current_block.box.top < b.box.top]
+            right_blocks = current_block.box.blocks_directly_right(non_delimiters)
+            potential_before_blocks += right_blocks
+            print('Potential before blocks:',[block.id for block in potential_before_blocks])
 
             # block is before every block under it
             for before_block in potential_before_blocks:
@@ -893,11 +893,9 @@ def topologic_order(ocr_results:OCR_Box,area:Box=None):
             next_block = None
             # check blocks added to order map, giving context of greatest width
             if order_map[current_block.id]:
-                potential_next_blocks = [b for b in non_delimiters if b.id in order_map[current_block.id] and b.id not in order_chosen]
+                potential_next_blocks = [b for b in potential_before_blocks if b.id in order_map[current_block.id] and b.id not in order_chosen]
                 print('Potential next blocks:',[block.id for block in potential_next_blocks])
                 next_block = next_top_block(potential_next_blocks,current_block.box)
-                if block.box.width > context_box.width:
-                    context_box = block.box
 
             # if no block added to order map, get next top block
             if not next_block:
@@ -907,11 +905,16 @@ def topologic_order(ocr_results:OCR_Box,area:Box=None):
                 if next_block:
                     # if next block, current block is before it
                     order_map[current_block.id].append(next_block.id)
-                    context_box = next_block.box
             
+            parent_block = current_block
             current_block = None
             if next_block:
                 current_block = next_block
+                # current block inherits parent block's order map (partially)
+                ## only blocks that are not in current block's order map and have not been chosen
+                for block in order_map[parent_block.id]:
+                    if block not in order_map[current_block.id] and block not in order_chosen and block != current_block.id:
+                        order_map[current_block.id].append(block)
 
         else:
             break
@@ -949,25 +952,261 @@ def topologic_order(ocr_results:OCR_Box,area:Box=None):
 
 
 
-def get_block_bellow(block:OCR_Box,blocks:list[OCR_Box]):
-    '''Get block bellow\n
-    Get block bellow block, lowest distance, and intersecting with extension of block\n'''
 
-    # extend block vertically
-    block_extended = block.box.copy()
-    block_extended.top = 0
-    block_extended.bottom = 1000000
+def topologic_order_context(ocr_results:OCR_Box,area:Box=None):
+    '''Generate topologic order of blocks\n
+    
+    Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n
+    Context will allow to estimate attraction between blocks, such as title blocks being very atracted to non title blocks\n'''
 
-    # get blocks bellow block
-    bellow_blocks = [b for b in blocks if b.box.top > block.box.top and b.box.intersects_box(block_extended)]
-    shortest_distance = None
-    bellow_block = None
+    # get blocks
+    if area:
+        blocks = ocr_results.get_boxes_in_area(area,2)
+    else:
+        blocks = ocr_results.get_boxes_level(2)
+    non_delimiters = [block for block in blocks if block.type != 'delimiter']
 
-    # get block with shortest distance
-    for b in bellow_blocks:
-        distance = math.sqrt((block.box.left-b.box.left)**2 + (block.box.top-b.box.top)**2)
-        if not shortest_distance or distance < shortest_distance:
-            shortest_distance = distance
-            bellow_block = b
+    # order map
+    # for each block, list of blocks that come after it
+    order_map = {block.id:{} for block in non_delimiters}
 
-    return bellow_block
+
+    # calculate order map
+
+    # first block
+    current_block = next_top_block(non_delimiters)
+    parent_block = None
+
+    order_chosen = []
+
+    for block in non_delimiters:
+        if current_block:
+            print('Current block:',current_block.id,current_block.type)
+            print('Parent block:',parent_block.id if parent_block else None)
+            order_chosen.append(current_block.id)
+            # block is before every block under it
+            # block is before every block directly to the right of it
+            potential_before_blocks = [b for b in non_delimiters if current_block.box.intersects_box(b.box,extend_vertical=True) and current_block.box.top < b.box.top]
+            right_blocks = current_block.box.blocks_directly_right(non_delimiters)
+            potential_before_blocks += right_blocks
+            print('Potential before blocks:',[block.id for block in potential_before_blocks])
+
+            # block is before every block under it
+            for before_block in potential_before_blocks:
+                # if before block is not in order map, and current block is not in before block's order map
+                # and before block not in topoligical order greater than current block
+                if before_block.id not in order_map[current_block.id] and current_block.id not in order_map[before_block.id] and before_block.id not in order_chosen:
+                    direction = 'bellow' if before_block not in right_blocks else 'right'
+                    attracion = calculate_block_attraction(current_block,before_block,blocks,direction)
+                    order_map[current_block.id][before_block.id] = {
+                        'attraction':attracion,
+                        'direction':direction,
+                        'block':before_block
+                    }
+            
+
+            # get next block
+            next_block = None
+            # check blocks added to order map, giving context of greatest width
+            if order_map[current_block.id]:
+                potential_next_blocks = [b for b in potential_before_blocks if b.id in order_map[current_block.id] and b.id not in order_chosen]
+                print('Potential next blocks:',[block.id for block in potential_next_blocks])
+                next_block = next_top_block(potential_next_blocks,current_block.box)
+
+
+            # if no block added to order map, get next top block
+            if not next_block:
+                print('No next block found',current_block.id)
+                not_chosen = [block for block in non_delimiters if block.id not in order_chosen]
+                next_block = next_top_block(not_chosen)
+                if next_block:
+                    # if next block, current block is before it
+                    order_map[current_block.id][next_block.id] = {
+                        'attraction':100,
+                        'block':next_block
+                    }
+            
+            parent_block = current_block
+            current_block = None
+            if next_block:
+                current_block = next_block
+                # current block inherits parent block's order map (partially)
+                ## only blocks that are not in current block's order map and have not been chosen
+                for block in order_map[parent_block.id]:
+                    if block not in order_map[current_block.id] and block not in order_chosen and block != current_block.id:
+                        block = order_map[parent_block.id][block]['block']
+                        attracion = calculate_block_attraction(current_block,block,blocks)
+                        order_map[current_block.id][block.id] = {
+                            'attraction':attracion,
+                            'block':block
+                        }
+
+        else:
+            break
+
+    print('Order map:')
+
+    for block in order_chosen:
+        sorted_blocks = sorted(order_map[block],key=lambda x: order_map[block][x]['attraction'],reverse=True)
+
+        print(block,end=': ')
+        for b in sorted_blocks:
+            print(f"{b}|{order_map[block][b]['attraction']}",end=' ')
+        print()
+
+
+    # order map to list
+    order_list = []
+    while len(order_list) < len(order_map):
+        # get first block
+        # no blocks before it in order_map, that are not already in order_list
+        first_block = None
+        for block in order_map:
+            if block not in order_list:
+                potential_first_block = block
+                valid = True
+                for other_blocks in order_map:
+                    # potential first block in other block's order map
+                    if potential_first_block in order_map[other_blocks]:
+                        # other block not in order list
+                        if other_blocks not in order_list:
+                            valid = False
+                            break
+                if valid:
+                    first_block = potential_first_block
+                    break
+
+        # add blocks to order_list
+        order_list.append(first_block)
+
+    print('Order list:',order_list)
+
+
+
+def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None)->int:
+    '''Calculate attraction between blocks\n
+
+    Attraction is calculated based on block's characteristics such as type, size, position, etc\n
+
+    Attraction is a value between 0 and 100\n
+
+    0: No attraction\n
+    100: Maximum attraction\n'''
+    print('Calculating attraction between',block.id,target_block.id)
+
+    max_distance = None
+    min_distance = None
+    for b in blocks:
+        if b != block:
+            distance = block.box.distance_to(b.box)
+            if not max_distance or distance > max_distance:
+                max_distance = distance
+            if not min_distance or distance < min_distance:
+                min_distance = distance
+
+    attraction = 0
+
+    if not direction:
+        if block.box.within_vertical_boxes(target_block.box,range=0.2) and block.box.left < target_block.box.left:
+            direction = 'right'
+        else:
+            direction = 'bellow'
+
+    if direction == 'bellow':
+        print('Direction: bellow')
+        attraction += 20
+
+    bellow_blocks = block.box.blocks_directly_bellow(blocks)
+    leftmost_block = None
+    if bellow_blocks:
+        bellow_blocks.sort(key=lambda x: x.box.left)
+        leftmost_block = bellow_blocks[0]
+
+    if leftmost_block:
+        if leftmost_block.type == 'delimiter' and direction == 'bellow':
+            print('Leftmost block is delimiter')
+            attraction -= 10
+        elif leftmost_block.type == 'delimiter' and direction == 'right':
+            print('Leftmost block is delimiter')
+            attraction += 10
+
+    if bellow_blocks:
+        if target_block in bellow_blocks:
+            print('Target block is bellow')
+            attraction += 30
+
+    # distance
+    # normalize distance
+    ## lower distance means higher attraction
+    ## max attraction increase is 20
+    distance = block.box.distance_to(target_block.box)
+    distance = (distance-min_distance)/(max_distance-min_distance)
+    attraction += round(20*(1-distance))
+
+
+
+    # title
+    ## title are very atracted to non title blocks
+    ### bellow blocks are more atracted than right blocks
+    ### right blocks are more attracted if bellow block is delimiter
+    if block.type == 'title':
+        print('Block is title')
+        if target_block.type != 'title':
+            print('Target block is not title')
+            attraction += 50
+        else:
+            if target_block in bellow_blocks:
+                print('Target block is bellow')
+                attraction += 20
+            
+    # image
+    ## images are very atracted to caption blocks
+    elif block.type == 'image':
+        print('Block is image')
+        if target_block.type == 'caption':
+            print('Target block is caption')
+            attraction += 50
+        else:
+            print('Target block is not caption')
+            attraction += 20
+    
+    # text
+    ## text is dependent on its content
+    ## unfinished text is more atracted to unstarted text
+    ## text is more attracted to text bellow it
+    ### text to the right is more attracted if bellow block is delimiter
+    elif block.type == 'text':
+        print('Block is text')
+        if target_block.type =='text':
+            print('Target block is text',target_block.start_text,target_block.end_text)
+            if direction == 'right':
+                print('Direction: right')
+                # text content
+                if block.end_text == False and target_block.start_text == True:
+                    print('Block text is not finished and target block text is started')
+                    attraction += 30
+
+                if bellow_blocks:
+                    if leftmost_block.type == 'delimiter':
+                        print('Leftmost block is delimiter')
+                        attraction += 20
+            else:
+                if target_block in bellow_blocks:
+                    print('Target block is bellow')
+                    attraction += 20
+                
+                if block.end_text == False and target_block.start_text == True:
+                    print('Block text is not finished and target block text is started')
+                    attraction += 50
+    
+
+    # normalize attraction
+    ## attraction is a value between 0 and 100
+    attraction = round(attraction)
+    if attraction < 0:
+        attraction = 0
+    elif attraction > 100:
+        attraction = 100
+
+    return attraction
+

@@ -765,7 +765,7 @@ if __name__ == '__main__':
         orcer_results = categorize_boxes(ocr_results)
 
         # run topologic_order
-        topologic_order(ocr_results,columns_area)
+        topologic_order_context(ocr_results,columns_area)
 
 
     # normal mode - open GUI

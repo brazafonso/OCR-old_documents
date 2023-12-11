@@ -2,6 +2,10 @@
 
 
 
+import math
+
+
+
 class Box:
     left = None
     right = None
@@ -109,10 +113,21 @@ class Box:
         return False
 
 
-    def intersects_box(self,box):
+    def intersects_box(self,box,extend_vertical=False,extend_horizontal=False):
         '''Check if box intersects another box'''
-        intercept_vertical = (self.top <= box.top and self.bottom >= box.top) or (box.top <= self.top and box.bottom >= self.top)
-        intercept_horizontal = (self.left <= box.right and self.right >= box.left) or (self.left <= box.right and self.right >= box.right)
+        self_top = self.top
+        self_bottom = self.bottom
+        self_left = self.left
+        self_right = self.right
+        if extend_vertical:
+            self_top = 0
+            self_bottom = 100000
+        if extend_horizontal:
+            self_left = 0
+            self_right = 100000
+            
+        intercept_vertical = (self_top <= box.top and self_bottom >= box.top) or (box.top <= self_top and box.bottom >= self_top)
+        intercept_horizontal = (self_left <= box.right and self_right >= box.left) or (self_left <= box.right and self_right >= box.right)
         if intercept_horizontal and intercept_vertical:
             return True
         return False
@@ -210,3 +225,67 @@ class Box:
         self.bottom = max(self.bottom,box.bottom)
         self.height = self.bottom - self.top
         self.width = self.right - self.left
+
+
+
+    def blocks_directly_bellow(self,blocks:list["OCR_Box"]):
+        '''Get block bellow\n
+        Get block bellow block, lowest distance, and intersecting with extension of block\n'''
+
+        # extend block vertically
+        block_extended = self.copy()
+        block_extended.top = 0
+        block_extended.bottom = 1000000
+
+        # get blocks bellow block
+        bellow_blocks = [b for b in blocks if b.box.top > self.top and b.box.intersects_box(block_extended)]
+        shortest_distance = None
+        directly_bellow_blocks = []
+        bellow_block = None
+
+        # get block with shortest distance
+        for b in bellow_blocks:
+            distance = math.sqrt((self.left-b.box.left)**2 + (self.top-b.box.top)**2)
+            if not shortest_distance or distance < shortest_distance:
+                shortest_distance = distance
+                bellow_block = b
+
+        # directly bellow blocks is bellow block and verticaly aligned that are in bellow_blocks
+        if bellow_block:
+            directly_bellow_blocks = [b for b in bellow_blocks if b.box.within_vertical_boxes(bellow_block.box)]
+
+        return directly_bellow_blocks
+    
+
+    def blocks_directly_right(self,blocks:list["OCR_Box"]):
+        '''Get block right\n
+        Get block right block, lowest distance, and intersecting with extension of block\n'''
+
+        # extend block horizontally
+        block_extended = self.copy()
+        block_extended.left = 0
+        block_extended.right = 1000000
+
+        # get blocks right block
+        right_blocks = [b for b in blocks if b.box.left > self.left and b.box.intersects_box(block_extended)]
+        shortest_distance = None
+        directly_right_blocks = []
+        right_block = None
+
+        # get block with shortest distance
+        for b in right_blocks:
+            distance = math.sqrt((self.left-b.box.left)**2 + (self.top-b.box.top)**2)
+            if not shortest_distance or distance < shortest_distance:
+                shortest_distance = distance
+                right_block = b
+
+        # directly right blocks is right block and horizontal aligned that are in right_blocks
+        if right_block:
+            directly_right_blocks = [b for b in right_blocks if b.box.within_horizontal_boxes(right_block.box)]
+
+        return directly_right_blocks
+    
+
+    def distance_to(self,box:'Box'):
+        '''Get distance to box'''
+        return math.sqrt((self.left-box.left)**2 + (self.top-box.top)**2)
