@@ -394,8 +394,7 @@ class OCR_Box:
 
         # directly bellow blocks is bellow block and verticaly aligned that are in bellow_blocks
         if bellow_block:
-            directly_bellow_blocks = [b for b in bellow_blocks if b.box.within_vertical_boxes(bellow_block.box)]
-
+            directly_bellow_blocks = [b for b in bellow_blocks if b.box.intersects_box(bellow_block.box,extend_horizontal=True)]
         return directly_bellow_blocks
     
 
@@ -403,13 +402,8 @@ class OCR_Box:
         '''Get block right\n
         Get block right block, lowest distance, and intersecting with extension of block\n'''
 
-        # extend block horizontally
-        block_extended = self.box.copy()
-        block_extended.left = 0
-        block_extended.right = 1000000
-
         # get blocks right block
-        right_blocks = [b for b in blocks if b.box.left > self.box.left and b.box.intersects_box(block_extended)]
+        right_blocks = [b for b in blocks if b.box.right > self.box.right and b.box.intersects_box(self.box,extend_horizontal=True) and not b.box.intersects_box(self.box,extend_vertical=True)]
         shortest_distance = None
         directly_right_blocks = []
         right_block = None

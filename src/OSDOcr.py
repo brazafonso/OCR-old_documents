@@ -765,8 +765,15 @@ if __name__ == '__main__':
         orcer_results = categorize_boxes(ocr_results)
 
         # run topologic_order
-        order_map = topologic_order(ocr_results,columns_area)
-        order_list = sort_topologic_order(order_map)
+        # t_graph = topologic_graph(ocr_results,columns_area)
+        # print('Topological graph: ')
+        # t_graph.self_print()
+        # order_list = sort_topologic_order(t_graph,ocr_results)
+        # print('Order List: ',order_list)
+
+        # run topologic_order context
+        t_graph = topologic_order_context(ocr_results,columns_area)
+        order_list = sort_topologic_order(t_graph,ocr_results,sort_weight=True)
         print('Order List: ',order_list)
 
 
