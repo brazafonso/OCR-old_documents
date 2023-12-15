@@ -67,6 +67,12 @@ class Box:
             'height':self.height
         }
     
+    def valid(self):
+        '''Check if box is valid'''
+        if self.left is None or self.right is None or self.top is None or self.bottom is None or self.left>self.right or self.top>self.bottom:
+            return False
+        return True
+    
     def within_vertical_boxes(self,box,range=0):
         '''Check if boxes are within each other vertically, considering a range'''
         # avoid division by zero
@@ -113,23 +119,24 @@ class Box:
         return False
 
 
-    def intersects_box(self,box,extend_vertical=False,extend_horizontal=False):
+    def intersects_box(self,box,extend_vertical:bool=False,extend_horizontal:bool=False,inside:bool=False):
         '''Check if box intersects another box'''
-        self_top = self.top
-        self_bottom = self.bottom
-        self_left = self.left
-        self_right = self.right
+        self_box = self.copy()
         if extend_vertical:
-            self_top = 0
-            self_bottom = 100000
+            self_box.top = 0
+            self_box.bottom = 100000
         if extend_horizontal:
-            self_left = 0
-            self_right = 100000
+            self_box.left = 0
+            self_box.right = 100000
             
-        intercept_vertical = (self_top <= box.top and self_bottom >= box.top) or (box.top <= self_top and box.bottom >= self_top)
-        intercept_horizontal = (self_left <= box.right and self_right >= box.left) or (self_left <= box.right and self_right >= box.right)
+        intercept_vertical = (self_box.top <= box.top and self_box.bottom >= box.top) or (box.top <= self_box.top and box.bottom >= self_box.top)
+        intercept_horizontal = (self_box.left <= box.right and self_box.right >= box.left) or (self_box.left <= box.right and self_box.right >= box.right)
         if intercept_horizontal and intercept_vertical:
             return True
+        
+        if inside and (self_box.is_inside_box(box) or box.is_inside_box(self_box)):
+            return True
+
         return False
 
     def intersect_area_box(self,box):
@@ -155,32 +162,62 @@ class Box:
             area_box.bottom = box.bottom
         else:
             area_box.bottom = self.bottom
+
+        if not area_box.valid():
+            return None
+
         return area_box
 
     def remove_box_area(self,area):
         '''Remove area from box (only if intersect)'''
         if area:
-            intersect = self.intersects_box(area)
             inside = self.is_inside_box(area)
-            if intersect and not inside:
-                above = area.top >= self.top
-                to_left = area.left <= self.left
+            done = False
+            while not done:
+                intersect = self.intersects_box(area)
+                if intersect and not inside:
+                    above = area.bottom < self.bottom
+                    to_left = area.right < self.right
+                    to_right = area.left > self.left
+                    below = area.top > self.top
 
-                # Remove area from box
-                if not above and area.left <= self.left:
-                    self.left = area.right
-                elif not above and area.right >= self.right:
-                    self.right = area.left
-                elif above and area.bottom <= self.bottom:
-                    self.top = area.bottom
-                elif not above and area.top >= self.top:
-                    self.bottom = area.top
+                    # if more than one condition is true, choose the one that removes less area
+                    combinations = {
+                        'above' : (above,area.bottom-self.top),
+                        'to_left' : (to_left,area.right-self.left),
+                        'to_right' : (to_right,self.right-area.left),
+                        'below' : (below,self.bottom-area.top)
+                    }
+                    combinations = {k:v for k,v in combinations.items() if v[0]}
+                    combinations = sorted(combinations.items(),key=lambda x:x[1][1])[0]
+                    for c in ['above','to_left','to_right','below']:
+                        if c in combinations:
+                            above = c == 'above'
+                            to_left = c == 'to_left'
+                            to_right = c == 'to_right'
+                            below = c == 'below'
+                            break
 
 
-                # Update width and height
-                self.width = self.right - self.left
-                self.height = self.bottom - self.top
-        
+
+                    # Remove area from box
+                    if to_right:
+                        self.right = area.left-1
+                    elif to_left:
+                        self.left = area.right+1
+                    elif above:
+                        self.top = area.bottom+1
+                    elif below:
+                        self.bottom = area.top-1
+                    else:
+                        done = True
+
+                else:
+                    done = True
+
+            # Update width and height
+            self.width = self.right - self.left
+            self.height = self.bottom - self.top
 
     def box_is_smaller(self,box):
         '''Check if self is smaller than box'''

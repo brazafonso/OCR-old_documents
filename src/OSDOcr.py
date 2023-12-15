@@ -398,7 +398,10 @@ def main():
         # draw bounding boxes
         elif event == 'draw_bounding_boxes':
             if os.path.exists(f'{result_path}/result.json') and target_image:
-                ocr_results = OCR_Box(f'{result_path}/result.json')
+                if os.path.exists(f'{result_path}/fixed/result_fixed.json'):
+                    ocr_results = OCR_Box(f'{result_path}/fixed/result_fixed.json')
+                else:
+                    ocr_results = OCR_Box(f'{result_path}/result.json')
                 ocr_results = categorize_boxes(ocr_results)
                 box_level = values['draw_bounding_boxes_level']
                 image = draw_bounding_boxes(ocr_results,target_image,[box_level])
@@ -755,6 +758,7 @@ if __name__ == '__main__':
             csv = pd.DataFrame(ocr_results.to_dict())
             csv.to_csv(f'{result_path}/fixed/result_fixed.csv')
         
+
         # get journal template
         image_info = get_image_info(f'{result_path}/fixed/result_fixed.jpg')
         journal_template = estimate_journal_template(ocr_results,image_info)

@@ -39,14 +39,21 @@ def block_bound_box_fix(ocr_results:OCR_Box):
                 ocr_results.remove_box_id(current_box.id)
                 current_box = None
             # boxes intersect (with same level, so as to be able to merge seemlessly)
-            elif current_box.box.intersects_box(compare_box.box) and current_box.box.same_level_box(compare_box.box):
-                intersect_area = current_box.box.intersect_area_box(compare_box.box)
+            elif current_box.box.intersects_box(compare_box.box):
                 # update boxes so that they don't intersect
                 # smaller box is reduced
                 if current_box.box.box_is_smaller(compare_box.box):
+                    intersect_area = compare_box.box.intersect_area_box(current_box.box)
+                    #print(f'Box {current_box.id} is smaller than {compare_box.id}')
                     current_box.box.remove_box_area(intersect_area)
+                    # update current box's children
+                    current_box.prune_children_area()
                 else:
+                    intersect_area = current_box.box.intersect_area_box(compare_box.box)
+                    #print(f'Box {compare_box.id} is smaller than {current_box.id}')
                     compare_box.box.remove_box_area(intersect_area)
+                    # update compare box's children
+                    compare_box.prune_children_area()
             else:
                 if compare_box.id not in checked_boxes and compare_box.id not in boxes_to_check:
                     boxes_to_check[compare_box.id] = compare_box

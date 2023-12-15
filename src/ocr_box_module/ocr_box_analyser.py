@@ -859,7 +859,7 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
     else:
         blocks = ocr_results.get_boxes_level(2)
     non_delimiters = [block for block in blocks if block.type != 'delimiter']
-
+    print('Non delimiters:',[block.id for block in non_delimiters])
 
     # calculate graph
     first_block = next_top_block(non_delimiters)
@@ -893,6 +893,8 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
         potential_before_blocks += right_blocks
         potential_before_blocks += bellow_blocks
         print('Potential before blocks:',[block.id for block in potential_before_blocks])
+        print('Bellow blocks:',[block.id for block in bellow_blocks])
+        print('Right blocks:',[block.id for block in right_blocks])
 
         # clean potential before blocks
         ## can't be before blocks that are connected to current block
@@ -928,12 +930,14 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
                 next_node = topologic_graph.get_node(next_block.id)
                 if not current_node.in_children(next_node):
                     current_node.add_child_edge(next_node)
-                    #print('Added edge:',current_block.id,'->',next_block.id)
 
         
         current_block = next_block
         current_node = next_node
+    topologic_graph.self_print()
 
+    # # clean graph
+    topologic_graph.clean_graph()
 
     return topologic_graph
 
@@ -1045,22 +1049,20 @@ def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
     # print attraction
     print('Attraction:')
     for node in t_graph.nodes:
-        print(node.id,node.children_edges)
+        print(node.id,node.children_edges,'|',node.parent_edges)
 
     return t_graph
 
 
 
-def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None)->int:
+def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None,log:bool=False)->int:
     '''Calculate attraction between blocks\n
 
     Attraction is calculated based on block's characteristics such as type, size, position, etc\n
 
-    Attraction is a value between 0 and 100\n
-
-    0: No attraction\n
-    100: Maximum attraction\n'''
-    print('Calculating attraction between',block.id,target_block.id)
+    0: No attraction\n'''
+    if log:
+        print('Calculating attraction between',block.id,target_block.id)
 
     max_distance = None
     min_distance = None
@@ -1083,8 +1085,9 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
             direction = 'right'
 
     if direction == 'bellow':
-        print('Direction: bellow')
         attraction += 20
+        if log:
+            print('Direction: bellow')
 
     bellow_blocks = block.blocks_directly_bellow(blocks)
     leftmost_block = None
@@ -1094,20 +1097,24 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
 
     if leftmost_block:
         if leftmost_block.type == 'delimiter' and direction == 'bellow':
-            print('Leftmost block is delimiter')
             attraction -= 10
+            if log:
+                print('Leftmost block is delimiter')
         elif leftmost_block.type == 'delimiter' and direction == 'right':
-            print('Leftmost block is delimiter')
             attraction += 10
+            if log:
+                print('Leftmost block is delimiter')
 
     if bellow_blocks:
         if target_block in bellow_blocks:
-            print('Target block is bellow')
             attraction += 30
+            if log:
+                print('Target block is bellow')
     else:
         if direction == 'right':
-            print('Direction: right')
             attraction += 40
+            if log:
+                print('Direction: right')
 
     # distance
     # normalize distance
@@ -1117,8 +1124,9 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
     distance = block.box.distance_to(target_block.box)
     distance = (distance-min_distance)/(max_distance-min_distance)
     if bellow_blocks:
-        print('Distance:',distance)
         attraction += round(20*(1-distance))
+        if log:
+            print('Distance:',distance)
 
 
 
@@ -1127,25 +1135,31 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
     ### bellow blocks are more atracted than right blocks
     ### right blocks are more attracted if bellow block is delimiter
     if block.type == 'title':
-        print('Block is title')
+        if log:
+            print('Block is title')
         if target_block.type != 'title':
-            print('Target block is not title')
             attraction += 50
+            if log:
+                print('Target block is not title')
         else:
             if target_block in bellow_blocks:
-                print('Target block is bellow')
                 attraction += 20
+                if log:
+                    print('Target block is bellow')
             
     # image
     ## images are very atracted to caption blocks
     elif block.type == 'image':
-        print('Block is image')
+        if log:
+            print('Block is image')
         if target_block.type == 'caption':
-            print('Target block is caption')
             attraction += 50
+            if log:
+                print('Target block is caption')
         else:
-            print('Target block is not caption')
             attraction += 20
+            if log:
+                print('Target block is not caption')
     
     # text
     ## text is dependent on its content
@@ -1153,38 +1167,40 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
     ## text is more attracted to text bellow it
     ### text to the right is more attracted if bellow block is delimiter
     elif block.type == 'text':
-        print('Block is text',block.start_text,block.end_text)
+        if log:
+            print('Block is text',block.start_text,block.end_text)
         if target_block.type =='text':
-            print('Target block is text',target_block.start_text,target_block.end_text)
+            if log:
+                print('Target block is text',target_block.start_text,target_block.end_text)
             if direction == 'right':
-                print('Direction: right')
+                if log:
+                    print('Direction: right')
                 # text content
                 if block.end_text == False and target_block.start_text == False:
-                    print('Block text is not finished and target block text is not started')
                     attraction += 30
+                    if log:
+                        print('Block text is not finished and target block text is not started')
 
                 if bellow_blocks:
-                    print('Bellow blocks:',[block.id for block in bellow_blocks])
+                    if log:
+                        print('Bellow blocks:',[block.id for block in bellow_blocks])
                     if leftmost_block.type == 'delimiter':
-                        print('Leftmost block is delimiter')
                         attraction += 20
+                        if log:
+                            print('Leftmost block is delimiter')
             else:
                 if target_block in bellow_blocks:
-                    print('Target block is bellow')
                     attraction += 20
+                    if log:
+                        print('Target block is bellow')
                 
                 if block.end_text == False and target_block.start_text == False:
-                    print('Block text is not finished and target block text is started')
                     attraction += 50
+                    if log:
+                        print('Block text is not finished and target block text is started')
     
 
-    # normalize attraction
-    ## attraction is a value between 0 and 100
-    attraction = round(attraction)
-    if attraction < 0:
-        attraction = 0
-    elif attraction > 100:
-        attraction = 100
-    print('Attraction:',attraction)
+    if log:
+        print('Attraction:',attraction)
     return attraction
 

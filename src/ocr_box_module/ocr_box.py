@@ -290,6 +290,24 @@ class OCR_Box:
                     boxes += child.get_boxes_in_area(area,level)
         return boxes
     
+    def prune_children_area(self,area:Box=None):
+        '''Prune children area so that they are inside box'''
+        # is parent
+        if not area:
+            area = self.box
+        # is child, prune
+        else:
+            if self.box.left < area.left:
+                self.box.left = area.left
+            if self.box.right > area.right:
+                self.box.right = area.right
+            if self.box.top < area.top:
+                self.box.top = area.top
+            if self.box.bottom > area.bottom:
+                self.box.bottom = area.bottom
+        for child in self.children:
+            child.prune_children_area(area)
+    
 
     def type_color(self)->(int,int,int):
         '''Get block color, in rgb value, based on type
@@ -380,7 +398,7 @@ class OCR_Box:
         block_extended.bottom = 1000000
 
         # get blocks bellow block
-        bellow_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
+        bellow_blocks = [b for b in blocks if b.box.top > self.box.top and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
         shortest_distance = None
         directly_bellow_blocks = []
         bellow_block = None
@@ -402,8 +420,15 @@ class OCR_Box:
         '''Get block right\n
         Get block right block, lowest distance, and intersecting with extension of block\n'''
 
+        if self.id == 12:
+            block_16 = [b for b in blocks if b.id == 16][0]
+            print(self.box,block_16.box)
+            print('Teste intercept',block_16.box.intersects_box(self.box,extend_vertical=True))
+            print('Teste inside',block_16.box.is_inside_box(self.box))
+            print('Teste horizontal',block_16.box.intersects_box(self.box,extend_horizontal=True))
+
         # get blocks right block
-        right_blocks = [b for b in blocks if b.box.right > self.box.right and b.box.intersects_box(self.box,extend_horizontal=True) and not b.box.intersects_box(self.box,extend_vertical=True)]
+        right_blocks = [b for b in blocks if b.box.right > self.box.right and not b.box.is_inside_box(self.box) and b.box.intersects_box(self.box,extend_horizontal=True) and not b.box.intersects_box(self.box,extend_vertical=True)]
         shortest_distance = None
         directly_right_blocks = []
         right_block = None
@@ -417,7 +442,22 @@ class OCR_Box:
 
         # directly right blocks is right block and horizontal aligned that are in right_blocks
         if right_block:
-            directly_right_blocks = [b for b in right_blocks if b.box.within_horizontal_boxes(right_block.box)]
+            directly_right_blocks = [b for b in right_blocks if b.box.intersects_box(right_block.box,extend_vertical=True)]
+            # clean directly right blocks
+            ## make sure no blocks are to the right of directly right blocks
+            clean_directly_right_blocks = []
+            for b1 in directly_right_blocks:
+                valid = True
+                for b2 in directly_right_blocks:
+                    if b2 == b1:
+                        continue
+                    if (b1.box.intersects_box(b2.box,extend_horizontal=True,inside=True)) and b1.box.left > b2.box.left:
+                        valid = False
+                        break
+                if valid:
+                    clean_directly_right_blocks.append(b1)
+            directly_right_blocks = clean_directly_right_blocks
+                
 
         return directly_right_blocks
     
@@ -432,7 +472,7 @@ class OCR_Box:
         block_extended.bottom = 1000000
 
         # get blocks above block
-        above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and b.box.intersects_box(block_extended)]
+        above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
         shortest_distance = None
         directly_above_blocks = []
         above_block = None
@@ -446,7 +486,7 @@ class OCR_Box:
 
         # directly above blocks is above block and verticaly aligned that are in above_blocks
         if above_block:
-            directly_above_blocks = [b for b in above_blocks if b.box.within_vertical_boxes(above_block.box)]
+            directly_above_blocks = [b for b in above_blocks if b.box.intersects_box(above_block.box,extend_horizontal=True)]
 
         return directly_above_blocks
             

@@ -149,6 +149,7 @@ class Node:
         '''Returns True if node is connected to self\n
         Recursively checks if node is in self.parents or self.children'''
         if self.id == node:
+            print('self',visited,self.id)
             return True
 
         if self.id in visited:
@@ -167,6 +168,7 @@ class Node:
             for parent_edge in parent_edges:
                 parent = parent_edge.source
                 if parent.id == node:
+                    print('parent',visited,self.id,parent.id)
                     return True
                 
         # check in direct children
@@ -174,6 +176,7 @@ class Node:
             for child_edge in children_edges:
                 child = child_edge.target
                 if child.id == node:
+                    print('child',visited,self.id,child.id)
                     return True
 
         # check if children or parents are connected to node
