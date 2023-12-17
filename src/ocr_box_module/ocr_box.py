@@ -334,18 +334,18 @@ class OCR_Box:
             return (0,255,0)
         
 
-    def blocks_bellow(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
-        '''Get blocks bellow\n
-        Get blocks bellow block, lowest distance, and intersecting with extension of block\n'''
+    def blocks_below(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+        '''Get blocks below\n
+        Get blocks below block, lowest distance, and intersecting with extension of block\n'''
 
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
         block_extended.bottom = 1000000
 
-        # get blocks bellow block
-        bellow_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
-        return bellow_blocks
+        # get blocks below block
+        below_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
+        return below_blocks
     
     def blocks_right(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
         '''Get blocks right\n
@@ -388,77 +388,61 @@ class OCR_Box:
 
 
 
-    def blocks_directly_bellow(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
-        '''Get block bellow\n
-        Get block bellow block, lowest distance, and intersecting with extension of block\n'''
+    def blocks_directly_below(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+        '''Get block below\n
+        Get block below block, lowest distance, and intersecting with extension of block\n'''
 
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
         block_extended.bottom = 1000000
 
-        # get blocks bellow block
-        bellow_blocks = [b for b in blocks if b.box.top > self.box.top and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
-        shortest_distance = None
-        directly_bellow_blocks = []
-        bellow_block = None
+        # get blocks below block
+        below_blocks = [b for b in blocks if b.box.top > self.box.top and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
+        # print('below blocks',[b.id for b in below_blocks])
 
-        # get block with shortest distance
-        for b in bellow_blocks:
-            distance = math.sqrt((self.box.left-b.box.left)**2 + (self.box.top-b.box.top)**2)
-            if not shortest_distance or distance < shortest_distance:
-                shortest_distance = distance
-                bellow_block = b
 
-        # directly bellow blocks is bellow block and verticaly aligned that are in bellow_blocks
-        if bellow_block:
-            directly_bellow_blocks = [b for b in bellow_blocks if b.box.intersects_box(bellow_block.box,extend_horizontal=True)]
-        return directly_bellow_blocks
+        ## clean directly below blocks
+        ### make sure no blocks are below directly below blocks
+        clean_directly_below_blocks = []
+        for b1 in below_blocks:
+            valid = True
+            for b2 in below_blocks:
+                if b2 == b1:
+                    continue
+                if (b1.box.intersects_box(b2.box,extend_vertical=True,inside=True)) and b1.box.top > b2.box.top:
+                    valid = False
+                    break
+            if valid:
+                clean_directly_below_blocks.append(b1)
+
+        directly_below_blocks = clean_directly_below_blocks
+
+        return directly_below_blocks
     
 
     def blocks_directly_right(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
         '''Get block right\n
         Get block right block, lowest distance, and intersecting with extension of block\n'''
 
-        if self.id == 12:
-            block_16 = [b for b in blocks if b.id == 16][0]
-            print(self.box,block_16.box)
-            print('Teste intercept',block_16.box.intersects_box(self.box,extend_vertical=True))
-            print('Teste inside',block_16.box.is_inside_box(self.box))
-            print('Teste horizontal',block_16.box.intersects_box(self.box,extend_horizontal=True))
-
         # get blocks right block
         right_blocks = [b for b in blocks if b.box.right > self.box.right and not b.box.is_inside_box(self.box) and b.box.intersects_box(self.box,extend_horizontal=True) and not b.box.intersects_box(self.box,extend_vertical=True)]
-        shortest_distance = None
-        directly_right_blocks = []
-        right_block = None
 
-        # get block with shortest distance
-        for b in right_blocks:
-            distance = math.sqrt((self.box.left-b.box.left)**2 + (self.box.top-b.box.top)**2)
-            if not shortest_distance or distance < shortest_distance:
-                shortest_distance = distance
-                right_block = b
-
-        # directly right blocks is right block and horizontal aligned that are in right_blocks
-        if right_block:
-            directly_right_blocks = [b for b in right_blocks if b.box.intersects_box(right_block.box,extend_vertical=True)]
-            # clean directly right blocks
-            ## make sure no blocks are to the right of directly right blocks
-            clean_directly_right_blocks = []
-            for b1 in directly_right_blocks:
-                valid = True
-                for b2 in directly_right_blocks:
-                    if b2 == b1:
-                        continue
-                    if (b1.box.intersects_box(b2.box,extend_horizontal=True,inside=True)) and b1.box.left > b2.box.left:
-                        valid = False
-                        break
-                if valid:
-                    clean_directly_right_blocks.append(b1)
-            directly_right_blocks = clean_directly_right_blocks
+        # clean directly right blocks
+        ## make sure no blocks are to the right of directly right blocks
+        clean_directly_right_blocks = []
+        for b1 in right_blocks:
+            valid = True
+            for b2 in right_blocks:
+                if b2 == b1:
+                    continue
+                if (b1.box.intersects_box(b2.box,extend_horizontal=True,inside=True)) and b1.box.left > b2.box.left:
+                    valid = False
+                    break
+            if valid:
+                clean_directly_right_blocks.append(b1)
+        directly_right_blocks = clean_directly_right_blocks
                 
-
         return directly_right_blocks
     
 
@@ -473,20 +457,21 @@ class OCR_Box:
 
         # get blocks above block
         above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
-        shortest_distance = None
-        directly_above_blocks = []
-        above_block = None
-
-        # get block with shortest distance
-        for b in above_blocks:
-            distance = math.sqrt((self.box.left-b.box.left)**2 + (self.box.top-b.box.top)**2)
-            if not shortest_distance or distance < shortest_distance:
-                shortest_distance = distance
-                above_block = b
-
-        # directly above blocks is above block and verticaly aligned that are in above_blocks
-        if above_block:
-            directly_above_blocks = [b for b in above_blocks if b.box.intersects_box(above_block.box,extend_horizontal=True)]
+        
+        ## clean directly above blocks
+        ### make sure no blocks are above directly above blocks
+        clean_directly_above_blocks = []
+        for b1 in above_blocks:
+            valid = True
+            for b2 in above_blocks:
+                if b2 == b1:
+                    continue
+                if (b1.box.intersects_box(b2.box,extend_vertical=True,inside=True)) and b1.box.bottom < b2.box.bottom:
+                    valid = False
+                    break
+            if valid:
+                clean_directly_above_blocks.append(b1)
+        directly_above_blocks = clean_directly_above_blocks
 
         return directly_above_blocks
             

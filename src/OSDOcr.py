@@ -777,7 +777,7 @@ if __name__ == '__main__':
 
         # run topologic_order context
         t_graph = topologic_order_context(ocr_results,columns_area)
-        order_list = sort_topologic_order(t_graph,ocr_results,sort_weight=True)
+        order_list = sort_weighted_topologic_order(t_graph)
         print('Order List: ',order_list)
 
 

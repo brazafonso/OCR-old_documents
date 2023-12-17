@@ -480,7 +480,7 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
                         order_map[current_block.id].append(block.id)
             
             # get next block
-            ## search for vertically aligned blocks bellow current block
+            ## search for vertically aligned blocks below current block
             ## if none found, search for highest leftmost block
             next_block = None
             potential_next_blocks = []
@@ -580,70 +580,70 @@ def next_top_block_context(blocks:list[OCR_Box],current_block:OCR_Box=None):
                 next_block = next_top_block(potential_blocks)
 
         # block title
-        ## search for blocks bellow title block, different from title
+        ## search for blocks below title block, different from title
         ## if none found try other types of block (other, image, caption)
         elif current_block_type == 'title':
             print('Current block is title')
             # get text blocks
-            bellow_blocks = [block for block in non_delimiters if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.3)]
-            if bellow_blocks:
-                print('Bellow blocks found',[block.id for block in bellow_blocks])
+            below_blocks = [block for block in non_delimiters if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.3)]
+            if below_blocks:
+                print('Bellow blocks found',[block.id for block in below_blocks])
                 # get best text block
-                bellow_block = next_top_block(bellow_blocks)
-                print('Bellow block:',bellow_block.id)
-                if bellow_block and bellow_block.type != 'title':
-                    next_block = bellow_block
+                below_block = next_top_block(below_blocks)
+                print('Bellow block:',below_block.id)
+                if below_block and below_block.type != 'title':
+                    next_block = below_block
 
         # block text
-        ## if current block has unfinished text, search for text blocks bellow current block with start_text=False
+        ## if current block has unfinished text, search for text blocks below current block with start_text=False
         ## if none found, search for text blocks to the right of current block with start_text=False
-        ## if none found, search for text blocks directly bellow current block
+        ## if none found, search for text blocks directly below current block
         ### if delimiter found, search for text blocks to the right of block and within delimiter's horizontal range
         elif current_block_type == 'text':
             print('Current block is text',current_block.id,current_block.start_text,current_block.end_text)
             # get text blocks
             text_blocks = [block for block in blocks if block.type == 'text']
-            bellow_blocks = [block for block in blocks if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.1)]
-            bellow_block = None
-            if bellow_blocks:
+            below_blocks = [block for block in blocks if block.box.top > current_block.box.top and current_block.box.within_horizontal_boxes(block.box,range=0.1)]
+            below_block = None
+            if below_blocks:
                 # get top block
-                bellow_blocks.sort(key=lambda x: x.box.top)
-                bellow_block = bellow_blocks[0]
+                below_blocks.sort(key=lambda x: x.box.top)
+                below_block = below_blocks[0]
             ## text not finished
             if current_block.end_text == False:
                 print('Text not finished')
-                ## if bellow block is delimiter, search to the right of block and within delimiter's horizontal range
-                if bellow_block and bellow_block.type == 'delimiter' and bellow_block.box.get_box_orientation() == 'horizontal':
-                    print('Bellow block is delimiter',bellow_block.id)
-                    potential_blocks = [block for block in text_blocks if  block.box.top < bellow_block.box.top and block.box.within_horizontal_boxes(bellow_block.box,range=0.3)]
+                ## if below block is delimiter, search to the right of block and within delimiter's horizontal range
+                if below_block and below_block.type == 'delimiter' and below_block.box.get_box_orientation() == 'horizontal':
+                    print('Bellow block is delimiter',below_block.id)
+                    potential_blocks = [block for block in text_blocks if  block.box.top < below_block.box.top and block.box.within_horizontal_boxes(below_block.box,range=0.3)]
                     if potential_blocks:
                         # get top block
                         ## TODO: may lack title context
                         next_block = next_top_block(potential_blocks)
-                ## if bellow block is not delimiter, search for text blocks bellow current block with start_text=False
+                ## if below block is not delimiter, search for text blocks below current block with start_text=False
                 ### if text block is found with start_text=True before a block with start_text=False, search for text blocks to the right of block with start_text=False
                 #### TODO: title context could be helpful
-                elif bellow_block:
+                elif below_block:
                     print('Bellow block is not delimiter')
                     #### TODO: dont ignore non text blocks
-                    bellow_blocks = [block for block in text_blocks if block.box.top > current_block.box.top and block.box.within_horizontal_boxes(current_block.box,range=0.3)]
-                    if bellow_blocks:
+                    below_blocks = [block for block in text_blocks if block.box.top > current_block.box.top and block.box.within_horizontal_boxes(current_block.box,range=0.3)]
+                    if below_blocks:
                         # get top block
-                        bellow_block = next_top_block(bellow_blocks)
-                        # if bellow block has start_text=False
-                        if bellow_block.start_text == False:
+                        below_block = next_top_block(below_blocks)
+                        # if below block has start_text=False
+                        if below_block.start_text == False:
                             # get text blocks to the right of current block with start_text=False
-                            next_block = bellow_block
+                            next_block = below_block
                         # else search to the right
                         else:
                             ## choose block to the right if it has start_text=False
                             potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3)]
                             next_block = next_top_block(potential_blocks)
-                            ## else search for text blocks bellow current block
+                            ## else search for text blocks below current block
                             if next_block and next_block.start_text == True:
-                                next_block = next_top_block(bellow_blocks)
+                                next_block = next_top_block(below_blocks)
 
-                    # no blocks bellow current block, search to the right
+                    # no blocks below current block, search to the right
                     else:
                         potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3) and block.start_text == False]
                         next_block = next_top_block(potential_blocks)
@@ -651,28 +651,28 @@ def next_top_block_context(blocks:list[OCR_Box],current_block:OCR_Box=None):
                     potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3) and block.start_text == False]
                     next_block = next_top_block(potential_blocks)
             ## text finished
-            ### if bellow block is delimiter, search to the right of block and within delimiter's horizontal range
+            ### if below block is delimiter, search to the right of block and within delimiter's horizontal range
             ### TODO: title context could be helpful to decide if search to the right
             else:
                 print('Text finished')
-                if bellow_block:
-                    print('Bellow block:',bellow_block.id)
-                    # if bellow is type text
-                    if bellow_block.type == 'text':
+                if below_block:
+                    print('Bellow block:',below_block.id)
+                    # if below is type text
+                    if below_block.type == 'text':
                         # if start_text=True, is next block
-                        if bellow_block.start_text == True:
-                            next_block = bellow_block
-                    # next block is bellow block
+                        if below_block.start_text == True:
+                            next_block = below_block
+                    # next block is below block
                     else:
-                        next_block = bellow_block
+                        next_block = below_block
 
-                # no blocks bellow current block
+                # no blocks below current block
                 else:
                     potential_blocks = [block for block in text_blocks if not block.box.within_horizontal_boxes(current_block.box,range=0.3)]
                     next_block = next_top_block(potential_blocks)
 
         # image block
-        ## search for caption blocks bellow current block
+        ## search for caption blocks below current block
         elif current_block_type == 'image':
             print('Current block is image')
             # get caption blocks
@@ -847,7 +847,7 @@ def categorize_boxes(ocr_results:OCR_Box):
 
             
 
-def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
+def topologic_graph(ocr_results:OCR_Box,area:Box=None,clean_graph:bool=True,log:bool=False)->Graph:
     '''Generate topologic graph of blocks\n
     
     Return:
@@ -859,7 +859,8 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
     else:
         blocks = ocr_results.get_boxes_level(2)
     non_delimiters = [block for block in blocks if block.type != 'delimiter']
-    print('Non delimiters:',[block.id for block in non_delimiters])
+    if log:
+        print('Non delimiters:',[block.id for block in non_delimiters])
 
     # calculate graph
     first_block = next_top_block(non_delimiters)
@@ -884,17 +885,18 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
         current_block = current_node.value
         current_block:OCR_Box
         visited.append(current_node.id)
-
-        print('Current block:',current_block.id,current_block.type)
-        # block is before blocks directly bellow and to the right of it
+        if log:
+            print('Current block:',current_block.id,current_block.type)
+        # block is before blocks directly below and to the right of it
         potential_before_blocks = []
         right_blocks = current_block.blocks_directly_right(non_delimiters)
-        bellow_blocks = current_block.blocks_directly_bellow(non_delimiters)
+        below_blocks = current_block.blocks_directly_below(non_delimiters)
         potential_before_blocks += right_blocks
-        potential_before_blocks += bellow_blocks
-        print('Potential before blocks:',[block.id for block in potential_before_blocks])
-        print('Bellow blocks:',[block.id for block in bellow_blocks])
-        print('Right blocks:',[block.id for block in right_blocks])
+        potential_before_blocks += below_blocks
+        if log:
+            print('Potential before blocks:',[block.id for block in potential_before_blocks])
+            print('Bellow blocks:',[block.id for block in below_blocks])
+            print('Right blocks:',[block.id for block in right_blocks])
 
         # clean potential before blocks
         ## can't be before blocks that are connected to current block
@@ -904,8 +906,8 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
             if before_node.is_connected(current_block.id,only_parents=True):
                 potential_before_blocks.remove(before_block)
 
-
-        print('Cleaned potential before blocks:',[block.id for block in potential_before_blocks])
+        if log:
+            print('Cleaned potential before blocks:',[block.id for block in potential_before_blocks])
         # create edges
         for before_block in potential_before_blocks:
             before_node = topologic_graph.get_node(before_block.id)
@@ -917,10 +919,10 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
         next_block = None
         next_node = None
 
-        # choose block bellow
-        ## if no block bellow, choose next top block
+        # choose block below
+        ## if no block below, choose next top block
         ## if next top block is not in current node's children, add it
-        next_block = next_top_block([b for b in bellow_blocks if b.id not in visited],current_block.box)
+        next_block = next_top_block([b for b in below_blocks if b.id not in visited],current_block.box)
         if next_block:
             next_node = topologic_graph.get_node(next_block.id)
         else:
@@ -928,21 +930,23 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None)->Graph:
             next_block = next_top_block(non_visited)
             if next_block:
                 next_node = topologic_graph.get_node(next_block.id)
-                if not current_node.in_children(next_node):
-                    current_node.add_child_edge(next_node)
+                # if not current_node.in_children(next_node):
+                #     current_node.add_child_edge(next_node)
 
         
         current_block = next_block
         current_node = next_node
     topologic_graph.self_print()
 
-    # # clean graph
-    topologic_graph.clean_graph()
+    order = sort_topologic_order(topologic_graph)
+    # clean graph
+    if clean_graph:
+        topologic_graph.clean_graph(order)
 
     return topologic_graph
 
 
-def sort_topologic_order(topologic_graph:Graph,blocks:OCR_Box,sort_weight:bool=False)->list:
+def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
     '''Sort topologic graph into list\n
 
     Searches for first block in topologic graph, that has no blocks before it in order map, that are not already in order list\n
@@ -1022,6 +1026,24 @@ def sort_topologic_order(topologic_graph:Graph,blocks:OCR_Box,sort_weight:bool=F
     return order_list
 
 
+def sort_weighted_topologic_order(topologic_graph:Graph)->list:
+    '''Sort topologic graph into list, using attraction weights\n
+    Cleans graph by choosing edges of greatest attraction first, and removing the rest of the node\n
+    
+    After cleaning graph, sorts nodes '''
+
+    # clean graph
+    print('Cleaning graph')
+    topologic_graph.narrow_parents()
+    print('Narrowed parents')
+    topologic_graph.self_print()
+
+    # sort nodes
+    order_list = sort_topologic_order(topologic_graph,sort_weight=True)
+    return order_list
+
+
+
 
 def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
     '''Generate topologic order of blocks\n
@@ -1034,9 +1056,8 @@ def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
         blocks = ocr_results.get_boxes_in_area(area,2)
     else:
         blocks = ocr_results.get_boxes_level(2)
-    non_delimiters = [block for block in blocks if block.type != 'delimiter']
 
-    t_graph = topologic_graph(ocr_results,area)
+    t_graph = topologic_graph(ocr_results,area,clean_graph=False)
 
     # calculate attraction of edges
     for node in t_graph.nodes:
@@ -1044,7 +1065,11 @@ def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
             # calculate attraction
             attraction = calculate_block_attraction(node.value,edge.target.value,blocks)
             edge.weight = attraction
-            edge.target.weight = attraction
+        
+        for edge in node.parent_edges:
+            # calculate attraction
+            attraction = calculate_block_attraction(node.value,edge.source.value,blocks,child=False)
+            edge.weight = attraction
 
     # print attraction
     print('Attraction:')
@@ -1055,14 +1080,14 @@ def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
 
 
 
-def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None,log:bool=False)->int:
+def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None,child:bool=True,log:bool=False)->int:
     '''Calculate attraction between blocks\n
 
     Attraction is calculated based on block's characteristics such as type, size, position, etc\n
 
     0: No attraction\n'''
     if log:
-        print('Calculating attraction between',block.id,target_block.id)
+        print('Calculating attraction between',block.id,target_block.id,'|','child' if child else 'parent')
 
     max_distance = None
     min_distance = None
@@ -1076,129 +1101,284 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
 
     attraction = 0
 
+    # estimate direction, if not given
+    ## below,above,right,left
     if not direction:
-        if block.box.within_vertical_boxes(target_block.box,range=0.2) and block.box.left < target_block.box.left:
-            direction = 'right'
-        elif block.box.top < target_block.box.top:
-            direction = 'bellow'
+        # above or below
+        if block.box.intersects_box(target_block.box,extend_vertical=True):
+            if block.box.top > target_block.box.top:
+                direction = 'above'
+            else:
+                direction = 'below'
+        # right or left
+        elif block.box.intersects_box(target_block.box,extend_horizontal=True):
+            if block.box.left < target_block.box.left:
+                direction = 'right'
+            else:
+                direction = 'left'
+        elif target_block.box.is_inside_box(block.box):
+            direction = 'below'
+        elif block.box.is_inside_box(target_block.box):
+            direction = 'above'
+        elif target_block.box.top < block.box.top:
+            direction = 'above'
         else:
-            direction = 'right'
+            direction = 'below'
 
-    if direction == 'bellow':
+
+    if direction == 'below' and child or direction == 'above' and not child:
         attraction += 20
-        if log:
-            print('Direction: bellow')
+    if log:
+        print('Direction:',direction)
 
-    bellow_blocks = block.blocks_directly_bellow(blocks)
-    leftmost_block = None
-    if bellow_blocks:
-        bellow_blocks.sort(key=lambda x: x.box.left)
-        leftmost_block = bellow_blocks[0]
-
-    if leftmost_block:
-        if leftmost_block.type == 'delimiter' and direction == 'bellow':
-            attraction -= 10
-            if log:
-                print('Leftmost block is delimiter')
-        elif leftmost_block.type == 'delimiter' and direction == 'right':
-            attraction += 10
-            if log:
-                print('Leftmost block is delimiter')
-
-    if bellow_blocks:
-        if target_block in bellow_blocks:
-            attraction += 30
-            if log:
-                print('Target block is bellow')
-    else:
-        if direction == 'right':
-            attraction += 40
-            if log:
-                print('Direction: right')
 
     # distance
     # normalize distance
     ## lower distance means higher attraction
     ## max attraction increase is 20
-    ### exception, no bellow blocks (probably prefers upper block)
-    distance = block.box.distance_to(target_block.box)
+    ### exception, no below blocks (probably prefers upper block)
+    border_point = {'above':'top','below':'bottom','left':'left','right':'right'}[direction]
+    distance = block.box.distance_to(target_block.box,border=border_point)
     distance = (distance-min_distance)/(max_distance-min_distance)
-    if bellow_blocks:
-        attraction += round(20*(1-distance))
-        if log:
-            print('Distance:',distance)
 
+    #259.83456275099354
 
-
-    # title
-    ## title are very atracted to non title blocks
-    ### bellow blocks are more atracted than right blocks
-    ### right blocks are more attracted if bellow block is delimiter
-    if block.type == 'title':
-        if log:
-            print('Block is title')
-        if target_block.type != 'title':
-            attraction += 50
-            if log:
-                print('Target block is not title')
-        else:
-            if target_block in bellow_blocks:
-                attraction += 20
+    # child
+    ## more atraction to blocks below
+    ## or right blocks in conditional cases
+    if child:
+        below_blocks = block.blocks_directly_below(blocks)
+        leftmost_block = None
+        if below_blocks:
+            below_blocks.sort(key=lambda x: x.box.left)
+            leftmost_block = below_blocks[0]
+        if leftmost_block:
+            if leftmost_block.type in ['delimiter','other','image'] and direction == 'below':
+                attraction -= 10
                 if log:
-                    print('Target block is bellow')
-            
-    # image
-    ## images are very atracted to caption blocks
-    elif block.type == 'image':
-        if log:
-            print('Block is image')
-        if target_block.type == 'caption':
-            attraction += 50
+                    print('Leftmost block is delimiter')
+            elif leftmost_block.type in ['delimiter','other','image'] and direction == 'right':
+                attraction += 10
+                if log:
+                    print('Leftmost block is delimiter')
+            elif leftmost_block == target_block:
+                attraction += 10
+                if log:
+                    print('Leftmost block is target block')
+
+        if below_blocks:
+            attraction += round(20*(1-distance))
             if log:
-                print('Target block is caption')
+                print('Distance:',distance)
+
+        if below_blocks:
+            if target_block in below_blocks:
+                attraction += 30
+                if log:
+                    print('Target block is below')
         else:
-            attraction += 20
-            if log:
-                print('Target block is not caption')
-    
-    # text
-    ## text is dependent on its content
-    ## unfinished text is more atracted to unstarted text
-    ## text is more attracted to text bellow it
-    ### text to the right is more attracted if bellow block is delimiter
-    elif block.type == 'text':
-        if log:
-            print('Block is text',block.start_text,block.end_text)
-        if target_block.type =='text':
-            if log:
-                print('Target block is text',target_block.start_text,target_block.end_text)
             if direction == 'right':
+                attraction += 40
                 if log:
                     print('Direction: right')
-                # text content
-                if block.end_text == False and target_block.start_text == False:
-                    attraction += 30
-                    if log:
-                        print('Block text is not finished and target block text is not started')
 
-                if bellow_blocks:
-                    if log:
-                        print('Bellow blocks:',[block.id for block in bellow_blocks])
-                    if leftmost_block.type == 'delimiter':
+
+        # title
+        ## title are very atracted to non title blocks
+        ### below blocks are more atracted than right blocks
+        ### right blocks are more attracted if below block is delimiter
+        if block.type == 'title':
+            if log:
+                print('Block is title')
+            if target_block.type != 'title':
+                if target_block.type == 'text':
+                    if target_block.start_text == True:
                         attraction += 20
                         if log:
-                            print('Leftmost block is delimiter')
+                            print('Target block is text and text is started')
+                else:
+                    attraction += 20
+                if log:
+                    print('Target block is not title')
             else:
-                if target_block in bellow_blocks:
+                if target_block in below_blocks:
                     attraction += 20
                     if log:
-                        print('Target block is bellow')
+                        print('Target block is below')
                 
-                if block.end_text == False and target_block.start_text == False:
+        # image
+        ## images are very atracted to caption blocks
+        elif block.type == 'image':
+            if log:
+                print('Block is image')
+            if target_block.type == 'caption':
+                attraction += 50
+                if log:
+                    print('Target block is caption')
+            else:
+                attraction += 20
+                if log:
+                    print('Target block is not caption')
+        
+        # text
+        ## text is dependent on its content
+        ## unfinished text is more atracted to unstarted text
+        ## text is more attracted to text below it
+        ### text to the right is more attracted if below block is delimiter
+        elif block.type == 'text':
+            if log:
+                print('Block is text',block.start_text,block.end_text)
+            if target_block.type =='text':
+                if log:
+                    print('Target block is text',target_block.start_text,target_block.end_text)
+                if direction == 'right':
+                    if log:
+                        print('Direction: right')
+                    # text content
+                    if block.end_text == False and target_block.start_text == False:
+                        attraction += 30
+                        if log:
+                            print('Block text is not finished and target block text is not started')
+
+                    if below_blocks:
+                        if log:
+                            print('Bellow blocks:',[block.id for block in below_blocks])
+                        if leftmost_block.type == 'delimiter':
+                            attraction += 20
+                            if log:
+                                print('Leftmost block is delimiter')
+                else:
+                    if target_block in below_blocks:
+                        attraction += 20
+                        if log:
+                            print('Target block is below')
+                    
+                    if block.end_text == False and target_block.start_text == False:
+                        attraction += 50
+                        if log:
+                            print('Block text is not finished and target block text is started')
+    
+    # parent
+    ## more atraction to blocks above
+    ## or left blocks in conditional cases
+    else:
+        above_blocks = block.blocks_directly_above(blocks)
+        leftmost_block = None
+        if above_blocks:
+            above_blocks.sort(key=lambda x: x.box.left)
+            leftmost_block = above_blocks[0]
+
+        if leftmost_block:
+            if leftmost_block.type in ['delimiter','other','image'] and direction == 'above':
+                attraction -= 10
+                if log:
+                    print('Leftmost block is delimiter')
+            elif leftmost_block.type in ['delimiter','other','image'] and direction == 'left':
+                attraction += 10
+                if log:
+                    print('Leftmost block is delimiter')
+            elif leftmost_block == target_block:
+                attraction += 10
+                if log:
+                    print('Leftmost block is target block')
+
+        if above_blocks:
+            attraction += round(20*(1-distance))
+            if log:
+                print('Distance:',distance)
+
+        if above_blocks:
+            if target_block in above_blocks:
+                attraction += 30
+                if log:
+                    print('Target block is above')
+        else:
+            if direction in ['left','below']:
+                attraction += 40
+                if log:
+                    print('Direction:',direction)
+
+        # title
+        ## title are very atracted to non title blocks
+        ### above blocks are more atracted than left blocks
+        ### left blocks are more attracted if above block is delimiter
+        if block.type == 'title':
+            if log:
+                print('Block is title')
+            if target_block.type != 'title':
+                attraction += 50
+                if log:
+                    print('Target block is not title')
+            else:
+                if target_block in above_blocks:
+                    attraction += 20
+                    if log:
+                        print('Target block is above')
+
+        # caption
+        ## captions are very atracted to images
+        elif block.type == 'caption':
+            if log:
+                print('Block is caption')
+            if target_block.type == 'image':
+                attraction += 50
+                if log:
+                    print('Target block is image')
+            else:
+                attraction += 20
+                if log:
+                    print('Target block is not image')
+
+        # text
+        ## text is dependent on its content
+        ## unstarted text is more atracted to unfinished text
+        ## text is more attracted to text above it
+        ### text to the left is more attracted if above block is delimiter
+        ## started text is more atracted to titles, if above
+        elif block.type == 'text':
+            if log:
+                print('Block is text',block.start_text,block.end_text)
+            if target_block.type =='text':
+                if log:
+                    print('Target block is text',target_block.start_text,target_block.end_text)
+                if direction == 'left':
+                    if log:
+                        print('Direction: left')
+                    # text content
+                    if block.start_text == False and target_block.end_text == False:
+                        attraction += 30
+                        if log:
+                            print('Block text is not started and target block text is not finished')
+
+                    if above_blocks:
+                        if log:
+                            print('Above blocks:',[block.id for block in above_blocks])
+                        if leftmost_block.type == 'delimiter':
+                            attraction += 20
+                            if log:
+                                print('Leftmost block is delimiter')
+                else:
+                    if target_block in above_blocks:
+                        attraction += 20
+                        if log:
+                            print('Target block is above')
+                    
+                    if block.start_text == False and target_block.end_text == False:
+                        attraction += 50
+                        if log:
+                            print('Block text is not started and target block text is not finished')
+            elif target_block.type == 'title':
+                if log:
+                    print('Target block is title')
+                if block.start_text == True and target_block in above_blocks:
                     attraction += 50
                     if log:
-                        print('Block text is not finished and target block text is started')
-    
+                        print('Block text is started and target block is above')
+                elif block.start_text == False:
+                    attraction -= 20
+                    if log:
+                        print('Block text is not started')
+                
 
     if log:
         print('Attraction:',attraction)

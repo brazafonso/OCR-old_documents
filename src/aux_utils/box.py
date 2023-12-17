@@ -266,6 +266,47 @@ class Box:
 
     
 
-    def distance_to(self,box:'Box'):
-        '''Get distance to box'''
-        return math.sqrt((self.left-box.left)**2 + (self.top-box.top)**2)
+    def distance_to(self,box:'Box',border:str=None):
+        '''Get distance to box
+        
+        Uses euclidean distance between center points of boxes
+        
+        If border arg is initialized, uses distance between borders instead of center points'''
+
+        if border and border in ['left','right','top','bottom']:
+            if border == 'left':
+                self_point = self.left_middle_point()
+                box_point = box.right_middle_point()
+            elif border == 'right':
+                self_point = self.right_middle_point()
+                box_point = box.left_middle_point()
+            elif border == 'top':
+                self_point = self.top_middle_point()
+                box_point = box.bottom_middle_point()
+            elif border == 'bottom':
+                self_point = self.bottom_middle_point()
+                box_point = box.top_middle_point()
+        else:
+            self_point = self.center_point()
+            box_point = box.center_point()
+        return math.sqrt((self_point[0]-box_point[0])**2 + (self_point[1]-box_point[1])**2)
+    
+    def center_point(self):
+        '''Get center point of box'''
+        return (self.left+self.width/2,self.top+self.height/2)
+    
+    def top_middle_point(self):
+        '''Get top middle point of box'''
+        return (self.left+self.width/2,self.top)
+    
+    def bottom_middle_point(self):
+        '''Get bottom middle point of box'''
+        return (self.left+self.width/2,self.bottom)
+    
+    def left_middle_point(self):
+        '''Get left middle point of box'''
+        return (self.left,self.top+self.height/2)
+    
+    def right_middle_point(self):
+        '''Get right middle point of box'''
+        return (self.right,self.top+self.height/2)
