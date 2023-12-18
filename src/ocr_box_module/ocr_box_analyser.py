@@ -67,7 +67,7 @@ def analyze_text(ocr_results:OCR_Box)->dict:
 
 
     # estimate normal text size
-    normal_text_gap = None
+    normal_text_gap = 0
 
     last_block = None
     last_top = None
@@ -100,6 +100,8 @@ def analyze_text(ocr_results:OCR_Box)->dict:
                 highest_normal_text = line.box.top
             if not lowest_normal_text or line.box.top+normal_text_size >= lowest_normal_text:
                 lowest_normal_text = line.box.top+normal_text_size
+
+
     number_lines = (lowest_normal_text - highest_normal_text) // (normal_text_size + normal_text_gap)
 
 
@@ -951,14 +953,15 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
 
     Searches for first block in topologic graph, that has no blocks before it in order map, that are not already in order list\n
     For next blocks, in case of ties, chooses block with greatest attraction\n
+
+    If sort_weight is True, sorts blocks by weight, otherwise sorts by order of appearance. Narrows parents before sorting.\n
     Return:
     - order_list: list of block ids in order'''
-    # clean graph (remove transitive edges)
-    # if not sort_weight:
-    #     print('Cleaning graph')
-    #     topologic_graph.clean_graph()
 
-    #     topologic_graph.self_print()
+    # clean graph (narrow parents by removing edges with lower attraction)
+    if sort_weight:
+        print('Narrowing parents')
+        topologic_graph.narrow_parents()
 
     order_list = []
     last_node = None
@@ -1024,24 +1027,6 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
                     
                     
     return order_list
-
-
-def sort_weighted_topologic_order(topologic_graph:Graph)->list:
-    '''Sort topologic graph into list, using attraction weights\n
-    Cleans graph by choosing edges of greatest attraction first, and removing the rest of the node\n
-    
-    After cleaning graph, sorts nodes '''
-
-    # clean graph
-    print('Cleaning graph')
-    topologic_graph.narrow_parents()
-    print('Narrowed parents')
-    topologic_graph.self_print()
-
-    # sort nodes
-    order_list = sort_topologic_order(topologic_graph,sort_weight=True)
-    return order_list
-
 
 
 
@@ -1384,3 +1369,33 @@ def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OC
         print('Attraction:',attraction)
     return attraction
 
+
+
+def graph_isolate_articles(graph:Graph):
+    '''Isolate articles in topologic graph\n'''
+    # sort nodes
+    order_list = sort_topologic_order(graph,sort_weight=True)
+
+    # isolate articles
+    ## a new article begins when a title block is found
+    ## a new article ends when another title block is found
+    articles = []
+    current_article = []
+    has_title = False
+    for node_id in order_list:
+        node = graph.get_node(node_id)
+        node:Node
+        if node.value.type == 'title':
+            if current_article and has_title:
+                articles.append(current_article)
+                current_article = []
+                has_title = True
+            else:
+                has_title = True
+        current_article.append(node.value)
+
+    # add last article
+    if current_article:
+        articles.append(current_article)
+
+    return articles

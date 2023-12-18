@@ -25,6 +25,7 @@ class Article:
         self.bounding_box = None
         self.original_ocr_box = None
         self.metadata = None
+        self.sorted = False
         # single arg (OCR_Box)
         if len(args) == 1:
             if isinstance(args[0],OCR_Box):
@@ -50,10 +51,11 @@ class Article:
 
         # analyze text
         text_analysis = analyze_text(self.original_ocr_box)
-        print('article analysis',text_analysis)
+        # print('article analysis',text_analysis)
 
-        # order ocr_boxes by y position
-        ocr_boxes.sort(key=lambda x: x.box.top)
+        # # order ocr_boxes by y position
+        # if not self.sorted:
+        #     ocr_boxes.sort(key=lambda x: x.box.top)
 
 
         # get title
@@ -71,11 +73,11 @@ class Article:
                     abstract_boxes.append(ocr_box)
 
 
-        print('potential title boxes',potential_title_boxes)
+        # print('potential title boxes',potential_title_boxes)
         if potential_title_boxes:
             ## get biggest box
             title_box = max(potential_title_boxes,key=lambda x: x.calculate_mean_height())
-            print('title box',title_box.to_text(),title_box.calculate_mean_height())
+            # print('title box',title_box.to_text(),title_box.calculate_mean_height())
             self.title = title_box.to_text()
             ## get subtitle
             ## all other potential title boxes

@@ -17,6 +17,7 @@ from ocr_box_module.ocr_box import *
 from ocr_box_module.ocr_box_analyser import *
 from ocr_box_module.ocr_box_fix import *
 from ocr_engines.engine_utils import tesseract_search_img
+from output_module.journal.article import Article
 
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -777,8 +778,17 @@ if __name__ == '__main__':
 
         # run topologic_order context
         t_graph = topologic_order_context(ocr_results,columns_area)
-        order_list = sort_weighted_topologic_order(t_graph)
+        order_list = sort_topologic_order(t_graph,sort_weight=True)
         print('Order List: ',order_list)
+        articles = graph_isolate_articles(t_graph)
+        for article in articles:
+            print('Article:',[b.id for b in article])
+            
+        with open(f'{result_path}/articles.txt','w') as f:
+            for article in articles:
+                article = Article(article)
+                f.write(article.pretty_print())
+                f.write('\n')
 
 
     # normal mode - open GUI
