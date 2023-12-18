@@ -1,5 +1,6 @@
 '''Module for journal article output'''
 
+import re
 from ocr_box_module.ocr_box_analyser import analyze_text
 from ocr_box_module.ocr_box import OCR_Box
 from aux_utils.box import Box
@@ -139,3 +140,23 @@ class Article:
     
     def __str__(self):
         return f'Article(title={self.title},authors={self.authors},bounding_box={self.bounding_box})'
+    
+    def to_md(self):
+        '''Returns article in markdown format'''
+        text = ''
+        clean_title = re.sub(r'\s\s+', ' ', self.title)
+        text += f'''# {clean_title}
+        '''
+        text += f'''
+## Authors
+        {", ".join(self.authors)}
+        '''
+        text += f'''
+## Abstract
+        {self.abstract}
+        '''
+        text += f'''
+## Body
+        {self.body}
+        '''
+        return text
