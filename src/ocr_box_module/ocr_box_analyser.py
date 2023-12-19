@@ -1,3 +1,4 @@
+import random
 import re
 import pytesseract
 import cv2
@@ -352,6 +353,35 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
             box_stack.append(child)
     return img
 
+
+def draw_articles(articles:list[list[OCR_Box]],image_path:str):
+    '''Draw articles in image\n
+    
+    Choose a unique color for each article\n'''
+
+    # get image
+    img = cv2.imread(image_path)
+
+    # choose colors
+    colors = []
+    for i in range(len(articles)):
+        unique_color = False
+        color = None
+        while not unique_color:
+            color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
+            if color not in colors:
+                unique_color = True
+        colors.append(color)
+
+    # draw articles
+    for i in range(len(articles)):
+        for block in articles[i]:
+            block:OCR_Box
+            (x, y, w, h) = (block.box.left, block.box.top, block.box.width, block.box.height)
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), colors[i], 2)
+
+    return img
+            
 
 
 def next_top_block(blocks:list[OCR_Box],origin:Box=Box(0,0,0,0)):
@@ -1399,3 +1429,8 @@ def graph_isolate_articles(graph:Graph):
         articles.append(current_article)
 
     return articles
+
+
+
+
+

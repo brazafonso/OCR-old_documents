@@ -270,6 +270,10 @@ def main():
             sg.Image(filename=None,visible=False,key='reading_order_image_context'),
         ],
         [
+            sg.Button("Extract articles",key='button_extract_articles'),
+            sg.Image(filename=None,visible=False,key='extract_articles_image'),
+        ],
+        [
             sg.Button("Close",key='button_close')
         ]
     ]
@@ -655,6 +659,63 @@ def main():
                     bio = io.BytesIO()
                     image.save(bio,format='png')
                     window['reading_order_image_context'].update(data=bio.getvalue(),visible=True)
+                    window.refresh()
+
+        elif event == 'button_extract_articles':
+            if target_image:
+                # results path
+                results_path = f'{result_path}/{path_to_id(target_image)}'
+                if os.path.exists(f'{results_path}/fixed/result_fixed.json') or os.path.exists(f'{results_path}/result.json'):
+                    # create fixed result file
+                    if not os.path.exists(f'{results_path}/fixed/result_fixed.json'):
+                        ocr_results = OCR_Box(f'{results_path}/result.json')
+                        ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
+                        result_dict_file = open(f'{results_path}/fixed/result_fixed.json','w')
+                        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+                        result_dict_file.close()
+                        image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        csv = pd.DataFrame(ocr_results.to_dict())
+                        csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
+                    
+                    ocr_results = OCR_Box(f'{results_path}/fixed/result_fixed.json')
+                    ocr_results = categorize_boxes(ocr_results)
+
+                    image_info = get_image_info(target_image)
+                    journal_template = estimate_journal_template(ocr_results,image_info)
+                    columns_area = image_info
+                    columns_area.remove_box_area(journal_template['header'])
+                    columns_area.remove_box_area(journal_template['footer'])
+                    print('header',journal_template['header'])
+                    print('footer',journal_template['footer'])
+                    print(columns_area)
+                    
+                    t_graph = topologic_order_context(ocr_results,columns_area)
+                    order_list = sort_topologic_order(t_graph,sort_weight=True)
+                    print('Order List: ',order_list)
+                    articles = graph_isolate_articles(t_graph)
+                    for article in articles:
+                        print('Article:',[b.id for b in article])
+                        
+                    with open(f'{results_path}/articles.txt','w') as f:
+                        for article in articles:
+                            article = Article(article)
+                            f.write(article.pretty_print())
+                            f.write('\n')
+
+                    with open(f'{results_path}/articles.md','w') as f:
+                        for article in articles:
+                            article = Article(article)
+                            f.write(article.to_md())
+                            f.write('\n'+'==='*40 + '\n')
+
+                    # draw reading order
+                    image = draw_articles(articles,target_image)
+                    cv2.imwrite(f'{results_path}/articles.jpg',image)
+                    image = Image.fromarray(image)
+                    bio = io.BytesIO()
+                    image.save(bio,format='png')
+                    window['extract_articles_image'].update(data=bio.getvalue(),visible=True)
                     window.refresh()
 
 
