@@ -8,3 +8,4 @@ docs/tese/progresso.txt
 src/conf/conf.json
 *.log
 *.pyc
+investigacao/papers.txt

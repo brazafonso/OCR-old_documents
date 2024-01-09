@@ -352,7 +352,7 @@ def main():
         ]
     ]
 
-    window = sg.Window(title="Simple tesseract",
+    window = sg.Window(title="OSDOcr",
                        layout=layout,
                        finalize=True,
                        size=(1000,800))
@@ -396,6 +396,8 @@ def main():
                 bio = io.BytesIO()
                 image.save(bio, format="png")
                 window['target_image_path'].update(data=bio.getvalue(),visible=True)
+                conf['target_image_path'] = target_image
+                save_configs()
                 # update og image (fix tab)
                 update_search_block_og(window,target_image)
                 window.refresh()
@@ -450,6 +452,9 @@ def main():
                     window['bounding_boxes_image'].update(data=bio.getvalue(),visible=True)
                     window['button_hide_draw_bounding_boxes'].update(visible=True)
                     window.refresh()
+
+                    # save tmp png
+                    cv2.imwrite(f'{results_path}/test.jpg',image)
             else:
                 sg.popup('No result data found. Please run text search first.')
 
@@ -492,10 +497,8 @@ def main():
                         page.add_child(delimiter)
                     img = draw_bounding_boxes(page,target_image)
                     cv2.imwrite(f'{results_path}//journal_delimiters.jpg',img)
-                    img = Image.fromarray(img)
-                    bio = io.BytesIO()
-                    img.save(bio,format='png')
-                    window['journal_delimiters_image'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',img)[1].tobytes()
+                    window['journal_delimiters_image'].update(data=bio,visible=True)
                     window.refresh()
                 
             else:
@@ -743,18 +746,14 @@ def main():
                     box_level = values['fix_box_bounds_level']
                     ocr_results.id_boxes([box_level])
                     image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
-                    bio = io.BytesIO()
-                    pil_img = Image.fromarray(image)
-                    pil_img.save(bio,format='png')
-                    window['fix_box_bounds_image_og'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['fix_box_bounds_image_og'].update(data=bio,visible=True)
                     window.refresh()
 
                     ocr_results = bound_box_fix(ocr_results,box_level,get_image_info(target_image))
                     image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
-                    bio = io.BytesIO()
-                    pil_img = Image.fromarray(image)
-                    pil_img.save(bio,format='png')
-                    window['fix_box_bounds_image_new'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['fix_box_bounds_image_new'].update(data=bio,visible=True)
                     window['button_save_fix_result'].update(visible=True)
                     window.refresh()
 
@@ -913,6 +912,15 @@ if __name__ == '__main__':
             # run topologic_order context
             t_graph = topologic_order_context(ocr_results,columns_area)
             order_list = sort_topologic_order(t_graph,sort_weight=True)
+
+            # change ids to order
+            order_map = {order_list[i]:i for i in range(len(order_list))}
+            ocr_results.change_ids(order_map)
+
+            # draw reading order
+            image = draw_bounding_boxes(ocr_results,f'{results_path}/fixed/result_fixed.jpg',[2],id=True)
+            cv2.imwrite(f'{results_path}/reading_order.jpg',image)
+
             print('Order List: ',order_list)
             articles = graph_isolate_articles(t_graph)
             for article in articles:

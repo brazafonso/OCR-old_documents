@@ -310,7 +310,7 @@ class OCR_Box:
     
 
     def type_color(self)->(int,int,int):
-        '''Get block color, in rgb value, based on type
+        '''Get block color, in bgr value, based on type
         
         Colors:
             - text: yellow
@@ -321,13 +321,13 @@ class OCR_Box:
             - other: green'''
         
         if self.type == 'text':
-            return (255,255,0)
+            return (0,255,255)
         elif self.type == 'image':
             return (0,0,0)
         elif self.type == 'title':
-            return (255,0,0)
-        elif self.type == 'delimiter':
             return (0,0,255)
+        elif self.type == 'delimiter':
+            return (255,0,0)
         elif self.type == 'caption':
             return (255,255,255)
         else:
@@ -474,6 +474,18 @@ class OCR_Box:
         directly_above_blocks = clean_directly_above_blocks
 
         return directly_above_blocks
+    
+
+    def change_ids(self,ids:dict,level:int=2,clean:bool=True):
+        '''Change ids in ocr_results'''
+        if self.level == level and self.id:
+            if self.id in ids:
+                self.id = ids[self.id]
+            elif clean:
+                self.id = None
+        elif self.level < level:
+            for child in self.children:
+                child.change_ids(ids,level,clean)
             
 
 
