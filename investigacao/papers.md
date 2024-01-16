@@ -270,7 +270,103 @@
 
 # OCR Pos processamento
 
-Survey of Post-OCR Processing Approaches : https://dl.acm.org/doi/10.1145/3453476
+## Survey of Post-OCR Processing Approaches : https://dl.acm.org/doi/10.1145/3453476
+* estudo extenso e compreensivo sobre a necessidade de pos processamento, as tecnicas comuns e a sua eficacia, e o caminho que a area esta a tomar
+* pos processamento é essencial nao so para obter a informação de forma correta, mas também por questões de indexação dos proprios documentos
+    * exposição sobre erros de OCR que foram calculados diminuir a taxa de acertos com termos de procura populares - Information Retrieval
+    * para NLP, como análise de sentimentos, taxas de erro por volta dos 7% mostram que pode afetar a performance tanto como 30%.
+* apresentação do problema de pos processamento de OCR
+    * tendo uma sequencia de tokens s dados pelo OCR e uma sequencia de palavras w representantes da ground truth de um documento, tenta-se a aproximar o conjunto S ao conjunto W o maximo possivel
+    * alguns erros detetaveis:
+        * não palavra: caso s não pertença ao conjunto de palavras do dicionário (deteção automática)
+        * palavra errada: caso sn seja diferente de wn (necessário ground truth e técnicas de alinhamento para detetar, ou modelos de previsão de texto)
+    * no caso de deteção erros, na maior parte dos casos são propostos modelos probabilísticos que procuram entre as possíveis palavras tendo em conta a palavra errada
+* técnicas de pos-OCR
+    * manuais
+        * principalmente para criação de dados de teste
+        * voluntariado
+        * jogos, projetos de correção de texto antigos, captcha
+    * (semi-)automáticas
+        * palavras isoladas
+            * considera:
+                * presença no dicionario
+                * confiança do reconhecimento
+                * frequencia de uso
+                * similaridade com entradas conhecidas do léxico
+            * maioritariamente para problemas de palavras não reais ou desconhecidas
+            * técnicas
+                * junção de Outputs de OCR
+                    * 3 fases
+                        * 1º obenção de varios resultados de OCR
+                            * varios scannings do texto
+                            * mudança de parametros de pre processamento antes de fazer varios scannings do texto
+                            * varios scannings com Motores OCR diferentes
+                        * 2º alinhamento de texto
+                            * uso de grafos para alinhar palavras numa linha
+                            * alinhamento hierarquico, pagina, linha, palavra
+                        * 3º fase de decisão
+                            * decidir qual dos inputs escolher
+                            * votação, dicionário, Modelos de LSTM; são alguns exemplos de decisores
+                    * limitado às palavras dos vários inputs, mas computação necessária
+                * vias lexicais
+                    * cálculos de similaridade entre palavras
+                        * levenshtein, ngrams
+                    * dependente do léxico/dicionário/corpura usado
+                        * maior parte do trabalho realizado é sobre a criação de léxicos abrangentes o suficiente, ou adaptados ao documento
+                * modelos de erro
+                    * foco na probabilidade de erro entre caracteres, inves de foco nas palavras inteiras
+                    * começou por permitir edições de 1 caractere, tendo propostas recentes permitido multiplos
+                    * uso de um lexico para o suporte em algumas das hipoteses
+                * maquinas de estado finitas com pesos
+                    * usado muitas vezes juntamente com os modelos de erro
+                    * pesos podem ser uma combinação de varios metodos, como hipotese do modelo de erro, distantica de similaridade, probabilidade de ser uma variação de uma palavra ,etc.
+                * modelos de linguagem baseados em tópicos
+                    * balancear os pesos tendo em conta o topico do documento
+                    * primeiramente é preciso criar uma lista de topicos conhecidos
+                    * criar algoritmo para decisao do topico de um documento
+                    * adaptar lexico para atribuir topicos às palavras
+                * outros modelos
+                    * SVM, word2vec, etc.
+        * dependente de contexto
+            * pode tratar de problemas de palavras não reais, ou de palavras erradas
+            * modelos de linguagem
+                * estatisticos
+                    * evolução de modelos de erro para consideram contexto
+                    * contexto pode utilizado conseguido através dos vizinhos diretos, ou de combinações de palavras dentro do documento ou num léxico (n grama), ou para probabilidade de n-grama aparecer num dado contexto
+                * Neural Network
+                    * word embedding
+                    * criaçao de classificadores probabilisticos
+                    * calculam probabilidade de uma palavra ser escolhida numa dada sequencia
+            * ML baseado em caracteristicas
+                * escolha de um numero limitado de features
+                    * distancia de edição ou similaridade
+                    * frequencia de unigrama
+                    * frequencia de n-grama
+                    * confusion weight
+                    * confiança do OCR
+                * classificaçao utilizando um modelo estatistico
+            * sequence-to-sequence (Seq2Seq)
+                * transformação do texto como um todo
+                * machine translation
+                * tradicional
+                    * transformação de palavras
+                * Neural Network
+                    * transformação da frase
+                * casos de mistura em que utilizam transformação de caracter
+* apresentadas varias metricas de avaliação
+    * Precisão
+    * recall (acertos relevantes)
+    * F-Score
+    * BLEU (para Machine translation)
+    * ER
+    * Acerto (accuracy)
+* conjunto de toolkits para pos processamento
+* conjunto de testes em diferetens datasets
+
+
+
+
+
 
 Deep Statistical Analysis of OCR Errors for Effective Post-OCR Processing - https://ieeexplore.ieee.org/document/8791206
 
@@ -342,3 +438,8 @@ Europeana Newspapers OCR Workflow Evaluation : https://dl.acm.org/doi/10.1145/28
 https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - Naive
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9413256 - ML
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7351614 - Grafo
+
+
+# Alinhamento de texto
+
+Creating an Improved Version Using Noisy OCR from Multiple Editions : https://ieeexplore.ieee.org/document/6628604 - 2013
