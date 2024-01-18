@@ -364,13 +364,119 @@
 * conjunto de testes em diferetens datasets
 
 
+# Segmentação de documentos
 
+## Document image segmentation using discriminative learning over connected components : https://dl.acm.org/doi/abs/10.1145/1815330.1815354 - 2010
+* resumo de segmentação de páginas
+    * baseado em blocos
+        * dividir pagina em blocos e atribuir a cada bloco uma classe
+        * metodo por Wang et al.
+            * divisao de pagina em blocos
+            * criação de vetores representantes dos blocos
+            * decisor para atribuir classe aos blocos
+        * muito dependente da daivisao inicial em blocos
+    * baseado em pixeis individuais
+        * classificação de pixeis
+        * não limitado a regiões quadradas
+        * lento
+* método proposto
+    * ML
+    * categorização de componentes ligados
+    * diferente dos ultimos dois métodos e independete de segmentação inicial
+    * conjunto limitado de classes, mais poderiam ser adicionadas no set de treino
+    * vetor de caracteristicas robusto
+        * objeto reescalado
+        * metadados da forma do objeto
+            * comprimento e largura normalizados
+            * aspect ratio
+            * numero de pixeis na area reescalada em relação ao numero total da area reescalada
+        * informacao de contexto
+            * uma certa quantidade da vizinhança do componente é juntada
+    * classificador MLP (multi-layer perceptron) auto tuned
+    * resultados
+        * segmentação de imagens mais flexivel do que o estado da arte comparado
 
+## A comprehensive survey of mostly textual document segmentation algorithms since 2008 : https://www.sciencedirect.com/science/article/pii/S0031320316303399 - 2017
+* divisão entre diferentes tipos de algoritmos 
+    * grupos tipicos
+        * top-down : segmentar a partir da pagina
+        * bottom-up : a partir de escalas mais pequenas, tenta aglomerar elementos em conjuntos maiores ate passar o documento inteiro
+            * pixeis
+            * componentes conectadas
+            * alternativo
+        * hibrido
+    * grupos da survey
+        * algoritmos especificos para um tipo de layout
+            * tipo que assumem as caracteristicas do layout
+            * tipo que utilizam filtros para realçarem as regioes de um documento
+            * tipo que procura as delimitações das regioes do layout no docmento
+        * algoritmos versateis mas que necessitam de parametros extra para se adaptarem ao layout
+            * clustering
+            * análise de funções
+            * classificação
+        * algoritmos totalmente flexiveis
+            * hibridos : complexos e normalmente sem grandes melhorias
+            * redes neuronais
+    * grupo 1 - layout especifico
+        * algoritmos especificos para um tipo de layout que assumem layout
+            * mais rapidos
+            * muito restritivos
+            * nas condições certas apresentam melhores resultados do que os mais flexiveis
+            * tipos
+                * gramáticas
+                    * layout é descrito segundo um conjunto de regras
+                * projeção de perfis
+                    * criação de um perfil usando quadrados que depois é projetado sobre o documento e sujeito a heuristicas e analises probabilistacas para deteção de erros
+        * algoritmos baseados em filtros
+            * assumem que as linhas sao retas e bem orientadas
+            * tipos
+                * morfologias
+                    * erosao e dilatação para identificação de imagens
+                    * RLSA (Run-Length Smoothing Algorithm)
+                        * conversao de pixeis de 0 para 1 quando o numero de 0 adjacentes é menor que um dado limite
+        * baseado na identificação de linhas retas
+            * calculo das linhas de texto para segmentação
+            * alguns algoritmos para reconhecimento de linhas
+                * Hough transformation
+    * grupo 2 - layout restringido por parametros
+        * mais flexiveis do que o anterior
+        * baseado em clustering
+            * mais popular
+            * geométrico
+                * elementos base os componentes conectados 
+                * features principais geometricas
+                    * distancia
+                    * area
+                    * densidade
+                * outras
+                    * distribuicao geometrica
+                    * cor
+            * textura
+                * baseado nas caracteristicas ao nivel dos pixeis
+            * caracteristicas genericas
+                * junção entre segmentação de blocos e clustering de features
+        * baseado em análise de funções
+            * otmização de função de custo
+        * baseado em classificação
+            * segundo mais popular
+            * uso de MLP, SVM
+            * baseado em textura
+            * baseado em caracteristicas
+                * mais comum
+                * uma das caracteristicas tende a ser a cor
+                * features podem ser predefinidas ou usados modelos para automaticamente calcular e depois escolher as melhores features
+    * grupo 3 - layout (potencialmente) não restrito
+        * hibridos
+        * combinados
+        * redes neuronais
+    * discussao, metricas de avaliação, estatisticas e resultados
 
+## Multi-Scale Multi-Task FCN for Semantic Page Segmentation and Table Detection : https://ieeexplore.ieee.org/abstract/document/8269981 - 2017
+* metodo utilizando multiplas CNN para segmentação de documentos em classes de texto e nao texto
+* foco tambem na indentificacao de tabelas
 
-Deep Statistical Analysis of OCR Errors for Effective Post-OCR Processing - https://ieeexplore.ieee.org/document/8791206
+    
 
-Error Correction with In-domain Training across Multiple OCR System Outputs - https://ieeexplore.ieee.org/document/6065393
 
 # OCR validação
 On OCR ground truths and OCR post-correction gold standards, tools and formats : https://dl.acm.org/doi/10.1145/2595188.2595216
@@ -387,52 +493,89 @@ Performance Evaluation and Benchmarking of Six-Page Segmentation Algorithms - ht
 Digitization of Data from Invoice using OCR - https://ieeexplore.ieee.org/document/9754117
 
 
+
+
+
 # Algoritmos
 
 
-## Estrutracao de jornais:
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9833047 - 2021
-    * processo de remoção de imagens do jornal, seguido da remoção de delimitadores; permite a identificação das linhas brancas
-    de separação entre artigos
-    * uso de ML apenas para tratamento de imagem
-    * resultados muito bons para jornais bastante complexos, embora quantidade de casos de teste muito reduzido (~250)
-        ** algoritmos a estudar:
-            * Douglas-Peucker algorithm
-            * Otsu binarization
-            * Hough line
-            * RLSA 
-            * Sobel X
-        ** referencias a varios artigos sobre limpeza e melhoria de imagens com danos causados por idade e má digitalização
+# Estrutracao de jornais:
 
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009 - 2014
-    * forte uso de ML para a indetificação segmentação de artigos num jornal
-    * imagens utilizadas nao tem em conta danos de idade
-    * utilizacao de processamento de imagem para remocao de delimitadores numa fase inicial e criacao dos diferentes blocos
-    de texto e imagem
-    * utilizacao de numero compacto mas logico de parametros na funcao de labeling dos blocos, incluindo imagens
-    * potencial de adaptabilidade para diferentes layouts, visto nao seguir heuristicas especificas
-    * resultados bons, mas sob um datasete muito reduzido (~45)
-    ** bastantes referencias a artigos sobre estado da arte, assim como uso de tecnologias ja criadas
-    no projeto
+## Old Sinhala Newspaper Article Segmentation for Content Recognition Using Image Processing : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9833047 - 2021 + Procedural approach for content segmentation of old newspaper pages : https://ieeexplore.ieee.org/abstract/document/8300390 - 2017
+* processo de remoção de imagens do jornal, seguido da remoção de delimitadores; permite a identificação das linhas brancas de separação entre artigos
+* uso de ML apenas para tratamento de imagem
+* resultados muito bons para jornais bastante complexos, embora quantidade de casos de teste muito reduzido (~250)
+    * algoritmos a estudar:
+        * Douglas-Peucker algorithm
+        * Otsu binarization
+        * Hough line
+        * RLSA 
+        * Sobel X
+    * referencias a varios artigos sobre limpeza e melhoria de imagens com danos causados por idade e má digitalização
 
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5277572 - 2009
-    * da google
-    * relativamente desatualizado, utiliza heuristicas e tecnicas sem uso de ML
-    * supostamente utilizado num grande numero de jornais mas sem grande detalhe sobre os resultados
-    sem ser 90% de eficacia na segmentacao e 80% no OCR (se apenas nos exemplos do artigo ou no total nao é explicito)
-    ** algoritmos a estudar:
-        * image binarization
-        * morphological grayscale reconstruction
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8999273 - 2019
-    * completamente focado em ML
-    * uso de CNN com mascara
-    * resultados que ajudariam na segementação do jornal, mas seriam necessitariam ainda de serem
-    processados localmente
-    * modulo generalista, agnostico de linguagens
-    * dataset nao muito grande (~840)
+## Newspaper Article Extraction Using Hierarchical Fixed Point Model : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6831009 - 2014
+* forte uso de ML para a indetificação segmentação de artigos num jornal
+* imagens utilizadas nao tem em conta danos de idade
+* utilizacao de processamento de imagem para remocao de delimitadores numa fase inicial e criacao dos diferentes blocos de texto e imagem
+* utilizacao de numero compacto mas logico de parametros na funcao de labeling dos blocos, incluindo imagens
+* potencial de adaptabilidade para diferentes layouts, visto nao seguir heuristicas especificas
+* resultados bons, mas sob um datasete muito reduzido (~45)
+* bastantes referencias a artigos sobre estado da arte, assim como uso de tecnologias ja criadas no projeto
+
+* pre processamento
+    * binarização
+    * remoção de linhas (delimitadores) tendo em conta o aspect ratio dos componentes ligados
+    * uso do projeto leptonica para segmentação entre texto e graficos
+    * resultado : blocos retangulares categorizados como texto ou imagem
+* 2º fase - calculo de vizinhos
+    * uso de limiar q define numero maximo de vizinhos em cada direção
+    * diferentes limares para categorização de bloco e extração de artigo
+        * para extracao de artigo maior
+* 3º fase - classificação de bloco
+    * uso de caracteristicas de aparacencia
+        * altura, comprimento
+        * altura do componente ligado mais alto
+        * aspect ratio
+        * ratio de pixeis preto e branco
+    * vizinhança como resto das caracteristicas
+    * Kernel logistic regression para classificação
+* 4º fase - extração de artigos
+    * para cada bloco de tipo heading, assume-se um artigo e itera-se o processo
+    * blocos são classificados entre artigo e não artigo usando como base o heading
+
+
+## Google Newspaper Search – Image Processing and Analysis Pipeline : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5277572 - 2009
+* da google
+* relativamente desatualizado, utiliza heuristicas e tecnicas sem uso de ML
+* supostamente utilizado num grande numero de jornais mas sem grande detalhe sobre os resultados sem ser 90% de eficacia na segmentacao e 80% no OCR (se apenas nos exemplos do artigo ou no total nao é explicito)
+* algoritmos a estudar:
+    * image binarization
+    * morphological grayscale reconstruction
+
+
+## Instance Segmentation of Newspaper Elements Using Mask R-CNN : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8999273 - 2019
+* completamente focado em ML
+* uso de CNN com mascara
+* resultados que ajudariam na segementação do jornal, mas seriam necessitariam ainda de serem processados localmente
+* modulo generalista, agnostico de linguagens
+* dataset nao muito grande (~840)
+* Modelo não usa resultados de OCR, fazendo ele proprio uma primeira fase de identificação de zonas candidatas de ter conteudo, e so depois sao essas regioes classificadas, e aplicadas mascaras ao nivel dos pixeis (nao limitadas a regioes quadrangulares)
+
     
-Europeana Newspapers OCR Workflow Evaluation : https://dl.acm.org/doi/10.1145/2809544.2809554
+## Europeana Newspapers OCR Workflow Evaluation : https://dl.acm.org/doi/10.1145/2809544.2809554 - 2015
+* projeto europeu para popularizar praticas para digitalização de jornais usando OCR
 
+## Fully Convolutional Neural Networks for Newspaper Article Segmentation : https://ieeexplore.ieee.org/abstract/document/8270006 - 2017
+* redes convolucionais para segmentação de artigos
+* 3 fases
+    * extraçao de features
+    * upscale e segmentação
+    * separação entre pixeis background e artigo
+
+
+## Combining Visual and Textual Features for Semantic Segmentation of Historical Newspapers : https://arxiv.org/abs/2002.06144v4 - 2020
+* modificacao de uma CNN para em conjunto com imagem, receber text embeddings
+* uniao de caracteristicas visuais com caracteristicas textuais do documento e dos blocos
 
 ## ordenaçao de caixas
 https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - Naive
