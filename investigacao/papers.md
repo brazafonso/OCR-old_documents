@@ -577,6 +577,12 @@ Digitization of Data from Invoice using OCR - https://ieeexplore.ieee.org/docume
 * modificacao de uma CNN para em conjunto com imagem, receber text embeddings
 * uniao de caracteristicas visuais com caracteristicas textuais do documento e dos blocos
 
+## Article Segmentation in Digitised Newspapers with a 2D Markov Model : https://ieeexplore.ieee.org/document/8978066 - 2019
+* focado em heuristicas
+* modelo de markvo 2d
+* permite segmentação em artigos tendo em conta a ordem de leitura
+
+
 ## ordenaçao de caixas
 https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - Naive
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9413256 - ML
