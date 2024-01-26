@@ -715,10 +715,8 @@ def main():
                     # draw reading order
                     image = draw_articles(articles,target_image)
                     cv2.imwrite(f'{results_path}/articles.jpg',image)
-                    image = Image.fromarray(image)
-                    bio = io.BytesIO()
-                    image.save(bio,format='png')
-                    window['extract_articles_image'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['extract_articles_image'].update(data=bio,visible=True)
                     window.refresh()
 
 

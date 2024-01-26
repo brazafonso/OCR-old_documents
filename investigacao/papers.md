@@ -583,10 +583,35 @@ Digitization of Data from Invoice using OCR - https://ieeexplore.ieee.org/docume
 * permite segmentação em artigos tendo em conta a ordem de leitura
 
 
-## ordenaçao de caixas
-https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - Naive
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9413256 - ML
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7351614 - Grafo
+# ordenaçao de caixas
+
+
+## High Performance Document Layout Analysis : https://www.researchgate.net/publication/2564797_High_Performance_Document_Layout_Analysis - 2003
+* heuristicas naive
+* ordenação topologica
+    * sem descrição sobre casos de conflito
+* bom para esquemas regulares
+* teria de ser adaptado para ordem de leituras diferentes da norma
+* não seria capaz de lidar com estruturas como tabelas por exemplo
+
+## Learning to Sort Handwritten Text Lines in Reading Order through Estimated Binary Order Relations : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9413256 - 2021
+* uso de ML
+    * multi layer percepton
+    * random decision forest
+* sem grandes resultados para estruturas mais complexas como tabelas
+* treinado maioritariamente para calcular ordem de leitura em documentos historicos com anotações de lado
+* focado em texto manuscrito
+* necessita de dados para teste
+
+## A layered method for determining manga text bubble reading order : https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7351614 - 2015
+* uso de grafos de forma dupla
+    * grafo para ordenação de paineis
+    * grafo para ordenação de bolhas texto dentro dos paineis
+    * algoritmo de vizinho mais proximo
+    * pesos simples baseados em distancia
+* estruturas complexas, mas pesos usados bastante simples sem grande uso de contexto
+    * compensado pelas duas ordenações diferentes que limitam para cada bolha o conjunto de potenciais proximas bolhas
+
 
 
 # Alinhamento de texto
