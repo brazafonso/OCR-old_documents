@@ -597,10 +597,8 @@ def main():
                     ocr_results.id_boxes([2],{2:1},False,columns_area)
                     image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
                     cv2.imwrite(f'{results_path}/initial_reading_order.jpg',image)
-                    image = Image.fromarray(image)
-                    bio = io.BytesIO()
-                    image.save(bio,format='png')
-                    window['initial_reading_order_image'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',img)[1].tobytes()
+                    window['initial_reading_order_image'].update(data=bio,visible=True)
                     window.refresh()
                     
                     reading_order = calculate_reading_order_naive(ocr_results,columns_area)
@@ -608,10 +606,8 @@ def main():
                     # draw reading order
                     image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
                     cv2.imwrite(f'{results_path}/reading_order.jpg',image)
-                    image = Image.fromarray(image)
-                    bio = io.BytesIO()
-                    image.save(bio,format='png')
-                    window['reading_order_image'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['reading_order_image'].update(data=bio,visible=True)
                     window.refresh()
 
         elif event == 'button_calculate_reading_order_context':
@@ -642,15 +638,14 @@ def main():
                     print('header',journal_template['header'])
                     print('footer',journal_template['footer'])
                     print(columns_area)
+
                     # draw initial reading order
                     ocr_results.clean_ids()
                     ocr_results.id_boxes([2],{2:1},True,columns_area)
                     image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
                     cv2.imwrite(f'{results_path}/initial_reading_order_context.jpg',image)
-                    image = Image.fromarray(image)
-                    bio = io.BytesIO()
-                    image.save(bio,format='png')
-                    window['initial_reading_order_image_context'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['initial_reading_order_image_context'].update(data=bio,visible=True)
                     window.refresh()
                     
                     reading_order = calculate_reading_order_naive_context(ocr_results,columns_area)
@@ -658,10 +653,8 @@ def main():
                     # draw reading order
                     image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
                     cv2.imwrite(f'{results_path}/reading_order_context.jpg',image)
-                    image = Image.fromarray(image)
-                    bio = io.BytesIO()
-                    image.save(bio,format='png')
-                    window['reading_order_image_context'].update(data=bio.getvalue(),visible=True)
+                    bio = cv2.imencode('.png',image)[1].tobytes()
+                    window['reading_order_image_context'].update(data=bio,visible=True)
                     window.refresh()
 
         elif event == 'button_extract_articles':
