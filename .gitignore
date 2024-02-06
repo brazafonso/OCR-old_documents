@@ -9,3 +9,4 @@ src/conf/conf.json
 *.log
 *.pyc
 investigacao/papers.txt
+src/targets.txt

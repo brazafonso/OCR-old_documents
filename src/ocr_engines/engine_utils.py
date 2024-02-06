@@ -1,8 +1,13 @@
 import sys
 import pytesseract
+import json
+import os
+from aux_utils import consts
 from PIL import Image
 from aux_utils.box import Box
+from aux_utils.misc import path_to_id
 from ocr_box_module.ocr_box import OCR_Box
+from ocr_box_module.ocr_box_analyser import *
 
 
 
@@ -65,3 +70,71 @@ def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Box:
             current_node.add_child(node)
             box_stack.append(node)
     return document
+
+
+def save_results(ocr_results:OCR_Box,image_path:str):
+    '''Saves results gathered from ocr_results to files'''
+
+    result_folder_name = path_to_id(image_path)
+    # create result folder
+    if not os.path.exists(f'{consts.result_path}/{result_folder_name}'):
+        os.makedirs(f'{consts.result_path}/{result_folder_name}')
+
+    results_path = f'{consts.result_path}/{result_folder_name}'
+
+    img = draw_bounding_boxes(ocr_results,image_path)
+    # create result files
+
+    # create result image
+    cv2.imwrite(f'{results_path}/result.jpg',img)
+
+    
+
+    # save result data
+    result_dict_file = open(f'{results_path}/result.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    result_csv_file = open(f'{results_path}/result.csv','w')
+    df = pd.DataFrame(ocr_results.to_dict())
+    df.to_csv(result_csv_file)
+    result_csv_file.close()
+    
+    # save result processed data
+    data_processed = analyze_text(ocr_results)
+    result_file = open(f'{results_path}/result_processed.json','w')
+    json.dump(data_processed,result_file,indent=4)
+    result_file.close()
+
+
+def run_tesseract(image_path):
+    '''GUI - Run text search on target image'''
+
+    results = tesseract_search_img(image_path)
+    ocr_results = results['ocr_results']
+    data_text = results['data_text']
+    data_pdf = results['data_pdf']
+    data_xml = results['data_xml']
+    
+    # save results
+
+    # save results from ocr_results
+    save_results(ocr_results,image_path)
+
+    # results path
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+
+    # save result simple text
+    result_file = open(f'{results_path}/result.txt','w')
+    result_file.write(data_text)
+    result_file.close()
+
+
+    # save result pdf and xml
+    result_pdf = open(f'{results_path}/result.pdf','wb')
+    result_pdf.write(data_pdf)
+    result_pdf.close()
+
+    result_xml = open(f'{results_path}/result.xml','wb')
+    result_xml.write(data_xml)
+    result_xml.close()

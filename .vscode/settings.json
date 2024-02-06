@@ -9,6 +9,7 @@
         "./src",
         "./src",
         "./src",
-        "./src"
+        "./src",
+        "./src/aux_utils"
     ]
 }

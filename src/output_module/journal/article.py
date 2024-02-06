@@ -144,7 +144,9 @@ class Article:
     def to_md(self):
         '''Returns article in markdown format'''
         text = ''
-        clean_title = re.sub(r'\s\s+', ' ', self.title)
+        clean_title = 'Default Title'
+        if self.title:
+            clean_title = re.sub(r'\s\s+', ' ', self.title)
         text += f'''# {clean_title}
         '''
         text += f'''
