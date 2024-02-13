@@ -77,31 +77,45 @@ class Box:
         '''Check if boxes are within each other vertically, considering a range'''
         # avoid division by zero
         topmost = min(self.top,box.top)
-        toplest = max(self.top,box.top)
+        topleast = max(self.top,box.top)
         bottommost = max(self.bottom,box.bottom)
         bottomlest = min(self.bottom,box.bottom)
 
+        # avoid division by zero
+        top_ratio = abs(topleast / topmost - 1) if topmost != 0 else abs(topleast / 0.1 - 1)
+        bottom_ratio = abs(bottomlest / bottommost - 1) if bottommost != 0 else abs(bottomlest / 0.1 - 1)
+
         # check if self is within box with range
-        if (topmost == toplest or self.top <= box.top or abs(1 - toplest/topmost) <= range) and (bottommost == bottomlest or self.bottom >= box.bottom or abs(1 - bottomlest/bottommost) <= range):
+        if (topmost == topleast or self.top <= box.top or top_ratio <= range) and (bottommost == bottomlest or self.bottom >= box.bottom or bottom_ratio <= range):
             return True
-        elif (topmost == toplest or box.top <= self.top or abs(1 - toplest/topmost) <= range) and (bottommost == bottomlest or box.bottom >= self.bottom or abs(1 - bottomlest/bottommost) <= range):
+
+        # check if box is within self with range
+        elif (topmost == topleast or box.top <= self.top or top_ratio<= range) and (bottommost == bottomlest or box.bottom >= self.bottom or bottom_ratio <= range):
             return True
         return False
             
 
-    def within_horizontal_boxes(self,box,range=0):
+    def within_horizontal_boxes(self, box, range=0):
         '''Check if boxes are within each other horizontally, considering a range'''
         # avoid division by zero
-        leftmost = min(self.left,box.left)
-        leftlest = max(self.left,box.left)
-        rightmost = max(self.right,box.right)
-        rightlest = min(self.right,box.right)
+        leftmost = min(self.left, box.left)
+        leftleast = max(self.left, box.left)
+        rightmost = max(self.right, box.right)
+        rightleast = min(self.right, box.right)
+
+        
+        # avoid division by zero
+        left_ratio = abs(leftleast / leftmost - 1) if leftmost != 0 else abs(leftleast / 0.1 - 1)
+        right_ratio = abs(rightleast / rightmost - 1) if rightmost != 0 else abs(rightleast / 0.1 - 1)
+
+        # check if box is within self with range
+        if (self.left <= box.left or left_ratio <= range) and (self.right >= box.right or right_ratio <= range):
+            return True
 
         # check if self is within box with range
-        if (leftmost == leftlest or self.left <= box.left or abs(1 - leftlest/leftmost) <= range) and (rightmost == rightlest or self.right >= box.right or abs(1 - rightlest/rightmost) <= range):
+        if (box.left <= self.left or left_ratio <= range) and (box.right >= self.right or right_ratio <= range):
             return True
-        elif (leftmost == leftlest or box.left <= self.left or abs(1 - leftlest/leftmost) <= range) and (rightmost == rightlest or box.right >= self.right or abs(1 - rightlest/rightmost) <= range):
-            return True
+
         return False
 
 

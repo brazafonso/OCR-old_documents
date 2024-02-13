@@ -86,7 +86,7 @@ def save_results(ocr_results:OCR_Box,image_path:str):
     # create result files
 
     # create result image
-    cv2.imwrite(f'{results_path}/result.jpg',img)
+    cv2.imwrite(f'{results_path}/result.png',img)
 
     
 

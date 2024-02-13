@@ -78,7 +78,7 @@ def run_tesseract_results(window:sg.Window):
         results_path = f'{consts.result_path}/{path_to_id(target_image)}'
 
         # update result image
-        image = Image.open(f'{results_path}/result.jpg')
+        image = Image.open(f'{results_path}/result.png')
         image.thumbnail((800, 800))
         bio = io.BytesIO()
         image.save(bio, format="png")
@@ -92,7 +92,7 @@ def run_tesseract_results(window:sg.Window):
         window['result_text2'].update(processed_result,visible=True)
 
         #update result columns
-        columns_image = split_page_columns(target_image if target_image else f'{results_path}/result.jpg',processed_result['columns'])
+        columns_image = split_page_columns(target_image if target_image else f'{results_path}/result.png',processed_result['columns'])
         columns_image = concatentate_columns(columns_image)
         if columns_image:
             columns_image.thumbnail((800, 800))
@@ -122,7 +122,7 @@ def run_gui():
     # main window layout
     main_layout = [
         [
-            sg.FileBrowse(file_types=(("IMG Files", "*.jpg"),("IMG Files", "*.png")),initial_folder=f'{current_path}/../docs/jornais/',button_text="Choose Image",key='browse_file',target='target_input'),
+            sg.FileBrowse(file_types=(("IMG Files", "*.*"),),initial_folder=f'{current_path}/../docs/jornais/',button_text="Choose Image",key='browse_file',target='target_input'),
             sg.Input(default_text='' if not conf['target_image_path'] else conf['target_image_path'],key='target_input',enable_events=True),
             sg.Button("Search Text",key='button_tesseract')
         ],
@@ -284,7 +284,7 @@ def run_gui():
         # new target file chosen
         if event == 'target_input':
             target_image = values['target_input']
-            if target_image and target_image.strip() != '' and target_image.endswith(('jpg','png')):
+            if target_image and target_image.strip() != '':
                 # update target image
                 image = Image.open(target_image)
                 image.thumbnail((800, 800))
@@ -301,7 +301,7 @@ def run_gui():
         if event == 'button_tesseract':
             target_image = values['target_input']
             print('Target:',target_image)
-            if  target_image and target_image.strip() != '' and target_image.endswith(('jpg','png')):
+            if  target_image and target_image.strip() != '':
                 # results path
                 results_path = f'{result_path}/{path_to_id(target_image)}'
 
@@ -349,7 +349,7 @@ def run_gui():
                     window.refresh()
 
                     # save tmp png
-                    cv2.imwrite(f'{results_path}/test.jpg',image)
+                    cv2.imwrite(f'{results_path}/test.png',image)
             else:
                 sg.popup('No result data found. Please run text search first.')
 
@@ -373,7 +373,7 @@ def run_gui():
         elif event == 'button_test_black_and_white':
             if target_image:
                 image = black_and_white(target_image)
-                image.save('test_bw.jpg')
+                image.save('test_bw.png')
             else:
                 sg.popup('No target image selected')
         
@@ -391,7 +391,7 @@ def run_gui():
                     for delimiter in delimiters:
                         page.add_child(delimiter)
                     img = draw_bounding_boxes(page,target_image)
-                    cv2.imwrite(f'{results_path}//journal_delimiters.jpg',img)
+                    cv2.imwrite(f'{results_path}//journal_delimiters.png',img)
                     bio = cv2.imencode('.png',img)[1].tobytes()
                     window['journal_delimiters_image'].update(data=bio,visible=True)
                     window.refresh()
@@ -412,7 +412,7 @@ def run_gui():
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
                         image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
                         
@@ -421,7 +421,7 @@ def run_gui():
                     image_info = get_image_info(target_image)
                     journal = estimate_journal_template(ocr_results,image_info)
                     img = draw_journal_template(journal,target_image)
-                    cv2.imwrite(f'{results_path}//journal_template.jpg',img)
+                    cv2.imwrite(f'{results_path}//journal_template.png',img)
                     img = Image.fromarray(img)
                     bio = io.BytesIO()
                     img.save(bio,format='png')
@@ -444,7 +444,7 @@ def run_gui():
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
                         image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
                     
@@ -472,7 +472,7 @@ def run_gui():
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
                         image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
                     
@@ -491,7 +491,7 @@ def run_gui():
                     ocr_results.clean_ids()
                     ocr_results.id_boxes([2],{2:1},False,columns_area)
                     image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                    cv2.imwrite(f'{results_path}/initial_reading_order.jpg',image)
+                    cv2.imwrite(f'{results_path}/initial_reading_order.png',image)
                     bio = cv2.imencode('.png',img)[1].tobytes()
                     window['initial_reading_order_image'].update(data=bio,visible=True)
                     window.refresh()
@@ -500,7 +500,7 @@ def run_gui():
 
                     # draw reading order
                     image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
-                    cv2.imwrite(f'{results_path}/reading_order.jpg',image)
+                    cv2.imwrite(f'{results_path}/reading_order.png',image)
                     bio = cv2.imencode('.png',image)[1].tobytes()
                     window['reading_order_image'].update(data=bio,visible=True)
                     window.refresh()
@@ -518,7 +518,7 @@ def run_gui():
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
                         image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
                     
@@ -538,7 +538,7 @@ def run_gui():
                     ocr_results.clean_ids()
                     ocr_results.id_boxes([2],{2:1},True,columns_area)
                     image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                    cv2.imwrite(f'{results_path}/initial_reading_order_context.jpg',image)
+                    cv2.imwrite(f'{results_path}/initial_reading_order_context.png',image)
                     bio = cv2.imencode('.png',image)[1].tobytes()
                     window['initial_reading_order_image_context'].update(data=bio,visible=True)
                     window.refresh()
@@ -547,7 +547,7 @@ def run_gui():
 
                     # draw reading order
                     image = draw_bounding_boxes(reading_order,target_image,[2],id=True)
-                    cv2.imwrite(f'{results_path}/reading_order_context.jpg',image)
+                    cv2.imwrite(f'{results_path}/reading_order_context.png',image)
                     bio = cv2.imencode('.png',image)[1].tobytes()
                     window['reading_order_image_context'].update(data=bio,visible=True)
                     window.refresh()
@@ -565,7 +565,7 @@ def run_gui():
                         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                         result_dict_file.close()
                         image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-                        cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                        cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                         csv = pd.DataFrame(ocr_results.to_dict())
                         csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
                     
@@ -602,7 +602,7 @@ def run_gui():
 
                     # draw reading order
                     image = draw_articles(articles,target_image)
-                    cv2.imwrite(f'{results_path}/articles.jpg',image)
+                    cv2.imwrite(f'{results_path}/articles.png',image)
                     bio = cv2.imencode('.png',image)[1].tobytes()
                     window['extract_articles_image'].update(data=bio,visible=True)
                     window.refresh()
@@ -615,7 +615,7 @@ def run_gui():
             if target_image:
                 # results path
                 results_path = f'{result_path}/{path_to_id(target_image)}'
-                if os.path.exists(f'{results_path}/result.jpg') and os.path.exists(f'{results_path}/result.txt') and os.path.exists(f'{results_path}/result.json') and os.path.exists(f'{results_path}/result_processed.json'):
+                if os.path.exists(f'{results_path}/result.png') and os.path.exists(f'{results_path}/result.txt') and os.path.exists(f'{results_path}/result.json') and os.path.exists(f'{results_path}/result_processed.json'):
                     run_tesseract_results(window)
             else:
                 sg.popup('No result data found. Please run text search first.')
@@ -658,7 +658,7 @@ def run_gui():
                 json.dump(ocr_results.to_json(),result_dict_file,indent=4)
                 result_dict_file.close()
                 image = draw_bounding_boxes(ocr_results,target_image,[box_level],id=True)
-                cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+                cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
                 csv = pd.DataFrame(ocr_results.to_dict())
                 csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
 
@@ -670,8 +670,8 @@ def run_gui():
             if target_image:
                 # results path
                 results_path = f'{result_path}/{path_to_id(target_image)}'
-                if os.path.exists(f'{results_path}/fixed/result_fixed.jpg') and os.path.exists(f'{results_path}/fixed/result_fixed.json') and os.path.exists(f'{results_path}/result.json'):
-                    image = Image.open(f'{results_path}/fixed/result_fixed.jpg')
+                if os.path.exists(f'{results_path}/fixed/result_fixed.png') and os.path.exists(f'{results_path}/fixed/result_fixed.json') and os.path.exists(f'{results_path}/result.json'):
+                    image = Image.open(f'{results_path}/fixed/result_fixed.png')
                     image.thumbnail((800, 800))
                     bio = io.BytesIO()
                     image.save(bio, format="png")

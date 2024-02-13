@@ -10,3 +10,4 @@ src/conf/conf.json
 *.pyc
 investigacao/papers.txt
 src/targets.txt
+info.txt

@@ -21,11 +21,12 @@ from output_module.journal.article import Article
 def process_args():
     '''Process command line arguments'''
     parser = argparse.ArgumentParser(description='Old Structured Document OCR - Main program')
-    parser.add_argument('--test'              ,action='store_true'                          ,help='Run tests')
-    parser.add_argument('-g','--gui'          ,action='store_true'                          ,help='Run gui')
-    parser.add_argument('-t','--target'       ,type=str,nargs=1                             ,help='Target image path')
-    parser.add_argument('-f','--file'         ,type=str,nargs=1                             ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
-    parser.add_argument('-focr','--force_ocr' ,action='store_true',default=False            ,help='Force OCR engine to run again')
+    parser.add_argument('--test'                     ,action='store_true'                          ,help='Run tests')
+    parser.add_argument('-g','--gui'                 ,action='store_true'                          ,help='Run gui')
+    parser.add_argument('target'                     ,type=str,nargs='*'                           ,help='Target image path') # trocar para ser por defeito
+    parser.add_argument('-f','--file'                ,type=str,nargs=1                             ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
+    parser.add_argument('-focr','--force_ocr'        ,action='store_true',default=False            ,help='Force OCR engine to run again')
+    parser.add_argument('-of','--output_folder'      ,type=str,nargs=1                             ,help='Results folder')
     args = parser.parse_args()
     return args
 
@@ -162,8 +163,8 @@ def run_target(target:str,force=False):
     t_graph = topologic_order_context(ocr_results)
 
     # draw reading order
-    image = draw_bounding_boxes(ocr_results,f'{results_path}/result.jpg',[2],id=True)
-    cv2.imwrite(f'{results_path}/reading_order.jpg',image)
+    image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
+    cv2.imwrite(f'{results_path}/reading_order.png',image)
 
     # isolate articles
     articles = graph_isolate_articles(t_graph)
@@ -223,6 +224,11 @@ def run_main(args:argparse.Namespace):
 if __name__ == '__main__':
     read_configs()
     args = process_args()
+
+    # change result path
+    if args.output_folder:
+        consts.result_path = args.output_folder
+
     # test mode
     if args.test:
         run_test()

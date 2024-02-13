@@ -26,7 +26,11 @@ def analyze_text(ocr_results:OCR_Box)->dict:
     - number_columns: estimated number of columns
     - columns: list of columns bounding boxes\n
     '''
+    normal_text_size = 0
+    normal_text_gap = 0
+    number_lines = 0
     number_columns = 0
+    columns = []
 
     lines = ocr_results.get_boxes_level(4)
     left_margin_n = {}
@@ -91,8 +95,8 @@ def analyze_text(ocr_results:OCR_Box)->dict:
         last_paragraph = line.par_num
 
     # estimate number of lines
-    highest_normal_text  = None
-    lowest_normal_text = None
+    highest_normal_text = 0
+    lowest_normal_text = 0
 
     ## find highest and lowest normal text
     for line in lines:
@@ -101,33 +105,32 @@ def analyze_text(ocr_results:OCR_Box)->dict:
                 highest_normal_text = line.box.top
             if not lowest_normal_text or line.box.top+normal_text_size >= lowest_normal_text:
                 lowest_normal_text = line.box.top+normal_text_size
-
-
-    number_lines = (lowest_normal_text - highest_normal_text) // (normal_text_size + normal_text_gap)
+    
+    if normal_text_size > 0 and normal_text_gap > 0:
+        number_lines = (lowest_normal_text - highest_normal_text) // (normal_text_size + normal_text_gap)
 
 
     # estimate number of columns
     probable_columns = sorted([k for k in sorted(left_margin_n, reverse=True,key=left_margin_n.get) if left_margin_n[k]>=0.45*number_lines])
     number_columns = len(probable_columns)
 
-    columns = []
 
-    # create columns bounding boxes
-    for i in range(len(probable_columns)):
-        if i < len(probable_columns)-1:
-            left = probable_columns[i]*0.98
-            right = probable_columns[i+1]*1.02
-            top = highest_normal_text*0.98
-            bottom = lowest_normal_text*1.02
-            columns.append(((left,top),(right,bottom)))
-        # last column
-        else:
-            left = probable_columns[i]*0.98
-            right = max(right_margin_n.keys())*1.02
-            top = highest_normal_text*0.98
-            bottom = lowest_normal_text*1.02
-            columns.append(((left,top),(right,bottom)))
-                
+    if number_columns > 0:
+        # create columns bounding boxes
+        for i in range(len(probable_columns)):
+            if i < len(probable_columns)-1:
+                left = probable_columns[i]*0.98
+                right = probable_columns[i+1]*1.02
+                top = highest_normal_text*0.98
+                bottom = lowest_normal_text*1.02
+                columns.append(((left,top),(right,bottom)))
+            # last column
+            else:
+                left = probable_columns[i]*0.98
+                right = max(right_margin_n.keys())*1.02
+                top = highest_normal_text*0.98
+                bottom = lowest_normal_text*1.02
+                columns.append(((left,top),(right,bottom)))  
 
 
     return {
