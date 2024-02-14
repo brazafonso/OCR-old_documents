@@ -48,14 +48,14 @@ def run_test():
             result_dict_file = open(f'{results_path}/fixed/result_fixed.json','w')
             json.dump(ocr_results.to_json(),result_dict_file,indent=4)
             result_dict_file.close()
-            image = draw_bounding_boxes(ocr_results,f'{results_path}/result.jpg',[2],id=True)
-            cv2.imwrite(f'{results_path}/fixed/result_fixed.jpg',image)
+            image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
+            cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
             csv = pd.DataFrame(ocr_results.to_dict())
             csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
         
 
         # get journal template
-        image_info = get_image_info(f'{results_path}/fixed/result_fixed.jpg')
+        image_info = get_image_info(f'{results_path}/fixed/result_fixed.png')
         journal_template = estimate_journal_template(ocr_results,image_info)
         columns_area = image_info
         columns_area.remove_box_area(journal_template['header'])
@@ -79,8 +79,8 @@ def run_test():
         ocr_results.change_ids(order_map)
 
         # draw reading order
-        image = draw_bounding_boxes(ocr_results,f'{results_path}/fixed/result_fixed.jpg',[2],id=True)
-        cv2.imwrite(f'{results_path}/reading_order.jpg',image)
+        image = draw_bounding_boxes(ocr_results,f'{results_path}/fixed/result_fixed.png',[2],id=True)
+        cv2.imwrite(f'{results_path}/reading_order.png',image)
 
         print('Order List: ',order_list)
         articles = graph_isolate_articles(t_graph)

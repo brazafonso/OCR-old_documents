@@ -11,3 +11,5 @@ src/conf/conf.json
 investigacao/papers.txt
 src/targets.txt
 info.txt
+src/gui/osdocr_gui copy.py
+src/gui/test_gui.py
