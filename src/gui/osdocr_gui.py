@@ -197,7 +197,22 @@ def reading_order_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',f'{results_path}/result_reading_order.png')
 
 
-def apply_method(window:sg.Window,image_path:str,method:str):
+def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
+    '''Apply calculate dpi method to image and update image element'''
+    # get image info
+    image_info = get_image_info(image_path)
+
+    # get resolution info from configs
+    resolution = consts.config['resolutions'][resolution]
+    resolution = Box(0,resolution['width'],0,resolution['height'])
+
+    # calculate dpi
+    dpi = calculate_dpi(image_info,resolution)
+
+    # update image element
+    window['result_text_1'].update(dpi,visible=True)
+
+def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     '''Apply method to image and update image element'''
     if method == 'run_tesseract':
         tesseract_method(window,image_path)
@@ -209,6 +224,8 @@ def apply_method(window:sg.Window,image_path:str,method:str):
         journal_template_method(window,image_path)
     elif method == 'reading_order':
         reading_order_method(window,image_path)
+    elif method == 'calculate_dpi':
+        calculate_dpi_method(window,image_path,values['select_list_1'])
     else:
         print(f'method {method} not implemented')
 
@@ -304,9 +321,34 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         else:
             window['result_img'].update(visible=False)
 
+    elif method == 'calculate_dpi':
+        target_image = consts.config['target_image_path']
+        result_text = ''
+        resolutions_list = [res  for res in consts.config['resolutions'].keys()]
+
+        if target_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path_2',target_image)
+        else:
+            window['target_image_path_2'].update(visible=False)
+
+        window['select_list_1'].update(values=resolutions_list,value=resolutions_list[0])
+        window['result_text_1'].update(result_text,visible=True)
+        window['result_text_2'].update(visible=False)
+
     window.refresh()
 
 
+
+def change_tab(window:sg.Window,tab:str):
+    '''Change tab'''
+    if tab == 'First':
+        update_method_layout(window,'run_tesseract')
+        method = 'run_tesseract'
+    elif tab == 'Second':
+        update_method_layout(window,'calculate_dpi')
+        method = 'calculate_dpi'
+
+    return method
 
 
 
@@ -374,10 +416,14 @@ def build_gui()->sg.Window:
     ## side bar for different methods
     ## upper bar for layout selection'
     ## main frame
-
+    ### target image
+    ### select list
+    ### apply button
+    ### result text
+    
     method_sidebar_2 = [
         [
-            sg.Button('Method3',key='sidebar_method3'),
+            sg.Button('Calculate DPI',key='sidebar_method_calculate_dpi'),
         ]
     ]
 
@@ -390,9 +436,12 @@ def build_gui()->sg.Window:
 
     second_layout_2 = [
         [
-            sg.Image(filename=None,visible=True,key='target_image_path',size=(500,700)),
+            sg.Image(filename=None,visible=True,key='target_image_path_2',size=(500,700)),
             sg.Button('Apply',key='apply'),
-            sg.Image(filename=None,visible=True,key='result_img',size=(500,700)),
+            sg.Combo([],key='select_list_1',enable_events=True,size=(5,10)),
+            sg.Text('Result:'),
+            sg.Text('',visible=False,key='result_text_1'),
+            sg.Multiline(visible=False,key='result_text_2',size=(500,500)),
         ]
     ]
 
@@ -466,9 +515,9 @@ def run_gui():
             # save config
             conf['target_image_path'] = target_image
             save_configs()
-        elif event == 'apply':
+        elif 'apply' in event:
             if target_image and method:
-                apply_method(window,target_image,method)
+                apply_method(window,values,target_image,method)
 
     ########################################
     # Methods sidebar
@@ -476,6 +525,11 @@ def run_gui():
             highlight_buttons(window,event,'red')
             method = "_".join(event.split('_')[2:])
             update_method_layout(window,method,target_image)
+
+    ########################################
+    # Tab
+        elif 'tab_group' in event:
+            method = change_tab(window,values['tab_group'])
         
         
 

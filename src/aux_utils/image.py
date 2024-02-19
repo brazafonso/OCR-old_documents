@@ -47,3 +47,9 @@ def get_image_info(image_path:str)->Box:
 
 
 
+def calculate_dpi(image_info:Box,dimensions:Box)->float:
+    '''Calculate dpi'''
+    dpi = (image_info.width/dimensions.width + image_info.height/dimensions.height) / 2
+    return dpi
+
+

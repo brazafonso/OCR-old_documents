@@ -25,6 +25,7 @@ def read_configs():
     else:
         conf = {
             'target_image_path':'',
+            'resolutions':[],
         }
     consts.config = conf
 
