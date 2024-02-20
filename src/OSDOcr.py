@@ -34,70 +34,10 @@ def process_args():
 def run_test():
     '''Run tests'''
     target_image = consts.config['target_image_path']
+    print('test','target_image',target_image)
     if target_image:
-        # results path
-        results_path = f'{consts.result_path}/{path_to_id(target_image)}'
-        # get fixed results
-        if os.path.exists(f'{results_path}/fixed/result_fixed.json'):
-            ocr_results = OCR_Box(f'{results_path}/fixed/result_fixed.json')
-        else:
-            ocr_results = OCR_Box(f'{results_path}/result.json')
-            ocr_results = bound_box_fix(ocr_results,2,None)
-            ocr_results = categorize_boxes(ocr_results)
-            ocr_results.id_boxes([2])
-            result_dict_file = open(f'{results_path}/fixed/result_fixed.json','w')
-            json.dump(ocr_results.to_json(),result_dict_file,indent=4)
-            result_dict_file.close()
-            image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
-            cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
-            csv = pd.DataFrame(ocr_results.to_dict())
-            csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
-        
-
-        # get journal template
-        image_info = get_image_info(f'{results_path}/fixed/result_fixed.png')
-        journal_template = estimate_journal_template(ocr_results,image_info)
-        columns_area = image_info
-        columns_area.remove_box_area(journal_template['header'])
-        columns_area.remove_box_area(journal_template['footer'])
-
-        ocr_results = categorize_boxes(ocr_results)
-
-        # run topologic_order
-        # t_graph = topologic_graph(ocr_results,columns_area)
-        # print('Topological graph: ')
-        # t_graph.self_print()
-        # order_list = sort_topologic_order(t_graph,ocr_results)
-        # print('Order List: ',order_list)
-
-        # run topologic_order context
-        t_graph = topologic_order_context(ocr_results,columns_area)
-        order_list = sort_topologic_order(t_graph,sort_weight=True)
-
-        # change ids to order
-        order_map = {order_list[i]:i for i in range(len(order_list))}
-        ocr_results.change_ids(order_map)
-
-        # draw reading order
-        image = draw_bounding_boxes(ocr_results,f'{results_path}/fixed/result_fixed.png',[2],id=True)
-        cv2.imwrite(f'{results_path}/reading_order.png',image)
-
-        print('Order List: ',order_list)
-        articles = graph_isolate_articles(t_graph)
-        for article in articles:
-            print('Article:',[b.id for b in article])
-            
-        with open(f'{results_path}/articles.txt','w') as f:
-            for article in articles:
-                article = Article(article)
-                f.write(article.pretty_print())
-                f.write('\n')
-
-        with open(f'{results_path}/articles.md','w') as f:
-            for article in articles:
-                article = Article(article)
-                f.write(article.to_md())
-                f.write('\n'+'==='*40 + '\n')
+        # test rotate image
+        rotate_image(target_image)
 
 
 
