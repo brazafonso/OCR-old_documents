@@ -38,6 +38,7 @@ def run_test():
     if target_image:
         # test rotate image
         rotate_image(target_image)
+        #rotate_image_alt(target_image)
 
 
 
