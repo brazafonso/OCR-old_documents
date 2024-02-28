@@ -1,3 +1,4 @@
+import os
 import cv2
 from PIL import Image
 from ocr_box_module.ocr_box import OCR_Box
@@ -55,14 +56,151 @@ def calculate_dpi(image_info:Box,dimensions:Box)->float:
     return dpi
 
 
+def calculate_rotation_direction(image_path:str,line_quantetization:int=100):
+    '''Calculate rotation direction (counter-clockwise or clockwise)
+    
+    On left margin of image compare the groups of ordered black pixels by x coordinate
+    If the largest group is x descengin (from top to bottom) the direction is clockwise, else counter-clockwise'''
+    test_path = image_path.split('/')[:-1]
+    test_path = '/'.join(test_path)
+    if not os.path.exists(f'{test_path}/test'):
+        os.mkdir(f'{test_path}/test')
+    test_path = f'{test_path}/test/{image_path.split("/")[-1]}'
+
+    direction = 'clockwise'
+    image = cv2.imread(image_path)
+    # crop margin
+    image = image[0:image.shape[0], 50:image.shape[1]]
+    # grey scale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # binarize, clean salt and pepper noise and dilate
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)[1]
+    cv2.imwrite(f'{test_path}_thresh.png',thresh)
+    filtered = ndimage.median_filter(thresh, 3)
+    cv2.imwrite(f'{test_path}_filtered.png',filtered)
+    dilation = cv2.dilate(filtered, np.ones((1,20),np.uint8),iterations=3)
+    cv2.imwrite(f'{test_path}_dilation.png',dilation)
+    transformed_image = dilation
+
+    # calculate sets
+    pixels = []
+    step = math.floor(transformed_image.shape[0]/line_quantetization)
+
+    for y in range(0,transformed_image.shape[0], step):
+        for x in range(transformed_image.shape[1]):
+            if transformed_image[y][x] == 255:
+                pixels.append((x,y))
+                break
+
+    # draw pixels
+    copy_image = cv2.imread(f'{test_path}_dilation.png')
+    for pixel in pixels:
+        cv2.circle(copy_image, pixel, 7, (0,0,255), -1)
+    cv2.imwrite(f'{test_path}_pixels.png',copy_image)
+
+    # make list of sets
+    # each set is a list of pixels in x coordinates order (ascending or descending depending on rotation direction)
+    clockwise_sets = []
+    counter_clockwise_sets = []
+    for i in range(1,len(pixels)):
+        new_cw_set = [pixels[i]]
+        new_ccw_set = [pixels[i]]
+        for j in range(i,len(pixels)):
+            if pixels[j][0] < new_cw_set[-1][0] and abs(pixels[j][0] - new_cw_set[-1][0])/transformed_image.shape[1] <= 0.1:
+                new_cw_set.append(pixels[j])
+            if pixels[j][0] > new_ccw_set[-1][0] and abs(pixels[j][0] - new_ccw_set[-1][0])/transformed_image.shape[1] <= 0.1:
+                new_ccw_set.append(pixels[j])
+        clockwise_sets.append(new_cw_set)
+        counter_clockwise_sets.append(new_ccw_set)
+        # clockwise_sets.append(pixels_set_remove_outliers(new_cw_set,'clockwise'))
+        # counter_clockwise_sets.append(pixels_set_remove_outliers(new_ccw_set,'counter_clockwise'))
+
+
+    # find biggest sets
+    biggest_clockwise_set = max(clockwise_sets, key=len)
+    biggest_counter_clockwise_set = max(counter_clockwise_sets, key=len)
+    print('test','clockwise',len(biggest_clockwise_set))
+    print('counter_clockwise',len(biggest_counter_clockwise_set))
+
+    # draw biggest sets
+    for pixel in biggest_clockwise_set:
+        cv2.circle(image, pixel, 7, (0,0,255), -1)
+    for pixel in biggest_counter_clockwise_set:
+        cv2.circle(image, pixel, 7, (0,255,0), -1)
+    cv2.imwrite(f'{test_path}_biggest_sets.png',image)
+
+    if len(biggest_clockwise_set) >= len(biggest_counter_clockwise_set):
+        direction = 'clockwise'
+    else:
+        direction = 'counter_clockwise'
+
+    return direction
+
+
+def pixels_set_remove_outliers(set:list,direction:str='clockwise'):
+    '''Removes outliers from set'''
+
+    aux_set = set
+    removed_pixel = True
+    # while outliers detected
+    # remove outliers
+    j = 0
+    while removed_pixel and len(aux_set) > 1:
+        j+=1
+        new_set = []
+
+        # average displacement of x coordinates
+        x_avg = 0
+        for i in range(1,len(aux_set)):
+            x1 = aux_set[i-1][0]
+            x2 = aux_set[i][0]
+            if direction == 'counter_clockwise':
+                x1,x2 = x2,x1
+            x_avg +=  x1 - x2
+                
+        x_avg = x_avg / (len(aux_set)-1)
+
+        # remove outlier pixels, using average displacement
+        for i in range(1,len(aux_set)):
+            x1 = aux_set[i-1][0]
+            x2 = aux_set[i][0]
+            if direction == 'counter_clockwise':
+                x1,x2 = x2,x1
+
+            if abs(x1 - x2 - x_avg) < x_avg:
+                new_set.append(aux_set[i])
+
+        x1 = aux_set[0][0]
+        x2 = aux_set[1][0]
+        if direction == 'counter_clockwise':
+            x1,x2 = x2,x1
+        #check first point
+        if abs(x1 - x2 - x_avg) < x_avg:
+            new_set = [aux_set[0]] + new_set
+
+        if len(new_set) == len(aux_set):
+            removed_pixel = False
+        aux_set = new_set
+
+    return aux_set
+
+
 def rotate_image_alt(image):
     '''Rotate image alt, based on longest hough line'''
+    test_path = image.split('/')[:-1]
+    test_path = '/'.join(test_path)
+    if not os.path.exists(f'{test_path}/test'):
+        os.mkdir(f'{test_path}/test')
+    test_path = f'{test_path}/test/{image.split("/")[-1]}'
+
     img_before = cv2.imread(image)
 
+    # crop image (remove all margins to leave center)
+    img_before = img_before[100:img_before.shape[0]-100, 200:img_before.shape[1]-200] 
     
     img_gray = cv2.cvtColor(img_before, cv2.COLOR_BGR2GRAY)
     img_edges = cv2.Canny(img_gray, 100, 100, apertureSize=3)
-    cv2.imwrite(image+'_edges.png', img_edges)
+    cv2.imwrite(test_path+'_edges.png', img_edges)
     lines = cv2.HoughLinesP(img_edges, 1, math.pi / 180.0, 100, minLineLength=100, maxLineGap=10)
     
     # draw lines on image
@@ -71,7 +209,7 @@ def rotate_image_alt(image):
         for line in lines:
             x1, y1, x2, y2 = line[0]
             cv2.line(all_lines_img, (x1, y1), (x2, y2), (255, 0, 0), 3)
-    cv2.imwrite(image+'_all_lines.png', all_lines_img)
+    cv2.imwrite(test_path+'_all_lines.png', all_lines_img)
 
 
     image_info = get_image_info(image)
@@ -96,7 +234,7 @@ def rotate_image_alt(image):
         return
     
     # get angle
-    angle = math.degrees(math.atan2(longest_line[3] - longest_line[1], longest_line[2] - longest_line[0]))
+    angle = abs(math.degrees(math.atan2(longest_line[3] - longest_line[1], longest_line[2] - longest_line[0])))
 
     # if (median_angle >= 0):
     # 	img_rotated = ndimage.rotate(img_before, median_angle)
@@ -105,48 +243,19 @@ def rotate_image_alt(image):
     
     print("Angle is {}".format(angle))
 
+    img = cv2.imread(image)
     # showImage(img_rotated)
-    img_rotated = ndimage.rotate(img_before, angle)
+    img_rotated = ndimage.rotate(img, 90-angle)
     
-    cv2.imwrite(image+'_rotated_alt.png', img_rotated)
+    cv2.imwrite(test_path+'_rotated_alt.png', img_rotated)
 
     # draw longest line
     cv2.line(img_before, (longest_line[0], longest_line[1]), (longest_line[2], longest_line[3]), (255, 0, 0), 3)
-    cv2.imwrite(image+'_lines_alt.png', img_before)
+    cv2.imwrite(test_path+'_lines_alt.png', img_before)
 
 
 
-def rotate_image_remove_outliers(set:list):
-    '''Removes outliers from set'''
 
-    aux_set = set
-    removed_pixel = True
-    # while outliers detected
-    # remove outliers
-    j = 0
-    while removed_pixel and aux_set:
-        j+=1
-        new_set = []
-
-        # average displacement of x coordinates
-        x_avg = 0
-        for i in range(1,len(aux_set)):
-            x_avg += aux_set[i-1][0] - aux_set[i][0] 
-        x_avg = x_avg / (len(aux_set)-1)
-
-        # remove outlier pixels, using average displacement
-        for i in range(1,len(aux_set)):
-            if abs(aux_set[i-1][0] - aux_set[i][0] - x_avg) < x_avg:
-                new_set.append(aux_set[i])
-
-        #check first point
-        if abs(aux_set[0][0] - aux_set[1][0] - x_avg) < x_avg:
-            new_set = [aux_set[0]] + new_set
-
-        if len(new_set) == len(aux_set):
-            removed_pixel = False
-        aux_set = new_set
-    return new_set
 
 
 
@@ -167,6 +276,12 @@ def rotate_image(image:str,line_quantetization:int=100):
     7. Find angle
     8. Rotate image
     '''
+
+    test_path = image.split('/')[:-1]
+    test_path = '/'.join(test_path)
+    if not os.path.exists(f'{test_path}/test'):
+        os.mkdir(f'{test_path}/test')
+    test_path = f'{test_path}/test/{image.split("/")[-1]}'
     
     img = cv2.imread(image)
     # crop margin
@@ -214,10 +329,10 @@ def rotate_image(image:str,line_quantetization:int=100):
     for p in set:
         cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    cv2.imwrite(image + '_points_1.png', og_img)
+    cv2.imwrite(test_path + '_points_1.png', og_img)
 
 
-    new_set = rotate_image_remove_outliers(set)
+    new_set = pixels_set_remove_outliers(set)
 
 
     # get extreme points
@@ -232,7 +347,7 @@ def rotate_image(image:str,line_quantetization:int=100):
     rotation_angle = 90 - abs(angle)
 
     img = ndimage.rotate(img, rotation_angle)
-    cv2.imwrite(image + '_rotated.png', img)
+    cv2.imwrite(test_path + '_rotated.png', img)
 
     og_img = cv2.imread(image)
 
@@ -240,7 +355,7 @@ def rotate_image(image:str,line_quantetization:int=100):
     for p in new_set:
         cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    cv2.imwrite(image + '_points.png', og_img)
+    cv2.imwrite(test_path + '_points.png', og_img)
         
 
     
