@@ -60,9 +60,10 @@ def save_articles(articles,results_path):
 def run_target(target:str,force=False):
     '''Run pipeline for single target.
     
-    1. OCR image
-    2. Fix bounding boxes
-    3. Categorize boxes
+    1. Rotate image
+    2. OCR image
+    3. Fix bounding boxes
+    4. Categorize boxes
     5. Run topologic_order context
     6. Draw reading order
     7. Isolate articles
@@ -80,7 +81,10 @@ def run_target(target:str,force=False):
     if not force and os.path.exists(f'{results_path}/result.json'):
         print(f'Results exist: {target}')
     else:
-        run_tesseract(target)
+        img = rotate_image(target,direction='auto')
+        cv2.imwrite(f'{target}_tmp.png',img) 
+        run_tesseract(target,results_path=results_path)
+        os.remove(f'{target}_tmp.png')
 
     # get results
     ocr_results = OCR_Box(f'{results_path}/result.json')

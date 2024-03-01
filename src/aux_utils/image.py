@@ -95,12 +95,13 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # binarize, clean salt and pepper noise and dilate
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)[1]
-    cv2.imwrite(f'{test_path}_thresh.png',thresh)
     filtered = ndimage.median_filter(thresh, 10)
-    cv2.imwrite(f'{test_path}_filtered.png',filtered)
     dilation = cv2.dilate(filtered, np.ones((0,10),np.uint8),iterations=3)
-    cv2.imwrite(f'{test_path}_dilation.png',dilation)
     transformed_image = dilation
+
+    # cv2.imwrite(f'{test_path}_thresh.png',thresh)
+    # cv2.imwrite(f'{test_path}_filtered.png',filtered)
+    # cv2.imwrite(f'{test_path}_dilation.png',dilation)
 
     # calculate sets
     pixels = []
@@ -113,10 +114,10 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
                 break
 
     # draw pixels
-    copy_image = cv2.imread(f'{test_path}_dilation.png')
-    for pixel in pixels:
-        cv2.circle(copy_image, pixel, 7, (0,0,255), -1)
-    cv2.imwrite(f'{test_path}_pixels.png',copy_image)
+    # copy_image = cv2.imread(f'{test_path}_dilation.png')
+    # for pixel in pixels:
+    #     cv2.circle(copy_image, pixel, 7, (0,0,255), -1)
+    # cv2.imwrite(f'{test_path}_pixels.png',copy_image)
 
     # make list of sets
     # each set is a list of pixels in x coordinates order (ascending or descending depending on rotation direction)
@@ -137,11 +138,11 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
     print('counter_clockwise',len(biggest_counter_clockwise_set))
 
     # draw biggest sets
-    for pixel in biggest_clockwise_set:
-        cv2.circle(image, pixel, 7, (0,0,255), -1)
-    for pixel in biggest_counter_clockwise_set:
-        cv2.circle(image, pixel, 7, (0,255,0), -1)
-    cv2.imwrite(f'{test_path}_biggest_sets.png',image)
+    # for pixel in biggest_clockwise_set:
+    #     cv2.circle(image, pixel, 7, (0,0,255), -1)
+    # for pixel in biggest_counter_clockwise_set:
+    #     cv2.circle(image, pixel, 7, (0,255,0), -1)
+    # cv2.imwrite(f'{test_path}_biggest_sets.png',image)
 
     if len(biggest_clockwise_set) >= len(biggest_counter_clockwise_set):
         direction = 'clockwise'
@@ -360,21 +361,24 @@ def rotate_image(image:str,line_quantetization:int=100,direction:str='auto'):
     if direction == 'counter_clockwise':
         rotation_angle = -rotation_angle
     img = ndimage.rotate(og_img, rotation_angle)
-    cv2.imwrite(test_path + '_rotated.png', img)
 
-    # draw points from set
-    for p in set:
-        cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    cv2.imwrite(test_path + '_points_1.png', og_img)
-    
-    og_img = cv2.imread(image)
+    ## test images
+    # cv2.imwrite(test_path + '_rotated.png', img)
 
-    # draw points from set
-    for p in new_set:
-        cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
+    # # draw points from set
+    # for p in set:
+    #     cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    cv2.imwrite(test_path + '_points.png', og_img)
+    # cv2.imwrite(test_path + '_points_1.png', og_img)
+
+    # og_img = cv2.imread(image)
+
+    # # draw points from set
+    # for p in new_set:
+    #     cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
+
+    # cv2.imwrite(test_path + '_points.png', og_img)
 
     return img
         

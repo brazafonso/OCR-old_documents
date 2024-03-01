@@ -65,7 +65,7 @@ def fix_ocr(target_image:str,results_path:str):
     csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
 
 
-def tesseract_method(window:sg.Window,image_path:str):
+def tesseract_method(window:sg.Window,image_path:str,values:dict):
     '''Apply tesseract method to image and update image element'''
     # results path
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
@@ -80,8 +80,21 @@ def tesseract_method(window:sg.Window,image_path:str):
             else:
                 os.remove(f'{results_path}/{file}')
 
-    # run tesseract
-    run_tesseract(image_path)
+
+    # rotate image if not disabled
+    ## create tmp rotated image
+    if values['checkbox_1_1']:
+        direction = values['select_list_1_1'].lower()
+        img = rotate_image(image_path,direction=direction)
+        cv2.imwrite(f'{image_path}_tmp.png',img)
+        # run tesseract
+        run_tesseract(f'{image_path}_tmp.png',results_path=results_path)
+        os.remove(f'{image_path}_tmp.png')
+
+    else:
+        # run tesseract
+        run_tesseract(image_path)
+        
     # update result image
     update_image_element(window,'result_img',f'{results_path}/result.png')
 
@@ -197,6 +210,14 @@ def reading_order_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',f'{results_path}/result_reading_order.png')
 
 
+def auto_rotate_method(window:sg.Window,image_path:str):
+    '''Apply auto rotate method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+
+    img = rotate_image(image_path,direction='auto')
+    cv2.imwrite(f'{results_path}/rotated.png',img)
+    update_image_element(window,'result_img',f'{results_path}/rotated.png')
+
 def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
     '''Apply calculate dpi method to image and update image element'''
     # get image info
@@ -214,8 +235,9 @@ def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
 
 def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     '''Apply method to image and update image element'''
+    ## TAB 1
     if method == 'run_tesseract':
-        tesseract_method(window,image_path)
+        tesseract_method(window,image_path,values)
     elif method == 'extract_articles':
         extract_articles_method(window,image_path)
     elif method == 'fix_blocks':
@@ -224,8 +246,12 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
         journal_template_method(window,image_path)
     elif method == 'reading_order':
         reading_order_method(window,image_path)
+    elif method == 'auto_rotate':
+        auto_rotate_method(window,image_path)
+
+    ## TAB 2
     elif method == 'calculate_dpi':
-        calculate_dpi_method(window,image_path,values['select_list_1'])
+        calculate_dpi_method(window,image_path,values['select_list_2_!'])
     else:
         print(f'method {method} not implemented')
 
@@ -245,8 +271,15 @@ def highlight_buttons(window:sg.Window,button:str,color:str,default_color:str='#
 
 def update_method_layout(window:sg.Window,method:str,target_image:str=None):
     '''Updates elements in layout based on method'''
+    window['checkbox_1_1'].update(visible=False)
+    window['select_list_text_1_1'].update(visible=False)
+    window['select_list_1_1'].update(visible=False)
 
+    ## TAB 1
     if method == 'run_tesseract' and target_image:
+        window['checkbox_1_1'].update(visible=True)
+        window['select_list_text_1_1'].update(visible=True)
+        window['select_list_1_1'].update(visible=True)
         result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
         # update target image
         update_image_element(window,'target_image_path',target_image)
@@ -321,6 +354,20 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         else:
             window['result_img'].update(visible=False)
 
+    elif method == 'auto_rotate':
+        target_image = consts.config['target_image_path']
+        result_image = f'{consts.result_path}/{path_to_id(target_image)}/rotated.png'
+        if target_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    ## TAB 2
     elif method == 'calculate_dpi':
         target_image = consts.config['target_image_path']
         result_text = ''
@@ -331,7 +378,7 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         else:
             window['target_image_path_2'].update(visible=False)
 
-        window['select_list_1'].update(values=resolutions_list,value=resolutions_list[0])
+        window['select_list_2_1'].update(values=resolutions_list,value=resolutions_list[0])
         window['result_text_1'].update(result_text,visible=True)
         window['result_text_2'].update(visible=False)
 
@@ -378,6 +425,9 @@ def build_gui()->sg.Window:
         [
             sg.Button('Extract Articles',key='sidebar_method_extract_articles'),
         ],
+        [
+            sg.Button('Auto Rotate',key='sidebar_method_auto_rotate'),
+        ]
     ]
 
     first_layout_1 = [
@@ -386,6 +436,18 @@ def build_gui()->sg.Window:
         ]
     ]
 
+    first_layout_2_1 = [
+        [
+            sg.Button('Apply',key='apply'),
+        ],
+        [
+            sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(10,10),visible=False),
+        ],
+        [
+            sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False),
+            sg.Combo(['Auto','Clockwise','Counterclockwise'],default_value='Auto',key='select_list_1_1',enable_events=True,size=(5,10),visible=False),
+        ]
+    ]
 
     first_layout_2 = [
         [
@@ -395,7 +457,7 @@ def build_gui()->sg.Window:
         ],
         [
             sg.Image(filename=None,visible=True,key='target_image_path',size=(500,700)),
-            sg.Button('Apply',key='apply'),
+            sg.Column(first_layout_2_1,expand_x=True,expand_y=False),
             sg.Image(filename=None,visible=True,key='result_img',size=(500,700)),
         ],
     ]
@@ -438,7 +500,7 @@ def build_gui()->sg.Window:
         [
             sg.Image(filename=None,visible=True,key='target_image_path_2',size=(500,700)),
             sg.Button('Apply',key='apply'),
-            sg.Combo([],key='select_list_1',enable_events=True,size=(5,10)),
+            sg.Combo([],key='select_list_2_1',enable_events=True,size=(5,10)),
             sg.Text('Result:'),
             sg.Text('',visible=False,key='result_text_1'),
             sg.Multiline(visible=False,key='result_text_2',size=(500,500)),

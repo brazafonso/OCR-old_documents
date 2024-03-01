@@ -2,8 +2,8 @@ import sys
 import pytesseract
 import json
 import os
+import cv2
 from aux_utils import consts
-from PIL import Image
 from aux_utils.box import Box
 from aux_utils.misc import path_to_id
 from ocr_box_module.ocr_box import OCR_Box
@@ -11,11 +11,11 @@ from ocr_box_module.ocr_box_analyser import *
 
 
 
-def tesseract_search_img(image_path:str)->dict:
+def tesseract_search_img(img:(str|cv2.typing.MatLike))->dict:
     '''Search for text in image of path saved on \'target_image_path\' using tesseract\n
     Return dict with results in various formats, and image with bounding boxes'''
-
-    img = Image.open(image_path)
+    if type(img) == str:
+        img = cv2.imread(img)
     print('Using tesseract')
     data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT,lang='por')
     data_text = pytesseract.image_to_string(img,lang='por')
@@ -72,15 +72,18 @@ def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Box:
     return document
 
 
-def save_results(ocr_results:OCR_Box,image_path:str):
+def save_results(ocr_results:OCR_Box,image_path:str,results_path:str=None):
     '''Saves results gathered from ocr_results to files'''
 
-    result_folder_name = path_to_id(image_path)
-    # create result folder
-    if not os.path.exists(f'{consts.result_path}/{result_folder_name}'):
-        os.makedirs(f'{consts.result_path}/{result_folder_name}')
+    if not results_path:
+        result_folder_name = path_to_id(image_path)
+        results_path = f'{consts.result_path}/{result_folder_name}'
 
-    results_path = f'{consts.result_path}/{result_folder_name}'
+
+    # create result folder
+    if not os.path.exists(results_path):
+        os.makedirs(results_path)
+
 
     img = draw_bounding_boxes(ocr_results,image_path)
     # create result files
@@ -107,7 +110,7 @@ def save_results(ocr_results:OCR_Box,image_path:str):
     result_file.close()
 
 
-def run_tesseract(image_path):
+def run_tesseract(image_path,results_path:str=None):
     '''GUI - Run text search on target image'''
 
     results = tesseract_search_img(image_path)
@@ -119,10 +122,12 @@ def run_tesseract(image_path):
     # save results
 
     # save results from ocr_results
-    save_results(ocr_results,image_path)
+    save_results(ocr_results,image_path,results_path)
+
 
     # results path
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    if not results_path:
+        results_path = f'{consts.result_path}/{path_to_id(image_path)}'
 
     # save result simple text
     result_file = open(f'{results_path}/result.txt','w')
