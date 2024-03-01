@@ -37,10 +37,10 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test rotate image
-        #rotate_image(target_image)
+        rotate_image(target_image)
         #rotate_image_alt(target_image)
-        direction = calculate_rotation_direction(target_image)
-        print('test','direction',direction)
+        #direction = calculate_rotation_direction(target_image)
+        #print('test','direction',direction)
 
 
 def save_articles(articles,results_path):
