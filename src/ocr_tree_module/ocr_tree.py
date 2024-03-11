@@ -6,16 +6,16 @@ from aux_utils.box import Box
 '''Module to generalize OCR result into box object\n'''
 
 
-class OCR_Box:
-    '''Class to represent OCR results as a box object\n'''
+class OCR_Tree:
+    '''Class to represent OCR results as a tree object\n'''
     
 
     def __init__(self,*args):
-        '''Initialize OCR_Box object\n
+        '''Initialize ocr_tree object\n
         Available constructors:\n
-        OCR_Box(level:int, page_num:int, block_num:int, par_num:int, line_num:int, word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None)\n
-        OCR_Box(json_list:list[dict])\n
-        OCR_Box(json_file:str)\n'''
+        ocr_tree(level:int, page_num:int, block_num:int, par_num:int, line_num:int, word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None)\n
+        ocr_tree(json_list:list[dict])\n
+        ocr_tree(json_file:str)\n'''
         self.level = None # 0 = document, 1 = page, 2 = block, 3 = paragraph, 4 = line, 5 = word
         self.page_num = None
         self.block_num = None
@@ -53,7 +53,7 @@ class OCR_Box:
 
     def init(self, level:int, page_num:int, block_num:int, par_num:int, line_num:int, 
                  word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None):
-        '''Initialize OCR_Box object'''
+        '''Initialize ocr_tree object'''
         self.level = level
         self.page_num = page_num
         self.block_num = block_num
@@ -78,7 +78,7 @@ class OCR_Box:
         node_stack = [self]
         for i in range(1,len(json_list)):
             current_node = node_stack[-1]
-            node = OCR_Box(json_list[i])
+            node = OCR_Tree(json_list[i])
             if node.level == current_node.level + 1:
                 current_node.add_child(node)
                 node_stack.append(node)
@@ -129,13 +129,13 @@ class OCR_Box:
         return result
 
     def copy(self):
-        '''Copy OCR_Box object'''
-        return OCR_Box(self.level,self.page_num,self.block_num,self.par_num,self.line_num,self.word_num,self.box,self.text,self.conf,self.id,self.type)
+        '''Copy ocr_tree object'''
+        return OCR_Tree(self.level,self.page_num,self.block_num,self.par_num,self.line_num,self.word_num,self.box,self.text,self.conf,self.id,self.type)
             
         
 
     def __str__(self):
-        return f'OCR_Box(level={self.level},page_num={self.page_num},block_num={self.block_num},par_num={self.par_num},line_num={self.line_num},word_num={self.word_num},box={self.box},text={self.text},conf={self.conf},id={self.id})'
+        return f'ocr_tree(level={self.level},page_num={self.page_num},block_num={self.block_num},par_num={self.par_num},line_num={self.line_num},word_num={self.word_num},box={self.box},text={self.text},conf={self.conf},id={self.id})'
 
     def pretty_print(self,index:int=0):
         print('  '*index + str(self))
@@ -191,7 +191,7 @@ class OCR_Box:
                     break
         return group_boxes
     
-    def get_boxes_level(self,level:int)->list['OCR_Box']:
+    def get_boxes_level(self,level:int)->list['OCR_Tree']:
         '''Get boxes with level in ocr_results'''
         group_boxes = []
         if self.level == level:
@@ -278,7 +278,7 @@ class OCR_Box:
                 child.remove_box_id(id,level)
 
 
-    def get_boxes_in_area(self,area:Box,level:int=2)->list['OCR_Box']:
+    def get_boxes_in_area(self,area:Box,level:int=2)->list['OCR_Tree']:
         '''Get boxes in area\n
         If level is -1, get all boxes in area'''
         boxes = []
@@ -309,7 +309,7 @@ class OCR_Box:
             child.prune_children_area(area)
     
 
-    def type_color(self)->(int,int,int):
+    def type_color(self)->tuple[int,int,int]:
         '''Get block color, in bgr value, based on type
         
         Colors:
@@ -334,7 +334,7 @@ class OCR_Box:
             return (0,255,0)
         
 
-    def blocks_below(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks below\n
         Get blocks below block, lowest distance, and intersecting with extension of block\n'''
 
@@ -347,7 +347,7 @@ class OCR_Box:
         below_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
         return below_blocks
     
-    def blocks_right(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks right\n
         Get blocks right block, lowest distance, and intersecting with extension of block\n'''
 
@@ -360,7 +360,7 @@ class OCR_Box:
         right_blocks = [b for b in blocks if b.box.left > self.box.left and b.box.intersects_box(block_extended)]
         return right_blocks
     
-    def blocks_above(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks above\n
         Get blocks above block, lowest distance, and intersecting with extension of block\n'''
 
@@ -373,7 +373,7 @@ class OCR_Box:
         above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and b.box.intersects_box(block_extended)]
         return above_blocks
     
-    def blocks_left(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_left(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks left\n
         Get blocks left block, lowest distance, and intersecting with extension of block\n'''
 
@@ -388,7 +388,7 @@ class OCR_Box:
 
 
 
-    def blocks_directly_below(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_directly_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block below\n
         Get block below block, lowest distance, and intersecting with extension of block\n'''
 
@@ -421,7 +421,7 @@ class OCR_Box:
         return directly_below_blocks
     
 
-    def blocks_directly_right(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_directly_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block right\n
         Get block right block, lowest distance, and intersecting with extension of block\n'''
 
@@ -446,7 +446,7 @@ class OCR_Box:
         return directly_right_blocks
     
 
-    def blocks_directly_above(self,blocks:list["OCR_Box"])->list["OCR_Box"]:
+    def blocks_directly_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block above\n
         Get block above block, lowest distance, and intersecting with extension of block\n'''
 

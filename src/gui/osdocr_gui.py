@@ -14,10 +14,10 @@ from aux_utils import consts
 from aux_utils.page_tree import *
 from aux_utils.image import *
 from aux_utils.misc import *
-from ocr_box_module.information_extraction import journal_template_to_text
-from ocr_box_module.ocr_box import *
-from ocr_box_module.ocr_box_analyser import *
-from ocr_box_module.ocr_box_fix import *
+from ocr_tree_module.information_extraction import journal_template_to_text
+from ocr_tree_module.ocr_tree import *
+from ocr_tree_module.ocr_tree_analyser import *
+from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
 
@@ -51,7 +51,7 @@ def fix_ocr(target_image:str,results_path:str):
     if not os.path.exists(f'{results_path}/fixed'):
         os.mkdir(f'{results_path}/fixed')
 
-    ocr_results = OCR_Box(f'{results_path}/result.json')
+    ocr_results = OCR_Tree(f'{results_path}/result.json')
     ocr_results.id_boxes([2])
     ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
     # save results
@@ -119,7 +119,7 @@ def extract_articles_method(window:sg.Window,image_path:str):
         if not os.path.exists(results_ocr_fixed_path):
             fix_ocr(image_path,results_path)
 
-    ocr_results = OCR_Box(f'{results_path}/fixed/result_fixed.json')
+    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
     ocr_results = categorize_boxes(ocr_results)
 
     image_info = get_image_info(image_path)
@@ -138,13 +138,13 @@ def extract_articles_method(window:sg.Window,image_path:str):
     for article in articles:
         print('Article:',[b.id for b in article])
         
-    with open(f'{results_path}/articles.txt','w') as f:
+    with open(f'{results_path}/articles.txt','w',encoding='utf-8') as f:
         for article in articles:
             article = Article(article)
             f.write(article.pretty_print())
             f.write('\n')
 
-    with open(f'{results_path}/articles.md','w') as f:
+    with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
         for article in articles:
             article = Article(article)
             f.write(article.to_md())
@@ -171,7 +171,7 @@ def journal_template_method(window:sg.Window,image_path:str):
     if not os.path.exists(f'{results_path}/fixed/result_fixed.json'):
         fix_ocr(image_path,results_path)
 
-    ocr_results = OCR_Box(f'{results_path}/fixed/result_fixed.json')
+    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
     image_info = get_image_info(image_path)
     journal = estimate_journal_template(ocr_results,image_info)
     img = draw_journal_template(journal,image_path)
@@ -186,7 +186,7 @@ def reading_order_method(window:sg.Window,image_path:str):
     if not os.path.exists(f'{results_path}/fixed/result_fixed.json'):
         fix_ocr(image_path,results_path)
 
-    ocr_results = OCR_Box(f'{results_path}/fixed/result_fixed.json')
+    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
     ocr_results.id_boxes([2],delimiters=False)
     image_info = get_image_info(f'{results_path}/fixed/result_fixed.png')
     journal_template = estimate_journal_template(ocr_results,image_info)

@@ -1,8 +1,8 @@
-from ocr_box_module.ocr_box import *
-from ocr_box_module.ocr_box_analyser import *
+from ocr_tree_module.ocr_tree import *
+from ocr_tree_module.ocr_tree_analyser import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Box):
+def block_bound_box_fix(ocr_results:OCR_Tree):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -85,7 +85,7 @@ def block_bound_box_fix(ocr_results:OCR_Box):
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Box,level:int,image_info:Box):
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box):
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}

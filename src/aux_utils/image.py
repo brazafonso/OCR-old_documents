@@ -1,7 +1,7 @@
 import os
 import cv2
 from PIL import Image
-from ocr_box_module.ocr_box import OCR_Box
+from ocr_tree_module.ocr_tree import OCR_Tree
 from aux_utils.box import *
 from scipy import ndimage
 import numpy as np
@@ -76,7 +76,7 @@ def create_vertical_aligned_pixel_set(pixels:list,image_shape:tuple,direction:st
     return pixel_set
 
 
-def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
+def calculate_rotation_direction(image_path:str,line_quantetization:int=200,debug=False):
     '''Calculate rotation direction (counter-clockwise or clockwise)
     
     On left margin of image compare the groups of ordered black pixels by x coordinate
@@ -99,9 +99,10 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
     dilation = cv2.dilate(filtered, np.ones((0,10),np.uint8),iterations=3)
     transformed_image = dilation
 
-    # cv2.imwrite(f'{test_path}_thresh.png',thresh)
-    # cv2.imwrite(f'{test_path}_filtered.png',filtered)
-    # cv2.imwrite(f'{test_path}_dilation.png',dilation)
+    if debug:
+        cv2.imwrite(f'{test_path}_thresh.png',thresh)
+        cv2.imwrite(f'{test_path}_filtered.png',filtered)
+        cv2.imwrite(f'{test_path}_dilation.png',dilation)
 
     # calculate sets
     pixels = []
@@ -113,11 +114,12 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
                 pixels.append((x,y))
                 break
 
+    if debug:
     # draw pixels
-    # copy_image = cv2.imread(f'{test_path}_dilation.png')
-    # for pixel in pixels:
-    #     cv2.circle(copy_image, pixel, 7, (0,0,255), -1)
-    # cv2.imwrite(f'{test_path}_pixels.png',copy_image)
+        copy_image = cv2.imread(f'{test_path}_dilation.png')
+        for pixel in pixels:
+            cv2.circle(copy_image, pixel, 7, (0,0,255), -1)
+        cv2.imwrite(f'{test_path}_pixels.png',copy_image)
 
     # make list of sets
     # each set is a list of pixels in x coordinates order (ascending or descending depending on rotation direction)
@@ -137,12 +139,13 @@ def calculate_rotation_direction(image_path:str,line_quantetization:int=200):
     print('test','clockwise',len(biggest_clockwise_set))
     print('counter_clockwise',len(biggest_counter_clockwise_set))
 
+    if debug:
     # draw biggest sets
-    # for pixel in biggest_clockwise_set:
-    #     cv2.circle(image, pixel, 7, (0,0,255), -1)
-    # for pixel in biggest_counter_clockwise_set:
-    #     cv2.circle(image, pixel, 7, (0,255,0), -1)
-    # cv2.imwrite(f'{test_path}_biggest_sets.png',image)
+        for pixel in biggest_clockwise_set:
+            cv2.circle(image, pixel, 7, (0,0,255), -1)
+        for pixel in biggest_counter_clockwise_set:
+            cv2.circle(image, pixel, 7, (0,255,0), -1)
+        cv2.imwrite(f'{test_path}_biggest_sets.png',image)
 
     if len(biggest_clockwise_set) >= len(biggest_counter_clockwise_set):
         direction = 'clockwise'
@@ -277,7 +280,7 @@ def rotate_image_alt(image):
 
 
 
-def rotate_image(image:str,line_quantetization:int=100,direction:str='auto'):
+def rotate_image(image:str,line_quantetization:int=100,direction:str='auto',debug=False):
     '''Finds the angle of the image and rotates it
     
     Based on the study by: W. Bieniecki, Sz. Grabowski, W. Rozenberg 
@@ -319,7 +322,7 @@ def rotate_image(image:str,line_quantetization:int=100,direction:str='auto'):
     
     # estimate rotation direction
     if direction == 'auto' or direction not in ['clockwise', 'counter_clockwise']:
-        direction = calculate_rotation_direction(image)
+        direction = calculate_rotation_direction(image, debug=debug)
     print('direction',direction)
 
     # make list of sets
@@ -364,21 +367,22 @@ def rotate_image(image:str,line_quantetization:int=100,direction:str='auto'):
 
 
     ## test images
-    # cv2.imwrite(test_path + '_rotated.png', img)
+    if debug:
+        cv2.imwrite(test_path + '_rotated.png', img)
 
-    # # draw points from set
-    # for p in set:
-    #     cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
+        # draw points from set
+        for p in set:
+            cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    # cv2.imwrite(test_path + '_points_1.png', og_img)
+        cv2.imwrite(test_path + '_points_1.png', og_img)
 
-    # og_img = cv2.imread(image)
+        og_img = cv2.imread(image)
 
-    # # draw points from set
-    # for p in new_set:
-    #     cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
+        # draw points from set
+        for p in new_set:
+            cv2.circle(og_img, (p[0]+50, p[1]), 7, (255, 0, 0), -1)
 
-    # cv2.imwrite(test_path + '_points.png', og_img)
+        cv2.imwrite(test_path + '_points.png', og_img)
 
     return img
         

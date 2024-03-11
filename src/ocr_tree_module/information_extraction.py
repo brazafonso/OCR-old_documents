@@ -1,9 +1,9 @@
-from ocr_box_module.ocr_box import OCR_Box
+from ocr_tree_module.ocr_tree import OCR_Tree
 from aux_utils.box import Box
 from output_module.journal.article import Article
-from ocr_box_module.ocr_box_analyser import analyze_text
+from ocr_tree_module.ocr_tree_analyser import analyze_text
 
-def journal_template_to_text(journal_template:dict,ocr_results:OCR_Box):
+def journal_template_to_text(journal_template:dict,ocr_results:OCR_Tree):
     '''Converts ocr_results to text using journal_template'''
     text = ''
 
@@ -25,7 +25,7 @@ def journal_template_to_text(journal_template:dict,ocr_results:OCR_Box):
 
 '''
         column_boxes = ocr_results.get_boxes_in_area(column,2)
-        column_page = OCR_Box(
+        column_page = OCR_Tree(
             {'level':1,'page_num':0,'block_num':0,'par_num':0,'line_num':0,
              'word_num':0,'box':column}
              )
@@ -56,7 +56,7 @@ def journal_template_to_text(journal_template:dict,ocr_results:OCR_Box):
             ### get boxes in each area
             for article_area in article_areas:
                 article_boxes = ocr_results.get_boxes_in_area(article_area,2)
-                article_page = OCR_Box(
+                article_page = OCR_Tree(
                     {'level':1,'page_num':0,'block_num':0,'par_num':0,'line_num':0,
                      'word_num':0,'box':article_area}
                      )

@@ -275,7 +275,7 @@ with the lowest being a word container. Based on a n-ary tree structure.
     % \begin{algorithmic}[1]
 
     %     \Comment{ get horizontal delimiters}
-    %     delimiters = OCR_Box.get_delimiters(upper_half_image,'horizontal')
+    %     delimiters = ocr_tree.get_delimiters(upper_half_image,'horizontal')
 
     %     delimiters = sort delimiters by width
 
@@ -297,7 +297,7 @@ with the lowest being a word container. Based on a n-ary tree structure.
 
     % \begin{algorithmic}[1]
     %     \Comment{ get potential column delimiters}
-    %     delimiters = OCR_Box.get_delimiters(body_area,'vertical')
+    %     delimiters = ocr_tree.get_delimiters(body_area,'vertical')
 
     %     \Comment{ clean/join delimiters}
     %     delimiters = join_aligned_delimiters(delimiters)
@@ -340,7 +340,7 @@ with the lowest being a word container. Based on a n-ary tree structure.
     % \begin{algorithmic}[1]
 
     %     \Comment{ get blocks}
-    %     blocks = OCR_Box.get_box_level(2)
+    %     blocks = ocr_tree.get_box_level(2)
 
         
     %     for block in blocks:

@@ -6,8 +6,8 @@ import cv2
 from aux_utils import consts
 from aux_utils.box import Box
 from aux_utils.misc import path_to_id
-from ocr_box_module.ocr_box import OCR_Box
-from ocr_box_module.ocr_box_analyser import *
+from ocr_tree_module.ocr_tree import OCR_Tree
+from ocr_tree_module.ocr_tree_analyser import *
 
 
 
@@ -33,7 +33,7 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike))->dict:
     }
 
 
-def tesseract_convert_index_to_box(data_dict:dict,index:int)->OCR_Box:
+def tesseract_convert_index_to_box(data_dict:dict,index:int)->OCR_Tree:
     '''Convert tesseract index box into box'''
     atributes = {}
     # gather box atributes
@@ -41,16 +41,16 @@ def tesseract_convert_index_to_box(data_dict:dict,index:int)->OCR_Box:
         atributes[k] = data_dict[k][index]
     atributes['right'] = atributes['left'] + atributes['width']
     atributes['bottom'] = atributes['top'] + atributes['height']
-    # create ocr_box
+    # create ocr_tree
     box = Box(atributes['left'],atributes['right'],atributes['top'],atributes['bottom'])
-    ocr_box = OCR_Box(atributes['level'],atributes['page_num'],atributes['block_num'],
+    ocr_tree = OCR_Tree(atributes['level'],atributes['page_num'],atributes['block_num'],
                       atributes['par_num'],atributes['line_num'],atributes['word_num'],box,atributes['text'],atributes['conf'])
-    return ocr_box
+    return ocr_tree
 
 
-def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Box:
-    '''Convert tesseract results into ocr_box'''
-    document = OCR_Box({'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,'box':Box(0,0,0,0),'text':'','conf':-1})
+def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Tree:
+    '''Convert tesseract results into ocr_tree'''
+    document = OCR_Tree({'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,'box':Box(0,0,0,0),'text':'','conf':-1})
     box_stack = [document]
     for i in range(len(data_dict['text'])):
         current_node = box_stack[-1]
@@ -72,7 +72,7 @@ def tesseract_convert_to_ocrbox(data_dict:dict)->OCR_Box:
     return document
 
 
-def save_results(ocr_results:OCR_Box,image_path:str,results_path:str=None):
+def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     '''Saves results gathered from ocr_results to files'''
 
     if not results_path:

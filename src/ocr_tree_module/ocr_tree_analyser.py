@@ -9,13 +9,13 @@ from aux_utils.graph import *
 from aux_utils.page_tree import *
 from aux_utils.image import *
 from aux_utils.box import *
-from ocr_box_module.ocr_box import *
+from ocr_tree_module.ocr_tree import *
 import math
 
 
 
 
-def analyze_text(ocr_results:OCR_Box)->dict:
+def analyze_text(ocr_results:OCR_Tree)->dict:
     '''Analyse text from ocr_results and return text data as dict\n
     Tries to find info about normal text size, number of lines and number of columns\n
     
@@ -182,7 +182,7 @@ def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
 
 
 
-def join_aligned_delimiters(delimiters:list[OCR_Box],orientation='horizontal'):
+def join_aligned_delimiters(delimiters:list[OCR_Tree],orientation='horizontal'):
     '''Join aligned delimiters\n'''
     aligned_delimiters = []
     for delimiter in delimiters:
@@ -204,7 +204,7 @@ def join_aligned_delimiters(delimiters:list[OCR_Box],orientation='horizontal'):
 
     
 
-def estimate_journal_header(ocr_results:OCR_Box,image_info:Box):
+def estimate_journal_header(ocr_results:OCR_Tree,image_info:Box):
     '''Estimate journal header blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
 
@@ -333,7 +333,7 @@ def draw_journal_template(journal_data,image_path):
     return img
 
 
-def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=60,id=False):
+def draw_bounding_boxes(ocr_results:OCR_Tree,image_path:str,draw_levels=[2],conf=60,id=False):
     '''Draw bounding boxes on image of type MatLike from cv2\n
     Return image with bounding boxes'''
 
@@ -357,7 +357,7 @@ def draw_bounding_boxes(ocr_results:OCR_Box,image_path:str,draw_levels=[2],conf=
     return img
 
 
-def draw_articles(articles:list[list[OCR_Box]],image_path:str):
+def draw_articles(articles:list[list[OCR_Tree]],image_path:str):
     '''Draw articles in image\n
     
     Choose a unique color for each article\n'''
@@ -379,7 +379,7 @@ def draw_articles(articles:list[list[OCR_Box]],image_path:str):
     # draw articles
     for i in range(len(articles)):
         for block in articles[i]:
-            block:OCR_Box
+            block:OCR_Tree
             (x, y, w, h) = (block.box.left, block.box.top, block.box.width, block.box.height)
             img = cv2.rectangle(img, (x, y), (x + w, y + h), colors[i], 2)
 
@@ -387,7 +387,7 @@ def draw_articles(articles:list[list[OCR_Box]],image_path:str):
             
 
 
-def next_top_block(blocks:list[OCR_Box],origin:Box=Box(0,0,0,0)):
+def next_top_block(blocks:list[OCR_Tree],origin:Box=Box(0,0,0,0)):
     '''Get next top block\n
     Estimates block with best potential to be next top block\n
     Uses top and leftmost blocks for reference\n'''
@@ -461,8 +461,8 @@ def next_top_block(blocks:list[OCR_Box],origin:Box=Box(0,0,0,0)):
     
 
 
-def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
-    '''Calculate reading order of OCR_Box of block level.
+def calculate_reading_order_naive(ocr_results:OCR_Tree,area:Box=None):
+    '''Calculate reading order of ocr_tree of block level.
 
     Order left to right, top to bottom.
 
@@ -588,7 +588,7 @@ def calculate_reading_order_naive(ocr_results:OCR_Box,area:Box=None):
 
 
 
-def next_top_block_context(blocks:list[OCR_Box],current_block:OCR_Box=None):
+def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None):
     '''Get next top block
     
     Estimates block with best potential to be next top block, using context such as block type as reference
@@ -726,8 +726,8 @@ def next_top_block_context(blocks:list[OCR_Box],current_block:OCR_Box=None):
 
 
 
-def calculate_reading_order_naive_context(ocr_results:OCR_Box,area:Box=None):
-    '''Calculate reading order of OCR_Box of block level.
+def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None):
+    '''Calculate reading order of ocr_tree of block level.
 
     Order left to right, top to bottom.
 
@@ -821,7 +821,7 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Box,area:Box=None):
 
 
 
-def categorize_boxes(ocr_results:OCR_Box):
+def categorize_boxes(ocr_results:OCR_Tree):
     '''Categorize blocks into different types
     
     Types:
@@ -882,7 +882,7 @@ def categorize_boxes(ocr_results:OCR_Box):
 
             
 
-def topologic_graph(ocr_results:OCR_Box,area:Box=None,clean_graph:bool=True,log:bool=False)->Graph:
+def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log:bool=False)->Graph:
     '''Generate topologic graph of blocks\n
     
     Return:
@@ -918,7 +918,7 @@ def topologic_graph(ocr_results:OCR_Box,area:Box=None,clean_graph:bool=True,log:
 
     while current_node:
         current_block = current_node.value
-        current_block:OCR_Box
+        current_block:OCR_Tree
         visited.append(current_node.id)
         if log:
             print('Current block:',current_block.id,current_block.type)
@@ -1063,7 +1063,7 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
 
 
 
-def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
+def topologic_order_context(ocr_results:OCR_Tree,area:Box=None)->Graph:
     '''Generate topologic order of blocks\n
     
     Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n
@@ -1098,7 +1098,7 @@ def topologic_order_context(ocr_results:OCR_Box,area:Box=None)->Graph:
 
 
 
-def calculate_block_attraction(block:OCR_Box,target_block:OCR_Box,blocks:list[OCR_Box],direction:str=None,child:bool=True,log:bool=False)->int:
+def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[OCR_Tree],direction:str=None,child:bool=True,log:bool=False)->int:
     '''Calculate attraction between blocks\n
 
     Attraction is calculated based on block's characteristics such as type, size, position, etc\n
