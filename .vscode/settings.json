@@ -10,6 +10,8 @@
         "./src",
         "./src",
         "./src",
-        "./src/aux_utils"
+        "./src/aux_utils",
+        "./packages",
+        "./packages/document_image_utils"
     ]
 }

@@ -2,17 +2,16 @@
 
 import io
 import shutil
+from typing import Union
 import cv2
 import os
 import json
-import argparse
+import numpy
 import pandas as pd
 import PySimpleGUI as sg
-from pytesseract import Output
-from PIL import Image
 from aux_utils import consts
 from aux_utils.page_tree import *
-from aux_utils.image import *
+from document_image_utils.image import *
 from aux_utils.misc import *
 from ocr_tree_module.information_extraction import journal_template_to_text
 from ocr_tree_module.ocr_tree import *
@@ -30,14 +29,16 @@ methods_1 = ['run_tesseract','fix_blocks','draw_bb','draw_journal_template',
     
 
 
-def update_image_element(window:sg.Window,image_element:str,new_image,size:tuple=(500,700)):
+def update_image_element(window:sg.Window,image_element:str,new_image:Union[str,cv2.typing.MatLike],size:tuple=(500,700)):
     '''Update image element'''
-    if type(new_image) in [str,'MatLike']:
+    if type(new_image) in [str,numpy.ndarray]:
         image = None
+        bio = None
         if type(new_image) == str:
             image = cv2.imread(new_image)
         else:
             image = new_image
+
         image = cv2.resize(image,size)
         bio = cv2.imencode('.png',image)[1].tobytes()
         window[image_element].update(data=bio,visible=True)
@@ -213,10 +214,8 @@ def reading_order_method(window:sg.Window,image_path:str):
 def auto_rotate_method(window:sg.Window,image_path:str):
     '''Apply auto rotate method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-
     img = rotate_image(image_path,direction='auto')
-    cv2.imwrite(f'{results_path}/rotated.png',img)
-    update_image_element(window,'result_img',f'{results_path}/rotated.png')
+    update_image_element(window,'result_img',img)
 
 def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
     '''Apply calculate dpi method to image and update image element'''

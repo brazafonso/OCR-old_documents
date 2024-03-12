@@ -1,27 +1,26 @@
 import os
 import cv2
-from PIL import Image
-from ocr_tree_module.ocr_tree import OCR_Tree
-from aux_utils.box import *
+from .box import *
 from scipy import ndimage
 import numpy as np
 
 
 def get_concat_h(im1, im2,margin=0):
     '''Concatenate images horizontally'''
-    dst = Image.new('RGB', (im1.width + im2.width + margin, im1.height))
-    dst.paste(im1, (0, 0))
-    dst.paste(im2, (im1.width + margin, 0))
+    dst = np.zeros((im1.shape[0], im1.shape[1] + im2.shape[1] + margin, 3), dtype=np.uint8)
+    dst[:, :im1.shape[1], :] = im1
+    dst[:, im1.shape[1] + margin:, :] = im2
     return dst
 
 
 def split_page_columns(image_path,columns):
     '''Split image into columns images'''
-    image = Image.open(image_path)
+    image = cv2.imread(image_path)
     columns_image = []
     for column in columns:
-        columns_image.append(image.crop((column[0][0],column[0][1],column[1][0],column[1][1])))
+        columns_image.append(image[column[0][1]:column[1][1],column[0][0]:column[1][0]])
     return columns_image
+
 
 def concatentate_columns(columns):
     '''Concatenate columns images horizontally in a single image'''
@@ -36,16 +35,16 @@ def concatentate_columns(columns):
 
 def black_and_white(image_path):
     '''Convert image to black and white'''
-    image = Image.open(image_path)
-    image = image.convert('L')
-    image = image.point(lambda x: 0 if x < 128 else 255, '1')
-    return image
+    image = cv2.imread(image_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
+    return thresh
 
 
 def get_image_info(image_path:str)->Box:
     '''Get image info'''
-    image = Image.open(image_path)
-    image_info = Box(0,image.width,0,image.height)
+    image = cv2.imread(image_path)
+    image_info = Box(0,len(image[0]),0,len(image))
     return image_info
 
 

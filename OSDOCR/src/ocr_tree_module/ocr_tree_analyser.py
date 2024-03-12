@@ -7,7 +7,7 @@ from pytesseract import Output
 from PIL import Image
 from aux_utils.graph import *
 from aux_utils.page_tree import *
-from aux_utils.image import *
+from document_image_utils.image import *
 from aux_utils.box import *
 from ocr_tree_module.ocr_tree import *
 import math

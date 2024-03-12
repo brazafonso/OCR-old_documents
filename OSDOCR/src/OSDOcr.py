@@ -6,7 +6,7 @@ import json
 import argparse
 import pandas as pd
 from aux_utils.page_tree import *
-from aux_utils.image import *
+from document_image_utils.image import *
 from aux_utils.misc import *
 from aux_utils import consts
 from gui.osdocr_gui import run_gui

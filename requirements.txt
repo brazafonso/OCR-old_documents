@@ -1,0 +1,7 @@
+numpy
+opencv-python
+pandas
+PySimpleGUI
+pytesseract
+jellyfish
+document_image_utils
