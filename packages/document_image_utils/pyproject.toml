@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "document_image_utils"
-version = "0.1.2"
+version = "0.1.4"
 description = "Toolkit for document image processing"
 authors = ["Gonçalo Afonso <brazafonso2001@gmail.com>"]
 readme = "README.md"

@@ -20,3 +20,12 @@ def test_rotation_direction_clockwise_2():
     assert calculate_rotation_direction(rotated_image) == 'clockwise'
 
 
+def test_rotation_direction_none_1():
+    rotated_image = f'{study_cases_folder}/ideal/AAA-13.png'
+    assert calculate_rotation_direction(rotated_image) == 'none'
+
+def test_rotation_direction_none_2():
+    rotated_image = f'{study_cases_folder}/ideal/AAA-19.png'
+    assert calculate_rotation_direction(rotated_image) == 'none'
+
+
