@@ -840,6 +840,7 @@ def categorize_boxes(ocr_results:OCR_Tree):
     # get blocks
     blocks = ocr_results.get_boxes_level(2)
 
+
     # categorize blocks
     for block in blocks:
         # empty block
@@ -878,6 +879,7 @@ def categorize_boxes(ocr_results:OCR_Tree):
                 block.end_text = True
             else:
                 block.end_text = False
+            
     return ocr_results
 
             
@@ -921,7 +923,7 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
         current_block:OCR_Tree
         visited.append(current_node.id)
         if log:
-            print('Current block:',current_block.id,current_block.type)
+            print('Current block:',current_block.id,current_block.type,'|',current_block.to_text().strip()[:20])
         # block is before blocks directly below and to the right of it
         potential_before_blocks = []
         right_blocks = current_block.blocks_directly_right(non_delimiters)
@@ -973,9 +975,9 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
         current_node = next_node
     topologic_graph.self_print()
 
-    order = sort_topologic_order(topologic_graph)
     # clean graph
     if clean_graph:
+        order = sort_topologic_order(topologic_graph)
         topologic_graph.clean_graph(order)
 
     return topologic_graph
@@ -1404,14 +1406,16 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
 
 
 
-def graph_isolate_articles(graph:Graph):
+def graph_isolate_articles(graph:Graph,order_list:list=None):
     '''Isolate articles in topologic graph\n'''
     # sort nodes
-    order_list = sort_topologic_order(graph,sort_weight=True)
+    if not order_list: 
+        order_list = sort_topologic_order(graph,sort_weight=True)
+    print(order_list)
 
     # isolate articles
-    ## a new article begins when a title block is found
-    ## a new article ends when another title block is found
+    ## a new article begins when a title block is found and current article is not empty
+    ## a new article ends when another title block is found and current article is not empty
     articles = []
     current_article = []
     has_title = False

@@ -109,7 +109,7 @@ def save_articles(articles:list,results_path:str,args:argparse.Namespace):
 def extract_articles(target:str,ocr_results:OCR_Tree,results_path:str,args:argparse.Namespace):
     '''Extract articles from image'''
 
-     # get journal template
+    # get journal template
     ## leaves only body
     image_info = get_image_info(target)
     journal_template = estimate_journal_template(ocr_results,image_info)
@@ -119,17 +119,24 @@ def extract_articles(target:str,ocr_results:OCR_Tree,results_path:str,args:argpa
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results)
+    order_list = sort_topologic_order(t_graph,sort_weight=True)
 
-    # draw reading order
-    image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
-    if args.debug:
-        cv2.imwrite(f'{results_path}/reading_order.png',image)
 
     # isolate articles
-    articles = graph_isolate_articles(t_graph)
+    articles = graph_isolate_articles(t_graph,order_list=order_list)
     if args.debug:
         articles_img = draw_articles(articles,target)
         cv2.imwrite(f'{results_path}/articles.png',articles_img)
+
+    # draw reading order
+    if args.debug:
+        # change ids to order
+        order_map = {order_list[i]:i for i in range(len(order_list))}
+        ocr_results.change_ids(order_map)
+
+        image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
+        cv2.imwrite(f'{results_path}/reading_order.png',image)
+
 
     # save articles
     save_articles(articles,results_path,args)
@@ -251,6 +258,10 @@ def run_target(target:str,args:argparse.Namespace):
 
     # id boxes
     ocr_results.id_boxes([2])
+
+    if args.debug:
+        id_img = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
+        cv2.imwrite(f'{results_path}/result_id.png',id_img)
 
     # clean ocr_results
     if 'clean_ocr' not in args.skip_method:

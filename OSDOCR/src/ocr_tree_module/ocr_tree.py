@@ -215,7 +215,7 @@ class OCR_Tree:
                 count += 1
         return line_sum / count
     
-    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.3):
+    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.1):
         '''Check if text size is in range'''
         mean_height = mean_height
         if not mean_height:
