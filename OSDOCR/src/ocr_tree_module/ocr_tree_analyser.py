@@ -50,7 +50,7 @@ def analyze_text(ocr_results:OCR_Tree)->dict:
             right_margin_n[right_margin] = 0
         right_margin_n[right_margin] += 1
 
-        lmh = line.calculate_mean_height()
+        lmh = line.calculate_mean_height(level=4)
         line.mean_height = lmh
         line_sizes.append(lmh)
 
@@ -62,13 +62,15 @@ def analyze_text(ocr_results:OCR_Tree)->dict:
     normal_text_size = sum(line_sizes)/len(line_sizes)
     ## normal text size standard deviation
     normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
-    while normal_text_size_std > normal_text_size*2:
+    i = 0
+    while normal_text_size_std > normal_text_size:
         # remove outliers (greatest value)
         line_sizes.remove(max(line_sizes))
         # recalculate normal text size
         normal_text_size = sum(line_sizes)/len(line_sizes)
         # recalculate normal text size standard deviation
         normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
+        i += 1
 
 
     # estimate normal text size
@@ -852,15 +854,15 @@ def categorize_boxes(ocr_results:OCR_Tree):
             ## TODO: categorize empty such as images
         # non empty block
         else:
-            if block.is_text_size(box_analysis['normal_text_size']):
+            if block.is_text_size(box_analysis['normal_text_size'],level=4):
                 # text block
                 block.type = 'text'
             # greater than normal text size
-            elif block.calculate_mean_height() > box_analysis['normal_text_size']:
+            elif block.calculate_mean_height(level=4) > box_analysis['normal_text_size']:
                 # title block
                 block.type = 'title'
             # smaller than normal text size
-            elif block.calculate_mean_height() < box_analysis['normal_text_size']:
+            elif block.calculate_mean_height(level=4) < box_analysis['normal_text_size']:
                 # caption block
                 block.type = 'caption'
             else:
@@ -1065,17 +1067,18 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
 
 
 
-def topologic_order_context(ocr_results:OCR_Tree,area:Box=None)->Graph:
+def topologic_order_context(ocr_results:OCR_Tree,area:Box=None,ignore_delimiters:bool=False)->Graph:
     '''Generate topologic order of blocks\n
     
     Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n
     Context will allow to estimate attraction between blocks, such as title blocks being very atracted to non title blocks\n'''
 
+    ignore_type = ['delimiter'] if ignore_delimiters else []
     # get blocks
     if area:
-        blocks = ocr_results.get_boxes_in_area(area,2)
+        blocks = ocr_results.get_boxes_in_area(area,2,ignore_type=ignore_type)
     else:
-        blocks = ocr_results.get_boxes_level(2)
+        blocks = ocr_results.get_boxes_level(2,ignore_type=ignore_type)
 
     t_graph = topologic_graph(ocr_results,area,clean_graph=False,log=False)
 
@@ -1100,7 +1103,7 @@ def topologic_order_context(ocr_results:OCR_Tree,area:Box=None)->Graph:
 
 
 
-def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[OCR_Tree],direction:str=None,child:bool=True,log:bool=True)->int:
+def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[OCR_Tree],direction:str=None,child:bool=True,log:bool=False)->int:
     '''Calculate attraction between blocks\n
 
     Attraction is calculated based on block's characteristics such as type, size, position, etc\n

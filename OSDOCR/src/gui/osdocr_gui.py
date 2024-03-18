@@ -24,13 +24,47 @@ from output_module.journal.article import Article
 methods_1 = ['run_tesseract','fix_blocks','draw_bb','draw_journal_template',
            'calculate_reading_order','extract_articles','search_block','unite_blocks']
 
-
-
+normal_image_size = (600,800)
+window_sizes = [
+    {   
+        'window_size':(3840,2160),
+        'normal_image_size':(1300,1700),
+    },
+    {
+        'window_size':(2560,1377),
+        'normal_image_size':(1000,1400),
+    },
+    {
+        'window_size':(1536,801),
+        'normal_image_size':(600,800),
+    },
+    {
+        'window_size':(1280,720),
+        'normal_image_size':(600,800),
+    },
+    {
+        'window_size':(800,600),
+        'normal_image_size':(400,600),
+    }
+]
     
 
 
-def update_image_element(window:sg.Window,image_element:str,new_image:Union[str,cv2.typing.MatLike],size:tuple=(500,700)):
+def update_sizes(window:sg.Window):
+    '''Update window sizes, using window size dict and current window size'''
+    global normal_image_size
+    current_window_size = window.size
+    for window_size_dict in window_sizes:
+        if current_window_size >= window_size_dict['window_size']:
+            normal_image_size = window_size_dict['normal_image_size']
+            break
+    
+    
+
+
+def update_image_element(window:sg.Window,image_element:str,new_image:Union[str,cv2.typing.MatLike],size:tuple=None):
     '''Update image element'''
+    size = size or normal_image_size
     if type(new_image) in [str,numpy.ndarray]:
         image = None
         bio = None
@@ -109,7 +143,7 @@ def tesseract_method(window:sg.Window,image_path:str,values:dict):
 
 
 
-def extract_articles_method(window:sg.Window,image_path:str):
+def extract_articles_method(window:sg.Window,image_path:str,values:dict):
     '''Apply extract articles method to image and update image element'''
 
     # results path
@@ -134,8 +168,11 @@ def extract_articles_method(window:sg.Window,image_path:str):
     print('footer',journal_template['footer'])
     print(columns_area)
     
-    t_graph = topologic_order_context(ocr_results,columns_area)
+    # calculate reading order
+    ignore_delimiters = True if values['checkbox_1_1'] else False
+    t_graph = topologic_order_context(ocr_results,columns_area,ignore_delimiters=ignore_delimiters)
     order_list = sort_topologic_order(t_graph,sort_weight=True)
+
     print('Order List: ',order_list)
     articles = graph_isolate_articles(t_graph)
     for article in articles:
@@ -181,7 +218,7 @@ def journal_template_method(window:sg.Window,image_path:str):
     cv2.imwrite(f'{results_path}/result_journal_template.png',img)
     update_image_element(window,'result_img',f'{results_path}/result_journal_template.png')
 
-def reading_order_method(window:sg.Window,image_path:str):
+def reading_order_method(window:sg.Window,image_path:str,values:dict):
     '''Apply reading order method to image and update image element'''
 
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
@@ -200,7 +237,8 @@ def reading_order_method(window:sg.Window,image_path:str):
     ocr_results = categorize_boxes(ocr_results)
 
     # run topologic_order context
-    t_graph = topologic_order_context(ocr_results,columns_area)
+    ignore_delimiters = True if values['checkbox_1_1'] else False
+    t_graph = topologic_order_context(ocr_results,columns_area,ignore_delimiters=ignore_delimiters)
     order_list = sort_topologic_order(t_graph,sort_weight=True)
 
     # change ids to order
@@ -265,13 +303,13 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     if method == 'run_tesseract':
         tesseract_method(window,image_path,values)
     elif method == 'extract_articles':
-        extract_articles_method(window,image_path)
+        extract_articles_method(window,image_path,values)
     elif method == 'fix_blocks':
         fix_blocks_method(window,image_path)
     elif method == 'journal_template':
         journal_template_method(window,image_path)
     elif method == 'reading_order':
-        reading_order_method(window,image_path)
+        reading_order_method(window,image_path,values)
     elif method == 'auto_rotate':
         auto_rotate_method(window,image_path)
     elif method == 'unite_blocks':
@@ -305,12 +343,15 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
 
     ## TAB 1
     if method == 'run_tesseract' and target_image:
-        window['checkbox_1_1'].update(visible=True)
-        window['select_list_text_1_1'].update(visible=True)
-        window['select_list_1_1'].update(visible=True)
         result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
         # update target image
         update_image_element(window,'target_image_path',target_image)
+
+        # update options
+        window['checkbox_1_1'].update(visible=True,text='Auto Rotate:')
+        window['select_list_text_1_1'].update(visible=True)
+        window['select_list_1_1'].update(visible=True)
+
         # check if result image exists
         if target_image and os.path.exists(result_image):
             # update result image
@@ -359,6 +400,10 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         else:
             window['result_img'].update(visible=False)
 
+        # enable checkbox
+        window['checkbox_1_1'].update(text='Ignore Delimeters:',visible=True)
+
+
         if os.path.exists(reading_order_image):
             # update result image
             update_image_element(window,'result_img',reading_order_image)
@@ -375,6 +420,9 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
             update_image_element(window,'target_image_path',result_image)
         else:
             window['result_img'].update(visible=False)
+
+        # enable checkbox
+        window['checkbox_1_1'].update(text='Ignore Delimeters:',visible=True)
 
         if os.path.exists(articles_image):
             # update result image
@@ -485,7 +533,7 @@ def build_gui()->sg.Window:
             sg.Button('Apply',key='apply'),
         ],
         [
-            sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(10,10),visible=False),
+            sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(15,10),visible=False),
         ],
         [
             sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False),
@@ -573,6 +621,7 @@ def build_gui()->sg.Window:
     ]
 
     window = sg.Window('OCR',layout,finalize=True,resizable=True,size=(1200,800))
+    window.bind('<Configure>',"Event")
     return window
 
 
@@ -604,9 +653,19 @@ def run_gui():
         update_method_layout(window,method,target_image)
         window['target_input'].update(target_image)
 
+
     while True:
+        last_window_size = window.size
         event, values = window.read()
         print(event)
+
+        # check window size
+        ## adaptelement sizes accordingly
+        if event == 'Event':
+            if last_window_size != window.size:
+                update_sizes(window)
+                update_method_layout(window,method,target_image)
+
 
         if event in (sg.WIN_CLOSED, 'Exit'):
             break

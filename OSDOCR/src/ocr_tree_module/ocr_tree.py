@@ -191,35 +191,33 @@ class OCR_Tree:
                     break
         return group_boxes
     
-    def get_boxes_level(self,level:int)->list['OCR_Tree']:
+    def get_boxes_level(self,level:int,ignore_type:list[str]=[])->list['OCR_Tree']:
         '''Get boxes with level in ocr_results'''
         group_boxes = []
-        if self.level == level:
+        if self.level == level and self.type not in ignore_type:
             group_boxes.append(self)
         else:
             for child in self.children:
                 if child.level <= level:
-                    group_boxes += child.get_boxes_level(level)
+                    group_boxes += child.get_boxes_level(level,ignore_type)
         return group_boxes
     
     def calculate_mean_height(self,level:int=5)->float:
         '''Get mean height of group boxes'''
         line_sum = 0
         count = 0
-        if self.level == level:
-            line_sum += self.box.height
+        boxes_level = self.get_boxes_level(level)
+        for box in boxes_level:
+            line_sum += box.box.height
             count += 1
-        elif self.level < level:
-            for child in self.children:
-                line_sum += child.calculate_mean_height(level)
-                count += 1
-        return line_sum / count
+        
+        return line_sum/count if count > 0 else 0
     
-    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.1):
+    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.1,level:int=5):
         '''Check if text size is in range'''
         mean_height = mean_height
         if not mean_height:
-            mean_height = self.calculate_mean_height()
+            mean_height = self.calculate_mean_height(level)
         if mean_height >= text_size*(1-range) and mean_height <= text_size*(1+range):
             return True
         return False
@@ -278,16 +276,17 @@ class OCR_Tree:
                 child.remove_box_id(id,level)
 
 
-    def get_boxes_in_area(self,area:Box,level:int=2)->list['OCR_Tree']:
+    def get_boxes_in_area(self,area:Box,level:int=2,ignore_type:list[str]=[])->list['OCR_Tree']:
         '''Get boxes in area\n
         If level is -1, get all boxes in area'''
         boxes = []
         if area:
-            if (level == -1 or self.level == level )and self.box.is_inside_box(area):
+            if (level == -1 or self.level == level ) and self.box.is_inside_box(area) and self.type not in ignore_type:
                 boxes.append(self)
             elif self.level < level or level == -1:
                 for child in self.children:
-                    boxes += child.get_boxes_in_area(area,level)
+                    child:OCR_Tree
+                    boxes += child.get_boxes_in_area(area,level,ignore_type)
         return boxes
     
     def prune_children_area(self,area:Box=None):
@@ -493,9 +492,21 @@ class OCR_Tree:
         '''Join trees of the same level'''
         if self.level == tree.level:
             # add tree childrens
+            ## adapt children metadata to make sense in new tree (block_num,par_num)
+            if self.children:
+                last_child : OCR_Tree = self.children[-1]
+                tree.update_children_metadata(reference_block=last_child.block_num,reference_par=last_child.par_num)
             self.children += tree.children
             # join boxes
             self.box.join(tree.box)
+
+
+    def update_children_metadata(self,reference_block:int,reference_par:int):
+        '''Update children metadata to make sense in new tree (block_num,par_num)'''
+        self.block_num = reference_block
+        self.par_num += reference_par
+        for child in self.children:
+            child.update_children_metadata(reference_block,reference_par)
 
 
     

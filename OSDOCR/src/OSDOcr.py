@@ -52,10 +52,11 @@ def process_args():
     parser.add_argument('-f','--file'                ,type=str,nargs=1                                  ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
     parser.add_argument('-of','--output_folder'      ,type=str,nargs=1                                  ,help='Results folder')
     parser.add_argument('-ot','--output_type'        ,type=str,nargs='*' ,default=['markdown']          ,help='Output type. Possible values: markdown, html, txt (default: markdown).')
-    parser.add_argument('-d','--debug'               ,action='store_true',default=False                 ,help='Debug mode')
     parser.add_argument('-focr','--force_ocr'        ,action='store_true',default=False                 ,help='Force OCR engine to run again')
+    parser.add_argument('-id','--ignore_delimiters'  ,action='store_true',default=False                 ,help='Ignore delimiters as page/column boundaries (default: False)')
     parser.add_argument('-fr','--fix_rotation'       ,type=str,nargs='?' ,default=None,const='auto'     ,help='Fix image rotation automatically (default: False). Further options: auto, clockwise, counter_clockwise (default: auto).')
     parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                     ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
+    parser.add_argument('-d','--debug'               ,action='store_true',default=False                 ,help='Debug mode')
     args = parser.parse_args()
     return args
 
@@ -80,6 +81,10 @@ def run_test():
         ocr_results.id_boxes([2])
         ocr_results = categorize_boxes(ocr_results)
         ocr_results = unite_blocks(ocr_results)
+        results_path = f'{consts.result_path}/{path_to_id(target_image)}/fixed/united.json'
+        json_format = ocr_results.to_json()
+        with open(results_path,'w') as f:
+            json.dump(json_format,f,indent=4)
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):
@@ -119,7 +124,7 @@ def extract_articles(target:str,ocr_results:OCR_Tree,results_path:str,args:argpa
     columns_area.remove_box_area(journal_template['footer'])
 
     # run topologic_order context
-    t_graph = topologic_order_context(ocr_results)
+    t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=args.ignore_delimiters)
     order_list = sort_topologic_order(t_graph,sort_weight=True)
 
 
@@ -135,7 +140,7 @@ def extract_articles(target:str,ocr_results:OCR_Tree,results_path:str,args:argpa
         order_map = {order_list[i]:i for i in range(len(order_list))}
         ocr_results.change_ids(order_map)
 
-        image = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
+        image = draw_bounding_boxes(ocr_results,target,[2],id=True)
         cv2.imwrite(f'{results_path}/reading_order.png',image)
 
 
@@ -261,8 +266,8 @@ def run_target(target:str,args:argparse.Namespace):
     ocr_results.id_boxes([2])
 
     if args.debug:
-        id_img = draw_bounding_boxes(ocr_results,f'{results_path}/result.png',[2],id=True)
-        cv2.imwrite(f'{results_path}/result_id.png',id_img)
+        id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
+        cv2.imwrite(f'{results_path}/result_id_0.png',id_img)
 
     # clean ocr_results
     if 'clean_ocr' not in args.skip_method:
@@ -274,6 +279,10 @@ def run_target(target:str,args:argparse.Namespace):
     # unite same type blocks
     if 'unite_blocks' not in args.skip_method:
         ocr_results = unite_blocks(ocr_results)
+
+    if args.debug:
+        id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
+        cv2.imwrite(f'{results_path}/result_id_2.png',id_img)
 
     if args.debug:
         # analyse ocr_results
