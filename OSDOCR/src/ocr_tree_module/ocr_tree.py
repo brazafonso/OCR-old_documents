@@ -334,7 +334,7 @@ class OCR_Tree:
             return (0,255,0)
         
 
-    def blocks_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks below\n
         Get blocks below block, lowest distance, and intersecting with extension of block\n'''
 
@@ -347,7 +347,7 @@ class OCR_Tree:
         below_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
         return below_blocks
     
-    def blocks_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks right\n
         Get blocks right block, lowest distance, and intersecting with extension of block\n'''
 
@@ -360,7 +360,7 @@ class OCR_Tree:
         right_blocks = [b for b in blocks if b.box.left > self.box.left and b.box.intersects_box(block_extended)]
         return right_blocks
     
-    def blocks_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks above\n
         Get blocks above block, lowest distance, and intersecting with extension of block\n'''
 
@@ -373,7 +373,7 @@ class OCR_Tree:
         above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and b.box.intersects_box(block_extended)]
         return above_blocks
     
-    def blocks_left(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_left(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get blocks left\n
         Get blocks left block, lowest distance, and intersecting with extension of block\n'''
 
@@ -388,7 +388,7 @@ class OCR_Tree:
 
 
 
-    def blocks_directly_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_directly_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block below\n
         Get block below block, lowest distance, and intersecting with extension of block\n'''
 
@@ -421,7 +421,7 @@ class OCR_Tree:
         return directly_below_blocks
     
 
-    def blocks_directly_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_directly_right(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block right\n
         Get block right block, lowest distance, and intersecting with extension of block\n'''
 
@@ -446,7 +446,7 @@ class OCR_Tree:
         return directly_right_blocks
     
 
-    def blocks_directly_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
+    def boxes_directly_above(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:
         '''Get block above\n
         Get block above block, lowest distance, and intersecting with extension of block\n'''
 
@@ -486,7 +486,16 @@ class OCR_Tree:
         elif self.level < level:
             for child in self.children:
                 child.change_ids(ids,level,clean)
-            
+
+
+
+    def join_trees(self,tree:'OCR_Tree'):
+        '''Join trees of the same level'''
+        if self.level == tree.level:
+            # add tree childrens
+            self.children += tree.children
+            # join boxes
+            self.box.join(tree.box)
 
 
     

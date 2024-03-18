@@ -926,8 +926,8 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
             print('Current block:',current_block.id,current_block.type,'|',current_block.to_text().strip()[:20])
         # block is before blocks directly below and to the right of it
         potential_before_blocks = []
-        right_blocks = current_block.blocks_directly_right(non_delimiters)
-        below_blocks = current_block.blocks_directly_below(non_delimiters)
+        right_blocks = current_block.boxes_directly_right(non_delimiters)
+        below_blocks = current_block.boxes_directly_below(non_delimiters)
         potential_before_blocks += right_blocks
         potential_before_blocks += below_blocks
         if log:
@@ -1077,7 +1077,7 @@ def topologic_order_context(ocr_results:OCR_Tree,area:Box=None)->Graph:
     else:
         blocks = ocr_results.get_boxes_level(2)
 
-    t_graph = topologic_graph(ocr_results,area,clean_graph=False)
+    t_graph = topologic_graph(ocr_results,area,clean_graph=False,log=False)
 
     # calculate attraction of edges
     for node in t_graph.nodes:
@@ -1100,7 +1100,7 @@ def topologic_order_context(ocr_results:OCR_Tree,area:Box=None)->Graph:
 
 
 
-def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[OCR_Tree],direction:str=None,child:bool=True,log:bool=False)->int:
+def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[OCR_Tree],direction:str=None,child:bool=True,log:bool=True)->int:
     '''Calculate attraction between blocks\n
 
     Attraction is calculated based on block's characteristics such as type, size, position, etc\n
@@ -1109,6 +1109,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     if log:
         print('Calculating attraction between',block.id,target_block.id,'|','child' if child else 'parent')
 
+    # calculate distances for normalization
     max_distance = None
     min_distance = None
     for b in blocks:
@@ -1159,15 +1160,13 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     ### exception, no below blocks (probably prefers upper block)
     border_point = {'above':'top','below':'bottom','left':'left','right':'right'}[direction]
     distance = block.box.distance_to(target_block.box,border=border_point)
-    distance = (distance-min_distance)/(max_distance-min_distance)
-
-    #259.83456275099354
+    distance = abs((distance-min_distance)/(max_distance-min_distance))
 
     # child
     ## more atraction to blocks below
     ## or right blocks in conditional cases
     if child:
-        below_blocks = block.blocks_directly_below(blocks)
+        below_blocks = block.boxes_directly_below(blocks)
         leftmost_block = None
         if below_blocks:
             below_blocks.sort(key=lambda x: x.box.left)
@@ -1245,6 +1244,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
         ## unfinished text is more atracted to unstarted text
         ## text is more attracted to text below it
         ### text to the right is more attracted if below block is delimiter
+        ## unfineshed text is less atracted to non text block
         elif block.type == 'text':
             if log:
                 print('Block is text',block.start_text,block.end_text)
@@ -1263,10 +1263,10 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                     if below_blocks:
                         if log:
                             print('Bellow blocks:',[block.id for block in below_blocks])
-                        if leftmost_block.type == 'delimiter':
+                        if leftmost_block.type != 'text':
                             attraction += 20
                             if log:
-                                print('Leftmost block is delimiter')
+                                print('Leftmost block is not text')
                 else:
                     if target_block in below_blocks:
                         attraction += 20
@@ -1277,12 +1277,18 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                         attraction += 50
                         if log:
                             print('Block text is not finished and target block text is started')
+
+            ## unfineshed text is less atracted to not non-started text block
+            elif block.end_text == False and (target_block.type != 'text'or target_block.start_text == True):
+                attraction -= 20
+                if log:
+                    print('Target block is not text and block text is not finished')
     
     # parent
     ## more atraction to blocks above
     ## or left blocks in conditional cases
     else:
-        above_blocks = block.blocks_directly_above(blocks)
+        above_blocks = block.boxes_directly_above(blocks)
         leftmost_block = None
         if above_blocks:
             above_blocks.sort(key=lambda x: x.box.left)

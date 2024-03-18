@@ -93,3 +93,51 @@ def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box):
         new_ocr_results = block_bound_box_fix(ocr_results)
 
     return new_ocr_results
+
+
+
+def unite_blocks(ocr_results:OCR_Tree,log:bool=False):
+    '''Unite same type of blocks if they are horizontally aligned and adjacent to each other'''
+
+    
+    # get all blocks
+    blocks = ocr_results.get_boxes_level(2)
+    non_visited = [b.id for b in blocks if b.id]
+    available_blocks = [b for b in blocks if b.id]
+    # iterate over all blocks
+    while non_visited:
+        # get first block
+        target_block_id = non_visited.pop(0)
+        target_block = ocr_results.get_box_id(target_block_id,level=2)
+        if log:
+            print(f'Uniting block {target_block_id}',len(available_blocks),len(non_visited))
+        # get adjacent bellow blocks
+        bellow_blocks = target_block.boxes_directly_below(available_blocks)
+
+        # if bellow blocks exist
+        if bellow_blocks:
+            # filter blocks of same type and horizontally aligned
+            bellow_blocks = [b for b in bellow_blocks if b.type == target_block.type and b.box.within_horizontal_boxes(target_block.box,range=0.1)]
+
+            # if single block passed, unite with target block
+            if len(bellow_blocks) == 1:
+                if log:
+                    print('Unite with block',bellow_blocks[0].id)
+                # get bellow block
+                bellow_block = bellow_blocks[0]
+                # remove bellow block
+                available_blocks.remove(bellow_block)
+                non_visited.remove(bellow_block.id)
+
+                # unite
+                target_block.join_trees(bellow_block)
+
+                # remove bellow block from main tree
+                ocr_results.remove_box_id(bellow_block.id,level=2)
+
+
+
+    return ocr_results
+
+
+

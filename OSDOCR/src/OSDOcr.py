@@ -17,7 +17,7 @@ from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
 
 
-skipable_methods = ['clean_ocr','auto_rotate','fix_distortions',
+skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'noise_removal','blur_removal','lightning_correction',
                     'image_upscaling','extract_articles']
 
@@ -74,11 +74,12 @@ def run_test():
     target_image = consts.config['target_image_path']
     print('test','target_image',target_image)
     if target_image:
-        # test rotate image
-        rotate_image(target_image,debug=True)
-        #rotate_image_alt(target_image)
-        #direction = calculate_rotation_direction(target_image)
-        #print('test','direction',direction)
+        # test unite blocks
+        ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
+        ocr_results = OCR_Tree(ocr_results_path)
+        ocr_results.id_boxes([2])
+        ocr_results = categorize_boxes(ocr_results)
+        ocr_results = unite_blocks(ocr_results)
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):
@@ -269,6 +270,10 @@ def run_target(target:str,args:argparse.Namespace):
 
     # categorize boxes
     ocr_results = categorize_boxes(ocr_results)
+
+    # unite same type blocks
+    if 'unite_blocks' not in args.skip_method:
+        ocr_results = unite_blocks(ocr_results)
 
     if args.debug:
         # analyse ocr_results

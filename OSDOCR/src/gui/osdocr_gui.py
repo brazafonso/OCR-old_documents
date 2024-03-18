@@ -22,7 +22,7 @@ from output_module.journal.article import Article
 
 
 methods_1 = ['run_tesseract','fix_blocks','draw_bb','draw_journal_template',
-           'calculate_reading_order','extract_articles','search_block']
+           'calculate_reading_order','extract_articles','search_block','unite_blocks']
 
 
 
@@ -64,6 +64,8 @@ def fix_ocr(target_image:str,results_path:str):
     cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
     csv = pd.DataFrame(ocr_results.to_dict())
     csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
+
+
 
 
 def tesseract_method(window:sg.Window,image_path:str,values:dict):
@@ -232,6 +234,31 @@ def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
     # update image element
     window['result_text_1'].update(dpi,visible=True)
 
+
+def unite_blocks_method(window:sg.Window,image_path:str):
+    '''Apply unite blocks method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    # check if results folder exists
+    if not os.path.exists(f'{results_path}/fixed'):
+        os.mkdir(f'{results_path}/fixed')
+
+    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    ocr_results.id_boxes([2])
+    ocr_results = categorize_boxes(ocr_results)
+    ocr_results = unite_blocks(ocr_results)
+    # save results
+    result_dict_file = open(f'{results_path}/fixed/united.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    image = draw_bounding_boxes(ocr_results,image_path,[2],id=True)
+    cv2.imwrite(f'{results_path}/fixed/united.png',image)
+    csv = pd.DataFrame(ocr_results.to_dict())
+    csv.to_csv(f'{results_path}/fixed/united.csv')
+
+    update_image_element(window,'result_img',f'{results_path}/fixed/united.png')
+
+
 def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     '''Apply method to image and update image element'''
     ## TAB 1
@@ -247,6 +274,8 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
         reading_order_method(window,image_path)
     elif method == 'auto_rotate':
         auto_rotate_method(window,image_path)
+    elif method == 'unite_blocks':
+        unite_blocks_method(window,image_path)
 
     ## TAB 2
     elif method == 'calculate_dpi':
@@ -366,6 +395,19 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         else:
             window['result_img'].update(visible=False)
 
+    elif method == 'unite_blocks':
+        target_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
+        result_image = f'{consts.result_path}/{path_to_id(target_image)}/fixed/united.png'
+        if target_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
     ## TAB 2
     elif method == 'calculate_dpi':
         target_image = consts.config['target_image_path']
@@ -426,6 +468,9 @@ def build_gui()->sg.Window:
         ],
         [
             sg.Button('Auto Rotate',key='sidebar_method_auto_rotate'),
+        ],
+        [
+            sg.Button('Unite blocks',key='sidebar_method_unite_blocks'),
         ]
     ]
 
