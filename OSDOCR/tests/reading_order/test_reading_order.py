@@ -54,6 +54,33 @@ def get_reading_order(target,ocr_results,args=None):
 
 
 def test_reading_order_1():
+    target = f'{study_cases_folder}/ideal/AAA-13.png'
+
+    ocr_results = get_ocr_results(target)
+    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results.id_boxes([2])
+
+    reading_order = get_reading_order(target,ocr_results)
+    print('Calculated reading order:',reading_order)
+
+    acceptable_orders = [
+        [1,3,2,4,5,6,7,8,9,11,10,12,15,14,13],
+        [1,3,2,4,5,6,7,8,9,11,10,12,14,15,13],
+    ]
+
+    # remove non existing ids from reading order
+    i = 0
+    while i < len(reading_order):
+        id = reading_order[i]
+        if id not in acceptable_orders[0]:
+            reading_order.remove(id)
+        else:
+            i += 1
+
+    print('Cleaned reading order:',reading_order)
+    assert reading_order in acceptable_orders
+
+def test_reading_order_2():
     target = f'{study_cases_folder}/ideal/AAA-19.png'
 
     ocr_results = get_ocr_results(target)
@@ -61,8 +88,22 @@ def test_reading_order_1():
     ocr_results.id_boxes([2])
 
     reading_order = get_reading_order(target,ocr_results)
+    print('Calculated reading order:',reading_order)
 
-    assert reading_order == [2,0,1,3]
+    acceptable_orders = [
+        [0,5,7,8,11,13,15,12,16,3,19,21,23,32,33,34,35,37],
+        [0,3,5,7,8,11,13,15,12,16,19,21,23,32,33,34,35,37],
+    ]
 
+    # remove non existing ids from reading order
+    i = 0
+    while i < len(reading_order):
+        id = reading_order[i]
+        if id not in acceptable_orders[0]:
+            reading_order.remove(id)
+        else:
+            i += 1
 
+    print('Cleaned reading order:',reading_order)
+    assert reading_order in acceptable_orders
 

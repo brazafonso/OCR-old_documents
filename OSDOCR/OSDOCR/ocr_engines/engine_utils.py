@@ -91,8 +91,6 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     # create result image
     cv2.imwrite(f'{results_path}/result.png',img)
 
-    
-
     # save result data
     result_dict_file = open(f'{results_path}/result.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
@@ -108,6 +106,14 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     result_file = open(f'{results_path}/result_processed.json','w')
     json.dump(data_processed,result_file,indent=4)
     result_file.close()
+
+    # create result id image
+    ocr_results.id_boxes(level=[2])
+    img = draw_bounding_boxes(ocr_results,image_path,id=True)
+    cv2.imwrite(f'{results_path}/result_id.png',img)
+
+    
+
 
 
 def run_tesseract(image_path,results_path:str=None):
