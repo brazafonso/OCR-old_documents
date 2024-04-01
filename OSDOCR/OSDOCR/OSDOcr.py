@@ -19,7 +19,7 @@ from output_module.journal.article import Article
 
 skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'noise_removal','blur_removal','lightning_correction',
-                    'image_upscaling','extract_articles']
+                    'image_upscaling','extract_articles','image_preprocess']
 
 
 def process_args():
@@ -208,7 +208,8 @@ def run_target_image(target:str,results_path:str,args:argparse.Namespace):
     '''
     
     # preprocess image
-    target = image_preprocess(target,args)
+    if 'image_preprocess' not in args.skip_method:
+        target = image_preprocess(target,args)
             
     run_tesseract(target,results_path=results_path)
 

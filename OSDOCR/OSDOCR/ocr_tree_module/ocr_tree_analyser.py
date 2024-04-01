@@ -345,14 +345,14 @@ def draw_bounding_boxes(ocr_results:OCR_Tree,image_path:str,draw_levels=[2],conf
         current_node = box_stack.pop()
         if current_node.level in draw_levels:
             # only draw text boxes if confidence is higher than conf
-            if id and current_node.id or not id:
+            if (id and current_node.id != None) or not id:
                 if current_node.level == 5 and current_node.conf < conf:
                     continue
                 (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
                 color = current_node.type_color()
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
                 
-                if id and current_node.id:
+                if id and current_node.id != None:
                     img = cv2.putText(img, str(current_node.id), (round(x+0.1*w), round(y+0.3*h)), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255,0,0), 6)
         for child in current_node.children:
             box_stack.append(child)

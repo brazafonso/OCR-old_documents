@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "OSDOCR"
+version = "0.1"
+description = "Toolkit for ocr of old structured documents"
+authors = ["Gonçalo Afonso <brazafonso2001@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "OSDOCR" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10.11"
+opencv-python = "^4.9.0.80"
+scipy = "^1.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.2"
+
+[tool.pytest.ini_options]
+pythonpath = "OSDOCR"

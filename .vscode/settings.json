@@ -12,6 +12,7 @@
         "./src",
         "./src/aux_utils",
         "./packages",
-        "./packages/document_image_utils"
+        "./packages/document_image_utils",
+        "./OSDOCR/OSDOCR"
     ]
 }
