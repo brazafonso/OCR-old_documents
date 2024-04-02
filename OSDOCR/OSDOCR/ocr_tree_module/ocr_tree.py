@@ -353,6 +353,7 @@ class OCR_Tree:
             - text: yellow
             - image: black
             - title: red
+            - highlight : purple
             - delimiter: blue
             - caption : white
             - other: green'''
@@ -363,6 +364,8 @@ class OCR_Tree:
             return (0,0,0)
         elif self.type == 'title':
             return (0,0,255)
+        elif self.type == 'highlight':
+            return (153,0,204)
         elif self.type == 'delimiter':
             return (255,0,0)
         elif self.type == 'caption':

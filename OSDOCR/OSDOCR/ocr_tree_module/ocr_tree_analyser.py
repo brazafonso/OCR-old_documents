@@ -860,7 +860,13 @@ def categorize_boxes(ocr_results:OCR_Tree):
             # greater than normal text size
             elif block.calculate_mean_height(level=4) > box_analysis['normal_text_size']:
                 # title block
-                block.type = 'title'
+                ## less than 11 words
+                if len(block.get_boxes_level(5)) < 10:
+                    block.type = 'title'
+                ## highlight (some kind of second title)
+                else:
+                    block.type = 'highlight'
+
             # smaller than normal text size
             elif block.calculate_mean_height(level=4) < box_analysis['normal_text_size']:
                 # caption block
@@ -1211,6 +1217,14 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 attraction += 40
                 if log:
                     print('Direction: right')
+        
+        if direction == 'right':
+            # if below block's width encompasses both block and target, more attraction
+            if leftmost_block and leftmost_block.box.within_horizontal_boxes(block.box,range=0.3) and leftmost_block.box.within_horizontal_boxes(target_block.box,range=0.3):
+                attraction += 20
+                if log:
+                    print('Below block encompansses block and target')
+
 
 
         # title
