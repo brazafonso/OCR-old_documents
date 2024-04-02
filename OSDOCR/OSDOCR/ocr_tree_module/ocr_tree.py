@@ -234,6 +234,44 @@ class OCR_Tree:
             if self.box.width >= self.box.height*4 or self.box.height >= self.box.width*4:
                 return True
         return False
+    
+    def is_vertical_text(self,conf:int=0):
+        '''Check if box is vertical text'''
+        if self.level == 2 and not self.is_empty(conf):
+            lines = self.get_boxes_level(4)
+            # single line
+            if len(lines) == 1:
+                words = self.get_boxes_level(5)
+                # single word
+                ## check width and height
+                if len(words) == 1:
+                    if words[0].box.height >= words[0].box.width*2:
+                        return True
+                # multiple words
+                ## check if most words overlap on x axis
+                else:
+                    # word with greatest horizontal range
+                    widest_word = max(words, key=lambda x: x.box.width)
+                    overlapped_words = 0
+                    for word in words:
+                        if word.box.within_horizontal_boxes(widest_word.box,range=0.1):
+                            overlapped_words += 1
+                    if overlapped_words/len(words) >= 0.5:
+                        return True
+
+            # multiple lines
+            ## check if most lines overlap on y axis
+            else:
+                # line with greatest vertical range
+                tallest_line = max(lines, key=lambda x: x.box.height)
+                overlapped_lines = 0
+                for line in lines:
+                    if line.box.within_vertical_boxes(tallest_line.box,range=0.1):
+                        overlapped_lines += 1
+                
+                if overlapped_lines/len(lines) >= 0.5:
+                    return True
+        return False
 
     def get_delimiters(self,search_area:Box=None,orientation:str=None,conf:int=0):
         '''Get delimiters in ocr_results\n

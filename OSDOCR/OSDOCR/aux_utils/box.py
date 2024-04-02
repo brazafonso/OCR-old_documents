@@ -74,7 +74,7 @@ class Box:
         return True
     
     def within_vertical_boxes(self,box: 'Box',range:float=0):
-        '''Check if boxes are within each other vertically, considering a range'''
+        '''Check if boxes are within each other vertically, considering a range (0-1)'''
         
         # check if box is within self with range
         if (self.top - self.height*range <= box.top and self.bottom + self.height*range >= box.bottom):
@@ -89,7 +89,7 @@ class Box:
             
 
     def within_horizontal_boxes(self, box: 'Box', range:float=0):
-        '''Check if boxes are within each other horizontally, considering a range'''
+        '''Check if boxes are within each other horizontally, considering a range (0-1)'''
         
         # check if box is within self with range
         if (self.left - self.width*range <= box.left and self.right + self.width*range >= box.right):
@@ -109,7 +109,7 @@ class Box:
         return False
 
 
-    def is_inside_box(self,box):
+    def is_inside_box(self,box:'Box'):
         '''Check if box is inside container'''
         if self.left >= box.left and self.right <= box.right and self.top >= box.top and self.bottom <= box.bottom:
             return True

@@ -854,7 +854,7 @@ def categorize_boxes(ocr_results:OCR_Tree):
             ## TODO: categorize empty such as images
         # non empty block
         else:
-            if block.is_text_size(box_analysis['normal_text_size'],level=4):
+            if block.is_text_size(box_analysis['normal_text_size'],level=4) or block.is_vertical_text():
                 # text block
                 block.type = 'text'
             # greater than normal text size
