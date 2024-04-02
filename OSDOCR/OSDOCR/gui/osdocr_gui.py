@@ -391,7 +391,7 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
 
 
     elif method == 'reading_order':
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
+        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result_id.png'
         reading_order_image = f'{consts.result_path}/{path_to_id(target_image)}/result_reading_order.png'
         # check if result image exists
         if os.path.exists(result_image):

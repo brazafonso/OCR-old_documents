@@ -2,7 +2,7 @@ from ocr_tree_module.ocr_tree import *
 from ocr_tree_module.ocr_tree_analyser import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Tree):
+def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -77,11 +77,11 @@ def block_bound_box_fix(ocr_results:OCR_Tree):
                         current_box = None
                 i = 0
 
-
-    print(f'''
-    Initial number of boxes: {og_len}
-    Final number of boxes: {len(ocr_results.get_boxes_level(2))}
-    ''')
+    if log:
+        print(f'''
+        Initial number of boxes: {og_len}
+        Final number of boxes: {len(ocr_results.get_boxes_level(2))}
+        ''')
     return ocr_results
 
 

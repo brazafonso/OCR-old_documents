@@ -1,4 +1,7 @@
+'''Test reading order
 
+Each test has a single target image.
+For each target image, diferent reading order complexities are tested.'''
 import os
 from argparse import Namespace
 from OSDOcr import run_target_image
@@ -28,6 +31,8 @@ def get_ocr_results(target,args= None):
     else:
         ocr_results = OCR_Tree(f'{results_path}/result.json')
 
+    ocr_results = categorize_boxes(ocr_results)
+
     return ocr_results
 
 
@@ -51,16 +56,55 @@ def get_reading_order(target,ocr_results,args=None):
     return order_list
 
     
+def clean_reading_order(reading_order,acceptable_orders):
+    i = 0
+    while i < len(reading_order):
+        id = reading_order[i]
+        in_order = False
+        for order in acceptable_orders:
+            if id in order:
+                in_order = True
+                break
+        if not in_order:
+            reading_order.remove(id)
+        else:
+            i += 1
+
+    return reading_order
 
 
-def test_reading_order_1():
+def test_reading_order_1_1():
     target = f'{study_cases_folder}/ideal/AAA-13.png'
 
     ocr_results = get_ocr_results(target)
     ocr_results = bound_box_fix(ocr_results,2,None)
     ocr_results.id_boxes([2])
+    
+    args = Namespace()
+    args.ignore_delimiters = True
+    reading_order = get_reading_order(target,ocr_results,args)
+    print('Calculated reading order:',reading_order)
 
-    reading_order = get_reading_order(target,ocr_results)
+    acceptable_orders = [
+        [3,5,6,8,9,12]
+    ]
+
+    reading_order = clean_reading_order(reading_order,acceptable_orders)
+
+    print('Cleaned reading order:',reading_order)
+    assert reading_order in acceptable_orders
+
+
+def test_reading_order_1_2():
+    target = f'{study_cases_folder}/ideal/AAA-13.png'
+
+    ocr_results = get_ocr_results(target)
+    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results.id_boxes([2])
+    
+    args = Namespace()
+    args.ignore_delimiters = True
+    reading_order = get_reading_order(target,ocr_results,args)
     print('Calculated reading order:',reading_order)
 
     acceptable_orders = [
@@ -68,41 +112,57 @@ def test_reading_order_1():
         [1,3,2,4,5,6,7,8,9,11,10,12,14,15,13],
     ]
 
-    # remove non existing ids from reading order
-    i = 0
-    while i < len(reading_order):
-        id = reading_order[i]
-        if id not in acceptable_orders[0]:
-            reading_order.remove(id)
-        else:
-            i += 1
+    reading_order = clean_reading_order(reading_order,acceptable_orders)
 
     print('Cleaned reading order:',reading_order)
     assert reading_order in acceptable_orders
 
-def test_reading_order_2():
+
+
+
+def test_reading_order_2_1():
     target = f'{study_cases_folder}/ideal/AAA-19.png'
 
     ocr_results = get_ocr_results(target)
     ocr_results = bound_box_fix(ocr_results,2,None)
     ocr_results.id_boxes([2])
 
-    reading_order = get_reading_order(target,ocr_results)
+    args = Namespace()
+    args.ignore_delimiters = True
+    reading_order = get_reading_order(target,ocr_results,args)
     print('Calculated reading order:',reading_order)
 
     acceptable_orders = [
-        [0,5,7,8,11,13,15,12,16,3,19,21,23,32,33,34,35,37],
-        [0,3,5,7,8,11,13,15,12,16,19,21,23,32,33,34,35,37],
+        [5,11,13,19,23,34,35],
     ]
 
     # remove non existing ids from reading order
-    i = 0
-    while i < len(reading_order):
-        id = reading_order[i]
-        if id not in acceptable_orders[0]:
-            reading_order.remove(id)
-        else:
-            i += 1
+    reading_order = clean_reading_order(reading_order,acceptable_orders)
+    
+
+    print('Cleaned reading order:',reading_order)
+    assert reading_order in acceptable_orders
+
+def test_reading_order_2_2():
+    target = f'{study_cases_folder}/ideal/AAA-19.png'
+
+    ocr_results = get_ocr_results(target)
+    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results.id_boxes([2])
+
+    args = Namespace()
+    args.ignore_delimiters = True
+    reading_order = get_reading_order(target,ocr_results,args)
+    print('Calculated reading order:',reading_order)
+
+    acceptable_orders = [
+        [0,5,7,9,11,13,15,12,16,3,19,21,23,32,33,34,35,37],
+        [0,3,5,7,9,11,13,15,12,16,19,21,23,32,33,34,35,37],
+    ]
+
+    # remove non existing ids from reading order
+    reading_order = clean_reading_order(reading_order,acceptable_orders)
+    
 
     print('Cleaned reading order:',reading_order)
     assert reading_order in acceptable_orders

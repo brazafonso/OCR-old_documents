@@ -930,6 +930,10 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
         potential_before_blocks = []
         right_blocks = current_block.boxes_directly_right(non_delimiters)
         below_blocks = current_block.boxes_directly_below(non_delimiters)
+        ## leave only leftmost of below blocks
+        below_blocks.sort(key=lambda x: x.box.left)
+        below_blocks = [below_blocks[0]] if below_blocks else []
+
         potential_before_blocks += right_blocks
         potential_before_blocks += below_blocks
         if log:
@@ -975,7 +979,9 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
         
         current_block = next_block
         current_node = next_node
-    topologic_graph.self_print()
+
+    if log:
+        topologic_graph.self_print()
 
     # clean graph
     if clean_graph:
@@ -985,7 +991,7 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
     return topologic_graph
 
 
-def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
+def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,log:bool=False)->list:
     '''Sort topologic graph into list\n
 
     Searches for first block in topologic graph, that has no blocks before it in order map, that are not already in order list\n
@@ -995,9 +1001,10 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
     Return:
     - order_list: list of block ids in order'''
 
-    # clean graph (narrow parents by removing edges with lower attraction)
+    # clean graph (narrow parents by removing edges with lower attraction; reduces blocks' dependencies)
     if sort_weight:
-        print('Narrowing parents')
+        if log:
+            print('Narrowing parents')
         topologic_graph.narrow_parents()
 
     order_list = []
@@ -1067,7 +1074,7 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False)->list:
 
 
 
-def topologic_order_context(ocr_results:OCR_Tree,area:Box=None,ignore_delimiters:bool=False)->Graph:
+def topologic_order_context(ocr_results:OCR_Tree,area:Box=None,ignore_delimiters:bool=False,log:bool=False)->Graph:
     '''Generate topologic order of blocks\n
     
     Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n
@@ -1095,9 +1102,10 @@ def topologic_order_context(ocr_results:OCR_Tree,area:Box=None,ignore_delimiters
             edge.weight = attraction
 
     # print attraction
-    print('Attraction:')
-    for node in t_graph.nodes:
-        print(node.id,node.children_edges,'|',node.parent_edges)
+    if log:
+        print('Attraction:')
+        for node in t_graph.nodes:
+            print(node.id,node.children_edges,'|',node.parent_edges)
 
     return t_graph
 
