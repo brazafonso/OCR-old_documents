@@ -3,6 +3,8 @@ import re
 import pytesseract
 import cv2
 import jellyfish
+import math
+from scipy.signal import find_peaks
 from pytesseract import Output
 from PIL import Image
 from aux_utils.graph import *
@@ -10,8 +12,36 @@ from aux_utils.page_tree import *
 from document_image_utils.image import *
 from aux_utils.box import *
 from ocr_tree_module.ocr_tree import *
-import math
 
+
+
+def get_text_sizes(ocr_results:OCR_Tree)->dict:
+    '''Get text sizes from ocr_results'''
+    text_sizes = {
+        'normal_text_size': 0,
+    }
+    lines = ocr_results.get_boxes_level(4)
+    line_sizes = []
+    # save text sizes and margins
+    for line in lines:
+        if not line.is_empty():
+            lmh = line.calculate_mean_height(level=4)
+            lmh = round(lmh)
+            if len(line_sizes) < lmh:
+                line_sizes += [0] * (lmh - len(line_sizes) + 1)
+            line_sizes[lmh] += 1
+
+    peaks,_ = find_peaks(line_sizes,prominence=2)
+
+    # print peaks
+    print('peaks:',peaks)
+    print('frequency:',[line_sizes[peak] for peak in peaks])
+
+    # turn line sizes into numpy array
+    line_sizes = np.array(line_sizes)
+
+    plt.plot(peaks, line_sizes[peaks], "ob"); plt.plot(line_sizes); plt.legend(['prominence'])
+    plt.show()
 
 
 

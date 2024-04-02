@@ -78,13 +78,7 @@ def run_test():
         # test unite blocks
         ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
         ocr_results = OCR_Tree(ocr_results_path)
-        ocr_results.id_boxes([2])
-        ocr_results = categorize_boxes(ocr_results)
-        ocr_results = unite_blocks(ocr_results)
-        results_path = f'{consts.result_path}/{path_to_id(target_image)}/fixed/united.json'
-        json_format = ocr_results.to_json()
-        with open(results_path,'w') as f:
-            json.dump(json_format,f,indent=4)
+        get_text_sizes(ocr_results)
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):
