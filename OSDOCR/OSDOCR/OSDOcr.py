@@ -79,6 +79,7 @@ def run_test():
         ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
         ocr_results = OCR_Tree(ocr_results_path)
         get_text_sizes(ocr_results)
+        get_columns(ocr_results)
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):

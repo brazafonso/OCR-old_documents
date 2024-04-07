@@ -4,7 +4,7 @@ import pytesseract
 import cv2
 import jellyfish
 import math
-from scipy.signal import find_peaks
+from scipy.signal import *
 from pytesseract import Output
 from PIL import Image
 from aux_utils.graph import *
@@ -16,7 +16,7 @@ from ocr_tree_module.ocr_tree import *
 
 
 def get_text_sizes(ocr_results:OCR_Tree)->dict:
-    '''Get text sizes from ocr_results'''
+    '''Get text sizes from ocr_results using peak detection on line size frequency\n'''
     text_sizes = {
         'normal_text_size': 0,
     }
@@ -24,14 +24,22 @@ def get_text_sizes(ocr_results:OCR_Tree)->dict:
     line_sizes = []
     # save text sizes and margins
     for line in lines:
-        if not line.is_empty():
+        if not line.is_empty() and not line.is_vertical_text():
             lmh = line.calculate_mean_height(level=4)
             lmh = round(lmh)
             if len(line_sizes) < lmh:
-                line_sizes += [0] * (lmh - len(line_sizes) + 1)
-            line_sizes[lmh] += 1
+                line_sizes += [0] * (lmh - len(line_sizes) + 2)
+            words = line.get_boxes_level(5)
+            words = [w for w in words if w.text.strip()]
+            line_sizes[lmh] += 1 + len(words)
 
-    peaks,_ = find_peaks(line_sizes,prominence=2)
+    # normal
+    peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
+
+    # smoothed 
+    line_sizes_smooth = savgol_filter(line_sizes, round(len(line_sizes)*0.1), 2)
+    line_sizes_smooth = [i if i > 0 else 0 for i in line_sizes_smooth ]
+    peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
 
     # print peaks
     print('peaks:',peaks)
@@ -39,9 +47,61 @@ def get_text_sizes(ocr_results:OCR_Tree)->dict:
 
     # turn line sizes into numpy array
     line_sizes = np.array(line_sizes)
-
+    line_sizes_smooth = np.array(line_sizes_smooth)
+    # create 2 plots
+    plt.subplot(1, 2, 1)
     plt.plot(peaks, line_sizes[peaks], "ob"); plt.plot(line_sizes); plt.legend(['prominence'])
+    plt.subplot(1, 2, 2)
+    plt.plot(peaks_smooth, line_sizes_smooth[peaks_smooth], "ob"); plt.plot(line_sizes_smooth); plt.legend(['prominence'])
+
     plt.show()
+
+
+def get_columns(ocr_results:OCR_Tree)->list:
+    '''Get columns from ocr_results using peak detection on box left margin frequency\n'''
+    left_margins = []
+    right_margins = []
+    blocks = ocr_results.get_boxes_level(2)
+    for block in blocks:
+        if not block.is_empty():
+            words = block.get_boxes_level(5)
+            words = [w for w in words if w.text.strip()]
+
+            left = round(block.box.left)
+            if len(left_margins) < left:
+                left_margins += [0] * (left - len(left_margins) + 1)
+            left_margins[left] += 1 + len(words)
+
+            right = round(block.box.left + block.box.width)
+            if len(right_margins) <= right:
+                right_margins += [0] * (right - len(right_margins) + 1)
+            right_margins[right] += 1 + len(words)
+
+    # calculate peaks
+
+    ## normal
+    peaks,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
+
+    ## smoothed 
+    left_margins_smooth = savgol_filter(left_margins, round(len(left_margins)*0.1), 2)
+    left_margins_smooth = [i if i > 0 else 0 for i in left_margins_smooth ]
+    peaks_smooth,_ = find_peaks(left_margins_smooth,prominence=0.1*max(left_margins_smooth))
+
+    # print peaks
+    print('peaks:',peaks)
+    print('frequency:',[left_margins[peak] for peak in peaks])
+
+    # turn line sizes into numpy array
+    left_margins = np.array(left_margins)
+    left_margins_smooth = np.array(left_margins_smooth)
+    # create 2 plots
+    plt.subplot(1, 2, 1)
+    plt.plot(peaks, left_margins[peaks], "ob"); plt.plot(left_margins); plt.legend(['prominence'])
+    plt.subplot(1, 2, 2)
+    plt.plot(peaks_smooth, left_margins_smooth[peaks_smooth], "ob"); plt.plot(left_margins_smooth); plt.legend(['prominence'])
+
+    plt.show()
+
 
 
 
