@@ -297,6 +297,39 @@ def unite_blocks_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',f'{results_path}/fixed/united.png')
 
 
+def divide_columns_method(window:sg.Window,image_path:str):
+    '''Apply divide columns method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    # check if results folder exists
+    if not os.path.exists(f'{results_path}/fixed'):
+        os.mkdir(f'{results_path}/fixed')
+
+    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    column_boxes = get_columns(ocr_results)
+
+    image_info = get_image_info(image_path)
+    page_tree = OCR_Tree()
+
+    for column in column_boxes:
+        column.update(top=image_info.top,bottom=image_info.bottom)
+        column_tree = OCR_Tree()
+        column_tree.box = column
+        page_tree.add_child(column_tree)
+
+
+
+    result_image_path = f'{results_path}/test/columns.png'
+    if not os.path.exists(f'{results_path}/test'):
+        os.mkdir(f'{results_path}/test')
+        
+    image = draw_bounding_boxes(page_tree,image_path,[1])
+    cv2.imwrite(result_image_path,image)
+
+    update_image_element(window,'result_img',result_image_path)
+    
+
+
+
 def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     '''Apply method to image and update image element'''
     ## TAB 1
@@ -314,6 +347,8 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
         auto_rotate_method(window,image_path)
     elif method == 'unite_blocks':
         unite_blocks_method(window,image_path)
+    elif method == 'divide_columns':
+        divide_columns_method(window,image_path)
 
     ## TAB 2
     elif method == 'calculate_dpi':
@@ -335,17 +370,17 @@ def highlight_buttons(window:sg.Window,button:str,color:str,default_color:str='#
 
     window.refresh()
 
-def update_method_layout(window:sg.Window,method:str,target_image:str=None):
+def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     '''Updates elements in layout based on method'''
     window['checkbox_1_1'].update(visible=False)
     window['select_list_text_1_1'].update(visible=False)
     window['select_list_1_1'].update(visible=False)
 
     ## TAB 1
-    if method == 'run_tesseract' and target_image:
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
+    if method == 'run_tesseract' and o_image:
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
         # update target image
-        update_image_element(window,'target_image_path',target_image)
+        update_image_element(window,'target_image_path',o_image)
 
         # update options
         window['checkbox_1_1'].update(visible=True,text='Auto Rotate:')
@@ -353,15 +388,15 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         window['select_list_1_1'].update(visible=True)
 
         # check if result image exists
-        if target_image and os.path.exists(result_image):
+        if o_image and os.path.exists(result_image):
             # update result image
             update_image_element(window,'result_img',result_image)
         else:
             window['result_img'].update(visible=False)
 
     elif method == 'fix_blocks':
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
-        fixed_image = f'{consts.result_path}/{path_to_id(target_image)}/fixed/result_fixed.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+        fixed_image = f'{consts.result_path}/{path_to_id(o_image)}/fixed/result_fixed.png'
 
         # check if result image exists
         if os.path.exists(result_image):
@@ -377,10 +412,10 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
             window['result_img'].update(visible=False)
 
         
-    elif method == 'journal_template' and target_image:
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result_journal_template.png'
+    elif method == 'journal_template' and o_image:
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result_journal_template.png'
         # update target image
-        update_image_element(window,'target_image_path',target_image)
+        update_image_element(window,'target_image_path',o_image)
 
         # check if result image exists
         if os.path.exists(result_image):
@@ -391,8 +426,8 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
 
 
     elif method == 'reading_order':
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result_id.png'
-        reading_order_image = f'{consts.result_path}/{path_to_id(target_image)}/result_reading_order.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result_id.png'
+        reading_order_image = f'{consts.result_path}/{path_to_id(o_image)}/result_reading_order.png'
         # check if result image exists
         if os.path.exists(result_image):
             # update target image
@@ -412,8 +447,8 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
 
 
     elif method == 'extract_articles':
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
-        articles_image = f'{consts.result_path}/{path_to_id(target_image)}/articles.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+        articles_image = f'{consts.result_path}/{path_to_id(o_image)}/articles.png'
         # check if result image exists
         if os.path.exists(result_image):
             # update target image
@@ -432,8 +467,8 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
 
     elif method == 'auto_rotate':
         target_image = consts.config['target_image_path']
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/rotated.png'
-        if target_image and os.path.exists(target_image):
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/rotated.png'
+        if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
             window['target_image_path'].update(visible=False)
@@ -444,9 +479,22 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'unite_blocks':
-        target_image = f'{consts.result_path}/{path_to_id(target_image)}/result.png'
-        result_image = f'{consts.result_path}/{path_to_id(target_image)}/fixed/united.png'
-        if target_image and os.path.exists(target_image):
+        target_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/fixed/united.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'divide_columns':
+        target_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/columns.png'
+        if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
             window['target_image_path'].update(visible=False)
@@ -462,7 +510,7 @@ def update_method_layout(window:sg.Window,method:str,target_image:str=None):
         result_text = ''
         resolutions_list = [res  for res in consts.config['resolutions'].keys()]
 
-        if target_image and os.path.exists(target_image):
+        if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path_2',target_image)
         else:
             window['target_image_path_2'].update(visible=False)
@@ -519,6 +567,9 @@ def build_gui()->sg.Window:
         ],
         [
             sg.Button('Unite blocks',key='sidebar_method_unite_blocks'),
+        ],
+        [
+            sg.Button('Divide Columns',key='sidebar_method_divide_columns'),
         ]
     ]
 

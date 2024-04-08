@@ -51,8 +51,8 @@ class OCR_Tree:
         else:
             self.init(*args)
 
-    def init(self, level:int, page_num:int, block_num:int, par_num:int, line_num:int, 
-                 word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None):
+    def init(self, level:int=0, page_num:int=0, block_num:int=0, par_num:int=0, line_num:int=0, 
+                 word_num:int=0, box:Box=Box(0,0,0,0), text:str='',conf:int=-1,id=None,type:str=None):
         '''Initialize ocr_tree object'''
         self.level = level
         self.page_num = page_num
@@ -145,9 +145,18 @@ class OCR_Tree:
 
     def add_child(self, child):
         '''Add child to ocr_results'''
+        # fix child level (recursive)
+        child.reset_level(self.level + 1)
+        
         child.parent = self
         self.children.append(child)
         self.box.join(child.box)
+
+    def reset_level(self,level:int):
+        '''Reset level of ocr_results'''
+        self.level = level
+        for child in self.children:
+            child.reset_level(level + 1)
 
     def id_boxes(self,level:list[int]=[2],ids:dict=None,delimiters:bool=True,area:Box=None):
         '''Id boxes in ocr_results

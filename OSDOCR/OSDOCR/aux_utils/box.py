@@ -38,8 +38,8 @@ class Box:
         self.right = json_dict['right']
         self.top = json_dict['top']
         self.bottom = json_dict['bottom']
-        self.width = json_dict['width']
-        self.height = json_dict['height']
+        self.width = self.right - self.left
+        self.height = self.bottom - self.top
 
     def copy(self):
         return Box(self.left,self.right,self.top,self.bottom)
@@ -66,6 +66,21 @@ class Box:
             'width':self.width,
             'height':self.height
         }
+    
+
+    def update(self, left:int=None, right:int=None, top:int=None, bottom:int=None):
+        if left is not None:
+            self.left = left
+        if right is not None:
+            self.right = right
+        if top is not None:
+            self.top = top
+        if bottom is not None:
+            self.bottom = bottom
+
+        self.width = self.right - self.left
+        self.height = self.bottom - self.top
+
     
     def valid(self):
         '''Check if box is valid'''
