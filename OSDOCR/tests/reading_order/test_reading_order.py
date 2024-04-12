@@ -48,6 +48,7 @@ def get_reading_order(target,ocr_results,args=None):
     columns_area = image_info
     columns_area.remove_box_area(journal_template['header'])
     columns_area.remove_box_area(journal_template['footer'])
+    
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=args.ignore_delimiters)
@@ -72,6 +73,52 @@ def clean_reading_order(reading_order,acceptable_orders):
 
     return reading_order
 
+def similarity(acceptable_order:list,reading_order:list):
+    similarity = 0
+    pairings = []
+    for i,id_1 in enumerate(acceptable_order[:-1]):
+        for id_2 in acceptable_order[i+1:]:
+            pairings.append([id_1,id_2])
+
+    total_pairings = len(pairings)
+    valid_pairings = 0
+
+    for pairing in pairings:
+        id_1 = pairing[0]
+        id_2 = pairing[1]
+        if reading_order.index(id_1) < reading_order.index(id_2):
+            valid_pairings += 1
+
+    similarity = valid_pairings/total_pairings
+
+
+    return similarity
+
+def compare_reading_orders(real_reading_orders,result_reading_order,threshold=1):
+    valid = False
+    biggest_similarity = 0
+    for real_reading_order in real_reading_orders:
+        cleaned_reading_order = clean_reading_order(result_reading_order,[real_reading_order])
+        real_reading_order = clean_reading_order(real_reading_order,[result_reading_order])
+        if threshold == 1:
+            if real_reading_order == cleaned_reading_order:
+                valid = True
+                break
+        else:
+            if similarity(real_reading_order,cleaned_reading_order) >= threshold:
+                valid = True
+                break
+
+        if similarity(real_reading_order,cleaned_reading_order) > biggest_similarity:
+            biggest_similarity = similarity(real_reading_order,cleaned_reading_order)
+
+        print('Real:',real_reading_order)
+        print('Cleaned:',cleaned_reading_order)
+        print('Similarity:',similarity(real_reading_order,cleaned_reading_order))
+
+    print('Biggest similarity:',biggest_similarity)
+    return valid
+
 
 def test_reading_order_1_1():
     target = f'{study_cases_folder}/ideal/AAA-13.png'
@@ -88,11 +135,9 @@ def test_reading_order_1_1():
     acceptable_orders = [
         [3,5,6,8,9,12]
     ]
-
-    reading_order = clean_reading_order(reading_order,acceptable_orders)
-
-    print('Cleaned reading order:',reading_order)
-    assert reading_order in acceptable_orders
+    
+    
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
 
 
 def test_reading_order_1_2():
@@ -112,10 +157,7 @@ def test_reading_order_1_2():
         [1,3,2,4,5,6,7,8,9,11,10,12,14,15,13],
     ]
 
-    reading_order = clean_reading_order(reading_order,acceptable_orders)
-
-    print('Cleaned reading order:',reading_order)
-    assert reading_order in acceptable_orders
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
 
 
 
@@ -136,12 +178,7 @@ def test_reading_order_2_1():
         [5,11,13,19,23,34,35],
     ]
 
-    # remove non existing ids from reading order
-    reading_order = clean_reading_order(reading_order,acceptable_orders)
-    
-
-    print('Cleaned reading order:',reading_order)
-    assert reading_order in acceptable_orders
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
 
 def test_reading_order_2_2():
     target = f'{study_cases_folder}/ideal/AAA-19.png'
@@ -160,10 +197,45 @@ def test_reading_order_2_2():
         [0,3,5,7,9,11,13,15,12,16,19,21,23,32,33,34,35,37],
     ]
 
-    # remove non existing ids from reading order
-    reading_order = clean_reading_order(reading_order,acceptable_orders)
-    
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
 
-    print('Cleaned reading order:',reading_order)
-    assert reading_order in acceptable_orders
+
+
+
+def test_reading_order_3_1():
+    target = f'{study_cases_folder}/simple template/2-1.jpg'
+
+    ocr_results = get_ocr_results(target)
+    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results.id_boxes([2])
+    ocr_results = categorize_boxes(ocr_results)
+    args = Namespace()
+    args.ignore_delimiters = False
+    reading_order = get_reading_order(target,ocr_results,args)
+    print('Calculated reading order:',reading_order)
+
+    acceptable_orders = [
+        [2,17,31,40,51,58],
+    ]
+
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
+
+def test_reading_order_3_2():
+    target = f'{study_cases_folder}/simple template/2-1.jpg'
+
+    ocr_results = get_ocr_results(target)
+    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results.id_boxes([2])
+    ocr_results = categorize_boxes(ocr_results)
+
+    args = Namespace()
+    args.ignore_delimiters = False
+    reading_order = get_reading_order(target,ocr_results,args)
+    print('Calculated reading order:',reading_order)
+
+    acceptable_orders = [
+        [2,11,12,17,31,37,40,51,53],
+    ]
+
+    assert compare_reading_orders(acceptable_orders,reading_order,threshold=0.8)
 

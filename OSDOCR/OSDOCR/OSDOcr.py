@@ -78,8 +78,10 @@ def run_test():
         # test unite blocks
         ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
         ocr_results = OCR_Tree(ocr_results_path)
-        get_text_sizes(ocr_results)
-        get_columns(ocr_results)
+        get_text_sizes(ocr_results,method='savgol_filter',log=True)
+        get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
+        get_columns(ocr_results,method='savgol_filter',log=True)
+        get_columns(ocr_results,method='WhittakerSmoother',log=True)
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):

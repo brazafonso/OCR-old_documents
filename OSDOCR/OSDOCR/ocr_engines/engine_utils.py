@@ -101,11 +101,6 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     df.to_csv(result_csv_file)
     result_csv_file.close()
     
-    # save result processed data
-    data_processed = analyze_text(ocr_results)
-    result_file = open(f'{results_path}/result_processed.json','w')
-    json.dump(data_processed,result_file,indent=4)
-    result_file.close()
 
     # create result id image
     ocr_results.id_boxes(level=[2])

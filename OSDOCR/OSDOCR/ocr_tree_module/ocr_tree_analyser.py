@@ -12,14 +12,30 @@ from aux_utils.page_tree import *
 from document_image_utils.image import *
 from aux_utils.box import *
 from ocr_tree_module.ocr_tree import *
+from whittaker_eilers import WhittakerSmoother
 
 
 
-def get_text_sizes(ocr_results:OCR_Tree,log:bool=False)->dict:
-    '''Get text sizes from ocr_results using peak detection on line size frequency\n'''
+
+def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->dict:
+    '''Get text sizes from ocr_results using peak detection on line size frequency\n
+    
+    Frequency graph is smoothened using chosen method.
+    
+    Available methods:
+        - WhittakerSmoother
+        - savgol_filter'''
+    
+    methods = ['WhittakerSmoother','savgol_filter']
+    if method not in methods:
+        method = 'WhittakerSmoother'
+
+
     text_sizes = {
         'normal_text_size': 0,
     }
+
+
     lines = ocr_results.get_boxes_level(4)
     line_sizes = []
     # save text sizes and margins
@@ -40,8 +56,15 @@ def get_text_sizes(ocr_results:OCR_Tree,log:bool=False)->dict:
     peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
 
     # smoothed 
-    line_sizes_smooth = savgol_filter(line_sizes, round(len(line_sizes)*0.1), 2)
+    if method == 'WhittakerSmoother':
+        whittaker_smoother = WhittakerSmoother(lmbda=1e1, order=3, data_length = len(line_sizes))
+        line_sizes_smooth = whittaker_smoother.smooth(line_sizes)
+    elif method == 'savgol_filter':
+        line_sizes_smooth = savgol_filter(line_sizes, round(len(line_sizes)*0.1), 2)
+
     line_sizes_smooth = [i if i > 0 else 0 for i in line_sizes_smooth ]
+    line_sizes_smooth = line_sizes_smooth[:len(line_sizes)] # filter adds to x axis length
+
     peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
     if log:
         # print peaks
@@ -49,19 +72,22 @@ def get_text_sizes(ocr_results:OCR_Tree,log:bool=False)->dict:
         print('frequency:',[line_sizes[peak] for peak in peaks])
 
         # turn line sizes into numpy array
-        line_sizes = np.array(line_sizes)
-        line_sizes_smooth = np.array(line_sizes_smooth)
+        log_line_sizes = np.array(line_sizes)
+        log_line_sizes_smooth = np.array(line_sizes_smooth)
         # create 2 plots
         plt.subplot(1, 2, 1)
-        plt.plot(peaks, line_sizes[peaks], "ob"); plt.plot(line_sizes); plt.legend(['prominence'])
+        plt.plot(peaks, log_line_sizes[peaks], "ob"); plt.plot(log_line_sizes); plt.legend(['prominence'])
         plt.subplot(1, 2, 2)
-        plt.plot(peaks_smooth, line_sizes_smooth[peaks_smooth], "ob"); plt.plot(line_sizes_smooth); plt.legend(['prominence'])
+        plt.plot(peaks_smooth, log_line_sizes_smooth[peaks_smooth], "ob"); plt.plot(log_line_sizes_smooth); plt.legend(['prominence'])
 
         plt.show()
 
+    peaks_smooth:np.ndarray
+    peaks_smooth = peaks_smooth.tolist()
+    
+
     text_sizes['normal_text_size'] = max(peaks_smooth)
     
-    peaks_smooth:list
     # categorize greater and smaller other text sizes
     id_normal = peaks_smooth.index(text_sizes['normal_text_size'])
     lower_peaks = peaks_smooth[:id_normal]
@@ -81,8 +107,21 @@ def get_text_sizes(ocr_results:OCR_Tree,log:bool=False)->dict:
     return text_sizes
 
 
-def get_columns(ocr_results:OCR_Tree,log:bool=False)->list[Box]:
-    '''Get columns from ocr_results using peak detection on box left margin frequency\n'''
+
+
+def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+    '''Get columns from ocr_results using peak detection on box left margin frequency\n
+    
+    Frequency graph is smoothened using chosen method.
+    
+    Available methods:
+        - WhittakerSmoother
+        - savgol_filter'''
+    
+    methods = ['WhittakerSmoother','savgol_filter']
+    if method not in methods:
+        method = 'WhittakerSmoother'
+
     left_margins = []
     right_margins = []
     blocks = ocr_results.get_boxes_level(2)
@@ -113,8 +152,16 @@ def get_columns(ocr_results:OCR_Tree,log:bool=False)->list[Box]:
     peaks_l,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
 
     ### smoothed 
-    left_margins_smooth = savgol_filter(left_margins, round(len(left_margins)*0.1), 2)
+    if method == 'WhittakerSmoother':
+        whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(left_margins))
+        left_margins_smooth = whittaker_smoother.smooth(left_margins)
+    elif method == 'savgol_filter':
+        left_margins_smooth = savgol_filter(left_margins, round(len(left_margins)*0.1), 2)
+
     left_margins_smooth = [i if i > 0 else 0 for i in left_margins_smooth ]
+    left_margins_smooth = left_margins_smooth[:len(left_margins)] # filter adds to x axis length
+
+
     peaks_smooth_l,_ = find_peaks(left_margins_smooth,prominence=0.1*max(left_margins_smooth))
 
     ## right
@@ -123,8 +170,16 @@ def get_columns(ocr_results:OCR_Tree,log:bool=False)->list[Box]:
     peaks_r,_ = find_peaks(right_margins,prominence=0.01*sum(right_margins))
 
     ### smoothed 
-    right_margins_smooth = savgol_filter(right_margins, round(len(right_margins)*0.1), 2)
+    if method == 'WhittakerSmoother':
+        whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(right_margins))
+        right_margins_smooth = whittaker_smoother.smooth(right_margins)
+    elif method == 'savgol_filter':
+        right_margins_smooth = savgol_filter(right_margins, round(len(right_margins)*0.1), 2)
+
     right_margins_smooth = [i if i > 0 else 0 for i in right_margins_smooth ]
+    right_margins_smooth = right_margins_smooth[:len(right_margins)] # filter adds to x axis length
+
+
     peaks_smooth_r,_ = find_peaks(right_margins_smooth,prominence=0.1*max(right_margins_smooth))
 
     if log:
@@ -133,33 +188,36 @@ def get_columns(ocr_results:OCR_Tree,log:bool=False)->list[Box]:
         print('frequency:',[left_margins[peak] for peak in peaks_l])
 
         # turn line sizes into numpy array
-        left_margins = np.array(left_margins)
-        left_margins_smooth = np.array(left_margins_smooth)
-        right_margins = np.array(right_margins)
-        right_margins_smooth = np.array(right_margins_smooth)
+        log_left_margins = np.array(left_margins)
+        log_left_margins_smooth = np.array(left_margins_smooth)
+        log_right_margins = np.array(right_margins)
+        log_right_margins_smooth = np.array(right_margins_smooth)
 
 
         # create 4 plots
         plt.subplot(2, 2, 1)
-        plt.plot(peaks_l, left_margins[peaks_l], "ob"); plt.plot(left_margins); plt.legend(['prominence'])
+        plt.plot(peaks_l, log_left_margins[peaks_l], "ob"); plt.plot(log_left_margins); plt.legend(['prominence'])
         plt.title('Frequency Peaks - Left')
 
         plt.subplot(2, 2, 2)
-        plt.plot(peaks_smooth_l, left_margins_smooth[peaks_smooth_l], "ob"); plt.plot(left_margins_smooth); plt.legend(['prominence'])
+        plt.plot(peaks_smooth_l, log_left_margins_smooth[peaks_smooth_l], "ob"); plt.plot(log_left_margins_smooth); plt.legend(['prominence'])
         plt.title('Frequency (smoothed) Peaks - Right')
 
         plt.subplot(2, 2, 3)
-        plt.plot(peaks_r, right_margins[peaks_r], "ob"); plt.plot(right_margins); plt.legend(['prominence'])
+        plt.plot(peaks_r, log_right_margins[peaks_r], "ob"); plt.plot(log_right_margins); plt.legend(['prominence'])
         plt.title('Frequency Peaks - Right')
 
         plt.subplot(2, 2, 4)
-        plt.plot(peaks_smooth_r, right_margins_smooth[peaks_smooth_r], "ob"); plt.plot(right_margins_smooth); plt.legend(['prominence'])
+        plt.plot(peaks_smooth_r, log_right_margins_smooth[peaks_smooth_r], "ob"); plt.plot(log_right_margins_smooth); plt.legend(['prominence'])
         plt.title('Frequency Peaks - Right')
 
         plt.show()
 
     columns = []
-
+    peaks_smooth_l:np.ndarray
+    peaks_smooth_r:np.ndarray
+    peaks_smooth_l = peaks_smooth_l.tolist()
+    peaks_smooth_r = peaks_smooth_r.tolist()
     for i in range(len(peaks_smooth_l)):
         column = Box({'left':peaks_smooth_l[i],'right':peaks_smooth_r[i],'top':0,'bottom':1})
         columns.append(column)
@@ -169,133 +227,25 @@ def get_columns(ocr_results:OCR_Tree,log:bool=False)->list[Box]:
 
 
 
+
 def analyze_text(ocr_results:OCR_Tree)->dict:
     '''Analyse text from ocr_results and return text data as dict\n
     Tries to find info about normal text size, number of lines and number of columns\n
     
     ### Result dict:
-    - normal_text_size: average size of normal text
-    - normal_text_gap: average gap between normal text lines
-    - number_lines: estimated number of lines
-    - number_columns: estimated number of columns
-    - columns: list of columns bounding boxes\n
+    - normal_text_size: normal text size of the document page
+    - <other text sizes>* : other text sizes of the document if any (need to be found as peaks by get_text_sizes)
+    - columns: list of columns as Box class\n
     '''
-    normal_text_size = 0
-    normal_text_gap = 0
-    number_lines = 0
-    number_columns = 0
-    columns = []
+    analyze_results = {}
 
-    lines = ocr_results.get_boxes_level(4)
-    left_margin_n = {}
-    right_margin_n = {}
-
-    line_sizes = []
-    
-    # save text sizes and margins
-    for line in lines:
-        left_margin = round(line.box.left,-1)
-        if left_margin not in left_margin_n:
-            left_margin_n[left_margin] = 0
-        left_margin_n[left_margin] += 1
-
-        right_margin = round((line.box.left + line.box.width),-1)
-        if right_margin not in right_margin_n:
-            right_margin_n[right_margin] = 0
-        right_margin_n[right_margin] += 1
-
-        lmh = line.calculate_mean_height(level=4)
-        line.mean_height = lmh
-        line_sizes.append(lmh)
-
-    
-    
-    # estimate normal text size
-    # calculate until good standard deviation is found
-    ## normal text size average
-    normal_text_size = sum(line_sizes)/len(line_sizes)
-    ## normal text size standard deviation
-    normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
-    i = 0
-    while normal_text_size_std > normal_text_size:
-        # remove outliers (greatest value)
-        line_sizes.remove(max(line_sizes))
-        # recalculate normal text size
-        normal_text_size = sum(line_sizes)/len(line_sizes)
-        # recalculate normal text size standard deviation
-        normal_text_size_std = math.sqrt(sum([(x-normal_text_size)**2 for x in line_sizes])/len(line_sizes))
-        i += 1
+    text_sizes = get_text_sizes(ocr_results,method='WhittakerSmoother',log=False)
+    analyze_results.update(text_sizes)
+    columns = get_columns(ocr_results,method='WhittakerSmoother',log=False)
+    analyze_results.update({'columns':columns})
 
 
-    # estimate normal text size
-    normal_text_gap = 0
-
-    last_block = None
-    last_top = None
-    last_line = None
-    last_paragraph = None
-
-    # estimate normal text gap
-    for line in lines:
-        if last_block:
-            if line.block_num == last_block and line.par_num == last_paragraph and line.line_num == last_line + 1 and line.is_text_size(normal_text_size,mean_height=line.mean_height):
-                if normal_text_gap:
-                    normal_text_gap += line.box.top - last_top - normal_text_size
-                    normal_text_gap /= 2
-                else:
-                    normal_text_gap = line.box.top - last_top - normal_text_size
-            
-        last_block = line.block_num
-        last_top = line.box.top
-        last_line = line.line_num
-        last_paragraph = line.par_num
-
-    # estimate number of lines
-    highest_normal_text = 0
-    lowest_normal_text = 0
-
-    ## find highest and lowest normal text
-    for line in lines:
-        if line.is_text_size(normal_text_size,mean_height=line.mean_height):
-            if not highest_normal_text or line.box.top <= highest_normal_text:
-                highest_normal_text = line.box.top
-            if not lowest_normal_text or line.box.top+normal_text_size >= lowest_normal_text:
-                lowest_normal_text = line.box.top+normal_text_size
-    
-    if normal_text_size > 0 and normal_text_gap > 0:
-        number_lines = (lowest_normal_text - highest_normal_text) // (normal_text_size + normal_text_gap)
-
-
-    # estimate number of columns
-    probable_columns = sorted([k for k in sorted(left_margin_n, reverse=True,key=left_margin_n.get) if left_margin_n[k]>=0.45*number_lines])
-    number_columns = len(probable_columns)
-
-
-    if number_columns > 0:
-        # create columns bounding boxes
-        for i in range(len(probable_columns)):
-            if i < len(probable_columns)-1:
-                left = probable_columns[i]*0.98
-                right = probable_columns[i+1]*1.02
-                top = highest_normal_text*0.98
-                bottom = lowest_normal_text*1.02
-                columns.append(((left,top),(right,bottom)))
-            # last column
-            else:
-                left = probable_columns[i]*0.98
-                right = max(right_margin_n.keys())*1.02
-                top = highest_normal_text*0.98
-                bottom = lowest_normal_text*1.02
-                columns.append(((left,top),(right,bottom)))  
-
-
-    return {
-        'normal_text_size':normal_text_size,
-        'normal_text_gap':normal_text_gap,
-        'number_lines':number_lines,
-        'number_columns':number_columns,
-        'columns':columns
-    }
+    return analyze_results
 
 
 
@@ -505,7 +455,6 @@ def draw_bounding_boxes(ocr_results:OCR_Tree,image_path:str,draw_levels=[2],conf
                 (x, y, w, h) = (current_node.box.left, current_node.box.top, current_node.box.width, current_node.box.height)
                 color = current_node.type_color()
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-                print('drew rectangle',x,y,w,h)
                 if id and current_node.id != None:
                     img = cv2.putText(img, str(current_node.id), (round(x+0.1*w), round(y+0.3*h)), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255,0,0), 6)
         for child in current_node.children:
