@@ -15,9 +15,7 @@ from ocr_tree_module.ocr_tree_analyser import *
 from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
-#from models.DE_GAN_old_docs.enhance import run_image_enhance
-import torch
-from PIL import Image
+from preprocessing.image import *
 
 
 
@@ -99,20 +97,8 @@ def run_test():
         # # print('finished DEGAN test - deblur')
 
         # Waifu2x test
-        print('run Waifu2x test')
-        print('Loading model')
-        #@ available methods scale2x scale4x noise
-        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
-                       method="scale4x", noise_level=1, model_type='photo',trust_repo=True).to("cuda")
-        # model.set_mode(method, noise_level) ## if no method chosen
-        print('finished loading model')
-        print('Running Waifu2x')
-        input_image = Image.open(target_image)
-        result = model.infer(input_image)
         result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
-        result.save(result_image_path)
-        print('finished Waifu2x test')
-
+        run_waifu2x(target_image,result_image_path,method='scale2x')
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):
