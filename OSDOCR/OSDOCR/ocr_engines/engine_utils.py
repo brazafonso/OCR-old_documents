@@ -11,13 +11,42 @@ from ocr_tree_module.ocr_tree_analyser import *
 
 
 
-def tesseract_search_img(img:(str|cv2.typing.MatLike))->dict:
+def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=False)->dict:
     '''Search for text in image of path saved on \'target_image_path\' using tesseract\n
     Return dict with results in various formats, and image with bounding boxes'''
+    if logs:
+        print('Using tesseract')
+        print('Configs: ',opts)
+
+        
     if type(img) == str:
         img = cv2.imread(img)
-    print('Using tesseract')
-    data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT,lang='por')
+    config_str = ''
+    dpi = None
+    lang = None
+    psm = None
+
+    if opts:
+        if 'lang' in opts:
+            lang = opts['lang']
+        if 'psm' in opts:
+            psm = opts['psm']
+        if 'dpi' in opts:
+            dpi = opts['dpi']
+
+    if lang:
+        config_str += f'-l {lang}'
+
+    if psm:
+        config_str += f'--psm {psm}'
+
+    if dpi:
+        config_str += f'--dpi {dpi}'
+
+
+
+
+    data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT,config=config_str)
     data_text = pytesseract.image_to_string(img,lang='por')
     data_pdf = pytesseract.image_to_pdf_or_hocr(img, extension='pdf',lang='por')
     data_xml = pytesseract.image_to_alto_xml(img,lang='por')
@@ -111,10 +140,10 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
 
 
 
-def run_tesseract(image_path,results_path:str=None):
+def run_tesseract(image_path,results_path:str=None,opts:dict=None,logs:bool=False):
     '''GUI - Run text search on target image'''
 
-    results = tesseract_search_img(image_path)
+    results = tesseract_search_img(image_path,opts=opts,logs=logs)
     ocr_results = results['ocr_results']
     data_text = results['data_text']
     data_pdf = results['data_pdf']

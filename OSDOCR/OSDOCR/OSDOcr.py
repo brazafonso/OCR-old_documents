@@ -2,11 +2,8 @@
 '''Old Structured Document OCR - Main program'''
 import cv2
 import os
-import json
 import argparse
-import pandas as pd
-from aux_utils.page_tree import *
-from document_image_utils.image import *
+from aux_utils.parse_args import *
 from aux_utils.misc import *
 from aux_utils import consts
 from gui.osdocr_gui import run_gui
@@ -24,41 +21,58 @@ skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'image_upscaling','extract_articles','image_preprocess']
 
 
+
+
+
 def process_args():
     '''Process command line arguments'''
     parser = argparse.ArgumentParser(description='''
-                            --------------------------------------------------------------
-                            |        Old Structured Document OCR - Main program          |
-                            --------------------------------------------------------------
-                                     
-                            Components:
-                                     - INPUT:
-                                        * Image 
-                                        * hOCR
-                                     
-                                     - PIPELINE:
-                                        * A : Image input
-                                            ^ TODO
-                                        * B : hOCR input
-                                            ^ TODO
-                                     
-                                     - OUTPUT:
-                                        * Markdown
-                                        * HTML
-                                        * TXT
+--------------------------------------------------------------
+|        Old Structured Document OCR - Main program          |
+--------------------------------------------------------------
+            
+Components:
+            - INPUT:
+            * Image 
+            * hOCR
+            
+            - PIPELINE:
+            * A : Image input
+                ^ TODO
+            * B : hOCR input
+                ^ TODO
+            
+            - OUTPUT:
+            * Markdown
+            * HTML
+            * TXT
                                      
                                      ''',formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--test'                     ,action='store_true'                               ,help='Run tests')
-    parser.add_argument('-g','--gui'                 ,action='store_true'                               ,help='Run gui')
-    parser.add_argument('target'                     ,type=str,nargs='*'                                ,help='Target image path')
-    parser.add_argument('-f','--file'                ,type=str,nargs=1                                  ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
-    parser.add_argument('-of','--output_folder'      ,type=str,nargs=1                                  ,help='Results folder')
-    parser.add_argument('-ot','--output_type'        ,type=str,nargs='*' ,default=['markdown']          ,help='Output type. Possible values: markdown, html, txt (default: markdown).')
-    parser.add_argument('-focr','--force_ocr'        ,action='store_true',default=False                 ,help='Force OCR engine to run again')
-    parser.add_argument('-id','--ignore_delimiters'  ,action='store_true',default=False                 ,help='Ignore delimiters as page/column boundaries (default: False)')
-    parser.add_argument('-fr','--fix_rotation'       ,type=str,nargs='?' ,default=None,const='auto'     ,help='Fix image rotation automatically (default: False). Further options: auto, clockwise, counter_clockwise (default: auto).')
-    parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                     ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
-    parser.add_argument('-d','--debug'               ,action='store_true',default=False                 ,help='Debug mode')
+    parser.add_argument('--test'                     ,action='store_true'                                           ,help='Run tests')
+    parser.add_argument('-g','--gui'                 ,action='store_true'                                           ,help='Run gui')
+    parser.add_argument('target'                     ,type=str,nargs='*'                                            ,help='Target image path')
+    parser.add_argument('-f','--file'                ,type=str,nargs=1                                              ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
+    parser.add_argument('-of','--output_folder'      ,type=str,nargs=1                                              ,help='Results folder')
+    parser.add_argument('-ot','--output_type'        ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).')
+    parser.add_argument('-focr','--force_ocr'        ,action='store_true',default=False                             ,help='Force OCR engine to run again')
+    parser.add_argument('-id','--ignore_delimiters'  ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
+    parser.add_argument('-fr','--fix_rotation'       ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).')
+    parser.add_argument('-upi','--upscaling_image'   ,type=str,nargs='*' ,default=['waifu2x']                       ,help='''
+Upscale image automatically (default: waifu2x). 
+Further options: 
+    - waifu2x
+            * scale2x
+            * scale4x
+                        ''',action=CustomAction_upscale_image)
+    parser.add_argument('-di','--denoise_image'   ,type=str,nargs='*' ,default=['waifu2x']                          ,help='''
+Upscale image automatically (default: waifu2x). 
+Further options: 
+    - waifu2x
+            * [-1,0,1,2,3]
+                        ''',action=CustomAction_denoise_image)
+    parser.add_argument('--tesseract_config'         ,type=str,nargs='*' ,default=['$$l','por']                  ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "$$"',action=CustomAction_tesseract_config)
+    parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
+    parser.add_argument('-d','--debug'               ,action='store_true',default=False                             ,help='Debug mode')
     args = parser.parse_args()
     return args
 
@@ -169,17 +183,17 @@ def image_preprocess(target:str,args:argparse.Namespace):
     '''Preprocess image'''
     if args.debug:
         print('IMAGE PREPROCESS')
-    tmp_image_path = f'{consts.tmp_path}/OSDOcr_image_tmp.png'
+    processed_image_path = os.path.dirname(target) +f'/{os.path.basename(target)}' + '_processed.png'
 
     # save image
     og_img = cv2.imread(target)
-    cv2.imwrite(tmp_image_path,og_img)
+    cv2.imwrite(processed_image_path,og_img)
 
     # image rotation
     ## not used by default
     if args.fix_rotation and 'auto_rotate' not in args.skip_method:
         rotate_img = rotate_image(target,direction=args.fix_rotation,debug=args.debug)
-        cv2.imwrite(tmp_image_path,rotate_img)
+        cv2.imwrite(processed_image_path,rotate_img)
 
     # image distortion
     if 'fix_distortions' not in args.skip_method:
@@ -188,8 +202,27 @@ def image_preprocess(target:str,args:argparse.Namespace):
 
     # noise removal
     if 'noise_removal' not in args.skip_method:
-        # TODO
-        pass
+        if args.debug:
+            print('NOISE REMOVAL')
+
+        if args.denoise_image:
+            method = args.denoise_image[0]
+            tmp_denoised_image_path = f'{consts.tmp_path}/OSDOcr_image_denoised_tmp.png'
+
+            if method == 'waifu2x':
+                method_config = None
+                if len(args.denoise_image) > 1:
+                    method_config = int(args.denoise_image[1])
+
+                if method_config:
+                    run_waifu2x(processed_image_path,method='noise',noise_level=method_config,result_image_path=tmp_denoised_image_path,log=args.debug) 
+                else:
+                    run_waifu2x(processed_image_path,method='noise',result_image_path=tmp_denoised_image_path,log=args.debug)
+
+                denoised_img = cv2.imread(tmp_denoised_image_path)
+                cv2.imwrite(processed_image_path,denoised_img)
+            
+
 
     # blur removal
     if 'blur_removal' not in args.skip_method:
@@ -198,15 +231,31 @@ def image_preprocess(target:str,args:argparse.Namespace):
 
     # image upscaling
     if 'image_upscaling' not in args.skip_method:
-        # TODO
-        pass
+        if args.debug:
+            print('IMAGE UPSCALING')
+
+        if args.upscaling_image:
+            method = args.upscaling_image[0]
+            if method == 'waifu2x':
+                tmp_upsacled_image_path = f'{consts.tmp_path}/OSDOcr_image_upscaled_tmp.png'
+                method_config = None
+                if len(args.upscaling_image) > 1:
+                    method_config = args.upscaling_image[1]
+
+                if method_config:
+                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,method=method_config,log=args.debug) 
+                else:
+                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,log=args.debug)
+
+                upscaled_img = cv2.imread(tmp_upsacled_image_path)
+                cv2.imwrite(processed_image_path,upscaled_img)
 
     # lightning correction
     if 'lightning_correction' not in args.skip_method:
         # TODO
         pass
 
-    return tmp_image_path
+    return processed_image_path
 
 
 def run_target_hocr(target:str,args:argparse.Namespace):
@@ -219,17 +268,60 @@ def run_target_image(target:str,results_path:str,args:argparse.Namespace):
     - Image preprocessing
     - OCR
     - Convert to ocr_tree
+
+    Return ocr_tree and image path (in case of preprocessing)
     '''
     
     # preprocess image
     if 'image_preprocess' not in args.skip_method:
         target = image_preprocess(target,args)
             
-    run_tesseract(target,results_path=results_path)
+    run_tesseract(target,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # get results
-    return OCR_Tree(f'{results_path}/result.json')
+    return [OCR_Tree(f'{results_path}/result.json'),target]
 
+
+def clean_ocr(ocr_results:OCR_Tree,target:str,results_path:str,logs:bool=False):
+    '''Clean ocr_tree'''
+    ocr_results = bound_box_fix(ocr_results,2,None)
+
+    # save results
+
+    ## check if results folder exists
+    if not os.path.exists(f'{results_path}/fixed'):
+        os.mkdir(f'{results_path}/fixed')
+
+    result_dict_file = open(f'{results_path}/fixed/result_fixed.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    image = draw_bounding_boxes(ocr_results,target,[2],id=True)
+    cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
+    csv = pd.DataFrame(ocr_results.to_dict())
+    csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
+
+    return ocr_results
+
+
+def unite_ocr_blocks(ocr_results:OCR_Tree,target:str,results_path:str,logs:bool=False):
+    '''Unite ocr_tree'''
+    ocr_results = unite_blocks(ocr_results)
+
+    ## check if results folder exists
+    if not os.path.exists(f'{results_path}/fixed'):
+        os.mkdir(f'{results_path}/fixed')
+
+    result_dict_file = open(f'{results_path}/fixed/result_united.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    image = draw_bounding_boxes(ocr_results,target,[2],id=True)
+    cv2.imwrite(f'{results_path}/fixed/result_united.png',image)
+    csv = pd.DataFrame(ocr_results.to_dict())
+    csv.to_csv(f'{results_path}/fixed/result_united.csv')
+
+    return ocr_results
 
 def run_target(target:str,args:argparse.Namespace):
     '''Run pipeline for single target.
@@ -268,7 +360,7 @@ def run_target(target:str,args:argparse.Namespace):
         force_ocr = args.force_ocr
         # check if target has been ocrd before or force
         if force_ocr or not os.path.exists(f'{consts.result_path}/{path_to_id(target)}/result.json'):
-            ocr_results = run_target_image(target,results_path,args)
+            ocr_results,target = run_target_image(target,results_path,args)
         else:
             if os.path.exists(f'{consts.result_path}/{path_to_id(target)}/result.json'):
                 ocr_results = OCR_Tree(f'{consts.result_path}/{path_to_id(target)}/result.json')
@@ -286,14 +378,18 @@ def run_target(target:str,args:argparse.Namespace):
 
     # clean ocr_results
     if 'clean_ocr' not in args.skip_method:
-        ocr_results = bound_box_fix(ocr_results,2,None)
+        if args.debug:
+            print('CLEAN OCR')
+        ocr_results = clean_ocr(ocr_results,target,results_path,logs=args.debug) 
 
     # categorize boxes
     ocr_results = categorize_boxes(ocr_results)
 
     # unite same type blocks
     if 'unite_blocks' not in args.skip_method:
-        ocr_results = unite_blocks(ocr_results)
+        if args.debug:
+            print('UNITE BLOCKS')
+        ocr_results = unite_ocr_blocks(ocr_results,target,results_path,logs=args.debug)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
@@ -306,14 +402,11 @@ def run_target(target:str,args:argparse.Namespace):
 
     # extract articles
     if 'extract_articles' not in args.skip_method:
+        if args.debug:
+            print('EXTRACT ARTICLES')
         extract_articles(target,ocr_results,results_path,args)
 
    
-
-
-
-
-
 
 
 

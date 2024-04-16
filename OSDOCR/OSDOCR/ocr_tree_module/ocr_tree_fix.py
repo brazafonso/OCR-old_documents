@@ -110,7 +110,9 @@ def unite_blocks(ocr_results:OCR_Tree,log:bool=False):
         target_block_id = non_visited.pop(0)
         target_block = ocr_results.get_box_id(target_block_id,level=2)
         if log:
-            print(f'Uniting block {target_block_id}',len(available_blocks),len(non_visited))
+            print(f'Uniting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
+            print(sorted([b.id for b in available_blocks]))
+            print(sorted([id for id in non_visited]))
         # get adjacent bellow blocks
         bellow_blocks = target_block.boxes_directly_below(available_blocks)
 
@@ -126,8 +128,8 @@ def unite_blocks(ocr_results:OCR_Tree,log:bool=False):
                 # get bellow block
                 bellow_block = bellow_blocks[0]
                 # remove bellow block
-                available_blocks.remove(bellow_block)
-                non_visited.remove(bellow_block.id)
+                available_blocks = [b for b in available_blocks if b.id != bellow_block.id]
+                non_visited = [id for id in non_visited if id != bellow_block.id]
 
                 # unite
                 target_block.join_trees(bellow_block)
