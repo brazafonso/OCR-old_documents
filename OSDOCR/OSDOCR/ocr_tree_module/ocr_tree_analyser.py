@@ -218,8 +218,8 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
     peaks_smooth_r:np.ndarray
     peaks_smooth_l = peaks_smooth_l.tolist()
     peaks_smooth_r = peaks_smooth_r.tolist()
-    for i in range(len(peaks_smooth_l)):
-        column = Box({'left':peaks_smooth_l[i],'right':peaks_smooth_r[i],'top':0,'bottom':1})
+    for i in range(len(peaks_smooth_l)-1):
+        column = Box({'left':peaks_smooth_l[i],'right':peaks_smooth_l[i+1] if i < len(peaks_smooth_l)-1 else peaks_smooth_l[i] + 100,'top':0,'bottom':1})
         columns.append(column)
 
     return columns
