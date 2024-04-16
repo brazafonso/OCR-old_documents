@@ -5,3 +5,29 @@ PySimpleGUI
 pytesseract
 jellyfish
 document_image_utils
+imageio
+matplotlib
+pillow
+scipy
+tensorboard
+tensorboard-plugin-wit
+tensorflow
+tensorflow-estimator
+tqdm
+poetry
+wand >= 0.6.10
+fonttools
+waitress
+bottle
+diskcache
+flake8
+psutil
+pyyaml
+onnx
+onnxconverter_common
+lpips
+packaging
+timm
+numba # only for iww3 sbs training
+av >= 9.0.0
+rembg # for --remove-bg

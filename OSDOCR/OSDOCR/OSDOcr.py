@@ -15,6 +15,10 @@ from ocr_tree_module.ocr_tree_analyser import *
 from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
+#from models.DE_GAN_old_docs.enhance import run_image_enhance
+import torch
+from PIL import Image
+
 
 
 skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
@@ -78,10 +82,37 @@ def run_test():
         # test unite blocks
         ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
         ocr_results = OCR_Tree(ocr_results_path)
-        get_text_sizes(ocr_results,method='savgol_filter',log=True)
-        get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
-        get_columns(ocr_results,method='savgol_filter',log=True)
-        get_columns(ocr_results,method='WhittakerSmoother',log=True)
+        # Frequency tests
+        # # get_text_sizes(ocr_results,method='savgol_filter',log=True)
+        # # get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
+        # # get_columns(ocr_results,method='savgol_filter',log=True)
+        # # get_columns(ocr_results,method='WhittakerSmoother',log=True)
+
+        # DEGAN test
+        # # print('run DEGAN test - binarize')
+        # # result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_binarized.png'
+        # # run_image_enhance('binarize',target_image,result_image_path)
+        # # print('finished DEGAN test - binarize')
+        # # print('run DEGAN test - deblur')
+        # # result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_deblurred.png'
+        # # run_image_enhance('deblur',target_image,result_image_path)
+        # # print('finished DEGAN test - deblur')
+
+        # Waifu2x test
+        print('run Waifu2x test')
+        print('Loading model')
+        #@ available methods scale2x scale4x noise
+        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
+                       method="scale4x", noise_level=1, model_type='photo',trust_repo=True).to("cuda")
+        # model.set_mode(method, noise_level) ## if no method chosen
+        print('finished loading model')
+        print('Running Waifu2x')
+        input_image = Image.open(target_image)
+        result = model.infer(input_image)
+        result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
+        result.save(result_image_path)
+        print('finished Waifu2x test')
+
 
 
 def save_articles(articles:list,results_path:str,args:argparse.Namespace):
