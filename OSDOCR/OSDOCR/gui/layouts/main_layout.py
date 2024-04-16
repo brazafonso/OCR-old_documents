@@ -93,6 +93,9 @@ def build_gui_main()->sg.Window:
     
     method_sidebar_2 = [
         [
+            sg.Button('OCR Pipeline',key='sidebar_method_ocr_pipeline'),
+        ],
+        [
             sg.Button('Calculate DPI',key='sidebar_method_calculate_dpi'),
         ]
     ]
@@ -107,6 +110,7 @@ def build_gui_main()->sg.Window:
     second_layout_2 = [
         [
             sg.Image(filename=None,visible=True,key='target_image_path_2',size=(500,700)),
+            sg.Button('Config',key='config_pipeline',visible=False),
             sg.Button('Apply',key='apply'),
             sg.Combo([],key='select_list_2_1',enable_events=True,size=(5,10)),
             sg.Text('Result:'),

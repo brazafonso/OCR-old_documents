@@ -20,7 +20,7 @@ def run_waifu2x(target_image:str,method:str='scale2x',model_type:str='photo',noi
     '''
     if log:
         print(f'Running Waifu2x | target_image: {target_image} | method: {method} | model_type: {model_type} | noise_level: {noise_level} | result_image_path: {result_image_path}')
-        print('Loading model')
+        print('Loading model | cuda available: ',torch.cuda.is_available())
 
     model = None
     if torch.cuda.is_available():

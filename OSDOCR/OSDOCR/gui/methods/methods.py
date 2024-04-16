@@ -1,4 +1,6 @@
+import argparse
 import shutil
+from pipeline import run_target as ocr_pipeline
 from gui.aux_utils.utils import *
 from ocr_tree_module.information_extraction import journal_template_to_text
 from ocr_tree_module.ocr_tree import *
@@ -6,6 +8,11 @@ from ocr_tree_module.ocr_tree_analyser import *
 from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
+from aux_utils.misc import *
+
+
+
+#### TAB 1
 
 
 def fix_ocr(target_image:str,results_path:str):
@@ -185,20 +192,6 @@ def auto_rotate_method(window:sg.Window,image_path:str):
     img = rotate_image(image_path,direction='auto')
     update_image_element(window,'result_img',img)
 
-def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
-    '''Apply calculate dpi method to image and update image element'''
-    # get image info
-    image_info = get_image_info(image_path)
-
-    # get resolution info from configs
-    resolution = consts.config['resolutions'][resolution]
-    resolution = Box(0,resolution['width'],0,resolution['height'])
-
-    # calculate dpi
-    dpi = calculate_dpi(image_info,resolution)
-
-    # update image element
-    window['result_text_1'].update(dpi,visible=True)
 
 
 def unite_blocks_method(window:sg.Window,image_path:str):
@@ -254,3 +247,83 @@ def divide_columns_method(window:sg.Window,image_path:str):
     cv2.imwrite(result_image_path,image)
 
     update_image_element(window,'result_img',result_image_path)
+
+
+
+
+
+
+#### TAB 2
+
+def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
+    '''Apply calculate dpi method to image and update image element'''
+    # get image info
+    image_info = get_image_info(image_path)
+
+    # get resolution info from configs
+    resolution = consts.config['resolutions'][resolution]
+    resolution = Box(0,resolution['width'],0,resolution['height'])
+
+    # calculate dpi
+    dpi = calculate_dpi(image_info,resolution)
+
+    # update image element
+    window['result_text_1'].update(dpi,visible=True)
+
+
+
+def ocr_pipeline_method(window:sg.Window):
+    '''Apply ocr pipeline method to image and update image element'''
+    configs = {}
+    
+    if 'ocr_pipeline' in consts.config:
+        configs.update(consts.config['ocr_pipeline'])
+
+    if configs['target']:
+        args = argparse.Namespace(**configs)
+        ocr_pipeline(configs['target'],args)
+
+
+def pipeline_config_method(values:dict):
+    '''Read values from pipeline config window and update configs'''
+    
+    new_configs = {
+        'skip_method' : []
+    }
+
+    new_configs['target'] = consts.config['target_image_path']
+
+    new_configs['output_folder'] = values['output_folder_path']
+
+    new_configs['output_type'] = [values['select_list_1_1'].lower()]
+
+    new_configs['force_ocr'] = values['checkbox_1_1']
+
+    new_configs['ignore_delimiters'] = values['checkbox_1_2']
+
+    new_configs['fix_rotation'] = [values['select_list_1_1'].lower()]
+    if not values['checkbox_1_3']:
+        new_configs['skip_method'].append('auto_rotate')
+
+    new_configs['upscaling_image'] = [values['select_list_1_2'].lower()]
+    if not values['checkbox_1_4']:
+        new_configs['skip_method'].append('image_upscaling')
+
+    new_configs['denoise_image'] = [values['select_list_1_3'].lower(),values['select_list_1_4']]
+    if not values['checkbox_1_5']:
+        new_configs['skip_method'].append('denoise_image')
+
+    
+    tesseract_lang = values['select_list_1_5']
+    tesseract_dpi = int(values['input_1_1']) if values['input_1_1'].isdigit() else 150
+    tesseract_psm = int(values['select_list_1_6'])
+    new_configs['tesseract_config'] = {
+        'l' : tesseract_lang,
+        'dpi' : tesseract_dpi,
+        'psm' : tesseract_psm
+    }
+
+    new_configs['debug'] = values['checkbox_1_6']
+
+    consts.config['ocr_pipeline'] = new_configs
+    save_configs()
