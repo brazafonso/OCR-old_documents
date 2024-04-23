@@ -49,60 +49,62 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=
             words = [w for w in words if w.text.strip()]
             line_sizes[lmh] += 1 + len(words)
 
-    # add 10% to lists (because of smoothing might not catch peaks on edges)
-    line_sizes += [0] * round(len(line_sizes)*0.1)
+    if line_sizes:
 
-    # normal
-    peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
+        # add 10% to lists (because of smoothing might not catch peaks on edges)
+        line_sizes += [0] * round(len(line_sizes)*0.1)
 
-    # smoothed 
-    if method == 'WhittakerSmoother':
-        whittaker_smoother = WhittakerSmoother(lmbda=1e1, order=3, data_length = len(line_sizes))
-        line_sizes_smooth = whittaker_smoother.smooth(line_sizes)
-    elif method == 'savgol_filter':
-        line_sizes_smooth = savgol_filter(line_sizes, round(len(line_sizes)*0.1), 2)
+        # normal
+        peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
 
-    line_sizes_smooth = [i if i > 0 else 0 for i in line_sizes_smooth ]
-    line_sizes_smooth = line_sizes_smooth[:len(line_sizes)] # filter adds to x axis length
+        # smoothed 
+        if method == 'WhittakerSmoother':
+            whittaker_smoother = WhittakerSmoother(lmbda=1e1, order=3, data_length = len(line_sizes))
+            line_sizes_smooth = whittaker_smoother.smooth(line_sizes)
+        elif method == 'savgol_filter':
+            line_sizes_smooth = savgol_filter(line_sizes, round(len(line_sizes)*0.1), 2)
 
-    peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
-    if log:
-        # print peaks
-        print('peaks:',peaks)
-        print('frequency:',[line_sizes[peak] for peak in peaks])
+        line_sizes_smooth = [i if i > 0 else 0 for i in line_sizes_smooth ]
+        line_sizes_smooth = line_sizes_smooth[:len(line_sizes)] # filter adds to x axis length
 
-        # turn line sizes into numpy array
-        log_line_sizes = np.array(line_sizes)
-        log_line_sizes_smooth = np.array(line_sizes_smooth)
-        # create 2 plots
-        plt.subplot(1, 2, 1)
-        plt.plot(peaks, log_line_sizes[peaks], "ob"); plt.plot(log_line_sizes); plt.legend(['prominence'])
-        plt.subplot(1, 2, 2)
-        plt.plot(peaks_smooth, log_line_sizes_smooth[peaks_smooth], "ob"); plt.plot(log_line_sizes_smooth); plt.legend(['prominence'])
+        peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
+        if log:
+            # print peaks
+            print('peaks:',peaks)
+            print('frequency:',[line_sizes[peak] for peak in peaks])
 
-        plt.show()
+            # turn line sizes into numpy array
+            log_line_sizes = np.array(line_sizes)
+            log_line_sizes_smooth = np.array(line_sizes_smooth)
+            # create 2 plots
+            plt.subplot(1, 2, 1)
+            plt.plot(peaks, log_line_sizes[peaks], "ob"); plt.plot(log_line_sizes); plt.legend(['prominence'])
+            plt.subplot(1, 2, 2)
+            plt.plot(peaks_smooth, log_line_sizes_smooth[peaks_smooth], "ob"); plt.plot(log_line_sizes_smooth); plt.legend(['prominence'])
 
-    peaks_smooth:np.ndarray
-    peaks_smooth = peaks_smooth.tolist()
-    
+            plt.show()
 
-    text_sizes['normal_text_size'] = max(peaks_smooth)
-    
-    # categorize greater and smaller other text sizes
-    id_normal = peaks_smooth.index(text_sizes['normal_text_size'])
-    lower_peaks = peaks_smooth[:id_normal]
-    higher_peaks = peaks_smooth[id_normal+1:]
-    i = 0
-    while lower_peaks:
-        text_sizes[f'small_text_size_{i}'] = max(lower_peaks)
-        lower_peaks.remove(text_sizes[f'small_text_size_{i}'])
-        i += 1
+        peaks_smooth:np.ndarray
+        peaks_smooth = peaks_smooth.tolist()
+        
 
-    i = 0
-    while higher_peaks:
-        text_sizes[f'big_text_size_{i}'] = max(higher_peaks)
-        higher_peaks.remove(text_sizes[f'big_text_size_{i}'])
-        i += 1
+        text_sizes['normal_text_size'] = max(peaks_smooth)
+        
+        # categorize greater and smaller other text sizes
+        id_normal = peaks_smooth.index(text_sizes['normal_text_size'])
+        lower_peaks = peaks_smooth[:id_normal]
+        higher_peaks = peaks_smooth[id_normal+1:]
+        i = 0
+        while lower_peaks:
+            text_sizes[f'small_text_size_{i}'] = max(lower_peaks)
+            lower_peaks.remove(text_sizes[f'small_text_size_{i}'])
+            i += 1
+
+        i = 0
+        while higher_peaks:
+            text_sizes[f'big_text_size_{i}'] = max(higher_peaks)
+            higher_peaks.remove(text_sizes[f'big_text_size_{i}'])
+            i += 1
         
     return text_sizes
 
@@ -117,6 +119,8 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
     Available methods:
         - WhittakerSmoother
         - savgol_filter'''
+    
+    columns = []
     
     methods = ['WhittakerSmoother','savgol_filter']
     if method not in methods:
@@ -140,87 +144,89 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
                 right_margins += [0] * (right - len(right_margins) + 1)
             right_margins[right] += 1 + len(words)
 
-    # add 10% to lists (because of smoothing might not catch peaks on edges)
-    left_margins += [0] * round(len(left_margins)*0.1)
-    right_margins += [0] * round(len(right_margins)*0.1)
+    if left_margins:
 
-    # calculate peaks
+        # add 10% to lists (because of smoothing might not catch peaks on edges)
+        left_margins += [0] * round(len(left_margins)*0.1)
+        right_margins += [0] * round(len(right_margins)*0.1)
 
-    ## left
+        # calculate peaks
 
-    ### normal
-    peaks_l,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
+        ## left
 
-    ### smoothed 
-    if method == 'WhittakerSmoother':
-        whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(left_margins))
-        left_margins_smooth = whittaker_smoother.smooth(left_margins)
-    elif method == 'savgol_filter':
-        left_margins_smooth = savgol_filter(left_margins, round(len(left_margins)*0.1), 2)
+        ### normal
+        peaks_l,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
 
-    left_margins_smooth = [i if i > 0 else 0 for i in left_margins_smooth ]
-    left_margins_smooth = left_margins_smooth[:len(left_margins)] # filter adds to x axis length
+        ### smoothed 
+        if method == 'WhittakerSmoother':
+            whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(left_margins))
+            left_margins_smooth = whittaker_smoother.smooth(left_margins)
+        elif method == 'savgol_filter':
+            left_margins_smooth = savgol_filter(left_margins, round(len(left_margins)*0.1), 2)
 
-
-    peaks_smooth_l,_ = find_peaks(left_margins_smooth,prominence=0.1*max(left_margins_smooth))
-
-    ## right
-
-    ### normal
-    peaks_r,_ = find_peaks(right_margins,prominence=0.01*sum(right_margins))
-
-    ### smoothed 
-    if method == 'WhittakerSmoother':
-        whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(right_margins))
-        right_margins_smooth = whittaker_smoother.smooth(right_margins)
-    elif method == 'savgol_filter':
-        right_margins_smooth = savgol_filter(right_margins, round(len(right_margins)*0.1), 2)
-
-    right_margins_smooth = [i if i > 0 else 0 for i in right_margins_smooth ]
-    right_margins_smooth = right_margins_smooth[:len(right_margins)] # filter adds to x axis length
+        left_margins_smooth = [i if i > 0 else 0 for i in left_margins_smooth ]
+        left_margins_smooth = left_margins_smooth[:len(left_margins)] # filter adds to x axis length
 
 
-    peaks_smooth_r,_ = find_peaks(right_margins_smooth,prominence=0.1*max(right_margins_smooth))
+        peaks_smooth_l,_ = find_peaks(left_margins_smooth,prominence=0.1*max(left_margins_smooth))
 
-    if log:
-        # print peaks
-        print('peaks:',peaks_l)
-        print('frequency:',[left_margins[peak] for peak in peaks_l])
+        ## right
 
-        # turn line sizes into numpy array
-        log_left_margins = np.array(left_margins)
-        log_left_margins_smooth = np.array(left_margins_smooth)
-        log_right_margins = np.array(right_margins)
-        log_right_margins_smooth = np.array(right_margins_smooth)
+        ### normal
+        peaks_r,_ = find_peaks(right_margins,prominence=0.01*sum(right_margins))
+
+        ### smoothed 
+        if method == 'WhittakerSmoother':
+            whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(right_margins))
+            right_margins_smooth = whittaker_smoother.smooth(right_margins)
+        elif method == 'savgol_filter':
+            right_margins_smooth = savgol_filter(right_margins, round(len(right_margins)*0.1), 2)
+
+        right_margins_smooth = [i if i > 0 else 0 for i in right_margins_smooth ]
+        right_margins_smooth = right_margins_smooth[:len(right_margins)] # filter adds to x axis length
 
 
-        # create 4 plots
-        plt.subplot(2, 2, 1)
-        plt.plot(peaks_l, log_left_margins[peaks_l], "ob"); plt.plot(log_left_margins); plt.legend(['prominence'])
-        plt.title('Frequency Peaks - Left')
+        peaks_smooth_r,_ = find_peaks(right_margins_smooth,prominence=0.1*max(right_margins_smooth))
 
-        plt.subplot(2, 2, 2)
-        plt.plot(peaks_smooth_l, log_left_margins_smooth[peaks_smooth_l], "ob"); plt.plot(log_left_margins_smooth); plt.legend(['prominence'])
-        plt.title('Frequency (smoothed) Peaks - Right')
+        if log:
+            # print peaks
+            print('peaks:',peaks_l)
+            print('frequency:',[left_margins[peak] for peak in peaks_l])
 
-        plt.subplot(2, 2, 3)
-        plt.plot(peaks_r, log_right_margins[peaks_r], "ob"); plt.plot(log_right_margins); plt.legend(['prominence'])
-        plt.title('Frequency Peaks - Right')
+            # turn line sizes into numpy array
+            log_left_margins = np.array(left_margins)
+            log_left_margins_smooth = np.array(left_margins_smooth)
+            log_right_margins = np.array(right_margins)
+            log_right_margins_smooth = np.array(right_margins_smooth)
 
-        plt.subplot(2, 2, 4)
-        plt.plot(peaks_smooth_r, log_right_margins_smooth[peaks_smooth_r], "ob"); plt.plot(log_right_margins_smooth); plt.legend(['prominence'])
-        plt.title('Frequency Peaks - Right')
 
-        plt.show()
+            # create 4 plots
+            plt.subplot(2, 2, 1)
+            plt.plot(peaks_l, log_left_margins[peaks_l], "ob"); plt.plot(log_left_margins); plt.legend(['prominence'])
+            plt.title('Frequency Peaks - Left')
 
-    columns = []
-    peaks_smooth_l:np.ndarray
-    peaks_smooth_r:np.ndarray
-    peaks_smooth_l = peaks_smooth_l.tolist()
-    peaks_smooth_r = peaks_smooth_r.tolist()
-    for i in range(len(peaks_smooth_l)-1):
-        column = Box({'left':peaks_smooth_l[i],'right':peaks_smooth_l[i+1] if i < len(peaks_smooth_l)-1 else peaks_smooth_l[i] + 100,'top':0,'bottom':1})
-        columns.append(column)
+            plt.subplot(2, 2, 2)
+            plt.plot(peaks_smooth_l, log_left_margins_smooth[peaks_smooth_l], "ob"); plt.plot(log_left_margins_smooth); plt.legend(['prominence'])
+            plt.title('Frequency (smoothed) Peaks - Right')
+
+            plt.subplot(2, 2, 3)
+            plt.plot(peaks_r, log_right_margins[peaks_r], "ob"); plt.plot(log_right_margins); plt.legend(['prominence'])
+            plt.title('Frequency Peaks - Right')
+
+            plt.subplot(2, 2, 4)
+            plt.plot(peaks_smooth_r, log_right_margins_smooth[peaks_smooth_r], "ob"); plt.plot(log_right_margins_smooth); plt.legend(['prominence'])
+            plt.title('Frequency Peaks - Right')
+
+            plt.show()
+
+        
+        peaks_smooth_l:np.ndarray
+        peaks_smooth_r:np.ndarray
+        peaks_smooth_l = peaks_smooth_l.tolist()
+        peaks_smooth_r = peaks_smooth_r.tolist()
+        for i in range(len(peaks_smooth_l)-1):
+            column = Box({'left':peaks_smooth_l[i],'right':peaks_smooth_l[i+1] if i < len(peaks_smooth_l)-1 else peaks_smooth_l[i] + 100,'top':0,'bottom':1})
+            columns.append(column)
 
     return columns
 

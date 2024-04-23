@@ -10,6 +10,7 @@ from gui.osdocr_gui import run_gui
 from ocr_tree_module.ocr_tree import *
 from preprocessing.image import *
 from pipeline import run_target
+from ocr_tree_module.ocr_tree_analyser import *
 
 
 
@@ -89,27 +90,17 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
-        ocr_results = OCR_Tree(ocr_results_path)
-        # Frequency tests
-        # # get_text_sizes(ocr_results,method='savgol_filter',log=True)
-        # # get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
-        # # get_columns(ocr_results,method='savgol_filter',log=True)
-        # # get_columns(ocr_results,method='WhittakerSmoother',log=True)
-
-        # DEGAN test
-        # # print('run DEGAN test - binarize')
-        # # result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_binarized.png'
-        # # run_image_enhance('binarize',target_image,result_image_path)
-        # # print('finished DEGAN test - binarize')
-        # # print('run DEGAN test - deblur')
-        # # result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_deblurred.png'
-        # # run_image_enhance('deblur',target_image,result_image_path)
-        # # print('finished DEGAN test - deblur')
+        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
+        # ocr_results = OCR_Tree(ocr_results_path)
+        # # Frequency tests
+        # get_text_sizes(ocr_results,method='savgol_filter',log=True)
+        # get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
+        # get_columns(ocr_results,method='savgol_filter',log=True)
+        # get_columns(ocr_results,method='WhittakerSmoother',log=True)
 
         # Waifu2x test
-        result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
-        run_waifu2x(target_image,result_image_path,method='scale2x')
+        result_image_path = f'{consts.result_path}/result_waifu2x.png'
+        run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
 
 
    

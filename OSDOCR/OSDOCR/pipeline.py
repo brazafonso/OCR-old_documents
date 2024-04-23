@@ -183,7 +183,7 @@ def run_target_image(target:str,results_path:str,args:argparse.Namespace):
 
 def clean_ocr(ocr_results:OCR_Tree,target:str,results_path:str,logs:bool=False):
     '''Clean ocr_tree'''
-    ocr_results = bound_box_fix(ocr_results,2,None)
+    ocr_results = bound_box_fix(ocr_results,2,None,logs=logs)
 
     # save results
 

@@ -2,7 +2,6 @@ import torch
 import aux_utils.consts as consts
 from PIL import Image
 from aux_utils.misc import *
-from models.DE_GAN_old_docs.enhance import run_image_enhance
 import torch
 from PIL import Image
 
@@ -46,24 +45,3 @@ def run_waifu2x(target_image:str,method:str='scale2x',model_type:str='photo',noi
 
     return result_image_path
 
-
-
-def run_degan_old_docs(target_image:str,result_image_path:str=None,method:str='binarize',log:bool=False) -> str:
-    '''Run DEGAN to clean or upscale image.
-    
-    Args:
-        target_image (str): path to image
-        result_image_path (str, optional): path to save result. Defaults to None, in which case result will be saved to same directory.
-        method (str, optional): method to use ['binarize','deblur']. Defaults to 'binarize'.
-    '''
-    if log:
-        print(f'run DEGAN - {method}')
-    if not result_image_path:
-        result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_{method}.png'
-    run_image_enhance(method,target_image,result_image_path)
-
-    if log:
-        print(f'finished DEGAN - {method}')
-
-
-    return result_image_path

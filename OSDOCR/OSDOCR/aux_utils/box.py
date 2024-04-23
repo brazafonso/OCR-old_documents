@@ -91,6 +91,10 @@ class Box:
             return False
         return True
     
+
+    def area(self):
+        return self.width * self.height
+    
     def within_vertical_boxes(self,box: 'Box',range:float=0):
         '''Check if boxes are within each other vertically, considering a range (0-1)'''
         

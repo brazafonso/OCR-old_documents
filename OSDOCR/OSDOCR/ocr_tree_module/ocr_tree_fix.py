@@ -2,12 +2,27 @@ from ocr_tree_module.ocr_tree import *
 from ocr_tree_module.ocr_tree_analyser import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
+def block_bound_box_fix(ocr_results:OCR_Tree,logs:bool=False):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
     text_analysis = analyze_text(ocr_results)
     blocks = ocr_results.get_boxes_level(2)
+
+    
+    # remove blocks that have no text and take more than 80% of image
+    image_box = ocr_results.get_boxes_level(0)[0].box
+    image_area = image_box.area()
+    for i,block in enumerate(blocks):
+        if block.is_empty():
+            if block.box.area() >= image_area*0.8:
+                if logs:
+                    print(f'Removing Box : {block.id} is empty and too big')
+                ocr_results.remove_box_id(block.id)
+                blocks.pop(i)
+
+
+
     boxes_to_check = {}
     checked_boxes = []
     og_len = len(blocks)
@@ -21,6 +36,8 @@ def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
                 current_box = blocks[i]
                 i+=1
             else:
+                if logs:
+                    print(f'Removing Box : {blocks[i].id} is empty and not a delimiter')
                 ocr_results.remove_box_id(blocks[i].id)
                 blocks.pop(i)
             continue
@@ -30,12 +47,16 @@ def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
             compare_box = blocks[i]
 
             # compared box inside current box
-            if compare_box.box.is_inside_box(current_box.box):
+            if compare_box.is_empty() and compare_box.box.is_inside_box(current_box.box):
+                if logs:
+                    print(f'Removing Box : {compare_box.id} is inside {current_box.id}')
                 ocr_results.remove_box_id(compare_box.id)
                 if compare_box.id in boxes_to_check: 
                     del boxes_to_check[compare_box.id]
             # current box inside compared box
-            elif current_box.box.is_inside_box(compare_box.box):
+            elif current_box.is_empty() and current_box.box.is_inside_box(compare_box.box):
+                if logs:
+                    print(f'Removing Box : {current_box.id} is inside {compare_box.id}')
                 ocr_results.remove_box_id(current_box.id)
                 current_box = None
             # boxes intersect (with same level, so as to be able to merge seemlessly)
@@ -66,6 +87,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
             while not current_box and boxes_to_check:
                 id = keys.pop(0)
                 current_box = boxes_to_check[id]
+                current_box:OCR_Tree
                 del boxes_to_check[id]
                 checked_boxes.append(current_box.id)
                 # check if box is empty
@@ -77,7 +99,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
                         current_box = None
                 i = 0
 
-    if log:
+    if logs:
         print(f'''
         Initial number of boxes: {og_len}
         Final number of boxes: {len(ocr_results.get_boxes_level(2))}
@@ -85,12 +107,12 @@ def block_bound_box_fix(ocr_results:OCR_Tree,log:bool=False):
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box):
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,logs:bool=False):
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
     if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results)
+        new_ocr_results = block_bound_box_fix(ocr_results,logs)
 
     return new_ocr_results
 
