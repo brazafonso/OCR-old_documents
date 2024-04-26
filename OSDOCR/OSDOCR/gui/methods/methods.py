@@ -301,22 +301,22 @@ def pipeline_config_method(values:dict):
 
     new_configs['ignore_delimiters'] = values['checkbox_1_2']
 
-    new_configs['fix_rotation'] = [values['select_list_1_1'].lower()]
+    new_configs['fix_rotation'] = [values['select_list_1_2'].lower()]
     if not values['checkbox_1_3']:
         new_configs['skip_method'].append('auto_rotate')
 
-    new_configs['upscaling_image'] = [values['select_list_1_2'].lower()]
+    new_configs['upscaling_image'] = [values['select_list_1_3'].lower()]
     if not values['checkbox_1_4']:
         new_configs['skip_method'].append('image_upscaling')
 
-    new_configs['denoise_image'] = [values['select_list_1_3'].lower(),values['select_list_1_4']]
+    new_configs['denoise_image'] = [values['select_list_1_4'].lower(),values['select_list_1_5']]
     if not values['checkbox_1_5']:
         new_configs['skip_method'].append('denoise_image')
 
     
-    tesseract_lang = values['select_list_1_5']
+    tesseract_lang = values['select_list_1_6']
     tesseract_dpi = int(values['input_1_1']) if values['input_1_1'].isdigit() else 150
-    tesseract_psm = int(values['select_list_1_6'])
+    tesseract_psm = int(values['select_list_1_7'])
     new_configs['tesseract_config'] = {
         'l' : tesseract_lang,
         'dpi' : tesseract_dpi,
