@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from ..aux_utils.utils import place
 
 
 def build_gui_main()->sg.Window:
@@ -13,28 +14,28 @@ def build_gui_main()->sg.Window:
     ### results
     method_sidebar = [
         [
-            sg.Button('Tesseract',key='sidebar_method_run_tesseract'),
+            place(sg.Button('Tesseract',key='sidebar_method_run_tesseract')),
         ],
         [
-            sg.Button('Fix Blocks',key='sidebar_method_fix_blocks'),
+            place(sg.Button('Fix Blocks',key='sidebar_method_fix_blocks')),
         ],
         [
-            sg.Button('Journal Template',key='sidebar_method_journal_template'),
+            place(sg.Button('Journal Template',key='sidebar_method_journal_template')),
         ],
         [
-            sg.Button('Reading Order',key='sidebar_method_reading_order'),
+            place(sg.Button('Reading Order',key='sidebar_method_reading_order')),
         ],
         [
-            sg.Button('Extract Articles',key='sidebar_method_extract_articles'),
+            place(sg.Button('Extract Articles',key='sidebar_method_extract_articles')),
         ],
         [
-            sg.Button('Auto Rotate',key='sidebar_method_auto_rotate'),
+            place(sg.Button('Auto Rotate',key='sidebar_method_auto_rotate')),
         ],
         [
-            sg.Button('Unite blocks',key='sidebar_method_unite_blocks'),
+            place(sg.Button('Unite blocks',key='sidebar_method_unite_blocks')),
         ],
         [
-            sg.Button('Divide Columns',key='sidebar_method_divide_columns'),
+            place(sg.Button('Divide Columns',key='sidebar_method_divide_columns')),
         ]
     ]
 
@@ -46,27 +47,27 @@ def build_gui_main()->sg.Window:
 
     first_layout_2_1 = [
         [
-            sg.Button('Apply',key='apply'),
+            place(sg.Button('Apply',key='apply')),
         ],
         [
-            sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(15,10),visible=False),
+            place(sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(15,10),visible=False)),
         ],
         [
-            sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False),
-            sg.Combo(['Auto','Clockwise','Counterclockwise'],default_value='Auto',key='select_list_1_1',enable_events=True,size=(5,10),visible=False),
+            place(sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False)),
+            place(sg.Combo(['Auto','Clockwise','Counterclockwise'],default_value='Auto',key='select_list_1_1',enable_events=True,size=(5,10),visible=False)),
         ]
     ]
 
     first_layout_2 = [
         [
-                sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Choose Image",key='browse_file',target='target_input'),
-                sg.Input(default_text='',key='target_input',enable_events=True),
-                sg.Button("Search Text",key='button_tesseract')
+                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Choose Image",key='browse_file',target='target_input')),
+                place(sg.Input(default_text='',key='target_input',enable_events=True)),
+                place(sg.Button("Search Text",key='button_tesseract'))
         ],
         [
-            sg.Image(filename=None,visible=True,key='target_image_path',size=(500,700)),
+            place(sg.Image(filename=None,visible=True,key='target_image_path',size=(500,700))),
             sg.Column(first_layout_2_1,expand_x=True,expand_y=False),
-            sg.Image(filename=None,visible=True,key='result_img',size=(500,700)),
+            place(sg.Image(filename=None,visible=True,key='result_img',size=(500,700))),
         ],
     ]
 
@@ -93,10 +94,10 @@ def build_gui_main()->sg.Window:
     
     method_sidebar_2 = [
         [
-            sg.Button('OCR Pipeline',key='sidebar_method_ocr_pipeline'),
+            place(sg.Button('OCR Pipeline',key='sidebar_method_ocr_pipeline')),
         ],
         [
-            sg.Button('Calculate DPI',key='sidebar_method_calculate_dpi'),
+            place(sg.Button('Calculate DPI',key='sidebar_method_calculate_dpi')),
         ]
     ]
 
@@ -109,13 +110,13 @@ def build_gui_main()->sg.Window:
 
     second_layout_2 = [
         [
-            sg.Image(filename=None,visible=True,key='target_image_path_2',size=(500,700)),
-            sg.Button('Config',key='config_pipeline',visible=False),
-            sg.Button('Apply',key='apply'),
-            sg.Combo([],key='select_list_2_1',enable_events=True,size=(5,10)),
-            sg.Text('Result:'),
-            sg.Text('',visible=False,key='result_text_1'),
-            sg.Multiline(visible=False,key='result_text_2',size=(500,500)),
+            place(sg.Image(filename=None,visible=True,key='target_image_path_2',size=(500,700))),
+            place(sg.Button('Config',key='config_pipeline',visible=False)),
+            place(sg.Button('Apply',key='apply')),
+            place(sg.Combo([],key='select_list_2_1',enable_events=True,size=(5,10))),
+            place(sg.Text('Result:',key='result_text_1')),
+            place(sg.Text('',visible=False,key='result_text_2')),
+            place(sg.Multiline(visible=False,key='result_text_3',size=(500,500))),
         ]
     ]
 

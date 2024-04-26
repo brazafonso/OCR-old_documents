@@ -71,3 +71,12 @@ def update_image_element(window:sg.Window,image_element:str,new_image:Union[str,
         bio = cv2.imencode('.png',image)[1].tobytes()
         window[image_element].update(data=bio,visible=True)
         window.refresh()
+
+
+def place(elem):
+    '''
+    Places element provided into a Column element so that its placement in the layout is retained.
+    :param elem: the element to put into the layout
+    :return: A column element containing the provided element
+    '''
+    return sg.Column([[elem]], pad=(0,0))

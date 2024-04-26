@@ -75,6 +75,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     window['select_list_2_1'].update(visible=False)
     window['result_text_1'].update(visible=False)
     window['result_text_2'].update(visible=False)
+    window['result_text_3'].update(visible=False)
 
     ## TAB 1
     if method == 'run_tesseract' and o_image:
@@ -243,22 +244,23 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         window['select_list_2_1'].update(values=resolutions_list,value=resolutions_list[0],visible=True)
-        window['result_text_1'].update(result_text,visible=True)
-        window['result_text_2'].update(visible=False)
+        window['result_text_1'].update(visible=True)
+        window['result_text_2'].update(result_text,visible=True)
+        window['result_text_3'].update(visible=False)
 
     window.refresh()
 
 
 
-def change_tab(window:sg.Window,tab:str):
+def change_tab(window:sg.Window,tab:str,target:str):
     '''Change tab'''
     if tab == 'First':
         highlight_buttons(window,'sidebar_method_run_tesseract','red')
-        update_method_layout(window,'run_tesseract')
+        update_method_layout(window,'run_tesseract',target)
         method = 'run_tesseract'
     elif tab == 'Second':
-        highlight_buttons(window,'sidebar_method_calculate_dpi','red')
-        update_method_layout(window,'calculate_dpi')
+        highlight_buttons(window,'sidebar_method_ocr_pipeline','red')
+        update_method_layout(window,'ocr_pipeline',target)
         method = 'calculate_dpi'
 
     return method
@@ -348,7 +350,7 @@ def run_gui():
     ########################################
     # Tab
         elif 'tab_group' in event:
-            method = change_tab(window,values['tab_group'])
+            method = change_tab(window,values['tab_group'],target_image)
         
         
 

@@ -101,6 +101,8 @@ def run_test():
         # Waifu2x test
         result_image_path = f'{consts.result_path}/result_waifu2x.png'
         run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='scale4x',noise_level=3,log=True)
 
 
    
@@ -110,6 +112,14 @@ def run_test():
 
 def run_main(args:argparse.Namespace):
     '''Run main program. Allows single image or multiple image list'''
+
+    if args.debug:
+        print(f'''
+        ---------------------------
+        |      Running OSDOCR     |
+        ---------------------------
+              ''')
+
     targets = []
 
     # single target
