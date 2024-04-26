@@ -295,35 +295,48 @@ def pipeline_config_method(values:dict):
 
     new_configs['output_folder'] = values['output_folder_path']
 
-    new_configs['output_type'] = [values['select_list_1_1'].lower()]
+    new_configs['output_type'] = [values['select_list_output_type'].lower()]
 
-    new_configs['force_ocr'] = values['checkbox_1_1']
+    new_configs['force_ocr'] = values['checkbox_force_ocr']
 
-    new_configs['ignore_delimiters'] = values['checkbox_1_2']
+    new_configs['ignore_delimiters'] = values['checkbox_ignore_delimiters']
 
-    new_configs['fix_rotation'] = [values['select_list_1_2'].lower()]
-    if not values['checkbox_1_3']:
+    new_configs['fix_rotation'] = [values['select_list_fix_rotation'].lower()]
+    if not values['checkbox_fix_rotation']:
         new_configs['skip_method'].append('auto_rotate')
 
-    new_configs['upscaling_image'] = [values['select_list_1_3'].lower()]
-    if not values['checkbox_1_4']:
+    new_configs['upscaling_image'] = [values['select_list_upscaling_image'].lower()]
+    if not values['checkbox_upscaling_image']:
         new_configs['skip_method'].append('image_upscaling')
 
-    new_configs['denoise_image'] = [values['select_list_1_4'].lower(),values['select_list_1_5']]
-    if not values['checkbox_1_5']:
+    new_configs['denoise_image'] = [values['select_list_denoise_image_method'].lower(),values['select_list_denoise_image_level']]
+    if not values['checkbox_denoise_image']:
         new_configs['skip_method'].append('denoise_image')
 
     
-    tesseract_lang = values['select_list_1_6']
-    tesseract_dpi = int(values['input_1_1']) if values['input_1_1'].isdigit() else 150
-    tesseract_psm = int(values['select_list_1_7'])
+    tesseract_lang = values['select_list_tesseract_language']
+    tesseract_dpi = int(values['input_tesseract_dpi']) if values['input_tesseract_dpi'].isdigit() else 150
+    tesseract_psm = int(values['select_list_tesseract_psm'])
     new_configs['tesseract_config'] = {
         'l' : tesseract_lang,
         'dpi' : tesseract_dpi,
         'psm' : tesseract_psm
     }
 
-    new_configs['debug'] = values['checkbox_1_6']
+
+    new_configs['fix_blocks'] = values['checkbox_fix_blocks']
+    if not values['checkbox_fix_blocks']:
+        new_configs['skip_method'].append('clean_ocr')
+
+    new_configs['unite_blocks'] = values['checkbox_unite_blocks']
+    if not values['checkbox_unite_blocks']:
+        new_configs['skip_method'].append('unite_blocks')
+
+    new_configs['extract_articles'] = values['checkbox_extract_articles']
+    if not values['checkbox_extract_articles']:
+        new_configs['skip_method'].append('extract_articles')
+
+    new_configs['debug'] = values['checkbox_debug']
 
     consts.config['ocr_pipeline'] = new_configs
     save_configs()
