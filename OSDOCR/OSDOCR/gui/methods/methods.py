@@ -218,15 +218,21 @@ def unite_blocks_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',f'{results_path}/fixed/united.png')
 
 
-def divide_columns_method(window:sg.Window,image_path:str):
+def divide_columns_method(window:sg.Window,image_path:str,values:dict):
     '''Apply divide columns method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
     # check if results folder exists
     if not os.path.exists(f'{results_path}/fixed'):
         os.mkdir(f'{results_path}/fixed')
 
-    ocr_results = OCR_Tree(f'{results_path}/result.json')
-    column_boxes = get_columns(ocr_results)
+    analyses_type = values['select_list_1_1'].strip().lower()
+
+    if analyses_type == 'blocks':
+        ocr_results = OCR_Tree(f'{results_path}/result.json')
+        column_boxes = get_columns(ocr_results)
+    else:
+        column_boxes = get_columns_pixels(image_path)
+
 
     image_info = get_image_info(image_path)
     page_tree = OCR_Tree()
@@ -240,6 +246,53 @@ def divide_columns_method(window:sg.Window,image_path:str):
 
 
     result_image_path = f'{results_path}/test/columns.png'
+    if not os.path.exists(f'{results_path}/test'):
+        os.mkdir(f'{results_path}/test')
+        
+    image = draw_bounding_boxes(page_tree,image_path,[1])
+    cv2.imwrite(result_image_path,image)
+
+    update_image_element(window,'result_img',result_image_path)
+
+
+def divide_journal_method(window:sg.Window,image_path:str):
+    '''Apply divide journal method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    # check if results folder exists
+    if not os.path.exists(f'{results_path}/fixed'):
+        os.mkdir(f'{results_path}/fixed')
+
+    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    journal_areas = get_journal_areas(ocr_results)
+
+    image_info = get_image_info(image_path)
+    page_tree = OCR_Tree()
+
+    if 'body' in journal_areas:
+        body_box = journal_areas['body']
+        body_box.update(right=image_info.right)
+        body_tree = OCR_Tree()
+        body_tree.box = body_box
+        page_tree.add_child(body_tree)
+
+
+    if 'footer' in journal_areas:
+        footer_box = journal_areas['footer']
+        footer_box.update(right=image_info.right)
+        footer_tree = OCR_Tree()
+        footer_tree.box = footer_box
+        page_tree.add_child(footer_tree)
+
+
+    if 'header' in journal_areas:
+        header_box = journal_areas['header']
+        header_box.update(right=image_info.right)
+        header_tree = OCR_Tree()
+        header_tree.box = header_box
+        page_tree.add_child(header_tree)
+
+
+    result_image_path = f'{results_path}/test/journal_areas.png'
     if not os.path.exists(f'{results_path}/test'):
         os.mkdir(f'{results_path}/test')
         

@@ -230,7 +230,273 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
 
     return columns
 
+def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+    '''Get areas of columns based on pixel frequency.\n
+    
+    Frequency graph is smoothened using chosen method.
+    
+    Available methods:
+        - WhittakerSmoother
+        - savgol_filter'''
+    columns = []
 
+    methods = ['WhittakerSmoother','savgol_filter']
+    if method not in methods:
+        method = 'WhittakerSmoother'
+
+    if not os.path.exists(image_path):
+        print('Image not found')
+        return columns
+
+    image = cv2.imread(image_path)
+    # cut possible header and footer (cut 30% from top and 10% from bottom)
+    image = image[round(image.shape[0]*0.3):round(image.shape[0]*0.9)]
+
+    # black and white
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # clean noise
+    se=cv2.getStructuringElement(cv2.MORPH_RECT , (8,8))
+    bg=cv2.morphologyEx(gray, cv2.MORPH_DILATE, se)
+    gray=cv2.divide(gray, bg, scale=255)
+    # binarize
+    binarized = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+    # get frequency of white pixels per column
+    x_axis_freq = np.zeros(binarized.shape[1])
+
+    # count when column neighbours (above,bellow and right) are also white
+    mask = np.logical_and(
+        np.logical_and(binarized[1:,:-1] == 255, binarized[:-1,:-1] == 255),
+        binarized[:-1,1:] == 255
+    )
+    x_axis_freq = np.add.reduce(mask, axis=0)
+
+
+    if x_axis_freq.any():
+
+        if method == 'WhittakerSmoother':
+            whittaker_smoother = WhittakerSmoother(lmbda=2e3, order=2, data_length = len(x_axis_freq))
+            x_axis_freq_smooth = whittaker_smoother.smooth(x_axis_freq)
+        elif method == 'savgol_filter':
+            x_axis_freq_smooth = savgol_filter(x_axis_freq, round(len(x_axis_freq)*0.1), 2)
+
+        x_axis_freq_smooth = [i if i > 0 else 0 for i in x_axis_freq_smooth ]
+
+        peaks,_ = find_peaks(x_axis_freq_smooth,prominence=0.3*max(x_axis_freq_smooth))
+
+        x_axis_freq_smooth = np.array(x_axis_freq_smooth)
+
+        # average of frequency
+        average_smooth_frequency = np.average(x_axis_freq_smooth)
+
+        if log:
+            
+            # create 4 plots
+            plt.subplot(2, 2, 1)
+            plt.plot(peaks, x_axis_freq[peaks], "ob"); plt.plot(x_axis_freq); plt.legend(['prominence'])
+            plt.title('Frequency')
+
+
+            plt.subplot(2, 2, 2)
+            plt.plot(peaks, x_axis_freq_smooth[peaks], "ob"); plt.plot(x_axis_freq_smooth); plt.legend(['prominence'])
+            # average line
+            plt.plot([0,len(x_axis_freq_smooth)], [average_smooth_frequency, average_smooth_frequency], "r--");
+            plt.title('Frequency Smooth')
+
+            # binarized image
+            plt.subplot(2, 2, 3)
+            plt.imshow(binarized, cmap='gray')
+            plt.title('Binarized Image')
+
+            plt.show()
+
+        print('peaks',peaks)
+        # adjust peaks
+        ## for each peak, go back while the frequency decreases
+        for i in range(len(peaks)):
+            j = peaks[i]
+            while j > 0 and (x_axis_freq_smooth[j-1] < x_axis_freq_smooth[j] or x_axis_freq_smooth[j] > average_smooth_frequency):
+                j -= 1
+            peaks[i] = j
+
+        print('cleaned peaks',peaks)
+
+        # estimate columns
+        ## for each two peaks, decide if possible column, if middle frequencies are mostly above average
+        potential_columns = []
+        next_column = [peaks[0],None]
+        for i in range(len(peaks)):
+            if next_column[1] == None:
+                average_peaks = np.average(x_axis_freq_smooth[next_column[0]:peaks[i]])
+                if average_peaks >= average_smooth_frequency:
+                    next_column[1] = peaks[i]
+                else:
+                    next_column[0] = peaks[i]
+
+            if next_column[1] != None:
+                potential_columns.append(next_column)
+                next_column = [next_column[1],None]
+
+        if next_column[0] != None:
+            next_column[1] = len(x_axis_freq_smooth)
+            potential_columns.append(next_column)
+
+        # create columns
+        if potential_columns:
+            print('potential columns',potential_columns)
+            for column in potential_columns:
+                c = Box({'left':column[0],'right':column[1],'top':0,'bottom':binarized.shape[0]})
+                columns.append(c)
+        
+
+    return columns
+
+
+
+
+def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+    '''Get areas of journal (header, body, footer) based on line box top margin frequency.\n
+    
+    Frequency graph is smoothened using chosen method.
+    
+    Available methods:
+        - WhittakerSmoother
+        - savgol_filter'''
+    
+    areas = {
+        'header' : None,
+        'body' : None,
+        'footer' : None
+    }
+    
+    methods = ['WhittakerSmoother','savgol_filter']
+    if method not in methods:
+        method = 'WhittakerSmoother'
+
+    top_margins = []
+    blocks = ocr_results.get_boxes_level(4)
+    for block in blocks:
+        if not block.is_empty():
+            words = block.get_boxes_level(5)
+            words = [w for w in words if w.to_text(conf=1).strip()]
+
+            top = round(block.box.top)
+            if len(top_margins) <= top:
+                top_margins += [0] * (top - len(top_margins) + 1)
+            top_margins[top] += 1 + len(words)
+
+    max_frequency = max(top_margins)
+    
+    # reverse frequencies
+    for i in range(len(top_margins)):
+        top_margins[i] = max_frequency - top_margins[i]
+
+    if top_margins:
+
+        # add 10% to lists (because of smoothing might not catch peaks on edges)
+        top_margins += [0] * round(len(top_margins)*0.1)
+
+        # calculate peaks
+
+
+        ### normal
+        peaks_l,properties_l = find_peaks(top_margins,prominence=0.01*sum(top_margins),width=1)
+
+        ### smoothed 
+        if method == 'WhittakerSmoother':
+            whittaker_smoother = WhittakerSmoother(lmbda=2e2, order=2, data_length = len(top_margins))
+            top_margins_smooth = whittaker_smoother.smooth(top_margins)
+        elif method == 'savgol_filter':
+            top_margins_smooth = savgol_filter(top_margins, round(len(top_margins)*0.1), 2)
+
+        top_margins_smooth = [i if i > 0 else 0 for i in top_margins_smooth ]
+        top_margins_smooth = top_margins_smooth[:len(top_margins)] # filter adds to x axis length
+
+
+        peaks_smooth_l,properties_smooth_l = find_peaks(top_margins_smooth,prominence=0.1*max(top_margins_smooth),width=1)
+
+
+        if log:
+            # print peaks
+            print('peaks:',peaks_l)
+            print('frequency:',[top_margins[peak] for peak in peaks_l])
+
+            # turn line sizes into numpy array
+            log_top_margins = np.array(top_margins)
+            log_top_margins_smooth = np.array(top_margins_smooth)
+
+
+            # create 4 plots
+            plt.subplot(2, 2, 1)
+            plt.plot(peaks_l, log_top_margins[peaks_l], "ob"); plt.plot(log_top_margins); plt.legend(['prominence'])
+            plt.vlines(x=peaks_l, ymin=log_top_margins[peaks_l] - properties_l["prominences"],
+                    ymax = log_top_margins[peaks_l], color = "C1")
+            plt.hlines(y=properties_l["width_heights"], xmin=properties_l["left_ips"],
+                    xmax=properties_l["right_ips"], color = "C1")
+            plt.title('Frequency Peaks - Left')
+
+            plt.subplot(2, 2, 2)
+            plt.plot(peaks_smooth_l, log_top_margins_smooth[peaks_smooth_l], "ob"); plt.plot(log_top_margins_smooth); plt.legend(['prominence'])
+            plt.vlines(x=peaks_smooth_l, ymin=log_top_margins_smooth[peaks_smooth_l] - properties_smooth_l["prominences"],
+                    ymax = log_top_margins_smooth[peaks_smooth_l], color = "C1")
+            plt.hlines(y=properties_smooth_l["width_heights"], xmin=properties_smooth_l["left_ips"],
+                    xmax=properties_smooth_l["right_ips"], color = "C1")
+            plt.title('Frequency (smoothed) Peaks - Right')
+
+            plt.show()
+
+        
+
+        # get areas
+        ## group consecutive non-zero frequencies in signal
+        ### biggest group is body
+        groups = []
+        group = (None,None)
+        for i in range(len(top_margins_smooth)):
+            if top_margins_smooth[i] > 0:
+                if group[0]:
+                    group = (group[0],i)
+                else:
+                    group = (i,None)
+            elif group[0]:
+                groups.append(group)
+                group = (None,None)
+        if group:
+            groups.append(group)
+
+        print('groups:',groups)
+        biggest_group = max(groups, key=lambda x: x[1]-x[0])
+        print('body:',biggest_group)
+        # get width of first peak inside biggest group
+        first_peak = None
+        for p,value in enumerate(peaks_smooth_l):
+            if value > biggest_group[0] and value < biggest_group[1]:
+                first_peak = p
+                break
+        last_peak = None
+        for p,value in enumerate(reversed(peaks_smooth_l)):
+            if value > biggest_group[0] and value < biggest_group[1]:
+                last_peak = p
+                break
+        body_top = 0
+        body_bottom = 0
+
+        if first_peak:
+            body_top = round(properties_smooth_l["left_ips"][first_peak])
+        else:
+            body_top = biggest_group[0]
+        if last_peak:
+            body_bottom = round(properties_smooth_l["right_ips"][last_peak])
+        else:
+            body_bottom = biggest_group[1]
+
+        areas['body'] = Box({'left':0,'top':body_top,'right':0,'bottom':body_bottom})
+        
+        ## footer and header are relative to body
+        areas['footer'] = Box({'left':0,'top':body_bottom,'right':0,'bottom':len(top_margins_smooth)})
+        areas['header'] = Box({'left':0,'top':0,'right':0,'bottom':body_top})
+
+    return areas
 
 
 

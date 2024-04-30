@@ -35,7 +35,9 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     elif method == 'unite_blocks':
         unite_blocks_method(window,image_path)
     elif method == 'divide_columns':
-        divide_columns_method(window,image_path)
+        divide_columns_method(window,image_path,values)
+    elif method == 'divide_journal':
+        divide_journal_method(window,image_path)
         
 
     ## TAB 2
@@ -87,8 +89,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         window['apply'].update(visible=True)
         # update options
         window['checkbox_1_1'].update(visible=True,text='Auto Rotate:')
-        window['select_list_text_1_1'].update(visible=True)
-        window['select_list_1_1'].update(visible=True)
+        window['select_list_text_1_1'].update(value='Skew Direction:',visible=True)
+        window['select_list_1_1'].update(value='Auto',values=['Auto','Clockwise','Counterclockwise'],visible=True)
 
         # check if result image exists
         if o_image and os.path.exists(result_image):
@@ -207,6 +209,22 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     elif method == 'divide_columns':
         target_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
         result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/columns.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        window['select_list_text_1_1'].update(value='Analyses Type:',visible=True)
+        window['select_list_1_1'].update(value='Blocks',values=['Blocks','Pixels'],visible=True)
+        # update apply button
+        window['apply'].update(visible=True)
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'divide_journal':
+        target_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+        result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/journal_areas.png'
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:

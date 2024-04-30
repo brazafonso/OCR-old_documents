@@ -36,6 +36,9 @@ def build_gui_main()->sg.Window:
         ],
         [
             place(sg.Button('Divide Columns',key='sidebar_method_divide_columns')),
+        ],
+        [
+            place(sg.Button('Divide journal',key='sidebar_method_divide_journal')),
         ]
     ]
 
