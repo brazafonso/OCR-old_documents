@@ -326,7 +326,7 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',log:bool=Fa
         potential_columns = []
         next_column = [peaks[0],None]
         for i in range(len(peaks)):
-            if next_column[1] == None:
+            if next_column[1] == None and next_column[0] != peaks[i]:
                 average_peaks = np.average(x_axis_freq_smooth[next_column[0]:peaks[i]])
                 if average_peaks >= average_smooth_frequency:
                     next_column[1] = peaks[i]

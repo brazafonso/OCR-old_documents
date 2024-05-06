@@ -1,8 +1,8 @@
+import cv2
 import torch
+import layoutparser as lp
 import aux_utils.consts as consts
-from PIL import Image
 from aux_utils.misc import *
-import torch
 from PIL import Image
 
 
@@ -45,3 +45,108 @@ def run_waifu2x(target_image:str,method:str='scale2x',model_type:str='photo',noi
 
     return result_image_path
 
+
+# def test_detectron2(image_path:str):
+#     from detectron2.utils.logger import setup_logger
+#     from detectron2 import model_zoo
+#     from detectron2.engine import DefaultPredictor
+#     from detectron2.config import get_cfg
+#     from detectron2.utils.visualizer import Visualizer
+#     from detectron2.data import MetadataCatalog, DatasetCatalog
+#     import torchvision
+
+#     TORCH_VERSION = ".".join(torch.__version__.split(".")[:2])
+#     CUDA_VERSION = torch.__version__.split("+")[-1]
+#     print("torch: ", TORCH_VERSION, "; cuda: ", CUDA_VERSION)
+#     print("torchvision: ", torchvision.__version__)
+#     print("detectron2:", detectron2.__version__)
+
+#     setup_logger()
+#     im = cv2.imread(image_path)
+#     cfg = get_cfg()
+
+#     cfg.merge_from_file(model_zoo.get_config_file("lp://PrimaLayout/mask_rcnn_R_50_FPN_3x/config"))
+#     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
+#     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+#     predictor = DefaultPredictor(cfg)
+#     outputs = predictor(im)
+
+#     v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+#     out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+#     out = out.get_image()[:, :, ::-1]
+#     out = cv2.resize(out, (1920, 1080))
+#     win = cv2.imshow('teste',out)
+#     cv2.waitKey(0)
+
+
+def remove_document_images(image_path:str,logs:bool=False)->cv2.Mat:
+    '''Remove document image elements from image, using layout parser.
+    Element images:
+    - Photograph
+    - Illustration
+    - Map
+    - Comics/Cartoon
+    - Editorial Cartoon
+    - Advertisement'''
+
+    treated_image = cv2.imread(image_path)
+    rgb_image = treated_image[..., ::-1]
+
+    # model = lp.Detectron2LayoutModel(
+    #             config_path='lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config', # In model catalog
+    #             label_map   ={0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"}, # In model`label_map`
+    #             extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
+    #         )
+
+        #     color_map = {
+    #     'Text':   'red',
+    #     'Title':  'blue',
+    #     'List':   'green',
+    #     'Table':  'purple',
+    #     'Figure': 'pink',
+    # }
+
+    model = lp.Detectron2LayoutModel(
+                config_path='lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config', # In model catalog
+                label_map   ={0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}, # In model`label_map`
+                extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
+            )
+    
+    color_map = {
+        'Photograph': 'green',
+        'Illustration': 'blue',
+        'Map': 'yellow',
+        'Comics/Cartoon': 'purple',
+        'Editorial Cartoon': 'orange',
+        'Headline': 'red',
+        'Advertisement': 'gray'
+    }
+
+
+    layout = model.detect(image = rgb_image)
+
+    if logs:
+        # analyse blocks
+        for block in layout:
+            print(f'Block: {block.type} -> {block.score}')
+            print('\t\t'+str(block.coordinates))
+    
+    blocks_to_remove = set(['Photograph', 'Illustration', 'Map', 'Comics/Cartoon', 'Editorial Cartoon', 'Advertisement'])
+
+
+    # remove blocks found
+    for block in layout:
+        if block.type in blocks_to_remove:
+            left = int(block.coordinates[0])
+            top = int(block.coordinates[1])
+            right = int(block.coordinates[2])
+            bottom = int(block.coordinates[3])
+            if logs:
+                print(left, top, right, bottom)
+
+            # remove block
+            treated_image = cv2.rectangle(treated_image, (left, top),
+                                (right, bottom),
+                                (255, 255, 255), -1)
+        
+    return treated_image

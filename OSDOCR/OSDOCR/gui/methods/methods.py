@@ -9,6 +9,7 @@ from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
 from aux_utils.misc import *
+from preprocessing.image import remove_document_images
 
 
 
@@ -302,6 +303,18 @@ def divide_journal_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',result_image_path)
 
 
+def remove_document_images_method(window:sg.Window,image_path:str):
+    '''Apply remove document images method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    
+    treated_image = remove_document_images(image_path)
+
+    if not os.path.exists(f'{results_path}/test'):
+        os.mkdir(f'{results_path}/test')
+
+    cv2.imwrite(f'{results_path}/test/removed_images.png',treated_image)
+
+    update_image_element(window,'result_img',treated_image)
 
 
 

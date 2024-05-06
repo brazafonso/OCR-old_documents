@@ -90,14 +90,14 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
-        ocr_results = OCR_Tree(ocr_results_path)
+        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
+        # ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',log=True)
         # get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
         #get_columns(ocr_results,method='savgol_filter',log=True)
-        get_columns(ocr_results,method='WhittakerSmoother',log=True)
-        get_columns_pixels(target_image,method='WhittakerSmoother',log=True)
+        # get_columns(ocr_results,method='WhittakerSmoother',log=True)
+        # get_columns_pixels(target_image,method='WhittakerSmoother',log=True)
         #get_journal_areas(ocr_results,log=True)
 
         # Waifu2x test
@@ -105,6 +105,12 @@ def run_test():
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
         # run_waifu2x(target_image,result_image_path=result_image_path,method='scale4x',noise_level=3,log=True)
+
+        # detectron2 test
+        # test_detectron2(target_image)
+
+        # layout parser test
+        remove_document_images(target_image,logs=True)
 
 
    
@@ -175,6 +181,13 @@ def run_main(args:argparse.Namespace):
 
 
 if __name__ == '__main__':
+    print('''
+        =============================
+        =============================
+        ||          OSDOCR         ||
+        =============================
+        =============================
+          ''')
     read_configs()
     args = process_args()
 

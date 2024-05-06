@@ -39,7 +39,10 @@ def build_gui_main()->sg.Window:
         ],
         [
             place(sg.Button('Divide journal',key='sidebar_method_divide_journal')),
-        ]
+        ],
+        [
+            place(sg.Button('Remove document images',key='sidebar_method_remove_document_images')),
+        ],
     ]
 
     first_layout_1 = [
