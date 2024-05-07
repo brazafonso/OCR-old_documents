@@ -53,20 +53,20 @@ def tesseract_method(window:sg.Window,image_path:str,values:dict):
             else:
                 os.remove(f'{results_path}/{file}')
 
-
+    logs = values['checkbox_1_1']
     # rotate image if not disabled
     ## create tmp rotated image
-    if values['checkbox_1_1']:
+    if values['checkbox_1_2']:
         direction = values['select_list_1_1'].lower()
         img = rotate_image(image_path,direction=direction)
         cv2.imwrite(f'{image_path}_tmp.png',img)
         # run tesseract
-        run_tesseract(f'{image_path}_tmp.png',results_path=results_path)
+        run_tesseract(f'{image_path}_tmp.png',results_path=results_path,logs=logs)
         os.remove(f'{image_path}_tmp.png')
 
     else:
         # run tesseract
-        run_tesseract(image_path)
+        run_tesseract(image_path,logs=logs)
         
     # update result image
     update_image_element(window,'result_img',f'{results_path}/result.png')
@@ -105,7 +105,7 @@ def extract_articles_method(window:sg.Window,image_path:str,values:dict):
     print(columns_area)
     
     # calculate reading order
-    ignore_delimiters = True if values['checkbox_1_1'] else False
+    ignore_delimiters = True if values['checkbox_1_2'] else False
     t_graph = topologic_order_context(ocr_results,columns_area,ignore_delimiters=ignore_delimiters)
     order_list = sort_topologic_order(t_graph,sort_weight=True)
 
@@ -187,25 +187,31 @@ def reading_order_method(window:sg.Window,image_path:str,values:dict):
     update_image_element(window,'result_img',f'{results_path}/result_reading_order.png')
 
 
-def auto_rotate_method(window:sg.Window,image_path:str):
+def auto_rotate_method(window:sg.Window,image_path:str,values:dict):
     '''Apply auto rotate method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    img = rotate_image(image_path,direction='auto')
+
+    logs = values['checkbox_1_1']
+
+    img = rotate_image(image_path,direction='auto',logs=logs)
     update_image_element(window,'result_img',img)
 
 
 
-def unite_blocks_method(window:sg.Window,image_path:str):
+def unite_blocks_method(window:sg.Window,image_path:str,values:dict):
     '''Apply unite blocks method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
     # check if results folder exists
     if not os.path.exists(f'{results_path}/fixed'):
         os.mkdir(f'{results_path}/fixed')
 
+    logs = values['checkbox_1_1']
+
+
     ocr_results = OCR_Tree(f'{results_path}/result.json')
     ocr_results.id_boxes([2])
     ocr_results = categorize_boxes(ocr_results)
-    ocr_results = unite_blocks(ocr_results)
+    ocr_results = unite_blocks(ocr_results,logs=logs)
     # save results
     result_dict_file = open(f'{results_path}/fixed/united.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
@@ -226,13 +232,14 @@ def divide_columns_method(window:sg.Window,image_path:str,values:dict):
     if not os.path.exists(f'{results_path}/fixed'):
         os.mkdir(f'{results_path}/fixed')
 
+    logs = values['checkbox_1_1']
     analyses_type = values['select_list_1_1'].strip().lower()
 
     if analyses_type == 'blocks':
         ocr_results = OCR_Tree(f'{results_path}/result.json')
-        column_boxes = get_columns(ocr_results)
+        column_boxes = get_columns(ocr_results,logs=logs)
     else:
-        column_boxes = get_columns_pixels(image_path)
+        column_boxes = get_columns_pixels(image_path,logs=logs)
 
 
     image_info = get_image_info(image_path)
@@ -256,15 +263,17 @@ def divide_columns_method(window:sg.Window,image_path:str,values:dict):
     update_image_element(window,'result_img',result_image_path)
 
 
-def divide_journal_method(window:sg.Window,image_path:str):
+def divide_journal_method(window:sg.Window,image_path:str,values:dict):
     '''Apply divide journal method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
     # check if results folder exists
     if not os.path.exists(f'{results_path}/fixed'):
         os.mkdir(f'{results_path}/fixed')
 
+    logs = values['checkbox_1_1']
+
     ocr_results = OCR_Tree(f'{results_path}/result.json')
-    journal_areas = get_journal_areas(ocr_results)
+    journal_areas = get_journal_areas(ocr_results,logs=logs)
 
     image_info = get_image_info(image_path)
     page_tree = OCR_Tree()
@@ -303,11 +312,13 @@ def divide_journal_method(window:sg.Window,image_path:str):
     update_image_element(window,'result_img',result_image_path)
 
 
-def remove_document_images_method(window:sg.Window,image_path:str):
+def remove_document_images_method(window:sg.Window,image_path:str,values:dict):
     '''Apply remove document images method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+
+    logs = values['checkbox_1_1']
     
-    treated_image = remove_document_images(image_path)
+    treated_image = remove_document_images(image_path,logs=logs)
 
     if not os.path.exists(f'{results_path}/test'):
         os.mkdir(f'{results_path}/test')

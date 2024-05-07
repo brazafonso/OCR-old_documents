@@ -17,7 +17,7 @@ from whittaker_eilers import WhittakerSmoother
 
 
 
-def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->dict:
+def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->dict:
     '''Get text sizes from ocr_results using peak detection on line size frequency\n
     
     Frequency graph is smoothened using chosen method.
@@ -68,7 +68,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=
         line_sizes_smooth = line_sizes_smooth[:len(line_sizes)] # filter adds to x axis length
 
         peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
-        if log:
+        if logs:
             # print peaks
             print('peaks:',peaks)
             print('frequency:',[line_sizes[peak] for peak in peaks])
@@ -111,7 +111,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=
 
 
 
-def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->list[Box]:
     '''Get columns from ocr_results using peak detection on box left margin frequency\n
     
     Frequency graph is smoothened using chosen method.
@@ -188,7 +188,7 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
 
         peaks_smooth_r,_ = find_peaks(right_margins_smooth,prominence=0.1*max(right_margins_smooth))
 
-        if log:
+        if logs:
             # print peaks
             print('peaks:',peaks_l)
             print('frequency:',[left_margins[peak] for peak in peaks_l])
@@ -230,7 +230,7 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=Fal
 
     return columns
 
-def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',logs:bool=False)->list[Box]:
     '''Get areas of columns based on pixel frequency.\n
     
     Frequency graph is smoothened using chosen method.
@@ -289,7 +289,7 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',log:bool=Fa
         # average of frequency
         average_smooth_frequency = np.average(x_axis_freq_smooth)
 
-        if log:
+        if logs:
             
             # create 4 plots
             plt.subplot(2, 2, 1)
@@ -354,7 +354,7 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',log:bool=Fa
 
 
 
-def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bool=False)->list[Box]:
+def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->list[Box]:
     '''Get areas of journal (header, body, footer) based on line box top margin frequency.\n
     
     Frequency graph is smoothened using chosen method.
@@ -416,7 +416,7 @@ def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',log:bo
         peaks_smooth_l,properties_smooth_l = find_peaks(top_margins_smooth,prominence=0.1*max(top_margins_smooth),width=1)
 
 
-        if log:
+        if logs:
             # print peaks
             print('peaks:',peaks_l)
             print('frequency:',[top_margins[peak] for peak in peaks_l])
@@ -511,9 +511,9 @@ def analyze_text(ocr_results:OCR_Tree)->dict:
     '''
     analyze_results = {}
 
-    text_sizes = get_text_sizes(ocr_results,method='WhittakerSmoother',log=False)
+    text_sizes = get_text_sizes(ocr_results,method='WhittakerSmoother',logs=False)
     analyze_results.update(text_sizes)
-    columns = get_columns(ocr_results,method='WhittakerSmoother',log=False)
+    columns = get_columns(ocr_results,method='WhittakerSmoother',logs=False)
     analyze_results.update({'columns':columns})
 
 

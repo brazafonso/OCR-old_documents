@@ -45,14 +45,17 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=F
 
 
 
-
+    data_dict = {}
+    data_text = ''
+    data_pdf = ''
+    data_xml = ''
     data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT,config=config_str)
-    data_text = pytesseract.image_to_string(img,lang='por')
-    data_pdf = pytesseract.image_to_pdf_or_hocr(img, extension='pdf',lang='por')
-    data_xml = pytesseract.image_to_alto_xml(img,lang='por')
-    print(data_dict.keys())
-
-    print('Text search over')
+    # data_text = pytesseract.image_to_string(img,lang='por')
+    # data_pdf = pytesseract.image_to_pdf_or_hocr(img, extension='pdf',lang='por')
+    # data_xml = pytesseract.image_to_alto_xml(img,lang='por')
+    if logs:
+        print(data_dict.keys())
+        print('Text search over')
     
     return {
         'ocr_results':tesseract_convert_to_ocrbox(data_dict),
@@ -118,14 +121,14 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     # create result files
 
     # create result image
-    cv2.imwrite(f'{results_path}/result.png',img)
+    cv2.imwrite(f'{results_path}/ocr_results.png',img)
 
     # save result data
-    result_dict_file = open(f'{results_path}/result.json','w')
+    result_dict_file = open(f'{results_path}/ocr_results.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
-    result_csv_file = open(f'{results_path}/result.csv','w')
+    result_csv_file = open(f'{results_path}/ocr_results.csv','w')
     df = pd.DataFrame(ocr_results.to_dict())
     df.to_csv(result_csv_file)
     result_csv_file.close()
@@ -134,7 +137,7 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     # create result id image
     ocr_results.id_boxes(level=[2])
     img = draw_bounding_boxes(ocr_results,image_path,id=True)
-    cv2.imwrite(f'{results_path}/result_id.png',img)
+    cv2.imwrite(f'{results_path}/ocr_results_id.png',img)
 
     
 
@@ -160,16 +163,19 @@ def run_tesseract(image_path,results_path:str=None,opts:dict=None,logs:bool=Fals
         results_path = f'{consts.result_path}/{path_to_id(image_path)}'
 
     # save result simple text
-    result_file = open(f'{results_path}/result.txt','w')
-    result_file.write(data_text)
-    result_file.close()
+    if data_text:
+        result_file = open(f'{results_path}/ocr_results.txt','w')
+        result_file.write(data_text)
+        result_file.close()
 
 
     # save result pdf and xml
-    result_pdf = open(f'{results_path}/result.pdf','wb')
-    result_pdf.write(data_pdf)
-    result_pdf.close()
+    if data_pdf:
+        result_pdf = open(f'{results_path}/ocr_results.pdf','wb')
+        result_pdf.write(data_pdf)
+        result_pdf.close()
 
-    result_xml = open(f'{results_path}/result.xml','wb')
-    result_xml.write(data_xml)
-    result_xml.close()
+    if data_xml:
+        result_xml = open(f'{results_path}/ocr_results.xml','wb')
+        result_xml.write(data_xml)
+        result_xml.close()

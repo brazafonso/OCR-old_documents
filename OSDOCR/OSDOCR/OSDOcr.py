@@ -75,13 +75,7 @@ Further options:
     return args
 
 
-def clean_tmp_folder():
-    '''Clean tmp folder. Removes all files in tmp folder with 'OSDOcr' in the name''' 
-    if os.path.exists(consts.tmp_path):
-        files = os.listdir(consts.tmp_path)
-        for file in files:
-            if 'OSDOcr' in file:
-                os.remove(f'{consts.tmp_path}/{file}')
+
 
 
 def run_test():
@@ -93,18 +87,18 @@ def run_test():
         # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
         # ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
-        # get_text_sizes(ocr_results,method='savgol_filter',log=True)
-        # get_text_sizes(ocr_results,method='WhittakerSmoother',log=True)
-        #get_columns(ocr_results,method='savgol_filter',log=True)
-        # get_columns(ocr_results,method='WhittakerSmoother',log=True)
-        # get_columns_pixels(target_image,method='WhittakerSmoother',log=True)
-        #get_journal_areas(ocr_results,log=True)
+        # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
+        # get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True)
+        #get_columns(ocr_results,method='savgol_filter',logs=True)
+        # get_columns(ocr_results,method='WhittakerSmoother',logs=True)
+        # get_columns_pixels(target_image,method='WhittakerSmoother',logs=True)
+        #get_journal_areas(ocr_results,logs=True)
 
         # Waifu2x test
         # result_image_path = f'{consts.result_path}/result_waifu2x.png'
-        # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
-        # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,log=True)
-        # run_waifu2x(target_image,result_image_path=result_image_path,method='scale4x',noise_level=3,log=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='scale4x',noise_level=3,logs=True)
 
         # detectron2 test
         # test_detectron2(target_image)

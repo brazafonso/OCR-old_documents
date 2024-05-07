@@ -31,15 +31,15 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
     elif method == 'reading_order':
         reading_order_method(window,image_path,values)
     elif method == 'auto_rotate':
-        auto_rotate_method(window,image_path)
+        auto_rotate_method(window,image_path,values)
     elif method == 'unite_blocks':
-        unite_blocks_method(window,image_path)
+        unite_blocks_method(window,image_path,values)
     elif method == 'divide_columns':
         divide_columns_method(window,image_path,values)
     elif method == 'divide_journal':
-        divide_journal_method(window,image_path)
+        divide_journal_method(window,image_path,values)
     elif method == 'remove_document_images':
-        remove_document_images_method(window,image_path)
+        remove_document_images_method(window,image_path,values)
         
 
     ## TAB 2
@@ -73,6 +73,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     window['apply'].update(visible=False)
     # disable extra options
     window['checkbox_1_1'].update(visible=False)
+    window['checkbox_1_2'].update(visible=False)
     window['select_list_text_1_1'].update(visible=False)
     window['select_list_1_1'].update(visible=False)
     window['config_pipeline'].update(visible=False)
@@ -90,7 +91,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         # update options
-        window['checkbox_1_1'].update(visible=True,text='Auto Rotate:')
+        window['checkbox_1_1'].update(visible=True)
+        window['checkbox_1_2'].update(visible=True,text='Auto Rotate:')
         window['select_list_text_1_1'].update(value='Skew Direction:',visible=True)
         window['select_list_1_1'].update(value='Auto',values=['Auto','Clockwise','Counterclockwise'],visible=True)
 
@@ -114,6 +116,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
 
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
 
         if os.path.exists(fixed_image):
             # update result image
@@ -129,6 +132,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
 
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
 
         # check if result image exists
         if os.path.exists(result_image):
@@ -150,7 +154,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         # enable checkbox
-        window['checkbox_1_1'].update(text='Ignore Delimeters:',visible=True)
+        window['checkbox_1_1'].update(visible=True)
+        window['checkbox_1_2'].update(text='Ignore Delimeters:',visible=True)
 
 
         if os.path.exists(reading_order_image):
@@ -172,7 +177,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         # enable checkbox
-        window['checkbox_1_1'].update(text='Ignore Delimeters:',visible=True)
+        window['checkbox_1_1'].update(visible=True)
+        window['checkbox_1_2'].update(text='Ignore Delimeters:',visible=True)
 
         if os.path.exists(articles_image):
             # update result image
@@ -189,6 +195,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['target_image_path'].update(visible=False)
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
@@ -203,6 +210,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['target_image_path'].update(visible=False)
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
@@ -219,6 +227,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         window['select_list_1_1'].update(value='Blocks',values=['Blocks','Pixels'],visible=True)
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
@@ -233,6 +242,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['target_image_path'].update(visible=False)
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
@@ -247,6 +257,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['target_image_path'].update(visible=False)
         # update apply button
         window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:

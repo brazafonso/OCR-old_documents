@@ -54,9 +54,10 @@ def build_gui_main()->sg.Window:
     first_layout_2_1 = [
         [
             place(sg.Button('Apply',key='apply')),
+            place(sg.Checkbox('Debug',default=False,key='checkbox_1_1',enable_events=True,size=(15,10),visible=False)),
         ],
         [
-            place(sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_1',enable_events=True,size=(15,10),visible=False)),
+            place(sg.Checkbox('Auto Rotate:',default=True,key='checkbox_1_2',enable_events=True,size=(15,10),visible=False)),
         ],
         [
             place(sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False)),
@@ -68,7 +69,8 @@ def build_gui_main()->sg.Window:
         [
                 place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Choose Image",key='browse_file',target='target_input')),
                 place(sg.Input(default_text='',key='target_input',enable_events=True)),
-                place(sg.Button("Search Text",key='button_tesseract'))
+                place(sg.Button("Search Text",key='button_tesseract')),
+                place(sg.Button("Reset Image",key='reset_image')),
         ],
         [
             place(sg.Image(filename=None,visible=True,key='target_image_path',size=(500,700))),
