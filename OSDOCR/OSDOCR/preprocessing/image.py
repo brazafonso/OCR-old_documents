@@ -131,7 +131,7 @@ def remove_document_images(image_path:str,logs:bool=False)->cv2.Mat:
             print(f'Block: {block.type} -> {block.score}')
             print('\t\t'+str(block.coordinates))
     
-    blocks_to_remove = set(['Photograph', 'Illustration', 'Map', 'Comics/Cartoon', 'Editorial Cartoon', 'Advertisement'])
+    blocks_to_remove = set(['Photograph', 'Illustration', 'Map', 'Comics/Cartoon', 'Editorial Cartoon'])
 
 
     # remove blocks found

@@ -69,7 +69,6 @@ def build_gui_main()->sg.Window:
         [
                 place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Choose Image",key='browse_file',target='target_input')),
                 place(sg.Input(default_text='',key='target_input',enable_events=True)),
-                place(sg.Button("Search Text",key='button_tesseract')),
                 place(sg.Button("Reset Image",key='reset_image')),
         ],
         [

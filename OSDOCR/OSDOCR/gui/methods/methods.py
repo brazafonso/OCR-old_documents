@@ -16,41 +16,47 @@ from preprocessing.image import remove_document_images
 #### TAB 1
 
 
-def fix_ocr(target_image:str,results_path:str):
+def fix_ocr(target:str,results_path:str):
     '''Fix OCR'''
     # check if results folder exists
-    if not os.path.exists(f'{results_path}/fixed'):
-        os.mkdir(f'{results_path}/fixed')
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
-    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    ocr_results = OCR_Tree(ocr_results_path)
     ocr_results.id_boxes([2])
     ocr_results = bound_box_fix(ocr_results,2,get_image_info(target_image))
     # save results
-    result_dict_file = open(f'{results_path}/fixed/result_fixed.json','w')
+    result_dict_file = open(f'{processed_folder_path}/clean_ocr.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
     image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
-    cv2.imwrite(f'{results_path}/fixed/result_fixed.png',image)
+    cv2.imwrite(f'{processed_folder_path}/clean_ocr.png',image)
     csv = pd.DataFrame(ocr_results.to_dict())
-    csv.to_csv(f'{results_path}/fixed/result_fixed.csv')
+    csv.to_csv(f'{processed_folder_path}/clean_ocr.csv')
+
+    metadata['ocr_results_path'] = f'{processed_folder_path}/clean_ocr.json'
+    metadata['transformations'].append('clean_ocr')
+    save_target_metadata(target,metadata)
 
 
 
 
-def tesseract_method(window:sg.Window,image_path:str,values:dict):
+def tesseract_method(window:sg.Window,target:str,values:dict):
     '''Apply tesseract method to image and update image element'''
-    # results path
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
 
     # clean results folder files
     if os.path.exists(results_path):
         files = os.listdir(results_path)
         for file in files:
-            # if is dir, delete dir
-            if os.path.isdir(f'{results_path}/{file}'):
-                shutil.rmtree(f'{results_path}/{file}')
-            else:
+            if not os.path.isdir(f'{results_path}/{file}'):
                 os.remove(f'{results_path}/{file}')
 
     logs = values['checkbox_1_1']
@@ -58,44 +64,45 @@ def tesseract_method(window:sg.Window,image_path:str,values:dict):
     ## create tmp rotated image
     if values['checkbox_1_2']:
         direction = values['select_list_1_1'].lower()
-        img = rotate_image(image_path,direction=direction)
-        cv2.imwrite(f'{image_path}_tmp.png',img)
-        # run tesseract
-        run_tesseract(f'{image_path}_tmp.png',results_path=results_path,logs=logs)
-        os.remove(f'{image_path}_tmp.png')
+        img = rotate_image(target_image,direction=direction,debug=logs)
+        target_image =f'{processed_folder_path}/fix_rotation.png'
+        cv2.imwrite(target_image,img)
 
-    else:
-        # run tesseract
-        run_tesseract(image_path,logs=logs)
+    # run tesseract
+    run_tesseract(target_image,results_path=processed_folder_path,logs=logs)
+
+    metadata['target_path'] = target_image
+    metadata['ocr'] = True
+    metadata['orc_results_path'] = f'{processed_folder_path}/ocr_results.json'
+    save_target_metadata(target,metadata)
+
         
     # update result image
-    update_image_element(window,'result_img',f'{results_path}/result.png')
-
-    # create fixed result folder
-    if not os.path.exists(f'{results_path}/fixed'):
-        os.makedirs(f'{results_path}/fixed')
+    update_image_element(window,'result_img',f'{processed_folder_path}/ocr_results.png')
 
 
 
 
 
-def extract_articles_method(window:sg.Window,image_path:str,values:dict):
+def extract_articles_method(window:sg.Window,target:str,values:dict):
     '''Apply extract articles method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
-    # results path
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    results_ocr_path =  f'{results_path}/result.json'
-    results_ocr_fixed_path =  f'{results_path}/fixed/result_fixed.json'
-
-    if os.path.exists(results_ocr_fixed_path) or os.path.exists(results_ocr_path):
+    if os.path.exists(ocr_results_path):
         # create fixed result file
-        if not os.path.exists(results_ocr_fixed_path):
-            fix_ocr(image_path,results_path)
+        if metadata_has_transformation(metadata,'clean_ocr'):
+            fix_ocr(target,results_path)
 
-    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
+            metadata = get_target_metadata(target)
+            ocr_results_path = metadata['orc_results_path']
+
+    ocr_results = OCR_Tree(ocr_results_path)
     ocr_results = categorize_boxes(ocr_results)
 
-    image_info = get_image_info(image_path)
+    image_info = get_image_info(target_image)
     journal_template = estimate_journal_template(ocr_results,image_info)
     columns_area = image_info
     columns_area.remove_box_area(journal_template['header'])
@@ -127,44 +134,49 @@ def extract_articles_method(window:sg.Window,image_path:str,values:dict):
             f.write('\n'+'==='*40 + '\n')
 
     # draw reading order
-    image = draw_articles(articles,image_path)
+    image = draw_articles(articles,target_image)
     cv2.imwrite(f'{results_path}/articles.png',image)
     update_image_element(window,'result_img',f'{results_path}/articles.png')
 
 
-def fix_blocks_method(window:sg.Window,image_path:str):
+def fix_blocks_method(window:sg.Window,target:str):
     '''Apply fix blocks method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    fix_ocr(image_path,results_path)
-    update_image_element(window,'result_img',f'{results_path}/fixed/result_fixed.png')
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+
+    fix_ocr(target,results_path)
+    update_image_element(window,'result_img',f'{processed_folder_path}/clean_ocr.png')
 
 
-def journal_template_method(window:sg.Window,image_path:str):
+def journal_template_method(window:sg.Window,target:str):
     '''Apply journal template method to image and update image element'''
 
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    # check if fixed result file exists
-    if not os.path.exists(f'{results_path}/fixed/result_fixed.json'):
-        fix_ocr(image_path,results_path)
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
-    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
-    image_info = get_image_info(image_path)
+    ocr_results = OCR_Tree(ocr_results_path)
+    image_info = get_image_info(target_image)
     journal = estimate_journal_template(ocr_results,image_info)
-    img = draw_journal_template(journal,image_path)
-    cv2.imwrite(f'{results_path}/result_journal_template.png',img)
-    update_image_element(window,'result_img',f'{results_path}/result_journal_template.png')
+    img = draw_journal_template(journal,target_image)
+    cv2.imwrite(f'{processed_folder_path}/result_journal_template.png',img)
 
-def reading_order_method(window:sg.Window,image_path:str,values:dict):
+    update_image_element(window,'result_img',f'{processed_folder_path}/result_journal_template.png')
+
+def reading_order_method(window:sg.Window,target:str,values:dict):
     '''Apply reading order method to image and update image element'''
 
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    # check if fixed result file exists
-    if not os.path.exists(f'{results_path}/fixed/result_fixed.json'):
-        fix_ocr(image_path,results_path)
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
-    ocr_results = OCR_Tree(f'{results_path}/fixed/result_fixed.json')
+    ocr_results = OCR_Tree(ocr_results_path)
     ocr_results.id_boxes([2],delimiters=False)
-    image_info = get_image_info(f'{results_path}/fixed/result_fixed.png')
+    image_info = get_image_info(target_image)
     journal_template = estimate_journal_template(ocr_results,image_info)
     columns_area = image_info
     columns_area.remove_box_area(journal_template['header'])
@@ -182,67 +194,83 @@ def reading_order_method(window:sg.Window,image_path:str,values:dict):
     ocr_results.change_ids(order_map)
 
     # draw reading order
-    image = draw_bounding_boxes(ocr_results,image_path,[2],id=True)
-    cv2.imwrite(f'{results_path}/result_reading_order.png',image)
-    update_image_element(window,'result_img',f'{results_path}/result_reading_order.png')
+    image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+    cv2.imwrite(f'{processed_folder_path}/result_reading_order.png',image)
+    update_image_element(window,'result_img',f'{processed_folder_path}/result_reading_order.png')
 
 
-def auto_rotate_method(window:sg.Window,image_path:str,values:dict):
+def auto_rotate_method(window:sg.Window,target:str,values:dict):
     '''Apply auto rotate method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
 
-    img = rotate_image(image_path,direction='auto',logs=logs)
+    img = rotate_image(target_image,direction='auto',debug=logs)
+
+    cv2.imwrite(f'{processed_folder_path}/fix_rotation.png',img)
+    metadata['target_path'] = f'{processed_folder_path}/fix_rotation.png'
+    metadata['transformations'].append(('fix_rotation','auto'))
+    save_target_metadata(target,metadata)
+
     update_image_element(window,'result_img',img)
 
 
 
-def unite_blocks_method(window:sg.Window,image_path:str,values:dict):
+def unite_blocks_method(window:sg.Window,target:str,values:dict):
     '''Apply unite blocks method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    # check if results folder exists
-    if not os.path.exists(f'{results_path}/fixed'):
-        os.mkdir(f'{results_path}/fixed')
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
 
 
-    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    ocr_results = OCR_Tree(ocr_results_path)
     ocr_results.id_boxes([2])
     ocr_results = categorize_boxes(ocr_results)
     ocr_results = unite_blocks(ocr_results,logs=logs)
     # save results
-    result_dict_file = open(f'{results_path}/fixed/united.json','w')
+    result_dict_file = open(f'{processed_folder_path}/result_united.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
-    image = draw_bounding_boxes(ocr_results,image_path,[2],id=True)
-    cv2.imwrite(f'{results_path}/fixed/united.png',image)
+    metadata['orc_results_path'] = f'{processed_folder_path}/result_united.json'
+    metadata['transformations'].append('unite_ocr_blocks')
+    save_target_metadata(target,metadata)
+
+    image = draw_bounding_boxes(ocr_results,target_image,[2],id=True)
+    cv2.imwrite(f'{processed_folder_path}/result_united.png',image)
     csv = pd.DataFrame(ocr_results.to_dict())
-    csv.to_csv(f'{results_path}/fixed/united.csv')
+    csv.to_csv(f'{processed_folder_path}/result_united.csv')
 
-    update_image_element(window,'result_img',f'{results_path}/fixed/united.png')
+    update_image_element(window,'result_img',f'{processed_folder_path}/result_united.png')
 
 
-def divide_columns_method(window:sg.Window,image_path:str,values:dict):
+def divide_columns_method(window:sg.Window,target:str,values:dict):
     '''Apply divide columns method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    # check if results folder exists
-    if not os.path.exists(f'{results_path}/fixed'):
-        os.mkdir(f'{results_path}/fixed')
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
+
 
     logs = values['checkbox_1_1']
     analyses_type = values['select_list_1_1'].strip().lower()
 
     if analyses_type == 'blocks':
-        ocr_results = OCR_Tree(f'{results_path}/result.json')
+        ocr_results = OCR_Tree(ocr_results_path)
         column_boxes = get_columns(ocr_results,logs=logs)
     else:
-        column_boxes = get_columns_pixels(image_path,logs=logs)
+        column_boxes = get_columns_pixels(target_image,logs=logs)
 
 
-    image_info = get_image_info(image_path)
+    image_info = get_image_info(target_image)
     page_tree = OCR_Tree()
 
     for column in column_boxes:
@@ -253,29 +281,28 @@ def divide_columns_method(window:sg.Window,image_path:str,values:dict):
 
 
 
-    result_image_path = f'{results_path}/test/columns.png'
-    if not os.path.exists(f'{results_path}/test'):
-        os.mkdir(f'{results_path}/test')
+    result_image_path = f'{processed_folder_path}/divide_columns.png'
         
-    image = draw_bounding_boxes(page_tree,image_path,[1])
+    image = draw_bounding_boxes(page_tree,target_image,[1])
     cv2.imwrite(result_image_path,image)
 
     update_image_element(window,'result_img',result_image_path)
 
 
-def divide_journal_method(window:sg.Window,image_path:str,values:dict):
+def divide_journal_method(window:sg.Window,target:str,values:dict):
     '''Apply divide journal method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
-    # check if results folder exists
-    if not os.path.exists(f'{results_path}/fixed'):
-        os.mkdir(f'{results_path}/fixed')
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    ocr_results_path = metadata['orc_results_path'] 
+    target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
 
-    ocr_results = OCR_Tree(f'{results_path}/result.json')
+    ocr_results = OCR_Tree(ocr_results_path)
     journal_areas = get_journal_areas(ocr_results,logs=logs)
 
-    image_info = get_image_info(image_path)
+    image_info = get_image_info(target_image)
     page_tree = OCR_Tree()
 
     if 'body' in journal_areas:
@@ -302,28 +329,29 @@ def divide_journal_method(window:sg.Window,image_path:str,values:dict):
         page_tree.add_child(header_tree)
 
 
-    result_image_path = f'{results_path}/test/journal_areas.png'
-    if not os.path.exists(f'{results_path}/test'):
-        os.mkdir(f'{results_path}/test')
+    result_image_path = f'{processed_folder_path}/journal_areas.png'
         
-    image = draw_bounding_boxes(page_tree,image_path,[1])
+    image = draw_bounding_boxes(page_tree,target_image,[1])
     cv2.imwrite(result_image_path,image)
 
     update_image_element(window,'result_img',result_image_path)
 
 
-def remove_document_images_method(window:sg.Window,image_path:str,values:dict):
+def remove_document_images_method(window:sg.Window,target:str,values:dict):
     '''Apply remove document images method to image and update image element'''
-    results_path = f'{consts.result_path}/{path_to_id(image_path)}'
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
     
-    treated_image = remove_document_images(image_path,logs=logs)
+    treated_image = remove_document_images(target_image,logs=logs)
 
-    if not os.path.exists(f'{results_path}/test'):
-        os.mkdir(f'{results_path}/test')
-
-    cv2.imwrite(f'{results_path}/test/removed_images.png',treated_image)
+    cv2.imwrite(f'{processed_folder_path}/removed_images.png',treated_image)
+    metadata['target_path'] = f'{processed_folder_path}/removed_images.png'
+    metadata['transformations'].append('remove_document_images')
+    save_target_metadata(target,metadata)
 
     update_image_element(window,'result_img',treated_image)
 
@@ -332,10 +360,13 @@ def remove_document_images_method(window:sg.Window,image_path:str,values:dict):
 
 #### TAB 2
 
-def calculate_dpi_method(window:sg.Window,image_path:str,resolution:str):
+def calculate_dpi_method(window:sg.Window,target:str,resolution:str):
     '''Apply calculate dpi method to image and update image element'''
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
     # get image info
-    image_info = get_image_info(image_path)
+    image_info = get_image_info(target_image)
 
     # get resolution info from configs
     resolution = consts.config['resolutions'][resolution]

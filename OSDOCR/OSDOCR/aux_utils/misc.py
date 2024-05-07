@@ -55,12 +55,12 @@ def create_target_results_folder(target_path:str):
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)
 
-        # create processed folder
-        processed_folder_path = f'{results_folder}/processed'
-        if not os.path.exists(processed_folder_path):
-            os.mkdir(processed_folder_path)
+    # create processed folder
+    processed_folder_path = f'{results_folder}/processed'
+    if not os.path.exists(processed_folder_path):
+        os.mkdir(processed_folder_path)
 
-        create_target_metadata(target_path)
+    create_target_metadata(target_path)
 
 
 def create_target_metadata(target_path:str):
@@ -129,3 +129,15 @@ def reset_metadata(results_path:str):
     metadata_path = f'{results_path}/metadata.json'
     os.remove(metadata_path)
     create_metadata(results_path)
+
+
+def metadata_has_transformation(metadata:dict,transformation:str):
+    '''Check if metadata has transformation'''
+    transformations = metadata['transformations']
+    for t in transformations:
+        if type(t) in (list,tuple):
+            if t[0] == transformation:
+                return True
+        elif t == transformation:
+            return True
+    return False

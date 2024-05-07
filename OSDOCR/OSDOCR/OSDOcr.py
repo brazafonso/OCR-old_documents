@@ -115,13 +115,6 @@ def run_test():
 def run_main(args:argparse.Namespace):
     '''Run main program. Allows single image or multiple image list'''
 
-    if args.debug:
-        print(f'''
-        ---------------------------
-        |      Running OSDOCR     |
-        ---------------------------
-              ''')
-
     targets = []
 
     # single target

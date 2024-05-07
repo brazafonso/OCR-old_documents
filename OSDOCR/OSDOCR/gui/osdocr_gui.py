@@ -66,6 +66,10 @@ def highlight_buttons(window:sg.Window,button:str,color:str,default_color:str='#
 
 def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     '''Updates elements in layout based on method'''
+    results_path = f'{consts.result_path}/{path_to_id(o_image)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(o_image)
+    latest_image = metadata['target_path']
 
 
     window['target_image_path'].update(visible=False)
@@ -83,10 +87,10 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     window['result_text_3'].update(visible=False)
 
     ## TAB 1
-    if method == 'run_tesseract' and o_image:
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
+    if method == 'run_tesseract' and latest_image:
+        result_image = f'{processed_folder_path}/ocr_results.png'
         # update target image
-        update_image_element(window,'target_image_path',o_image)
+        update_image_element(window,'target_image_path',latest_image)
 
         # update apply button
         window['apply'].update(visible=True)
@@ -97,15 +101,15 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         window['select_list_1_1'].update(value='Auto',values=['Auto','Clockwise','Counterclockwise'],visible=True)
 
         # check if result image exists
-        if o_image and os.path.exists(result_image):
+        if latest_image and os.path.exists(result_image):
             # update result image
             update_image_element(window,'result_img',result_image)
         else:
             window['result_img'].update(visible=False)
 
     elif method == 'fix_blocks':
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
-        fixed_image = f'{consts.result_path}/{path_to_id(o_image)}/fixed/result_fixed.png'
+        result_image = f'{processed_folder_path}/ocr_results.png'
+        fixed_image = f'{processed_folder_path}/clean_ocr.png'
 
         # check if result image exists
         if os.path.exists(result_image):
@@ -125,10 +129,10 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
         
-    elif method == 'journal_template' and o_image:
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result_journal_template.png'
+    elif method == 'journal_template' and latest_image:
+        result_image = f'{processed_folder_path}/result_journal_template.png'
         # update target image
-        update_image_element(window,'target_image_path',o_image)
+        update_image_element(window,'target_image_path',latest_image)
 
         # update apply button
         window['apply'].update(visible=True)
@@ -143,8 +147,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
 
 
     elif method == 'reading_order':
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result_id.png'
-        reading_order_image = f'{consts.result_path}/{path_to_id(o_image)}/result_reading_order.png'
+        result_image = f'{processed_folder_path}/ocr_results_id.png'
+        reading_order_image = f'{processed_folder_path}/result_reading_order.png'
         # check if result image exists
         if os.path.exists(result_image):
             # update target image
@@ -166,8 +170,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
 
 
     elif method == 'extract_articles':
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
-        articles_image = f'{consts.result_path}/{path_to_id(o_image)}/articles.png'
+        result_image = f'{processed_folder_path}/ocr_results.png'
+        articles_image = f'{results_path}/articles.png'
         # check if result image exists
         if os.path.exists(result_image):
             # update target image
@@ -187,10 +191,9 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'auto_rotate':
-        target_image = consts.config['target_image_path']
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/rotated.png'
-        if o_image and os.path.exists(target_image):
-            update_image_element(window,'target_image_path',target_image)
+        result_image = f'{processed_folder_path}/fix_rotation.png'
+        if latest_image:
+            update_image_element(window,'target_image_path',latest_image)
         else:
             window['target_image_path'].update(visible=False)
         # update apply button
@@ -202,8 +205,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'unite_blocks':
-        target_image = f'{consts.result_path}/{path_to_id(o_image)}/result.png'
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/fixed/united.png'
+        target_image = f'{processed_folder_path}/ocr_results.png'
+        result_image = f'{processed_folder_path}/result_united.png'
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
@@ -217,14 +220,14 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'divide_columns':
-        target_image = o_image
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/columns.png'
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/divide_columns.png'
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
             window['target_image_path'].update(visible=False)
         window['select_list_text_1_1'].update(value='Analyses Type:',visible=True)
-        window['select_list_1_1'].update(value='Blocks',values=['Blocks','Pixels'],visible=True)
+        window['select_list_1_1'].update(value='Pixels',values=['Blocks','Pixels'],visible=True)
         # update apply button
         window['apply'].update(visible=True)
         window['checkbox_1_1'].update(visible=True)
@@ -234,8 +237,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'divide_journal':
-        target_image = o_image
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/journal_areas.png'
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/journal_areas.png'
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
@@ -249,8 +252,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
         
     elif method == 'remove_document_images':
-        target_image = o_image
-        result_image = f'{consts.result_path}/{path_to_id(o_image)}/test/removed_images.png'
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/removed_images.png'
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path',target_image)
         else:
@@ -266,7 +269,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     ## TAB 2
     elif method == 'ocr_pipeline':
 
-        target_image = consts.config['target_image_path']
+        target_image = latest_image
 
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path_2',target_image)
@@ -278,7 +281,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         window['apply'].update(visible=True)
 
     elif method == 'calculate_dpi':
-        target_image = consts.config['target_image_path']
+        target_image = latest_image
         result_text = ''
         resolutions_list = [res  for res in consts.config['resolutions'].keys()]
 
@@ -326,6 +329,16 @@ def config_pipeline(window:sg.Window,image_path:str):
             config_window.close()
             break
 
+def reset_target_image(target:str):
+    '''Reset target image. Updates metadata info'''
+    metadata = get_target_metadata(target)
+    metadata['target_path'] = metadata['target_original_path']
+    metadata['transformations'] = []
+    metadata['ocr'] = False
+    metadata['ocr_results_original_path'] = ''
+    metadata['ocr_results_path'] = ''
+    save_target_metadata(target,metadata)
+    
 
 
 
@@ -373,6 +386,7 @@ def run_gui():
         # new target file chosen
         elif event == 'target_input':
             target_image = str(values['target_input'])
+            create_target_results_folder(target_image)
             # update target image
             update_image_element(window,'target_image_path',target_image)
             update_method_layout(window,method,target_image)
@@ -381,9 +395,19 @@ def run_gui():
             save_configs()
         elif 'apply' in event:
             if target_image and method:
-                apply_method(window,values,target_image,method)
+                try:
+                    apply_method(window,values,target_image,method)
+                except OCR_Tree_load_error:
+                    sg.popup_error('Could not load OCR results. Please run OCR on the target.')
+                except Exception as e:
+                    sg.popup_error(e)
         elif 'config_pipeline' in event:
             config_pipeline(window,target_image)
+        # reset target image to original
+        elif event == 'reset_image':
+            reset_target_image(target_image)
+            update_method_layout(window,method,target_image)
+
 
     ########################################
     # Methods sidebar

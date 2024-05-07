@@ -6,6 +6,15 @@ from aux_utils.box import Box
 '''Module to generalize OCR result into box object\n'''
 
 
+class OCR_Tree_load_error(Exception):
+    '''Exception to handle OCR_Tree load errors\n'''
+
+    def __init__(self,*args):
+        super().__init__(*args)
+
+
+    
+
 class OCR_Tree:
     '''Class to represent OCR results as a tree object\n'''
     
@@ -46,7 +55,7 @@ class OCR_Tree:
                     with open(args[0],'r') as f:
                         self.from_json(json.load(f))
                 else:
-                    raise FileNotFoundError(f'File {args[0]} not found')
+                    raise OCR_Tree_load_error(f'File {args[0]} not found')
         # normal method
         else:
             self.init(*args)
