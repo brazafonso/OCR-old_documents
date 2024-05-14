@@ -369,7 +369,7 @@ def calculate_dpi_method(window:sg.Window,target:str,resolution:str):
     image_info = get_image_info(target_image)
 
     # get resolution info from configs
-    resolution = consts.config['resolutions'][resolution]
+    resolution = consts.config['dimensions'][resolution]
     resolution = Box(0,resolution['width'],0,resolution['height'])
 
     # calculate dpi

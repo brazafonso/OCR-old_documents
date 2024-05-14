@@ -4,7 +4,6 @@ import os
 import pandas as pd
 import PySimpleGUI as sg
 from aux_utils import consts
-from aux_utils.page_tree import *
 from document_image_utils.image import *
 from aux_utils.misc import *
 from .layouts.main_layout import *
@@ -283,7 +282,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     elif method == 'calculate_dpi':
         target_image = latest_image
         result_text = ''
-        resolutions_list = [res  for res in consts.config['resolutions'].keys()]
+        resolutions_list = [res  for res in consts.config['dimensions'].keys()]
 
         if o_image and os.path.exists(target_image):
             update_image_element(window,'target_image_path_2',target_image)

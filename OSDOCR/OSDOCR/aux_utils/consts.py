@@ -6,5 +6,6 @@ result_path = f'{current_path}/results'
 tmp_path = f'{current_path}/tmp'
 
 config_file_path = f'{osdocr_path}/config/conf.json'
+consts_path = f'{osdocr_path}/consts'
 
 config = {}

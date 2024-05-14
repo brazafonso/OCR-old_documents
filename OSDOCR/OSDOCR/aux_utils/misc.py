@@ -25,12 +25,20 @@ def read_configs():
         conf_file = open(consts.config_file_path,'r')
         conf = json.load(conf_file)
         conf_file.close()
+        # target file
         if not os.path.exists(conf['target_image_path']):
             conf['target_image_path'] = ''
+        
+        # extra const files
+        if os.path.exists(f'{consts.consts_path}/dimensions.json'):
+            with open(f'{consts.consts_path}/dimensions.json') as f:
+                conf['dimensions'] = json.load(f)
+        else:
+            conf['dimensions'] = {}
     else:
         conf = {
             'target_image_path':'',
-            'resolutions':[],
+            'dimensions':{},
         }
     consts.config = conf
 
@@ -141,3 +149,9 @@ def metadata_has_transformation(metadata:dict,transformation:str):
         elif t == transformation:
             return True
     return False
+
+
+
+def get_dimensions(dimension_key:str):
+    '''Get dimension'''
+    return consts.config['dimensions'][dimension_key] if dimension_key in consts.config['dimensions'] else None

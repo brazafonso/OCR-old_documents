@@ -51,27 +51,46 @@ Components:
     parser.add_argument('target'                     ,type=str,nargs='*'                                            ,help='Target image path')
     parser.add_argument('-f','--file'                ,type=str,nargs=1                                              ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
     parser.add_argument('-of','--output_folder'      ,type=str,nargs=1                                              ,help='Results folder')
-    parser.add_argument('-ot','--output_type'        ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).')
+    parser.add_argument('-ot','--output_type'        ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt'])
     parser.add_argument('-focr','--force_ocr'        ,action='store_true',default=False                             ,help='Force OCR engine to run again')
     parser.add_argument('-id','--ignore_delimiters'  ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
-    parser.add_argument('-fr','--fix_rotation'       ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).')
+    parser.add_argument('-fr','--fix_rotation'       ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
     parser.add_argument('-upi','--upscaling_image'   ,type=str,nargs='*' ,default=['waifu2x']                       ,help='''
 Upscale image automatically (default: waifu2x). 
 Further options: 
     - waifu2x
             * scale2x
             * scale4x
+            * autoscale
                         ''',action=CustomAction_upscale_image)
-    parser.add_argument('-di','--denoise_image'   ,type=str,nargs='*' ,default=['waifu2x']                          ,help='''
+    parser.add_argument('-tdpi','--target_dpi'          ,type=int,nargs='?' ,default=300                            ,help='Target dpi for image (default: 300)')
+    parser.add_argument('-tdim','--target_dimensions'   ,type=str,nargs='?' ,default='A3'                           ,help='''
+Real page dimensions for image (default: A3). 
+Used to calculate image dpi.
+Available formats ('/OSDOCR/consts/dimensions.json' , more can be added):
+    - A5
+    - A4
+    - A3
+    - A2
+    - A1
+    - 2A0''',choices=consts.config['dimensions'].keys())
+    parser.add_argument('-di','--denoise_image'         ,type=str,nargs='*' ,default=['waifu2x']                        ,help='''
 Upscale image automatically (default: waifu2x). 
 Further options: 
     - waifu2x
             * [-1,0,1,2,3]
                         ''',action=CustomAction_denoise_image)
-    parser.add_argument('--tesseract_config'         ,type=str,nargs='*' ,default=['__l','por']                  ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
+    t = parser.add_argument('--tesseract_config'         ,type=str,nargs='*' ,default=['__l','por']                     ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
     parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
     parser.add_argument('-d','--debug'               ,action='store_true',default=False                             ,help='Debug mode')
-    args = parser.parse_args()
+    
+    # run action even with default
+    ns = argparse.Namespace()
+    t(parser,ns,t.default,'tesseract_config')
+
+
+    
+    args = parser.parse_args(namespace=ns)
     return args
 
 
@@ -84,7 +103,7 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/result.json'
+        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/ocr_results.json'
         # ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
@@ -93,18 +112,18 @@ def run_test():
         # get_columns(ocr_results,method='WhittakerSmoother',logs=True)
         # get_columns_pixels(target_image,method='WhittakerSmoother',logs=True)
         #get_journal_areas(ocr_results,logs=True)
-
         # Waifu2x test
-        # result_image_path = f'{consts.result_path}/result_waifu2x.png'
+        result_image_path = f'{consts.result_path}/result_waifu2x.png'
+        
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
-        # run_waifu2x(target_image,result_image_path=result_image_path,method='scale4x',noise_level=3,logs=True)
+        run_waifu2x(target_image,result_image_path=result_image_path,method='autoscale',noise_level=-1,logs=True)
 
         # detectron2 test
         # test_detectron2(target_image)
 
         # layout parser test
-        remove_document_images(target_image,logs=True)
+        # remove_document_images(target_image,logs=True)
 
 
    

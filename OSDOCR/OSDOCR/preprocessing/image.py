@@ -1,18 +1,34 @@
+import PIL
 import cv2
 import torch
 import layoutparser as lp
 import aux_utils.consts as consts
 from aux_utils.misc import *
+from document_image_utils.image import calculate_dpi
+from aux_utils.box import Box
 from PIL import Image
+from sympy import ceiling
 
 
 
-def run_waifu2x(target_image:str,method:str='scale2x',model_type:str='photo',noise_level:int=1,result_image_path:str=None,logs:bool=False) -> str:
+def create_waifu2x_model(method:str='scale2x',model_type:str='photo',noise_level:int=1) -> torch.nn.Module:
+    '''Create Waifu2x model'''
+    if torch.cuda.is_available():
+        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
+        method=method, noise_level=noise_level, model_type=model_type,trust_repo=True).to("cuda")
+    else:
+        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
+        method=method, noise_level=noise_level, model_type=model_type,trust_repo=True).to("cpu")
+
+    return model
+
+
+def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',noise_level:int=1,result_image_path:str=None,dimensions:tuple[int,int]=(11.7,16.5),target_dpi:int=300,logs:bool=False) -> str:
     '''Run Waifu2x to clean or upscale image.
     
     Args:
         target_image (str): path to image
-        method (str, optional): method to use ['scale2x','scale4x','noise']. Defaults to 'scale2x'.
+        method (str, optional): method to use ['scale2x','scale4x',autoscale,'noise']. Defaults to 'scale2x'.
         model_type (str, optional): model type ['photo','art','art_scan']. Defaults to 'photo'.
         noise_level (int, optional): noise level [-1 (None),0,1,2,3]. Defaults to 1.
         result_image_path (str, optional): path to save result. Defaults to None, in which case result will be saved to same directory.
@@ -21,24 +37,78 @@ def run_waifu2x(target_image:str,method:str='scale2x',model_type:str='photo',noi
         print(f'Running Waifu2x | target_image: {target_image} | method: {method} | model_type: {model_type} | noise_level: {noise_level} | result_image_path: {result_image_path}')
         print('Loading model | cuda available: ',torch.cuda.is_available())
 
+
     model = None
-    if torch.cuda.is_available():
-        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
-                       method=method, noise_level=noise_level, model_type=model_type,trust_repo=True).to("cuda")
-    else:
-        model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
-                       method=method, noise_level=noise_level, model_type=model_type,trust_repo=True).to("cpu")
-    # model.set_mode(method, noise_level) ## if no method chosen
-
-    if logs:
-        print('finished loading model')
-        print('running model')
-
+    PIL.Image.MAX_IMAGE_PIXELS = None # disable PIL.Image.MAX_IMAGE_PIXELS
     input_image = Image.open(target_image)
-    result = model.infer(input_image)
-    if not result_image_path:
-        result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
-    result.save(result_image_path)
+
+    # autoscale
+    ## discern how many times to run the model
+    if method == 'autoscale':
+        w,h = input_image.size
+        dpi = calculate_dpi(Box(0,w,0,h),Box(0,dimensions[0],0,dimensions[1]))
+
+        if logs:
+            print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
+
+        if dpi < target_dpi:
+            scale_times = ceiling(target_dpi/dpi) - 1
+            scaling_type = None
+            if scale_times >= 4:
+                model_main = 'scale4x'
+                scaling_type = 4
+            else:
+                model_main = 'scale2x'
+                scaling_type = 2
+
+            if logs:
+                print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi,' | scale_times: ',scale_times,' | scaling_type: ',scaling_type)
+
+            model = create_waifu2x_model(method=model_main,model_type=model_type,noise_level=noise_level)
+
+            # upscale for scaling times
+                # if scaling_type 4, run until scale_times = 1
+                    # scale_type 2 is faster for last scale
+            while (scaling_type == 2 and scale_times > 0) or (scaling_type == 4 and scale_times > 1):
+                if logs:
+                    print('scaling image | scale_times left: ',scale_times,' | scaling_type: ',scaling_type)
+                result = model.infer(input_image)
+                if not result_image_path:
+                    result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
+                result.save(result_image_path)
+                input_image = result
+
+                if scaling_type == 2:
+                    scale_times -= 1
+                elif scaling_type == 4:
+                    scale_times -= 3
+
+            if scale_times > 0:
+                model = create_waifu2x_model(method='scale2x',model_type=model_type,noise_level=noise_level)
+
+                result = model.infer(input_image)
+                if not result_image_path:
+                    result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
+                result.save(result_image_path)
+
+            if logs:
+                w,h = result.size
+                dpi = calculate_dpi(Box(0,w,0,h),Box(0,dimensions[0],0,dimensions[1]))
+                print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
+
+
+
+    else:
+        model = create_waifu2x_model(method=method,model_type=model_type,noise_level=noise_level)
+        if logs:
+            print('finished loading model')
+            print('running model')
+
+
+        result = model.infer(input_image)
+        if not result_image_path:
+            result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
+        result.save(result_image_path)
 
     if logs:
         print('finished Waifu2x')

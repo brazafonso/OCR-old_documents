@@ -28,7 +28,6 @@ Options
 
 
 
-
 class CustomAction_denoise_image(argparse.Action):
     '''
     Custom Action for Upscaling Image
@@ -73,6 +72,7 @@ Options (seperated by '__')
         argparse custom action.
         :param check_func: callable to do the real check.
         """
+        
         super(CustomAction_tesseract_config, self).__init__(*args, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string):
@@ -96,5 +96,18 @@ Options (seperated by '__')
             else:
                 i += 1
 
+
+        # if arguments 'target_dpi'
+        # make sure tesseract dpi corresponds to target_dpi
+        dpi = getattr(namespace, 'target_dpi', '300')
+        
+        if dpi:
+            if 'dpi' in final_values:
+                final_values['dpi'] = dpi
+            else:
+                final_values['dpi'] = dpi
+
         values = final_values
+        print(values)
+
         setattr(namespace, self.dest, values) 

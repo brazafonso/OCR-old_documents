@@ -151,10 +151,14 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
                 if len(args.upscaling_image) > 1:
                     method_config = args.upscaling_image[1]
 
+                target_dpi = args.target_dpi
+                page_dimensions = get_dimensions(args.target_dimensions if args.target_dimensions else 'A3')
+                page_dimensions = (page_dimensions['width'],page_dimensions['height'])
+
                 if method_config:
-                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,method=method_config,logs=args.debug) 
+                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,method=method_config,target_dpi=target_dpi,dimensions=page_dimensions,logs=args.debug) 
                 else:
-                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,logs=args.debug)
+                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,target_dpi=target_dpi,dimensions=page_dimensions,logs=args.debug)
 
                 upscaled_img = cv2.imread(tmp_upsacled_image_path)
                 cv2.imwrite(processed_image_path,upscaled_img)

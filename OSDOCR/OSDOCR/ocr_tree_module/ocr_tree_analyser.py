@@ -8,7 +8,6 @@ from scipy.signal import *
 from pytesseract import Output
 from PIL import Image
 from aux_utils.graph import *
-from aux_utils.page_tree import *
 from document_image_utils.image import *
 from aux_utils.box import *
 from ocr_tree_module.ocr_tree import *
@@ -281,6 +280,8 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',logs:bool=F
             x_axis_freq_smooth = savgol_filter(x_axis_freq, round(len(x_axis_freq)*0.1), 2)
 
         x_axis_freq_smooth = [i if i > 0 else 0 for i in x_axis_freq_smooth ]
+
+
 
         peaks,_ = find_peaks(x_axis_freq_smooth,prominence=0.3*max(x_axis_freq_smooth))
 
