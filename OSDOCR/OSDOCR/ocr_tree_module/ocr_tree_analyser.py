@@ -272,9 +272,12 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',logs:bool=F
 
 
     if x_axis_freq.any():
+        # invert frequencies
+        max_freq = max(x_axis_freq)
+        x_axis_freq = np.array([max_freq - i for i in x_axis_freq])
 
         if method == 'WhittakerSmoother':
-            whittaker_smoother = WhittakerSmoother(lmbda=2e3, order=2, data_length = len(x_axis_freq))
+            whittaker_smoother = WhittakerSmoother(lmbda=2e4, order=2, data_length = len(x_axis_freq))
             x_axis_freq_smooth = whittaker_smoother.smooth(x_axis_freq)
         elif method == 'savgol_filter':
             x_axis_freq_smooth = savgol_filter(x_axis_freq, round(len(x_axis_freq)*0.1), 2)
@@ -283,7 +286,7 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',logs:bool=F
 
 
 
-        peaks,_ = find_peaks(x_axis_freq_smooth,prominence=0.3*max(x_axis_freq_smooth))
+        peaks,_ = find_peaks(x_axis_freq_smooth,prominence=0.2*(max(x_axis_freq_smooth)- min(x_axis_freq_smooth)))
 
         x_axis_freq_smooth = np.array(x_axis_freq_smooth)
 
@@ -311,36 +314,22 @@ def get_columns_pixels(image_path:str,method:str='WhittakerSmoother',logs:bool=F
 
             plt.show()
 
-        print('peaks',peaks)
-        # adjust peaks
-        ## for each peak, go back while the frequency decreases
-        for i in range(len(peaks)):
-            j = peaks[i]
-            while j > 0 and (x_axis_freq_smooth[j-1] < x_axis_freq_smooth[j] or x_axis_freq_smooth[j] > average_smooth_frequency):
-                j -= 1
-            peaks[i] = j
 
         print('cleaned peaks',peaks)
 
         # estimate columns
         ## for each two peaks, decide if possible column, if middle frequencies are mostly above average
         potential_columns = []
-        next_column = [peaks[0],None]
+        next_column = [0,None]
         for i in range(len(peaks)):
-            if next_column[1] == None and next_column[0] != peaks[i]:
-                average_peaks = np.average(x_axis_freq_smooth[next_column[0]:peaks[i]])
-                if average_peaks >= average_smooth_frequency:
-                    next_column[1] = peaks[i]
-                else:
-                    next_column[0] = peaks[i]
 
-            if next_column[1] != None:
-                potential_columns.append(next_column)
-                next_column = [next_column[1],None]
+            if next_column[0] != None:
+                next_column[1] = peaks[i]
 
-        if next_column[0] != None:
-            next_column[1] = len(x_axis_freq_smooth)
-            potential_columns.append(next_column)
+            if next_column[0] != None and next_column[1] != None:
+                potential_columns.append([next_column[0],next_column[1]])
+
+            next_column = [peaks[i],None]
 
         # create columns
         if potential_columns:
