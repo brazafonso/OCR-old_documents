@@ -84,13 +84,15 @@ Further options:
     parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
     parser.add_argument('-d','--debug'               ,action='store_true',default=False                             ,help='Debug mode')
     
-    # run action even with default
+
+
+
     ns = argparse.Namespace()
+    args = parser.parse_args(namespace=ns)
+
+    # run action even with default
     t(parser,ns,t.default,'tesseract_config')
 
-
-    
-    args = parser.parse_args(namespace=ns)
     return args
 
 

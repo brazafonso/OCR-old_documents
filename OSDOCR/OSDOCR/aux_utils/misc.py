@@ -68,7 +68,9 @@ def create_target_results_folder(target_path:str):
     if not os.path.exists(processed_folder_path):
         os.mkdir(processed_folder_path)
 
-    create_target_metadata(target_path)
+    # create metadata
+    if not os.path.exists(f'{results_folder}/metadata.json'):
+        create_target_metadata(target_path)
 
 
 def create_target_metadata(target_path:str):

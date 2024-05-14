@@ -108,6 +108,5 @@ Options (seperated by '__')
                 final_values['dpi'] = dpi
 
         values = final_values
-        print(values)
 
         setattr(namespace, self.dest, values) 

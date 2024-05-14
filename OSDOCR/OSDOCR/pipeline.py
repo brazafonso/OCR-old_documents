@@ -164,6 +164,12 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
                 cv2.imwrite(processed_image_path,upscaled_img)
                 upscaled = True
 
+                # update tesseract config dpi
+                w,h = upscaled_img.shape[1],upscaled_img.shape[0]
+
+                dpi = calculate_dpi(Box(0,w,0,h),Box(0,page_dimensions[0],0,page_dimensions[1]))
+                args.tesseract_config['dpi'] = dpi
+
             if upscaled:
                 # create step img
                 step_img_path = f'{results_path}/image_upscaling.png'
