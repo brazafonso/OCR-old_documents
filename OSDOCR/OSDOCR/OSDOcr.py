@@ -17,7 +17,7 @@ from ocr_tree_module.ocr_tree_analyser import *
 skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'noise_removal','blur_removal','lightning_correction',
                     'image_upscaling','extract_articles','image_preprocess',
-                    'remove_document_images']
+                    'remove_document_images','cut_document_margins']
 
 
 

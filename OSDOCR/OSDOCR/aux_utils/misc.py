@@ -163,6 +163,29 @@ def metadata_get_transformation(metadata:dict,transformation:str):
             return t
     return None
 
+def get_last_image_path(target_path:str):
+    '''From target metadata, get last image path'''
+    metadata = get_target_metadata(target_path)
+    target_image_path = metadata['target_path']
+    if os.path.exists(target_image_path):
+        return target_image_path
+    
+    # needs to fix metadata
+    else:
+        results_path = f'{consts.result_path}/{path_to_id(target_path)}'
+        processed_path = f'{results_path}/processed'
+        tranformations = metadata['transformations']
+        for t in tranformations[::-1]:
+            tranformation = t[0] if type(t) in (list,tuple) else t 
+            if os.path.exists(f'{processed_path}/{tranformation}.png'):
+                # update metadata
+                metadata['target_path'] = f'{processed_path}/{tranformation}.png'
+                save_target_metadata(target_path,metadata)
+                return f'{processed_path}/{tranformation}.png'
+    
+    return None
+
+
 
 
 def get_dimensions(dimension_key:str):

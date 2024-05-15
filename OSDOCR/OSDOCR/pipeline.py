@@ -186,7 +186,11 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
     # image rotation
     if args.fix_rotation and 'auto_rotate' not in args.skip_method:
-        rotate_img = rotate_image(processed_image_path,direction=args.fix_rotation,debug=args.debug)
+        cut_margins = cut_document_margins(processed_image_path)
+
+        rotate_img = rotate_image(processed_image_path,direction=args.fix_rotation,
+                                  crop_bottom=cut_margins.bottom,crop_top=cut_margins.top,
+                                  crop_left=cut_margins.left,crop_right=cut_margins.right,debug=args.debug)
         cv2.imwrite(processed_image_path,rotate_img)
 
         # create step img
@@ -211,6 +215,21 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
         metadata['transformations'].append(('remove_document_images',images_folder))
 
+
+    # remove document margins
+    if 'remove_document_margins' not in args.skip_method:
+        # remove document margins
+        cut_margins = cut_document_margins(processed_image_path,logs=args.debug)
+        
+        image = cv2.imread(processed_image_path)
+        treated_image = image[cut_margins.top:cut_margins.bottom,cut_margins.left:cut_margins.right]
+        cv2.imwrite(processed_image_path,treated_image)
+
+        # create step img
+        step_img_path = f'{results_path}/remove_document_margins.png'
+        cv2.imwrite(step_img_path,treated_image)
+
+        metadata['transformations'].append(('remove_document_margins'))
 
 
     # update metadata

@@ -67,8 +67,8 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     '''Updates elements in layout based on method'''
     results_path = f'{consts.result_path}/{path_to_id(o_image)}'
     processed_folder_path = f'{results_path}/processed'
-    metadata = get_target_metadata(o_image)
-    latest_image = metadata['target_path']
+    latest_image = get_last_image_path(o_image)
+    print(latest_image)
 
 
     window['target_image_path'].update(visible=False)
