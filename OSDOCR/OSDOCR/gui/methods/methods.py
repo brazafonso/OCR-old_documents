@@ -10,6 +10,7 @@ from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
 from aux_utils.misc import *
 from preprocessing.image import remove_document_images
+from document_image_utils.image import *
 
 
 
@@ -267,7 +268,7 @@ def divide_columns_method(window:sg.Window,target:str,values:dict):
         ocr_results = OCR_Tree(ocr_results_path)
         column_boxes = get_columns(ocr_results,logs=logs)
     else:
-        column_boxes = get_columns_pixels(target_image,logs=logs)
+        column_boxes = divide_columns(target_image,logs=logs)
 
 
     image_info = get_image_info(target_image)

@@ -34,10 +34,13 @@ class Box:
         self.height = bottom - top
 
     def load_json(self,json_dict:dict):
-        self.left = json_dict['left']
-        self.right = json_dict['right']
-        self.top = json_dict['top']
-        self.bottom = json_dict['bottom']
+        if 'left' not in json_dict or 'right' not in json_dict or \
+            'top' not in json_dict or 'bottom' not in json_dict:
+            raise ValueError('Box must contain at least left, right, top and bottom values')
+
+        for key in json_dict:
+            setattr(self,key,json_dict[key])
+
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 

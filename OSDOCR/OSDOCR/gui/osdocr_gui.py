@@ -360,6 +360,7 @@ def run_gui():
 
     # update target image if exists
     if target_image:
+        create_target_results_folder(target_image)
         update_image_element(window,'target_image_path',target_image)
         update_method_layout(window,method,target_image)
         window['target_input'].update(target_image)

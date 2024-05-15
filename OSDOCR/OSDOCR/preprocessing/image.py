@@ -52,9 +52,9 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
             print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
 
         if dpi < target_dpi:
-            scale_times = ceiling(target_dpi/dpi) - 1
+            scale_times = ceiling((target_dpi/dpi - 1) / 2)
             scaling_type = None
-            if scale_times >= 4:
+            if scale_times >= 2:
                 model_main = 'scale4x'
                 scaling_type = 4
             else:
@@ -69,9 +69,11 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
             # upscale for scaling times
                 # if scaling_type 4, run until scale_times = 1
                     # scale_type 2 is faster for last scale
-            while (scaling_type == 2 and scale_times > 0) or (scaling_type == 4 and scale_times > 1):
+            while (scaling_type == 2 and scale_times > 0) or (scaling_type == 4 and scale_times > 1) and dpi <= target_dpi:
+                w,h = input_image.size
+                dpi = calculate_dpi(Box(0,w,0,h),Box(0,dimensions[0],0,dimensions[1]))
                 if logs:
-                    print('scaling image | scale_times left: ',scale_times,' | scaling_type: ',scaling_type)
+                    print('scaling image | current dpi: ',dpi,' | scale_times left: ',scale_times,' | scaling_type: ',scaling_type)
                 result = model.infer(input_image)
                 if not result_image_path:
                     result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
@@ -83,7 +85,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
                 elif scaling_type == 4:
                     scale_times -= 3
 
-            if scale_times > 0:
+            if scale_times > 0 and dpi <= target_dpi:
                 model = create_waifu2x_model(method='scale2x',model_type=model_type,noise_level=noise_level)
 
                 result = model.infer(input_image)
@@ -116,81 +118,62 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
     return result_image_path
 
 
-# def test_detectron2(image_path:str):
-#     from detectron2.utils.logger import setup_logger
-#     from detectron2 import model_zoo
-#     from detectron2.engine import DefaultPredictor
-#     from detectron2.config import get_cfg
-#     from detectron2.utils.visualizer import Visualizer
-#     from detectron2.data import MetadataCatalog, DatasetCatalog
-#     import torchvision
 
-#     TORCH_VERSION = ".".join(torch.__version__.split(".")[:2])
-#     CUDA_VERSION = torch.__version__.split("+")[-1]
-#     print("torch: ", TORCH_VERSION, "; cuda: ", CUDA_VERSION)
-#     print("torchvision: ", torchvision.__version__)
-#     print("detectron2:", detectron2.__version__)
-
-#     setup_logger()
-#     im = cv2.imread(image_path)
-#     cfg = get_cfg()
-
-#     cfg.merge_from_file(model_zoo.get_config_file("lp://PrimaLayout/mask_rcnn_R_50_FPN_3x/config"))
-#     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
-#     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
-#     predictor = DefaultPredictor(cfg)
-#     outputs = predictor(im)
-
-#     v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
-#     out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-#     out = out.get_image()[:, :, ::-1]
-#     out = cv2.resize(out, (1920, 1080))
-#     win = cv2.imshow('teste',out)
-#     cv2.waitKey(0)
-
-
-def remove_document_images(image_path:str,logs:bool=False)->cv2.Mat:
-    '''Remove document image elements from image, using layout parser.
-    Element images:
+def identify_document_images(image_path:str,conf:float=0.5,old_document:bool=True,logs:bool=False)->cv2.Mat:
+    '''Identify document image elements from image, using layout parser.
+    Identified image elements (old document):
     - Photograph
     - Illustration
     - Map
     - Comics/Cartoon
     - Editorial Cartoon
-    - Advertisement'''
+
+    Identified image elements (new document):
+    - Table
+    - Figure
+    
+    
+    '''
 
     treated_image = cv2.imread(image_path)
     rgb_image = treated_image[..., ::-1]
 
-    # model = lp.Detectron2LayoutModel(
-    #             config_path='lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config', # In model catalog
-    #             label_map   ={0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"}, # In model`label_map`
-    #             extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
-    #         )
+    model = None
+    blocks_to_identify = []
+    if old_document:
+        model = lp.Detectron2LayoutModel(
+                    config_path='lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config', # In model catalog
+                    label_map   ={0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}, # In model`label_map`
+                    extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
+        # color_map = {
+        #     'Photograph': 'green',
+        #     'Illustration': 'blue',
+        #     'Map': 'yellow',
+        #     'Comics/Cartoon': 'purple',
+        #     'Editorial Cartoon': 'orange',
+        #     'Headline': 'red',
+        #     'Advertisement': 'gray'
+        # }
+                )
+        blocks_to_identify = set(['Photograph', 'Illustration', 'Map', 'Comics/Cartoon', 'Editorial Cartoon'])
 
-        #     color_map = {
-    #     'Text':   'red',
-    #     'Title':  'blue',
-    #     'List':   'green',
-    #     'Table':  'purple',
-    #     'Figure': 'pink',
-    # }
+    else:
 
-    model = lp.Detectron2LayoutModel(
-                config_path='lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config', # In model catalog
-                label_map   ={0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}, # In model`label_map`
-                extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
-            )
+        model = lp.Detectron2LayoutModel(
+                    config_path='lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config', # In model catalog
+                    label_map   ={0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"}, # In model`label_map`
+                    extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.7] # Optional
+                )
+            #     color_map = {
+        #     'Text':   'red',
+        #     'Title':  'blue',
+        #     'List':   'green',
+        #     'Table':  'purple',
+        #     'Figure': 'pink',
+        # }
+        blocks_to_identify = set(['Table', 'Figure'])
+
     
-    color_map = {
-        'Photograph': 'green',
-        'Illustration': 'blue',
-        'Map': 'yellow',
-        'Comics/Cartoon': 'purple',
-        'Editorial Cartoon': 'orange',
-        'Headline': 'red',
-        'Advertisement': 'gray'
-    }
 
 
     layout = model.detect(image = rgb_image)
@@ -201,22 +184,66 @@ def remove_document_images(image_path:str,logs:bool=False)->cv2.Mat:
             print(f'Block: {block.type} -> {block.score}')
             print('\t\t'+str(block.coordinates))
     
-    blocks_to_remove = set(['Photograph', 'Illustration', 'Map', 'Comics/Cartoon', 'Editorial Cartoon'])
+    
 
-
+    identified_blocks = []
     # remove blocks found
     for block in layout:
-        if block.type in blocks_to_remove:
+        if block.type in blocks_to_identify and block.score > conf:
             left = int(block.coordinates[0])
             top = int(block.coordinates[1])
             right = int(block.coordinates[2])
             bottom = int(block.coordinates[3])
             if logs:
                 print(left, top, right, bottom)
-
-            # remove block
-            treated_image = cv2.rectangle(treated_image, (left, top),
-                                (right, bottom),
-                                (255, 255, 255), -1)
+            identified_block = Box(left, right, top, bottom)
+            identified_blocks.append(identified_block)
         
-    return treated_image
+    return identified_blocks
+
+
+
+def remove_image_blocks(image_path:str,blocks:list[Box],logs:bool=False)->cv2.Mat:
+    '''Remove blocks from image'''
+    image = cv2.imread(image_path)
+
+    for block in blocks:
+        # remove block
+            # creates white rectangle over the block
+        image = cv2.rectangle(image, (block.left, block.top), (block.right, block.bottom), (255, 255, 255), -1)
+
+        if logs:
+            print(f'Removed block: {block}')
+
+    return image
+
+
+
+def remove_document_images(image_path:str,conf:float=0.5,old_document:bool=True,save_blocks:bool=False,save_blocks_path:str=None,logs:bool=False)->cv2.Mat:
+    '''Remove document images from document'''
+    blocks = identify_document_images(image_path,conf=conf,old_document=old_document,logs=logs)
+
+    # save blocks and their positions
+    if save_blocks and save_blocks_path:
+        image = cv2.imread(image_path)
+
+        if not os.path.exists(save_blocks_path):
+            os.makedirs(save_blocks_path)
+
+        # save blocks
+        id = 0
+        serialized_blocks = []
+        for block in blocks:
+            # cut block and save it in folder
+            block_img = image[block.top:block.bottom, block.left:block.right]
+            cv2.imwrite(f'{save_blocks_path}/{id}.png',block_img)
+            serialized_block = block.to_json()
+            serialized_block['id'] = id
+            serialized_blocks.append(serialized_block)
+            id += 1
+
+        # save block positions
+        with open(f'{save_blocks_path}/blocks.json','w') as f:
+            json.dump(serialized_blocks,f,indent=4)
+
+    return remove_image_blocks(image_path,blocks,logs=logs)

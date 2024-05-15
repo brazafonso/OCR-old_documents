@@ -185,7 +185,6 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
 
     # image rotation
-    ## not used by default
     if args.fix_rotation and 'auto_rotate' not in args.skip_method:
         rotate_img = rotate_image(processed_image_path,direction=args.fix_rotation,debug=args.debug)
         cv2.imwrite(processed_image_path,rotate_img)
@@ -196,6 +195,25 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
         metadata['transformations'].append(('fix_rotation',args.fix_rotation))
 
+
+    # remove document images
+    if 'remove_document_images' not in args.skip_method:
+        old_document = args.target_old_document
+        # remove document images
+            # also save them so they can be restored later
+        images_folder = f'{results_path}/document_images'
+        treated_image = remove_document_images(processed_image_path,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
+        cv2.imwrite(processed_image_path,treated_image)
+
+        # create step img
+        step_img_path = f'{results_path}/remove_document_images.png'
+        cv2.imwrite(step_img_path,treated_image)
+
+        metadata['transformations'].append(('remove_document_images',images_folder))
+
+
+
+    # update metadata
     save_target_metadata(o_target,metadata)
 
     return processed_image_path
@@ -228,6 +246,20 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     metadata['orc_results_original_path'] = f'{results_path}/ocr_results.json'
     metadata['orc_results_path'] = f'{results_path}/ocr_results.json'
     save_target_metadata(o_target,metadata)
+
+    # create image blocks in OCR results
+    if metadata_has_transformation(metadata,'remove_document_images'):
+        _,blocks_path = metadata_get_transformation(metadata,'remove_document_images')
+
+        if os.path.exists(blocks_path):
+            blocks_positions_file_path = f'{blocks_path}/blocks.json'
+            blocks = json.load(open(blocks_positions_file_path,'r'))
+
+            ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
+            for block in blocks:
+                ocr_block = OCR_Tree({'level':2,'box':block,'type':'image'})
+                ocr_results.add_child(ocr_block)
+
 
     # get results
     return [OCR_Tree(f'{results_path}/ocr_results.json'),target]
@@ -281,8 +313,46 @@ def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,logs:boo
     metadata['transformations'].append('unite_ocr_blocks')
     save_target_metadata(o_target,metadata)
 
-
     return ocr_results
+
+
+def restore_document_images(o_target:str,results_path:str,logs:bool=False):
+    '''Restore document images'''
+
+    if logs:
+        print('Restoring document images...')
+
+    metadata = get_target_metadata(o_target)
+    metadata['transformations'].append('restore_document_images')
+    save_target_metadata(o_target,metadata)
+
+    if metadata_has_transformation(metadata,'remove_document_images'):
+        _,blocks_path = metadata_get_transformation(metadata,'remove_document_images')
+
+        if os.path.exists(blocks_path):
+            blocks_positions_file_path = f'{blocks_path}/blocks.json'
+            blocks = json.load(open(blocks_positions_file_path,'r'))
+
+            target_image = metadata['target_path']
+            image = cv2.imread(target_image)
+
+            for block in blocks:
+                left = block['left']
+                top = block['top']
+                right = block['right']
+                bottom = block['bottom']
+                block_id = block['id']
+                block_image_path = f'{blocks_path}/{block_id}.png'
+
+                if os.path.exists(block_image_path):
+                    block_image = cv2.imread(block_image_path)
+                    image[top:bottom,left:right] = block_image
+
+            # create step image
+            cv2.imwrite(f'{results_path}/restore_document_images.png',image)
+
+            metadata['target_path'] = f'{results_path}/restore_document_images.png'
+            save_target_metadata(o_target,metadata)
 
 def run_target(target:str,args:argparse.Namespace):
     '''Run pipeline for single target.
@@ -380,3 +450,5 @@ def run_target(target:str,args:argparse.Namespace):
         if args.debug:
             print('EXTRACT ARTICLES')
         extract_articles(original_target_path,ocr_results,results_path,args)
+
+    restore_document_images(original_target_path,processed_path,args.debug)

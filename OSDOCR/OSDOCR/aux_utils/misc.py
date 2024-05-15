@@ -152,6 +152,17 @@ def metadata_has_transformation(metadata:dict,transformation:str):
             return True
     return False
 
+def metadata_get_transformation(metadata:dict,transformation:str):
+    '''Get metadata transformation'''
+    transformations = metadata['transformations']
+    for t in transformations[::-1]:
+        if type(t) in (list,tuple):
+            if t[0] == transformation:
+                return t
+        elif t == transformation:
+            return t
+    return None
+
 
 
 def get_dimensions(dimension_key:str):
