@@ -80,7 +80,7 @@ def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:arg
 
 def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
     '''Preprocess image'''
-    if args.debug:
+    if args.logs:
         print('IMAGE PREPROCESS')
     processed_image_path = f'{results_path}/processed.png'
 
@@ -100,7 +100,7 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
     # noise removal
     if 'noise_removal' not in args.skip_method:
-        if args.debug:
+        if args.logs:
             print('NOISE REMOVAL')
 
         if args.denoise_image:
@@ -129,6 +129,40 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
                 metadata['transformations'].append(('noise_removal',method,method_config))
             
+    # image rotation
+    if args.fix_rotation and 'auto_rotate' not in args.skip_method:
+        if args.logs:
+            print('FIX ROTATION')
+
+        rotate_img = rotate_image(processed_image_path,direction=args.fix_rotation,
+                                  auto_crop=True,debug=args.debug)
+        cv2.imwrite(processed_image_path,rotate_img)
+
+        # create step img
+        step_img_path = f'{results_path}/fix_rotation.png'
+        cv2.imwrite(step_img_path,rotate_img)
+
+        metadata['transformations'].append(('fix_rotation',args.fix_rotation))
+
+
+
+    # remove document margins
+    if 'remove_document_margins' not in args.skip_method:
+        if args.logs:
+            print('REMOVE DOCUMENT MARGINS')
+
+        # remove document margins
+        cut_margins = cut_document_margins(processed_image_path,logs=args.debug)
+        
+        image = cv2.imread(processed_image_path)
+        treated_image = image[cut_margins.top:cut_margins.bottom,cut_margins.left:cut_margins.right]
+        cv2.imwrite(processed_image_path,treated_image)
+
+        # create step img
+        step_img_path = f'{results_path}/remove_document_margins.png'
+        cv2.imwrite(step_img_path,treated_image)
+
+        metadata['transformations'].append(('remove_document_margins'))
 
 
     # blur removal
@@ -138,7 +172,7 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
     # image upscaling
     if 'image_upscaling' not in args.skip_method:
-        if args.debug:
+        if args.logs:
             print('IMAGE UPSCALING')
 
         if args.upscaling_image:
@@ -184,53 +218,6 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         pass
 
 
-    # image rotation
-    if args.fix_rotation and 'auto_rotate' not in args.skip_method:
-        cut_margins = cut_document_margins(processed_image_path)
-
-        rotate_img = rotate_image(processed_image_path,direction=args.fix_rotation,
-                                  crop_bottom=cut_margins.bottom,crop_top=cut_margins.top,
-                                  crop_left=cut_margins.left,crop_right=cut_margins.right,debug=args.debug)
-        cv2.imwrite(processed_image_path,rotate_img)
-
-        # create step img
-        step_img_path = f'{results_path}/fix_rotation.png'
-        cv2.imwrite(step_img_path,rotate_img)
-
-        metadata['transformations'].append(('fix_rotation',args.fix_rotation))
-
-
-    # remove document images
-    if 'remove_document_images' not in args.skip_method:
-        old_document = args.target_old_document
-        # remove document images
-            # also save them so they can be restored later
-        images_folder = f'{results_path}/document_images'
-        treated_image = remove_document_images(processed_image_path,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
-        cv2.imwrite(processed_image_path,treated_image)
-
-        # create step img
-        step_img_path = f'{results_path}/remove_document_images.png'
-        cv2.imwrite(step_img_path,treated_image)
-
-        metadata['transformations'].append(('remove_document_images',images_folder))
-
-
-    # remove document margins
-    if 'remove_document_margins' not in args.skip_method:
-        # remove document margins
-        cut_margins = cut_document_margins(processed_image_path,logs=args.debug)
-        
-        image = cv2.imread(processed_image_path)
-        treated_image = image[cut_margins.top:cut_margins.bottom,cut_margins.left:cut_margins.right]
-        cv2.imwrite(processed_image_path,treated_image)
-
-        # create step img
-        step_img_path = f'{results_path}/remove_document_margins.png'
-        cv2.imwrite(step_img_path,treated_image)
-
-        metadata['transformations'].append(('remove_document_margins'))
-
 
     # update metadata
     save_target_metadata(o_target,metadata)
@@ -257,7 +244,14 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     if 'image_preprocess' not in args.skip_method:
         target = image_preprocess(o_target,results_path,args)
             
-    run_tesseract(target,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+    if args.logs:
+        print(f'OCR: {target}')
+
+    binarize_tmp = binarize(target)
+    cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
+    binarized_path = f'{results_path}/binarize.png'
+
+    run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)
@@ -266,27 +260,13 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     metadata['orc_results_path'] = f'{results_path}/ocr_results.json'
     save_target_metadata(o_target,metadata)
 
-    # create image blocks in OCR results
-    if metadata_has_transformation(metadata,'remove_document_images'):
-        _,blocks_path = metadata_get_transformation(metadata,'remove_document_images')
-
-        if os.path.exists(blocks_path):
-            blocks_positions_file_path = f'{blocks_path}/blocks.json'
-            blocks = json.load(open(blocks_positions_file_path,'r'))
-
-            ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
-            for block in blocks:
-                ocr_block = OCR_Tree({'level':2,'box':block,'type':'image'})
-                ocr_results.add_child(ocr_block)
-
-
     # get results
     return [OCR_Tree(f'{results_path}/ocr_results.json'),target]
 
 
-def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,logs:bool=False):
+def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''Clean ocr_tree'''
-    ocr_results = bound_box_fix(ocr_results,2,None,logs=logs)
+    ocr_results = bound_box_fix(ocr_results,2,None,find_images=False,logs=args.debug)
 
     result_dict_file = open(f'{results_path}/clean_ocr.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
@@ -343,7 +323,6 @@ def restore_document_images(o_target:str,results_path:str,logs:bool=False):
 
     metadata = get_target_metadata(o_target)
     metadata['transformations'].append('restore_document_images')
-    save_target_metadata(o_target,metadata)
 
     if metadata_has_transformation(metadata,'remove_document_images'):
         _,blocks_path = metadata_get_transformation(metadata,'remove_document_images')
@@ -371,7 +350,51 @@ def restore_document_images(o_target:str,results_path:str,logs:bool=False):
             cv2.imwrite(f'{results_path}/restore_document_images.png',image)
 
             metadata['target_path'] = f'{results_path}/restore_document_images.png'
-            save_target_metadata(o_target,metadata)
+
+    save_target_metadata(o_target,metadata)
+
+
+def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''Identify images in ocr_results'''
+    if args.logs:
+        print('IDENTIFY DOCUMENT IMAGES')
+
+    metadata = get_target_metadata(o_target)
+
+    target_path = metadata['target_path']
+    
+    images = identify_document_images(target_path,old_document=args.target_old_document,logs=args.debug)
+    
+    #id ocr results
+    ocr_results.id_boxes(level=[2])
+    last_id = len(ocr_results.get_boxes_level(level=2))
+    ocr_page = ocr_results.get_boxes_level(level=1)[0]
+    images_ids = []
+
+    for image in images:
+        ocr_block = OCR_Tree({'level':2,'box':image,'type':'image','id':last_id})
+        ocr_page.add_child(ocr_block)
+        images_ids.append(last_id)
+        last_id += 1
+
+    # for each image, delete ocr blocks inside it
+    for image_id in images_ids:
+        ocr_results.remove_blocks_inside(image_id,args.debug)
+
+    # save ocr results
+    result_dict_file = open(f'{results_path}/identify_document_images.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    image = draw_bounding_boxes(ocr_results,target_path,[2],id=True)
+    cv2.imwrite(f'{results_path}/identify_document_images.png',image)
+
+    # save metadata
+    metadata['ocr_results_path'] = f'{results_path}/identify_document_images.json'
+    metadata['transformations'].append('identify_images_ocr_results')
+    save_target_metadata(o_target,metadata)
+
+    return ocr_results
 
 def run_target(target:str,args:argparse.Namespace):
     '''Run pipeline for single target.
@@ -400,7 +423,7 @@ def run_target(target:str,args:argparse.Namespace):
     original_target_path = target
     metadata = get_target_metadata(target)
 
-    if args.debug:
+    if args.logs:
         print(f'Processing: {target}')
         print(f'Options: {args}')
 
@@ -418,6 +441,11 @@ def run_target(target:str,args:argparse.Namespace):
         # check if target has been ocrd before or force
         if force_ocr or not metadata['ocr']:
             ocr_results,_ = run_target_image(original_target_path,processed_path,args)
+            
+
+            # identify images in target and modify ocr_results accordingly
+            if 'identify_document_images' not in args.skip_method:
+                ocr_results = identify_images_ocr_results(ocr_results,original_target_path,processed_path,args)
 
             # get most recent metadata
             metadata = get_target_metadata(original_target_path)
@@ -433,6 +461,7 @@ def run_target(target:str,args:argparse.Namespace):
 
     target = metadata['target_path']
 
+
     # id boxes
     ocr_results.id_boxes([2])
 
@@ -442,16 +471,16 @@ def run_target(target:str,args:argparse.Namespace):
 
     # clean ocr_results
     if 'clean_ocr' not in args.skip_method:
-        if args.debug:
+        if args.logs:
             print('CLEAN OCR')
-        ocr_results = clean_ocr(ocr_results,original_target_path,processed_path,logs=args.debug) 
+        ocr_results = clean_ocr(ocr_results,original_target_path,processed_path,args) 
 
     # categorize boxes
     ocr_results = categorize_boxes(ocr_results)
 
     # unite same type blocks
     if 'unite_blocks' not in args.skip_method:
-        if args.debug:
+        if args.logs:
             print('UNITE BLOCKS')
         ocr_results = unite_ocr_blocks(ocr_results,original_target_path,processed_path,logs=args.debug)
 
@@ -466,8 +495,8 @@ def run_target(target:str,args:argparse.Namespace):
 
     # extract articles
     if 'extract_articles' not in args.skip_method:
-        if args.debug:
+        if args.logs:
             print('EXTRACT ARTICLES')
         extract_articles(original_target_path,ocr_results,results_path,args)
 
-    restore_document_images(original_target_path,processed_path,args.debug)
+    # restore_document_images(original_target_path,processed_path,args.debug)

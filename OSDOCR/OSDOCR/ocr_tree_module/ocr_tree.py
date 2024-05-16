@@ -152,7 +152,7 @@ class OCR_Tree:
             child.pretty_print(index+1)
 
 
-    def add_child(self, child):
+    def add_child(self, child:'OCR_Tree'):
         '''Add child to ocr_results'''
         # fix child level (recursive)
         child.reset_level(self.level + 1)
@@ -240,12 +240,15 @@ class OCR_Tree:
             return True
         return False
     
-    def is_empty(self,conf:int=0):
+    def is_empty(self,conf:int=0,only_text:bool=False)->bool:
         '''Check if box is empty'''
+        if not only_text:
+            return self.type not in ['image']
         text = self.to_text(conf).strip()
         empty = re.match(r'^\s*$',text)
         return empty != None
     
+
     def is_delimiter(self,conf:int=0):
         '''Check if box is delimiter'''
         if self.level == 2 and self.is_empty(conf):
@@ -255,7 +258,7 @@ class OCR_Tree:
     
     def is_vertical_text(self,conf:int=0):
         '''Check if box is vertical text'''
-        if self.level == 2 and not self.is_empty(conf):
+        if self.level == 2 and not self.is_empty(conf,only_text=True):
             lines = self.get_boxes_level(4)
             # single line
             if len(lines) == 1:
@@ -566,6 +569,21 @@ class OCR_Tree:
         self.par_num += reference_par
         for child in self.children:
             child.update_children_metadata(reference_block,reference_par)
+
+
+    def remove_blocks_inside(self,id:int,debug:bool=False):
+        '''Remove blocks inside of block id'''
+        block = self.get_box_id(id)
+        if block:
+            block_level = block.level
+            blocks = self.get_boxes_level(block_level)
+
+            for b in blocks:
+                if b.id != id and b.box.is_inside_box(block.box):
+                    if debug:
+                        print(f'Removing Box : {b.id} is inside {block.id}')
+                    self.remove_box_id(b.id)
+
 
 
     

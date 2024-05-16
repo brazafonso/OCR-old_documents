@@ -15,7 +15,7 @@ def path_to_id(path: str):
     file_name = path.split('/')[-1].split('.')[0]
     path_hash = hashlib.md5('/'.join(path.split('/')[:-1]).encode('utf-8')).hexdigest()
 
-    return f'{file_name}_{path_hash}'
+    return f'{file_name}______{path_hash}'
 
 
 def read_configs():

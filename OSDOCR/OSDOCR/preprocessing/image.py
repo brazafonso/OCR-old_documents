@@ -119,7 +119,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
 
 
 
-def identify_document_images(image_path:str,conf:float=0.5,old_document:bool=True,logs:bool=False)->cv2.Mat:
+def identify_document_images(image_path:str,conf:float=0.5,old_document:bool=True,logs:bool=False)->list[Box]:
     '''Identify document image elements from image, using layout parser.
     Identified image elements (old document):
     - Photograph

@@ -2,7 +2,7 @@ from ocr_tree_module.ocr_tree import *
 from ocr_tree_module.ocr_tree_analyser import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Tree,logs:bool=False):
+def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=False):
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -107,12 +107,12 @@ def block_bound_box_fix(ocr_results:OCR_Tree,logs:bool=False):
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,logs:bool=False):
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool=True,logs:bool=False):
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
     if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results,logs)
+        new_ocr_results = block_bound_box_fix(ocr_results,find_images,logs)
 
     return new_ocr_results
 

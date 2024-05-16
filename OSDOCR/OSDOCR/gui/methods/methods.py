@@ -209,7 +209,8 @@ def auto_rotate_method(window:sg.Window,target:str,values:dict):
 
     logs = values['checkbox_1_1']
 
-    img = rotate_image(target_image,direction='auto',debug=logs)
+    img = rotate_image(target_image,direction='auto',debug=logs,
+                       auto_crop=True)
 
     cv2.imwrite(f'{processed_folder_path}/fix_rotation.png',img)
     metadata['target_path'] = f'{processed_folder_path}/fix_rotation.png'

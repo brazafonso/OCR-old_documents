@@ -1100,6 +1100,10 @@ def categorize_boxes(ocr_results:OCR_Tree):
 
     # categorize blocks
     for block in blocks:
+        # block has type
+        if block.type:
+            continue
+
         # empty block
         if block.is_empty():
             if block.is_delimiter():

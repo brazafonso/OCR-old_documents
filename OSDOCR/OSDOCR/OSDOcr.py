@@ -17,7 +17,7 @@ from ocr_tree_module.ocr_tree_analyser import *
 skipable_methods = ['clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'noise_removal','blur_removal','lightning_correction',
                     'image_upscaling','extract_articles','image_preprocess',
-                    'remove_document_images','cut_document_margins']
+                    'identify_document_images','cut_document_margins']
 
 
 
@@ -82,9 +82,10 @@ Further options:
     - waifu2x
             * [-1,0,1,2,3]
                         ''',action=CustomAction_denoise_image)
-    t = parser.add_argument('--tesseract_config'         ,type=str,nargs='*' ,default=['__l','por']                     ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
-    parser.add_argument('--skip_method'              ,type=str,nargs='*',default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
-    parser.add_argument('-d','--debug'               ,action='store_true',default=False                             ,help='Debug mode')
+    t = parser.add_argument('--tesseract_config'     ,type=str,nargs='*'    ,default=['__l','por']                      ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
+    parser.add_argument('--skip_method'              ,type=str,nargs='*'    ,default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods))
+    parser.add_argument('-l','--logs'                ,action='store_false'  ,default=True                               ,help='Print logs')
+    parser.add_argument('-d','--debug'               ,action='store_true'   ,default=False                              ,help='Debug mode')
     
 
 
