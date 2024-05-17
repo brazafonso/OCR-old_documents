@@ -1078,7 +1078,7 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None):
 
 
 
-def categorize_boxes(ocr_results:OCR_Tree):
+def categorize_boxes(ocr_results:OCR_Tree,debug:bool=False):
     '''Categorize blocks into different types
     
     Types:
@@ -1146,6 +1146,10 @@ def categorize_boxes(ocr_results:OCR_Tree):
                 block.end_text = True
             else:
                 block.end_text = False
+                
+        if debug:
+            print(block,block.type)
+
             
     return ocr_results
 

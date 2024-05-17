@@ -476,7 +476,7 @@ def run_target(target:str,args:argparse.Namespace):
         ocr_results = clean_ocr(ocr_results,original_target_path,processed_path,args) 
 
     # categorize boxes
-    ocr_results = categorize_boxes(ocr_results)
+    ocr_results = categorize_boxes(ocr_results,args.debug)
 
     # unite same type blocks
     if 'unite_blocks' not in args.skip_method:

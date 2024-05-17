@@ -243,7 +243,8 @@ class OCR_Tree:
     def is_empty(self,conf:int=0,only_text:bool=False)->bool:
         '''Check if box is empty'''
         if not only_text:
-            return self.type not in ['image']
+            if self.type in ['image']:
+                return False
         text = self.to_text(conf).strip()
         empty = re.match(r'^\s*$',text)
         return empty != None
