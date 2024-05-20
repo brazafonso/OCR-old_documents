@@ -85,6 +85,8 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
     text_results_path = metadata['output']['txt_simple']
     text_result = open(text_results_path,'r',encoding='utf-8').read()
 
+    comparison['text'] = {}
+
     ## compare with complete ground truth
     if ground_truth_file:
 
@@ -97,9 +99,7 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
         pairwise_similarity = tfidf * tfidf.T
         similarity = pairwise_similarity.toarray()[0][1]
 
-        comparison['text'] = {
-            'ground_truth_similarity': similarity
-        }
+        comparison['text']['ground_truth_similarity'] = similarity
 
         comparison['ground_truth']['word_count'] = len([w for w in text_result.split() if w.strip()])
 
@@ -114,13 +114,11 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
         total_hits = 0
         found_lines = []
         for line in partial_ground_truth:
-            if line in text_result:
+            if line in text_result.splitlines():
                 total_hits += 1
                 found_lines.append(line)
 
-        comparison['text'] = {
-            'partial_ground_truth_hit_rate': total_hits/len(partial_ground_truth),
-        }
+        comparison['text']['partial_ground_truth_hit_rate'] = total_hits/len(partial_ground_truth)
 
         ### check if lines found are in the correct order in text
         if found_lines:
@@ -228,7 +226,7 @@ def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
             # compare results
             option_results_folder = f'{results_folder}/{option}'
             target_dir = path_to_id(target_image)
-            results = compare_results(f'{option_results_folder}/{target_dir}',option,ground_truth_path,partial_ground_truth_path)
+            results = compare_results(f'{option_results_folder}/{target_dir}',option,ground_truth_path,partial_ground_truth_path,logs)
 
             # save results
             with open(f'{option_results_folder}/results.json','w',encoding='utf-8') as f:
