@@ -586,7 +586,18 @@ class OCR_Tree:
                     self.remove_box_id(b.id)
 
 
-
+    def average_conf(self,level:int=2)->tuple[int,int]:
+        '''Get average confidence of boxes in level'''
+        if self.level == level:
+            return self.conf, 1
+        else:
+            conf = 0
+            count = 0
+            for child in self.children:
+                chlid_conf, child_count = child.average_conf(level)
+                conf += chlid_conf
+                count += child_count
+            return conf,count
     
 
 
