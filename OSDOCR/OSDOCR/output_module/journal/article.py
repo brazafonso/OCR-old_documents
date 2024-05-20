@@ -28,20 +28,17 @@ class Article:
         self.metadata = None
         self.sorted = False
         # single arg (ocr_tree)
-        if len(args) == 1:
-            if isinstance(args[0],OCR_Tree):
-                self.from_ocr_tree(args[0])
-            elif isinstance(args[0],list):
-                self.from_ocr_trees(args[0])
-            else:
-                raise TypeError(f'Invalid type {type(args[0])} for Article constructor')
+        if isinstance(args[0],OCR_Tree):
+            self.from_ocr_tree(*args)
+        elif isinstance(args[0],list):
+            self.from_ocr_trees(*args)
         # multiple args (title, authors, etc)
         else:
             self.init(*args)
 
 
 
-    def from_ocr_trees(self,ocr_trees:list[OCR_Tree]):
+    def from_ocr_trees(self,ocr_trees:list[OCR_Tree],conf:int=0):
         '''Initialize Article object from list of ocr_tree objects'''
         # create original ocr box
         self.original_ocr_tree = OCR_Tree(
@@ -64,7 +61,7 @@ class Article:
         potential_title_boxes = []
         abstract_boxes = []
         for ocr_tree in ocr_trees:
-            if not ocr_tree.is_empty():
+            if not ocr_tree.is_empty(conf=conf):
                 if not ocr_tree.is_text_size(text_analysis['normal_text_size'],range=0.6) and ocr_tree.calculate_mean_height() > text_analysis['normal_text_size']:
                     potential_title_boxes.append(ocr_tree)
                 # break when normal text is found and there are potential title boxes
@@ -161,4 +158,10 @@ class Article:
 ## Body
         {self.body}
         '''
+        return text
+    
+
+    def to_txt(self):
+        '''Returns article in txt format'''
+        text = f'{self.title}\n{self.body}\n'
         return text

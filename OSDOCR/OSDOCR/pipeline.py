@@ -11,30 +11,43 @@ from output_module.journal.article import Article
 from preprocessing.image import *
 
 
-def save_articles(articles:list,results_path:str,args:argparse.Namespace):
+def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,args:argparse.Namespace):
     '''Save articles. Type of output is defined in args : markdown, html, txt'''
     output_types = args.output_type
+    min_text_conf = args.text_confidence
+    metadata = get_target_metadata(o_taget)
 
     if 'markdown' in output_types:
-        with open(f'{results_path}/articles.txt','w',encoding='utf-8') as f:
-            for article in articles:
-                article = Article(article)
-                f.write(article.pretty_print())
-                f.write('\n')
 
         with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
             for article in articles:
-                article = Article(article)
+                article = Article(article,min_text_conf)
                 f.write(article.to_md())
                 f.write('\n'+'==='*40 + '\n')
+
+        metadata['output']['markdown'] = f'{results_path}/articles.md'
 
     if 'html' in output_types:
         # TODO
         pass
 
+        metadata['output']['html'] = f'{results_path}/articles.html'
+
     if 'txt' in output_types:
         # TODO
         pass
+
+        metadata['output']['txt'] = f'{results_path}/articles.txt'
+
+    if 'txt_simple' in output_types:
+        with open(f'{results_path}/articles.txt','w',encoding='utf-8') as f:
+            for article in articles:
+                article = Article(article,min_text_conf)
+                f.write(article.to_txt())
+
+        metadata['output']['txt_simple'] = f'{results_path}/articles.txt'
+
+    save_target_metadata(o_taget,metadata)
 
 def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argparse.Namespace):
     '''Extract articles from image'''
@@ -56,7 +69,7 @@ def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:arg
 
 
     # isolate articles
-    articles = graph_isolate_articles(t_graph,order_list=order_list)
+    articles = graph_isolate_articles(t_graph,order_list=order_list,logs=args.debug)
     if args.debug:
         articles_img = draw_articles(articles,target_img_path)
         cv2.imwrite(f'{results_path}/articles.png',articles_img)
@@ -72,7 +85,7 @@ def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:arg
 
 
     # save articles
-    save_articles(articles,results_path,args)
+    save_articles(articles,o_target,results_path,args)
 
 
     
@@ -256,8 +269,8 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     # update metadata
     metadata = get_target_metadata(o_target)
     metadata['ocr'] = True
-    metadata['orc_results_original_path'] = f'{results_path}/ocr_results.json'
-    metadata['orc_results_path'] = f'{results_path}/ocr_results.json'
+    metadata['ocr_results_original_path'] = f'{results_path}/ocr_results.json'
+    metadata['ocr_results_path'] = f'{results_path}/ocr_results.json'
     save_target_metadata(o_target,metadata)
 
     # get results
@@ -396,6 +409,28 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
 
     return ocr_results
 
+
+
+
+def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''Output target results'''
+    if args.logs:
+        print('OUTPUT TARGET RESULTS')
+
+    metadata = get_target_metadata(o_target)
+    metadata['output'] = {}
+    save_target_metadata(o_target,metadata)
+
+
+    if args.target_type == 'newspaper':
+        # extract articles
+        if 'extract_articles' not in args.skip_method:
+            if args.logs:
+                print('EXTRACT ARTICLES')
+            extract_articles(o_target,ocr_results,results_path,args)
+
+
+
 def run_target(target:str,args:argparse.Namespace):
     '''Run pipeline for single target.
     
@@ -451,8 +486,8 @@ def run_target(target:str,args:argparse.Namespace):
             metadata = get_target_metadata(original_target_path)
 
         else:
-            if os.path.exists(metadata['orc_results_path']):
-                ocr_results_path = metadata['orc_results_path']
+            if os.path.exists(metadata['ocr_results_path']):
+                ocr_results_path = metadata['ocr_results_path']
                 ocr_results = OCR_Tree(ocr_results_path)
             else:
                 print('File not found: ',ocr_results_path)
@@ -493,10 +528,9 @@ def run_target(target:str,args:argparse.Namespace):
         results = analyze_text(ocr_results)
         print(results)
 
-    # extract articles
-    if 'extract_articles' not in args.skip_method:
-        if args.logs:
-            print('EXTRACT ARTICLES')
-        extract_articles(original_target_path,ocr_results,results_path,args)
+
+    # output
+    output_target_results(ocr_results,original_target_path,results_path,args)
+
 
     # restore_document_images(original_target_path,processed_path,args.debug)

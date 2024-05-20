@@ -1,6 +1,7 @@
 import argparse
 
 
+
 class CustomAction_upscale_image(argparse.Action):
     '''
     Custom Action for Upscaling Image
@@ -108,5 +109,32 @@ Options (seperated by '__')
                 final_values['dpi'] = dpi
 
         values = final_values
+
+        setattr(namespace, self.dest, values) 
+
+
+
+
+
+class CustomAction_skip_method(argparse.Action):
+    '''
+    Custom Action for Skip Method option
+    '''
+    def __init__(self, *args, **kwargs):
+        """
+        argparse custom action.
+        :param check_func: callable to do the real check.
+        """
+        super(CustomAction_skip_method, self).__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+        # if skip method "all" is given, add all methods
+        if 'all' in values:
+
+            choices = parser.choices
+            values = []
+            for choice in choices:
+                if choice not in values:
+                    values.append(choice)
 
         setattr(namespace, self.dest, values) 

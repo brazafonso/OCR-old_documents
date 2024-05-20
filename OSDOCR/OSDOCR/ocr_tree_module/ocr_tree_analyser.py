@@ -1700,12 +1700,14 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
 
 
 
-def graph_isolate_articles(graph:Graph,order_list:list=None):
+def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->list[OCR_Tree]:
     '''Isolate articles in topologic graph\n'''
     # sort nodes
     if not order_list: 
         order_list = sort_topologic_order(graph,sort_weight=True)
-    print(order_list)
+
+    if logs:
+        print('Order list:',order_list)
 
     # isolate articles
     ## a new article begins when a title block is found and current article is not empty
@@ -1728,6 +1730,9 @@ def graph_isolate_articles(graph:Graph,order_list:list=None):
     # add last article
     if current_article:
         articles.append(current_article)
+
+    if logs:
+        print('Articles:',articles)
 
     return articles
 
