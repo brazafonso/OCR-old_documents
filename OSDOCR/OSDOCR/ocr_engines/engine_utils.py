@@ -27,22 +27,21 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=F
     psm = None
 
     if opts:
-        if 'lang' in opts:
-            lang = opts['lang']
+        if 'l' in opts:
+            lang = opts['l']
         if 'psm' in opts:
             psm = opts['psm']
         if 'dpi' in opts:
             dpi = opts['dpi']
 
     if lang:
-        config_str += f'-l {lang}'
+        config_str += f'-l {lang} '
 
     if psm:
-        config_str += f'--psm {psm}'
+        config_str += f'--psm {psm} '
 
     if dpi:
-        config_str += f'--dpi {dpi}'
-
+        config_str += f'--dpi {dpi} '
 
 
     data_dict = {}

@@ -249,6 +249,12 @@ class OCR_Tree:
         empty = re.match(r'^\s*$',text)
         return empty != None
     
+    def text_is_title(self,normal_text_size:int,conf:int=0,range:float=0.1,level:int=5):
+        '''Check if text is title'''
+        if not self.is_vertical_text(conf) and not self.is_text_size(normal_text_size,range=range,level=level) and self.calculate_mean_height(level=level) >= normal_text_size:
+            return True
+        return False
+    
 
     def is_delimiter(self,conf:int=0):
         '''Check if box is delimiter'''

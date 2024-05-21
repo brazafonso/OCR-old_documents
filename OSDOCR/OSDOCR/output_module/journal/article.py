@@ -29,7 +29,9 @@ class Article:
         self.sorted = False
         # single arg (ocr_tree)
         if isinstance(args[0],OCR_Tree):
-            self.from_ocr_tree(*args)
+            ocr_tree = [args[0]]
+            args[0] = ocr_tree
+            self.from_ocr_trees(*args)
         elif isinstance(args[0],list):
             self.from_ocr_trees(*args)
         # multiple args (title, authors, etc)
@@ -47,13 +49,10 @@ class Article:
              )
         self.original_ocr_tree.children = ocr_trees
 
+
         # analyze text
         text_analysis = analyze_text(self.original_ocr_tree)
         # print('article analysis',text_analysis)
-
-        # # order ocr_treees by y position
-        # if not self.sorted:
-        #     ocr_treees.sort(key=lambda x: x.box.top)
 
 
         # get title
@@ -62,7 +61,7 @@ class Article:
         abstract_boxes = []
         for ocr_tree in ocr_trees:
             if not ocr_tree.is_empty(conf=conf):
-                if not ocr_tree.is_text_size(text_analysis['normal_text_size'],range=0.6) and ocr_tree.calculate_mean_height() > text_analysis['normal_text_size']:
+                if ocr_tree.text_is_title(text_analysis['normal_text_size'],conf=conf):
                     potential_title_boxes.append(ocr_tree)
                 # break when normal text is found and there are potential title boxes
                 elif ocr_tree.is_text_size(text_analysis['normal_text_size']) and potential_title_boxes:
@@ -91,11 +90,10 @@ class Article:
         ## TODO
 
         # body
-        ## boxes after title
+        ## TODO fix
         body_boxes = []
         if self.title:
-            title_box_index = ocr_trees.index(title_box)
-            body_boxes = ocr_trees[title_box_index+1:]
+            body_boxes = [b for b in ocr_trees if b != title_box]
         else:
             body_boxes = ocr_trees
         self.body = ' '.join([box.to_text() for box in body_boxes])

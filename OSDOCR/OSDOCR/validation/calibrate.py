@@ -52,7 +52,7 @@ def prepare_pipeline_option(pipeline_option:str,target_image:str,default_args:st
 def compare_results(results_folder:str,option:str,ground_truth_file:str=None,partial_ground_truth_file:str=None,logs:bool=False)->dict:
     '''Compare results with ground truth'''
 
-    comparison = {'ground_truth':{}}
+    comparison = {'ground_truth':{},'partial_ground_truth':{},'ocr':{},'text':{}}
 
     
     if logs:
@@ -109,16 +109,21 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
             print('Checking text results with partial ground truth...')
 
         partial_ground_truth = open(partial_ground_truth_file,'r',encoding='utf-8').readlines()
+        partial_ground_truth = [p.strip() for p in partial_ground_truth if p.strip()]
         
+        text_results_lines = [line.strip() for line in text_result.splitlines()]
+
         ### check if lines in partial ground truth are in text result
         total_hits = 0
         found_lines = []
         for line in partial_ground_truth:
-            if line in text_result.splitlines():
+            if line in text_results_lines:
                 total_hits += 1
                 found_lines.append(line)
 
         comparison['text']['partial_ground_truth_hit_rate'] = total_hits/len(partial_ground_truth)
+        comparison['text']['partial_ground_truth_hit_count'] = total_hits
+        comparison['partial_ground_truth']['number_lines'] = len(partial_ground_truth)
 
         ### check if lines found are in the correct order in text
         if found_lines:
@@ -126,7 +131,7 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
 
             #### get line indexes in text
             line_text_indexes = {}
-            for i,line in enumerate(text_result.splitlines()):
+            for i,line in enumerate(text_results_lines):
                 if line in found_lines:
                     line_text_indexes[hashlib.md5(line.encode('utf-8')).hexdigest()] = i
 
@@ -149,6 +154,7 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
                     n_correct_order += 1
 
             comparison['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = n_correct_order/len(found_lines)
+            comparison['text']['partial_ground_truth_matched_lines_correct_order_count'] = n_correct_order
 
 
     return comparison

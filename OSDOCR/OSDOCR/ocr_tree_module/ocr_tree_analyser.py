@@ -1732,7 +1732,7 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
         articles.append(current_article)
 
     if logs:
-        print('Articles:',articles)
+        print('Articles:',len(articles))
 
     return articles
 

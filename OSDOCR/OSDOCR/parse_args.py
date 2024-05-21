@@ -42,7 +42,7 @@ Components:
     parser.add_argument('-ot','--output_type'           ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt','txt_simple'])
     parser.add_argument('-tc','--text_confidence'       ,type=int,nargs=1   ,default=10                                ,help='Text confidence level. Possible values: 0-100.')
     parser.add_argument('-tt','--target_type'           ,type=str,nargs=1   ,default='newspaper'                       ,help='Target type. Possible values: newspaper.')
-    parser.add_argument('-tod','--target_old_document'  ,action='store_true',default=True                              ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
+    parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                             ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
     parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                             ,help='Force OCR engine to run again')
     parser.add_argument('-id','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
     parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
