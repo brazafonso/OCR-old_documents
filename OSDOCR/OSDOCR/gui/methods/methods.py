@@ -9,7 +9,7 @@ from ocr_tree_module.ocr_tree_fix import *
 from ocr_engines.engine_utils import *
 from output_module.journal.article import Article
 from aux_utils.misc import *
-from preprocessing.image import remove_document_images
+from preprocessing.image import remove_document_images,run_waifu2x
 from document_image_utils.image import *
 
 
@@ -347,17 +347,99 @@ def remove_document_images_method(window:sg.Window,target:str,values:dict):
     target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
+    model = values['select_list_1_1'].strip().lower() == 'old'
     
-    treated_image = remove_document_images(target_image,logs=logs)
+    treated_image = remove_document_images(target_image,logs=logs,old_document=model)
 
     cv2.imwrite(f'{processed_folder_path}/removed_images.png',treated_image)
     metadata['target_path'] = f'{processed_folder_path}/removed_images.png'
-    metadata['transformations'].append('remove_document_images')
+    metadata['transformations'].append(('remove_document_images'))
     save_target_metadata(target,metadata)
 
     update_image_element(window,'result_img',treated_image)
 
 
+def upscale_image_method(window:sg.Window,target:str,values:dict):
+    '''Apply upscale image method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
+    logs = values['checkbox_1_1']
+    method = values['select_list_1_1']
+    
+    upscaled_image_path = f'{processed_folder_path}/image_upscaling.png'
+    run_waifu2x(target_image,result_image_path=upscaled_image_path,logs=logs,method=method)
+
+    metadata['target_path'] = f'{processed_folder_path}/image_upscaling.png'
+    metadata['transformations'].append(('image_upscaling','waifu2x',method))
+    save_target_metadata(target,metadata)
+
+    update_image_element(window,'result_img',upscaled_image_path)
+
+
+def denoise_image_method(window:sg.Window,target:str,values:dict):
+    '''Apply denoise image method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
+    logs = values['checkbox_1_1']
+    noise_level = values['select_list_1_1']
+    
+    denoise_image_path = f'{processed_folder_path}/noise_removal.png'
+
+    run_waifu2x(target_image,result_image_path=denoise_image_path,logs=logs,noise_level=noise_level,method='noise')
+
+    metadata['target_path'] = f'{processed_folder_path}/noise_removal.png'
+    metadata['transformations'].append(('noise_removal','waifu2x',noise_level))
+    save_target_metadata(target,metadata)
+
+    update_image_element(window,'result_img',denoise_image_path)
+
+
+def cut_margins_method(window:sg.Window,target:str,values:dict):
+    '''Apply cut margins method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
+    logs = values['checkbox_1_1']
+    
+    body = cut_document_margins(target_image,logs=logs)
+
+    image = cv2.imread(target_image)
+    cut_image = image[body.top:body.bottom,body.left:body.right]
+
+    cv2.imwrite(f'{processed_folder_path}/remove_document_margins.png',cut_image)
+    metadata['target_path'] = f'{processed_folder_path}/remove_document_margins.png'
+    metadata['transformations'].append(('remove_document_margins'))
+    save_target_metadata(target,metadata)
+
+    update_image_element(window,'result_img',cut_image)
+
+
+def binarize_method(window:sg.Window,target:str,values:dict):
+    '''Apply binarize method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
+    logs = values['checkbox_1_1']
+    denoise_strength = values['select_list_1_1']
+    
+    treated_image = binarize(target_image,denoise_strength,logs=logs)
+
+    cv2.imwrite(f'{processed_folder_path}/binarized.png',treated_image)
+    metadata['target_path'] = f'{processed_folder_path}/binarized.png'
+    metadata['transformations'].append(('binarize',denoise_strength))
+    save_target_metadata(target,metadata)
+
+    update_image_element(window,'result_img',treated_image)
 
 
 #### TAB 2

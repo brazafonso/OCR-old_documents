@@ -42,6 +42,10 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
     PIL.Image.MAX_IMAGE_PIXELS = None # disable PIL.Image.MAX_IMAGE_PIXELS
     input_image = Image.open(target_image)
 
+
+    if not result_image_path:
+        result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
+
     # autoscale
     ## discern how many times to run the model
     if method == 'autoscale':
@@ -75,8 +79,6 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
                 if logs:
                     print('scaling image | current dpi: ',dpi,' | scale_times left: ',scale_times,' | scaling_type: ',scaling_type)
                 result = model.infer(input_image)
-                if not result_image_path:
-                    result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
                 result.save(result_image_path)
                 input_image = result
 
@@ -89,8 +91,6 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
                 model = create_waifu2x_model(method='scale2x',model_type=model_type,noise_level=noise_level)
 
                 result = model.infer(input_image)
-                if not result_image_path:
-                    result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
                 result.save(result_image_path)
 
             if logs:
@@ -108,8 +108,6 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
 
 
         result = model.infer(input_image)
-        if not result_image_path:
-            result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
         result.save(result_image_path)
 
     if logs:

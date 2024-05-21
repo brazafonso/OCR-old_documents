@@ -43,6 +43,18 @@ def build_gui_main()->sg.Window:
         [
             place(sg.Button('Remove document images',key='sidebar_method_remove_document_images')),
         ],
+        [
+            place(sg.Button('Upscale image',key='sidebar_method_upscale_image')),
+        ],
+        [
+            place(sg.Button('Denoise image',key='sidebar_method_denoise_image')),
+        ],
+        [
+            place(sg.Button('Cut margins',key='sidebar_method_cut_margins')),
+        ],
+        [
+            place(sg.Button('Binarize',key='sidebar_method_binarize')),
+        ],
     ]
 
     first_layout_1 = [

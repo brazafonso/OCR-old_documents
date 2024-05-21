@@ -39,6 +39,14 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
         divide_journal_method(window,image_path,values)
     elif method == 'remove_document_images':
         remove_document_images_method(window,image_path,values)
+    elif method == 'upscale_image':
+        upscale_image_method(window,image_path,values)
+    elif method == 'denoise_image':
+        denoise_image_method(window,image_path,values)
+    elif method == 'cut_margins':
+        cut_margins_method(window,image_path,values)
+    elif method == 'binarize':
+        binarize_method(window,image_path,values)
         
 
     ## TAB 2
@@ -260,6 +268,80 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Document type:',visible=True)
+        window['select_list_1_1'].update(value='Old',values=['Old','New'],visible=True)
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'upscale_image':
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/image_upscaling.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        # update apply button
+        window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Upscaling Method:',visible=True)
+        window['select_list_1_1'].update(value='autoscale',values=['autoscale','scale2x','scale4x'],visible=True)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'denoise_image':
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/noise_removal.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        # update apply button
+        window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Noise Level:',visible=True)
+        window['select_list_1_1'].update(value=1,values=[0,1,2,3],visible=True)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'cut_margins':
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/cut_margins.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        # update apply button
+        window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'binarize':
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/binarized.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        # update apply button
+        window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Denoise strength:',visible=True)
+        window['select_list_1_1'].update(value=10,values=[5,7,10,15,20],visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
