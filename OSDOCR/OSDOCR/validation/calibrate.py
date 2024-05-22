@@ -9,7 +9,10 @@ from aux_utils.misc import path_to_id
 from parse_args import process_args
 from pipeline import run_target
 from ocr_tree_module.ocr_tree import OCR_Tree
+from ocr_tree_module.ocr_tree_analyser import extract_articles
 from sklearn.feature_extraction.text import TfidfVectorizer
+from document_image_utils.image import divide_columns
+from preprocessing.image import identify_document_images
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -49,10 +52,21 @@ def prepare_pipeline_option(pipeline_option:str,target_image:str,default_args:st
     return pipeline_args
 
 
-def compare_results(results_folder:str,option:str,ground_truth_file:str=None,partial_ground_truth_file:str=None,logs:bool=False)->dict:
+def compare_results(results_folder:str,option:str,
+                    ground_truth_file:str=None,partial_ground_truth_file:str=None,expected_results_path:str=None,
+                    option_args:Namespace=None,logs:bool=False)->dict:
     '''Compare results with ground truth'''
 
-    comparison = {'ground_truth':{},'partial_ground_truth':{},'ocr':{},'text':{}}
+    comparison = {
+        'ground_truth':{},
+        'partial_ground_truth':{},
+        'image':{},
+        'validation':{
+            'ocr':{},
+            'text':{},
+            'image':{},
+        }
+    }
 
     
     if logs:
@@ -72,7 +86,7 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
     ocr_average_text_conf = ocr_totaltext_conf / ocr_number_text_blocks
     ocr_text_blocks = [t for t in ocr_results.get_boxes_level(level=5)]
 
-    comparison['ocr'] = {
+    comparison['validation']['ocr'] = {
         'average_text_conf': ocr_average_text_conf,
         'number_text_blocks': len(ocr_text_blocks)
     }
@@ -85,7 +99,6 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
     text_results_path = metadata['output']['txt_simple']
     text_result = open(text_results_path,'r',encoding='utf-8').read()
 
-    comparison['text'] = {}
 
     ## compare with complete ground truth
     if ground_truth_file:
@@ -99,7 +112,7 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
         pairwise_similarity = tfidf * tfidf.T
         similarity = pairwise_similarity.toarray()[0][1]
 
-        comparison['text']['ground_truth_similarity'] = similarity
+        comparison['validation']['text']['ground_truth_similarity'] = similarity
 
         comparison['ground_truth']['word_count'] = len([w for w in text_result.split() if w.strip()])
 
@@ -121,8 +134,8 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
                 total_hits += 1
                 found_lines.append(line)
 
-        comparison['text']['partial_ground_truth_hit_rate'] = total_hits/len(partial_ground_truth)
-        comparison['text']['partial_ground_truth_hit_count'] = total_hits
+        comparison['validation']['text']['partial_ground_truth_hit_rate']  = total_hits/len(partial_ground_truth)
+        comparison['validation']['text']['partial_ground_truth_hit_count'] = total_hits
         comparison['partial_ground_truth']['number_lines'] = len(partial_ground_truth)
 
         ### check if lines found are in the correct order in text
@@ -153,9 +166,35 @@ def compare_results(results_folder:str,option:str,ground_truth_file:str=None,par
                 if correct_order:
                     n_correct_order += 1
 
-            comparison['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = n_correct_order/len(found_lines)
-            comparison['text']['partial_ground_truth_matched_lines_correct_order_count'] = n_correct_order
+            comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = n_correct_order/len(found_lines)
+            comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_count'] = n_correct_order
 
+    ## compare with other metrics
+    if expected_results_path:
+
+        if logs:
+            print('Checking text results with expected results...')
+
+        expected_results = json.load(open(expected_results_path,'r',encoding='utf-8'))
+        metadata = json.load(open(f'{results_folder}/metadata.json','r',encoding='utf-8'))
+        target_path = metadata['target_path']
+
+        # compare number of columns
+        if 'number_columns' in expected_results:
+            number_of_columns = len(divide_columns(target_path))
+            comparison['validation']['image']['number_columns'] = number_of_columns
+            comparison['image']['number_columns'] = expected_results['number_columns']
+
+        if 'number_images' in expected_results:
+            images = identify_document_images(target_path,old_document=option_args.target_old_document)
+            comparison['validation']['image']['number_images'] = len(images)
+            comparison['image']['number_images'] = expected_results['number_images']
+
+        if 'number_articles' in expected_results:
+            ocr_results = OCR_Tree(metadata['ocr_results_path'])
+            articles = extract_articles(target_path,ocr_results,ignore_delimiters=option_args.ignore_delimiters)
+            comparison['validation']['image']['number_articles'] = len(articles)
+            comparison['image']['number_articles'] = expected_results['number_articles']
 
     return comparison
                     
@@ -196,7 +235,8 @@ def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
     
     ground_truth_path = f'{calibration_folder}/ground_truth.txt' if os.path.exists(f'{calibration_folder}/ground_truth.txt') else None
     partial_ground_truth_path = f'{calibration_folder}/partial_ground_truth.txt' if os.path.exists(f'{calibration_folder}/partial_ground_truth.txt') else None
-    
+    expected_results_path = f'{calibration_folder}/expected_results.json' if os.path.exists(f'{calibration_folder}/expected_results.json') else None
+
     pipeline_options_path = f'{file_path}/pipeline_options'
 
     # modify results folder
@@ -232,7 +272,9 @@ def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
             # compare results
             option_results_folder = f'{results_folder}/{option}'
             target_dir = path_to_id(target_image)
-            results = compare_results(f'{option_results_folder}/{target_dir}',option,ground_truth_path,partial_ground_truth_path,logs)
+            results = compare_results(f'{option_results_folder}/{target_dir}',option,
+                                      ground_truth_path,partial_ground_truth_path,expected_results_path,
+                                      pipeline_args,logs)
 
             # save results
             with open(f'{option_results_folder}/results.json','w',encoding='utf-8') as f:

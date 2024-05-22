@@ -80,7 +80,7 @@ def create_target_metadata(target_path:str):
         'target_path':target_path,
         'ocr': False,
         'ocr_results_original_path': '',
-        'orc_results_path': '',
+        'ocr_results_path': '',
         'transformations': []
     }
     save_target_metadata(target_path,metadata)
@@ -90,7 +90,7 @@ def create_metadata(results_path:str):
     metadata = {
         'ocr': False,
         'ocr_results_original_path': '',
-        'orc_results_path': '',
+        'ocr_results_path': '',
         'transformations': []
     }
     save_metadata(results_path,metadata)

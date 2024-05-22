@@ -23,7 +23,7 @@ def fix_ocr(target:str,results_path:str):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     ocr_results = OCR_Tree(ocr_results_path)
@@ -74,7 +74,7 @@ def tesseract_method(window:sg.Window,target:str,values:dict):
 
     metadata['target_path'] = target_image
     metadata['ocr'] = True
-    metadata['orc_results_path'] = f'{processed_folder_path}/ocr_results.json'
+    metadata['ocr_results_path'] = f'{processed_folder_path}/ocr_results.json'
     save_target_metadata(target,metadata)
 
         
@@ -89,7 +89,7 @@ def extract_articles_method(window:sg.Window,target:str,values:dict):
     '''Apply extract articles method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     if os.path.exists(ocr_results_path):
@@ -98,7 +98,7 @@ def extract_articles_method(window:sg.Window,target:str,values:dict):
             fix_ocr(target,results_path)
 
             metadata = get_target_metadata(target)
-            ocr_results_path = metadata['orc_results_path']
+            ocr_results_path = metadata['ocr_results_path']
 
     ocr_results = OCR_Tree(ocr_results_path)
     ocr_results = categorize_boxes(ocr_results)
@@ -155,7 +155,7 @@ def journal_template_method(window:sg.Window,target:str):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     ocr_results = OCR_Tree(ocr_results_path)
@@ -172,7 +172,7 @@ def reading_order_method(window:sg.Window,target:str,values:dict):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     ocr_results = OCR_Tree(ocr_results_path)
@@ -226,7 +226,7 @@ def unite_blocks_method(window:sg.Window,target:str,values:dict):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']
@@ -241,7 +241,7 @@ def unite_blocks_method(window:sg.Window,target:str,values:dict):
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
-    metadata['orc_results_path'] = f'{processed_folder_path}/result_united.json'
+    metadata['ocr_results_path'] = f'{processed_folder_path}/result_united.json'
     metadata['transformations'].append('unite_ocr_blocks')
     save_target_metadata(target,metadata)
 
@@ -258,7 +258,7 @@ def divide_columns_method(window:sg.Window,target:str,values:dict):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
 
@@ -296,7 +296,7 @@ def divide_journal_method(window:sg.Window,target:str,values:dict):
     results_path = f'{consts.result_path}/{path_to_id(target)}'
     processed_folder_path = f'{results_path}/processed'
     metadata = get_target_metadata(target)
-    ocr_results_path = metadata['orc_results_path'] 
+    ocr_results_path = metadata['ocr_results_path'] 
     target_image = metadata['target_path']
 
     logs = values['checkbox_1_1']

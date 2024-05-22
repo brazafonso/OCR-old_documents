@@ -1740,3 +1740,23 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
 
 
 
+def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,logs:bool=False)->list[OCR_Tree]:
+    '''Extract articles from document using OCR results and image information'''
+
+    
+    image_info = get_image_info(image_path)
+    journal_template = estimate_journal_template(ocr_results,image_info)
+    columns_area = image_info
+    columns_area.remove_box_area(journal_template['header'])
+    columns_area.remove_box_area(journal_template['footer'])
+
+    # run topologic_order context
+    t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
+    order_list = sort_topologic_order(t_graph,sort_weight=True)
+
+
+    # isolate articles
+    articles = graph_isolate_articles(t_graph,order_list=order_list,logs=logs)
+
+
+    return articles
