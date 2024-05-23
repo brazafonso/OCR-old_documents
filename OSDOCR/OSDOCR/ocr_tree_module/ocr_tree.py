@@ -117,7 +117,7 @@ class OCR_Tree:
             if k not in ['box']:
                 self_dict[k] = getattr(self,k)
             else:
-                self_dict[k] = self.box.to_dict()
+                self_dict[k] = self.box.to_json()
 
         data.append(self_dict)
 
@@ -132,7 +132,8 @@ class OCR_Tree:
             if k in ['mean_height']:
                 continue
             if k not in ['box']:
-                result[k].append(getattr(self,k))
+                if k in result.keys():
+                    result[k].append(getattr(self,k))
             else:
                 result[k].append(self.box.to_dict())
         for child in self.children:

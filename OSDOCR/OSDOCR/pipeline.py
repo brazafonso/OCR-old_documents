@@ -302,10 +302,16 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
             blocks = json.load(open(blocks_positions_file_path,'r'))
 
             ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
+            page = ocr_results.get_boxes_level(1)[0]
             for block in blocks:
                 ocr_block = OCR_Tree({'level':2,'box':block,'type':'image'})
                 ocr_block.image_id = block['id']
-                ocr_results.add_child(ocr_block)
+                page.add_child(ocr_block)
+
+            # save ocr results
+            result_dict_file = open(f'{results_path}/ocr_results.json','w')
+            json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+            result_dict_file.close()
 
 
     # get results
