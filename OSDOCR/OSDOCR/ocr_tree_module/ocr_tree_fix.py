@@ -2,7 +2,7 @@ from ocr_tree_module.ocr_tree import *
 from ocr_tree_module.ocr_tree_analyser import *
 from aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=False):
+def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=False)->OCR_Tree:
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -107,7 +107,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=Fal
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool=True,logs:bool=False):
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool=True,logs:bool=False)->OCR_Tree:
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
@@ -118,7 +118,7 @@ def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool
 
 
 
-def unite_blocks(ocr_results:OCR_Tree,log:bool=False):
+def unite_blocks(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
     '''Unite same type of blocks if they are horizontally aligned and adjacent to each other'''
 
     
@@ -131,21 +131,32 @@ def unite_blocks(ocr_results:OCR_Tree,log:bool=False):
         # get first block
         target_block_id = non_visited.pop(0)
         target_block = ocr_results.get_box_id(target_block_id,level=2)
-        if log:
-            print(f'Uniting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
-            print(sorted([b.id for b in available_blocks]))
-            print(sorted([id for id in non_visited]))
+        if logs:
+            print(f'Visiting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
         # get adjacent bellow blocks
         bellow_blocks = target_block.boxes_directly_below(available_blocks)
+        
 
         # if bellow blocks exist
         if bellow_blocks:
             # filter blocks of same type and horizontally aligned
             bellow_blocks = [b for b in bellow_blocks if b.type == target_block.type and b.box.within_horizontal_boxes(target_block.box,range=0.1)]
 
+            # treating text blocks
+            if not target_block.is_empty(conf=conf,only_text=True):
+                # if block is vertical text, can only unite with vertical text blocks
+                if target_block.is_vertical_text(conf=conf):
+                    bellow_blocks = [b for b in bellow_blocks if b.is_vertical_text(conf=conf)]
+
+            # non text blocks
+            else:
+                target_orientation = target_block.box.get_box_orientation()
+                # orientation should be the same
+                bellow_blocks = [b for b in bellow_blocks if b.box.get_box_orientation() == target_orientation]
+
             # if single block passed, unite with target block
             if len(bellow_blocks) == 1:
-                if log:
+                if logs:
                     print('Unite with block',bellow_blocks[0].id)
                 # get bellow block
                 bellow_block = bellow_blocks[0]

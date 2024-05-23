@@ -320,7 +320,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
 
 def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''Clean ocr_tree'''
-    ocr_results = bound_box_fix(ocr_results,2,None,find_images=False,logs=args.debug)
+    ocr_results = bound_box_fix(ocr_results,2,None,find_images='remove_document_images' not in args.skip_method ,logs=args.debug)
 
     result_dict_file = open(f'{results_path}/clean_ocr.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
@@ -342,11 +342,11 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     return ocr_results
 
 
-def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,logs:bool=False):
+def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''Unite ocr_tree'''
     
 
-    ocr_results = unite_blocks(ocr_results)
+    ocr_results = unite_blocks(ocr_results,logs=args.debug)
 
 
     result_dict_file = open(f'{results_path}/result_united.json','w')
@@ -526,8 +526,8 @@ def run_target(target:str,args:argparse.Namespace):
             metadata = get_target_metadata(original_target_path)
 
         else:
-            if os.path.exists(metadata['ocr_results_path']):
-                ocr_results_path = metadata['ocr_results_path']
+            if os.path.exists(metadata['ocr_results_original_path']):
+                ocr_results_path = metadata['ocr_results_original_path']
                 ocr_results = OCR_Tree(ocr_results_path)
             else:
                 print('File not found: ',ocr_results_path)
@@ -550,18 +550,26 @@ def run_target(target:str,args:argparse.Namespace):
             print('CLEAN OCR')
         ocr_results = clean_ocr(ocr_results,original_target_path,processed_path,args) 
 
+    if args.debug:
+        id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
+        cv2.imwrite(f'{processed_path}/result_id_1.png',id_img)
+
     # categorize boxes
     ocr_results = categorize_boxes(ocr_results,args.debug)
+
+    if args.debug:
+        id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
+        cv2.imwrite(f'{processed_path}/result_id_2.png',id_img)
 
     # unite same type blocks
     if 'unite_blocks' not in args.skip_method:
         if args.logs:
             print('UNITE BLOCKS')
-        ocr_results = unite_ocr_blocks(ocr_results,original_target_path,processed_path,logs=args.debug)
+        ocr_results = unite_ocr_blocks(ocr_results,original_target_path,processed_path,args)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)
-        cv2.imwrite(f'{processed_path}/result_id_2.png',id_img)
+        cv2.imwrite(f'{processed_path}/result_id_3.png',id_img)
 
     if args.debug:
         # analyse ocr_results

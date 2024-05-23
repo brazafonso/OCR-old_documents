@@ -285,6 +285,8 @@ class OCR_Tree:
                     widest_word = max(words, key=lambda x: x.box.width)
                     overlapped_words = 0
                     for word in words:
+                        if word == widest_word:
+                            continue
                         if word.box.within_horizontal_boxes(widest_word.box,range=0.1):
                             overlapped_words += 1
                     if overlapped_words/len(words) >= 0.5:
