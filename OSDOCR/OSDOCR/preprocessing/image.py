@@ -1,5 +1,6 @@
 import PIL
 import cv2
+import numpy as np
 import torch
 import layoutparser as lp
 import aux_utils.consts as consts
@@ -204,11 +205,12 @@ def identify_document_images(image_path:str,conf:float=0.5,old_document:bool=Tru
 def remove_image_blocks(image_path:str,blocks:list[Box],logs:bool=False)->cv2.Mat:
     '''Remove blocks from image'''
     image = cv2.imread(image_path)
+    average_color = [int(np.average(image[:,:,i])) for i in range(3)]
 
     for block in blocks:
         # remove block
             # creates white rectangle over the block
-        image = cv2.rectangle(image, (block.left, block.top), (block.right, block.bottom), (255, 255, 255), -1)
+        image = cv2.rectangle(image, (block.left, block.top), (block.right, block.bottom), average_color, -1)
 
         if logs:
             print(f'Removed block: {block}')
