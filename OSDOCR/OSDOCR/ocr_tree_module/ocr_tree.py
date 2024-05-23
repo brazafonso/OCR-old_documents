@@ -61,7 +61,7 @@ class OCR_Tree:
             self.init(*args)
 
     def init(self, level:int=0, page_num:int=0, block_num:int=0, par_num:int=0, line_num:int=0, 
-                 word_num:int=0, box:Box=Box(0,0,0,0), text:str='',conf:int=-1,id=None,type:str=None):
+                 word_num:int=0, box:Box=Box(0,0,0,0), text:str='',conf:int=-1,id=None,type:str=None,**opts:dict):
         '''Initialize ocr_tree object'''
         self.level = level
         self.page_num = page_num
@@ -76,6 +76,10 @@ class OCR_Tree:
         self.type = type
         self.children = []
         self.parent = None
+
+        if opts:
+            for k,v in opts.items():
+                setattr(self,k,v)
 
     def from_json(self,json_list:list[dict]):
         '''Load ocr_results from json list'''
@@ -106,19 +110,17 @@ class OCR_Tree:
 
     def to_json(self):
         data = []
-        data.append({
-            'level':self.level,
-            'page_num':self.page_num,
-            'block_num':self.block_num,
-            'par_num':self.par_num,
-            'line_num':self.line_num,
-            'word_num':self.word_num,
-            'box':self.box.to_json() if self.box else None,
-            'text':self.text,
-            'conf':self.conf,
-            'id':self.id,
-            'type':self.type
-        })
+        self_dict = {}
+        for k in self.__dict__.keys():
+            if k in ['mean_height','children','parent']:
+                continue
+            if k not in ['box']:
+                self_dict[k] = getattr(self,k)
+            else:
+                self_dict[k] = self.box.to_dict()
+
+        data.append(self_dict)
+
         for child in self.children:
             data += child.to_json()
         return data

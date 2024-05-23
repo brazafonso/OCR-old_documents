@@ -36,7 +36,7 @@ class Box:
     def load_json(self,json_dict:dict):
         if 'left' not in json_dict or 'right' not in json_dict or \
             'top' not in json_dict or 'bottom' not in json_dict:
-            raise ValueError('Box must contain at least left, right, top and bottom values')
+            raise ValueError(f'Box must contain at least left, right, top and bottom values. Value : {json_dict}')
 
         for key in json_dict:
             setattr(self,key,json_dict[key])

@@ -224,6 +224,24 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
                 metadata['transformations'].append(('image_upscaling',method,method_config))
 
+    # remove document images
+    if 'remove_document_images' not in args.skip_method:
+        if args.logs:
+            print('REMOVE DOCUMENT IMAGES')
+
+        old_document = args.target_old_document
+        # remove document images
+            # also save them so they can be restored later
+        images_folder = f'{results_path}/document_images'
+        treated_image = remove_document_images(processed_image_path,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
+        cv2.imwrite(processed_image_path,treated_image)
+
+        # create step img
+        step_img_path = f'{results_path}/remove_document_images.png'
+        cv2.imwrite(step_img_path,treated_image)
+
+        metadata['transformations'].append(('remove_document_images',images_folder))
+
 
     # lightning correction
     if 'lightning_correction' not in args.skip_method:
@@ -260,6 +278,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     if args.logs:
         print(f'OCR: {target}')
 
+    # binarize
     binarize_tmp = binarize(target)
     cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
     binarized_path = f'{results_path}/binarize.png'
@@ -272,6 +291,22 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     metadata['ocr_results_original_path'] = f'{results_path}/ocr_results.json'
     metadata['ocr_results_path'] = f'{results_path}/ocr_results.json'
     save_target_metadata(o_target,metadata)
+
+
+    # create image blocks in OCR results
+    if metadata_has_transformation(metadata,'remove_document_images'):
+        _,blocks_path = metadata_get_transformation(metadata,'remove_document_images')
+
+        if os.path.exists(blocks_path):
+            blocks_positions_file_path = f'{blocks_path}/blocks.json'
+            blocks = json.load(open(blocks_positions_file_path,'r'))
+
+            ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
+            for block in blocks:
+                ocr_block = OCR_Tree({'level':2,'box':block,'type':'image'})
+                ocr_block.image_id = block['id']
+                ocr_results.add_child(ocr_block)
+
 
     # get results
     return [OCR_Tree(f'{results_path}/ocr_results.json'),target]
@@ -477,10 +512,9 @@ def run_target(target:str,args:argparse.Namespace):
         if force_ocr or not metadata['ocr']:
             ocr_results,_ = run_target_image(original_target_path,processed_path,args)
             
-
-            # identify images in target and modify ocr_results accordingly
-            if 'identify_document_images' not in args.skip_method:
-                ocr_results = identify_images_ocr_results(ocr_results,original_target_path,processed_path,args)
+            # # identify images in target and modify ocr_results accordingly
+            # if 'identify_document_images' not in args.skip_method:
+            #     ocr_results = identify_images_ocr_results(ocr_results,original_target_path,processed_path,args)
 
             # get most recent metadata
             metadata = get_target_metadata(original_target_path)
@@ -533,4 +567,4 @@ def run_target(target:str,args:argparse.Namespace):
     output_target_results(ocr_results,original_target_path,results_path,args)
 
 
-    # restore_document_images(original_target_path,processed_path,args.debug)
+    restore_document_images(original_target_path,processed_path,args.debug)

@@ -6,7 +6,7 @@ from aux_utils import consts
 
 skipable_methods = ['all','clean_ocr','unite_blocks','auto_rotate','fix_distortions',
                     'noise_removal','blur_removal','lightning_correction',
-                    'image_upscaling','image_preprocess',
+                    'image_upscaling','image_preprocess','remove_document_images'
                     'identify_document_images','cut_document_margins']
 
 def process_args():
