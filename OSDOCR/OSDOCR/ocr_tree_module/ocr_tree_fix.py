@@ -126,10 +126,12 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
     blocks = ocr_results.get_boxes_level(2)
     non_visited = [b.id for b in blocks if b.id]
     available_blocks = [b for b in blocks if b.id]
+    # get first block
+    target_block_id = non_visited.pop(0)
     # iterate over all blocks
     while non_visited:
-        # get first block
-        target_block_id = non_visited.pop(0)
+        united = False
+
         target_block = ocr_results.get_box_id(target_block_id,level=2)
         if logs:
             print(f'Visiting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
@@ -169,6 +171,12 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
 
                 # remove bellow block from main tree
                 ocr_results.remove_box_id(bellow_block.id,level=2)
+
+                united = True
+            
+        if not united:
+            # next block
+            target_block_id = non_visited.pop(0)
 
 
 

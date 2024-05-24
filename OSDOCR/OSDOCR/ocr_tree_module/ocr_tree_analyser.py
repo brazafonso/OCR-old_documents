@@ -12,11 +12,12 @@ from document_image_utils.image import *
 from aux_utils.box import *
 from ocr_tree_module.ocr_tree import *
 from whittaker_eilers import WhittakerSmoother
+from document_image_utils.image import divide_columns
 
 
 
 
-def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->dict:
+def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=10,logs:bool=False)->dict:
     '''Get text sizes from ocr_results using peak detection on line size frequency\n
     
     Frequency graph is smoothened using chosen method.
@@ -39,12 +40,12 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool
     line_sizes = []
     # save text sizes and margins
     for line in lines:
-        if not line.is_empty() and not line.is_vertical_text():
+        if not line.is_empty(conf=conf) and not line.is_vertical_text(conf=conf):
             lmh = line.calculate_mean_height(level=4)
             lmh = round(lmh)
             if len(line_sizes) <= lmh:
                 line_sizes += [0] * (lmh - len(line_sizes) + 2)
-            words = line.get_boxes_level(5)
+            words = line.get_boxes_level(5,conf=conf)
             words = [w for w in words if w.text.strip()]
             line_sizes[lmh] += 1 + len(words)
 
@@ -380,7 +381,7 @@ def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:b
 
 
 
-def analyze_text(ocr_results:OCR_Tree)->dict:
+def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
     '''Analyse text from ocr_results and return text data as dict\n
     Tries to find info about normal text size, number of lines and number of columns\n
     
@@ -391,7 +392,7 @@ def analyze_text(ocr_results:OCR_Tree)->dict:
     '''
     analyze_results = {}
 
-    text_sizes = get_text_sizes(ocr_results,method='WhittakerSmoother',logs=False)
+    text_sizes = get_text_sizes(ocr_results,method='WhittakerSmoother',conf=conf,logs=False)
     analyze_results.update(text_sizes)
     columns = get_columns(ocr_results,method='WhittakerSmoother',logs=False)
     analyze_results.update({'columns':columns})
@@ -1078,7 +1079,7 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None):
 
 
 
-def categorize_boxes(ocr_results:OCR_Tree,debug:bool=False):
+def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False):
     '''Categorize blocks into different types
     
     Types:
@@ -1092,7 +1093,9 @@ def categorize_boxes(ocr_results:OCR_Tree,debug:bool=False):
     '''
 
     # analyze boxes
-    box_analysis = analyze_text(ocr_results)
+    box_analysis = analyze_text(ocr_results,conf=conf)
+    if debug:
+        print('Box analysis:',box_analysis)
 
     # get blocks
     blocks = ocr_results.get_boxes_level(2)
@@ -1105,37 +1108,45 @@ def categorize_boxes(ocr_results:OCR_Tree,debug:bool=False):
             continue
 
         # empty block
-        if block.is_empty():
-            if block.is_delimiter():
+        if block.is_empty(conf=conf):
+            if block.is_delimiter(conf=conf):
                 block.type = 'delimiter'
             else:
                 block.type = 'other'
             ## TODO: categorize empty such as images
         # non empty block
         else:
-            if block.is_text_size(box_analysis['normal_text_size'],level=4) or block.is_vertical_text():
+            if block.is_text_size(box_analysis['normal_text_size'],level=4) or block.is_vertical_text(conf=conf):
                 # text block
                 block.type = 'text'
+                if debug:
+                    print('Text block:',block.id,f'| Is vertical: {block.is_vertical_text(conf=conf)} | Is text size: {block.is_text_size(box_analysis["normal_text_size"],level=4)}')
             # greater than normal text size
             elif block.calculate_mean_height(level=4) > box_analysis['normal_text_size']:
+                words = block.get_boxes_level(5,conf=conf)
+                words = [w for w in words if w.text.strip()]
                 # title block
                 ## less than 11 words
-                if len(block.get_boxes_level(5)) < 10:
+                if len(words) < 10:
                     block.type = 'title'
                 ## highlight (some kind of second title)
                 else:
                     block.type = 'highlight'
+                    if debug:
+                        print('Hihghlight block:',block.id,'| Too many words:',len(words))
 
             # smaller than normal text size
             elif block.calculate_mean_height(level=4) < box_analysis['normal_text_size']:
                 # caption block
                 block.type = 'caption'
+                if debug:
+                    print('Caption block:',block.id,'| Is text size: ',block.is_text_size(box_analysis["normal_text_size"],level=4))
             else:
                 # other
                 block.type = 'other'
 
             # text characteristics
-            block_text = block.to_text().strip()
+            block_text = block.to_text(conf=conf).strip()
             # if first character is lower case, starts with lower case
             if not block_text[0].isupper() and not re.match(r'^-\s*[A-Z"]',block_text):
                 block.start_text = False

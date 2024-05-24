@@ -212,33 +212,33 @@ class OCR_Tree:
                     break
         return group_boxes
     
-    def get_boxes_level(self,level:int,ignore_type:list[str]=[])->list['OCR_Tree']:
+    def get_boxes_level(self,level:int,ignore_type:list[str]=[],conf:int=-1)->list['OCR_Tree']:
         '''Get boxes with level in ocr_results'''
         group_boxes = []
-        if self.level == level and self.type not in ignore_type:
+        if self.level == level and self.type not in ignore_type and self.conf >= conf:
             group_boxes.append(self)
         else:
             for child in self.children:
                 if child.level <= level:
-                    group_boxes += child.get_boxes_level(level,ignore_type)
+                    group_boxes += child.get_boxes_level(level,ignore_type,conf)
         return group_boxes
     
-    def calculate_mean_height(self,level:int=5)->float:
+    def calculate_mean_height(self,level:int=5,conf:int=-1)->float:
         '''Get mean height of group boxes'''
         line_sum = 0
         count = 0
-        boxes_level = self.get_boxes_level(level)
+        boxes_level = self.get_boxes_level(level,conf=conf)
         for box in boxes_level:
             line_sum += box.box.height
             count += 1
         
         return line_sum/count if count > 0 else 0
     
-    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.1,level:int=5):
+    def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.3,level:int=5,conf:int=-1):
         '''Check if text size is in range'''
         mean_height = mean_height
         if not mean_height:
-            mean_height = self.calculate_mean_height(level)
+            mean_height = self.calculate_mean_height(level,conf=conf)
         if mean_height >= text_size*(1-range) and mean_height <= text_size*(1+range):
             return True
         return False
@@ -299,6 +299,9 @@ class OCR_Tree:
                 tallest_line = max(lines, key=lambda x: x.box.height)
                 overlapped_lines = 0
                 for line in lines:
+                    if line == tallest_line:
+                        continue
+
                     if line.box.within_vertical_boxes(tallest_line.box,range=0.1):
                         overlapped_lines += 1
                 

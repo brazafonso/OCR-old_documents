@@ -279,7 +279,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
         print(f'OCR: {target}')
 
     # binarize
-    binarize_tmp = binarize(target)
+    binarize_tmp = binarize(target,denoise_strength=5)
     cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
     binarized_path = f'{results_path}/binarize.png'
 
@@ -555,7 +555,7 @@ def run_target(target:str,args:argparse.Namespace):
         cv2.imwrite(f'{processed_path}/result_id_1.png',id_img)
 
     # categorize boxes
-    ocr_results = categorize_boxes(ocr_results,args.debug)
+    ocr_results = categorize_boxes(ocr_results,debug=args.debug)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)

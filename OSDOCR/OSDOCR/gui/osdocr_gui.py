@@ -1,7 +1,6 @@
 '''Old Structured Document OCR - GUI'''
 
 import os
-import pandas as pd
 import PySimpleGUI as sg
 from aux_utils import consts
 from document_image_utils.image import *
