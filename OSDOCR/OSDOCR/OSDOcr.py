@@ -138,7 +138,7 @@ if __name__ == '__main__':
         run_main(args)
 
     else:
-        run_calibrate(args.calibrate[0],args.calibrate[1],args.logs,args.debug)
+        run_calibrate(args.calibrate[0],args.calibrate[1],args.calibrate_no_reuse == False,args.logs,args.debug)
 
     # clean tmp folder files
     clean_tmp_folder()
