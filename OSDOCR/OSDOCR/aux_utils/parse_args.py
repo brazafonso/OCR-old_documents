@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+file_path = os.path.dirname(os.path.realpath(__file__))
 
 class CustomAction_upscale_image(argparse.Action):
     '''
@@ -170,3 +171,24 @@ class CustomAction_pipeline_config(argparse.Action):
         for k,v in config.items():
             setattr(namespace, k, v)
         
+
+class CustomAction_calibrate(argparse.Action):
+    '''
+    Custom Action for Calibrate option
+    '''
+    def __init__(self, *args, **kwargs):
+        """
+        argparse custom action.
+        :param check_func: callable to do the real check.
+        """
+        super(CustomAction_calibrate, self).__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+
+        # check and fix pipeline config path (second value)
+        ## if single value is given, second value is default pipeline config folder
+        if len(values) == 1:
+            pipeline_configs_folder = f'{file_path}/../validation/pipeline_options'
+            values = [values[0],pipeline_configs_folder]
+
+        setattr(namespace, self.dest, values)

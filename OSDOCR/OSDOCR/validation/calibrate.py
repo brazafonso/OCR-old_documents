@@ -201,7 +201,7 @@ def compare_results(results_folder:str,option:str,
 
                 
 
-def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
+def run_calibrate(calibration_folder:str,pipeline_configs_path:str,logs:bool=False,debug:bool=False):
     '''Find the best calibration for OSDOCR using prepared ground truth data.
         Possible files:
         - target_image.<extension>
@@ -237,7 +237,6 @@ def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
     partial_ground_truth_path = f'{calibration_folder}/partial_ground_truth.txt' if os.path.exists(f'{calibration_folder}/partial_ground_truth.txt') else None
     expected_results_path = f'{calibration_folder}/expected_results.json' if os.path.exists(f'{calibration_folder}/expected_results.json') else None
 
-    pipeline_options_path = f'{file_path}/pipeline_options'
 
     # modify results folder
     results_folder = f'{calibration_folder}/results'
@@ -253,10 +252,10 @@ def run_calibrate(calibration_folder:str,logs:bool=False,debug:bool=False):
     # for each pipeline option
         # run pipeline and compare results with ground truth
         # save comparison results
-    for option in os.listdir(pipeline_options_path):
+    for option in os.listdir(pipeline_configs_path):
         if option.endswith('.json'):
 
-            pipeline_args = prepare_pipeline_option(f'{pipeline_options_path}/{option}',target_image,
+            pipeline_args = prepare_pipeline_option(f'{pipeline_configs_path}/{option}',target_image,
                                                     default_args,results_folder,option,logs,debug)
         
             # run pipeline
