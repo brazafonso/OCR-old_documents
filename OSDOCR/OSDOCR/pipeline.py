@@ -111,36 +111,6 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         # TODO
         pass
 
-    # noise removal
-    if 'noise_removal' not in args.skip_method:
-        if args.logs:
-            print('NOISE REMOVAL')
-
-        if args.denoise_image:
-            method = args.denoise_image[0]
-            tmp_denoised_image_path = f'{consts.tmp_path}/OSDOcr_image_denoised_tmp.png'
-            denoised = False
-
-            if method == 'waifu2x':
-                method_config = None
-                if len(args.denoise_image) > 1:
-                    method_config = int(args.denoise_image[1])
-
-                if method_config:
-                    run_waifu2x(processed_image_path,method='noise',noise_level=method_config,result_image_path=tmp_denoised_image_path,logs=args.debug) 
-                else:
-                    run_waifu2x(processed_image_path,method='noise',result_image_path=tmp_denoised_image_path,logs=args.debug)
-
-                denoised_img = cv2.imread(tmp_denoised_image_path)
-                cv2.imwrite(processed_image_path,denoised_img)
-                denoised = True
-
-            if denoised:
-                # create step img
-                step_img_path = f'{results_path}/noise_removal.png'
-                cv2.imwrite(step_img_path,denoised_img)
-
-                metadata['transformations'].append(('noise_removal',method,method_config))
             
     # image rotation
     if args.fix_rotation and 'auto_rotate' not in args.skip_method:
@@ -243,6 +213,38 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         metadata['transformations'].append(('remove_document_images',images_folder))
 
 
+    # noise removal
+    if 'noise_removal' not in args.skip_method:
+        if args.logs:
+            print('NOISE REMOVAL')
+
+        if args.denoise_image:
+            method = args.denoise_image[0]
+            tmp_denoised_image_path = f'{consts.tmp_path}/OSDOcr_image_denoised_tmp.png'
+            denoised = False
+
+            if method == 'waifu2x':
+                method_config = None
+                if len(args.denoise_image) > 1:
+                    method_config = int(args.denoise_image[1])
+
+                if method_config:
+                    run_waifu2x(processed_image_path,method='noise',noise_level=method_config,result_image_path=tmp_denoised_image_path,logs=args.debug) 
+                else:
+                    run_waifu2x(processed_image_path,method='noise',result_image_path=tmp_denoised_image_path,logs=args.debug)
+
+                denoised_img = cv2.imread(tmp_denoised_image_path)
+                cv2.imwrite(processed_image_path,denoised_img)
+                denoised = True
+
+            if denoised:
+                # create step img
+                step_img_path = f'{results_path}/noise_removal.png'
+                cv2.imwrite(step_img_path,denoised_img)
+
+                metadata['transformations'].append(('noise_removal',method,method_config))
+
+
     # lightning correction
     if 'lightning_correction' not in args.skip_method:
         # TODO
@@ -278,12 +280,12 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     if args.logs:
         print(f'OCR: {target}')
 
-    # binarize
-    binarize_tmp = binarize(target,denoise_strength=5)
-    cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
-    binarized_path = f'{results_path}/binarize.png'
+    # binarize (may remove delimiters)
+    # binarize_tmp = binarize(target,denoise_strength=5)
+    # cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
+    # binarized_path = f'{results_path}/binarize.png'
 
-    run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+    run_tesseract(target,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)

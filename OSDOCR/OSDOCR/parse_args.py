@@ -75,6 +75,7 @@ Further options:
     t = parser.add_argument('--tesseract_config'     ,type=str,nargs='*'    ,default=['__l','por']                      ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
     parser.add_argument('--skip_method'              ,type=str,nargs='*'    ,default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods),action=CustomAction_skip_method,choices=skipable_methods)
     parser.add_argument('--calibrate'                ,type=str,nargs=1                                                  ,help='Calibrate pipeline by using specifying a folder with a target and results for comparison.')
+    parser.add_argument('-pc','--pipeline_config'    ,type=str,nargs=1                                                  ,help='Pipeline config file.',action=CustomAction_pipeline_config)
     parser.add_argument('-l','--logs'                ,action='store_false'  ,default=True                               ,help='Print logs')
     parser.add_argument('-d','--debug'               ,action='store_true'   ,default=False                              ,help='Debug mode')
     

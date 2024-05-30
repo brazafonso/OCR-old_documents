@@ -1,5 +1,6 @@
 import argparse
-
+import json
+import os
 
 
 class CustomAction_upscale_image(argparse.Action):
@@ -138,3 +139,34 @@ class CustomAction_skip_method(argparse.Action):
                     values.append(choice)
 
         setattr(namespace, self.dest, values) 
+
+
+
+
+class CustomAction_pipeline_config(argparse.Action):
+    '''
+    Custom Action for Pipeline config. Reads the config file and updates namespace accordingly
+    '''
+    def __init__(self, *args, **kwargs):
+        """
+        argparse custom action.
+        :param check_func: callable to do the real check.
+        """
+        super(CustomAction_pipeline_config, self).__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+        config_path = values[0]
+
+        # check and load config
+        if not os.path.exists(config_path):
+            parser.error(f'Config file not found: {config_path}')
+
+        try:
+            config = json.load(open(config_path,'r',encoding='utf-8'))
+        except Exception as e:
+            parser.error(f'Error loading config file: {str(e)}')
+
+        # update namespace
+        for k,v in config.items():
+            setattr(namespace, k, v)
+        
