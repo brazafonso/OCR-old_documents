@@ -269,7 +269,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         window['checkbox_1_1'].update(visible=True)
 
         window['select_list_text_1_1'].update(value='Document type:',visible=True)
-        window['select_list_1_1'].update(value='Old',values=['Old','New'],visible=True)
+        window['select_list_1_1'].update(value='Leptonica',values=['Leptonica','Old','New'],visible=True)
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:

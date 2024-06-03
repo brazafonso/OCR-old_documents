@@ -199,11 +199,12 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         if args.logs:
             print('REMOVE DOCUMENT IMAGES')
 
+        method = args.remove_document_images
         old_document = args.target_old_document
         # remove document images
             # also save them so they can be restored later
         images_folder = f'{results_path}/document_images'
-        treated_image = remove_document_images(processed_image_path,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
+        treated_image = remove_document_images(processed_image_path,method=method,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
         cv2.imwrite(processed_image_path,treated_image)
 
         # create step img
@@ -419,7 +420,7 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
 
     target_path = metadata['target_path']
     
-    images = identify_document_images(target_path,old_document=args.target_old_document,logs=args.debug)
+    images = identify_document_images_layoutparser(target_path,old_document=args.target_old_document,logs=args.debug)
     
     #id ocr results
     ocr_results.id_boxes(level=[2])

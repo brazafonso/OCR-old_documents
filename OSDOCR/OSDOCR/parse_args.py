@@ -74,6 +74,7 @@ Further options:
     - waifu2x
             * [-1,0,1,2,3]
                         ''',action=CustomAction_denoise_image)
+    parser.add_argument('-rdi','--remove_document_images',type=str,nargs='*' ,default=['leptonica']                     ,help='Identify document images automatically (default: leptonica).',choices=['leptonica','layoutparser'])
     t = parser.add_argument('--tesseract_config'     ,type=str,nargs='*'    ,default=['__l','por']                      ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
     parser.add_argument('--skip_method'              ,type=str,nargs='*'    ,default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods),action=CustomAction_skip_method,choices=skipable_methods)
     parser.add_argument('--calibrate'                ,type=str,nargs='+'                                                ,help='Calibrate pipeline by using specifying a folder with a target and results for comparison. A folder for pipeline configs can also be given. By default, uses pipeline config folder in validation folder.',action=CustomAction_calibrate)

@@ -12,7 +12,7 @@ from ocr_tree_module.ocr_tree import OCR_Tree
 from ocr_tree_module.ocr_tree_analyser import extract_articles
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document_image_utils.image import divide_columns
-from preprocessing.image import identify_document_images
+from preprocessing.image import identify_document_images_layoutparser
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -186,7 +186,7 @@ def compare_results(results_folder:str,option:str,
             comparison['image']['number_columns'] = expected_results['number_columns']
 
         if 'number_images' in expected_results:
-            images = identify_document_images(target_path,old_document=option_args.target_old_document)
+            images = identify_document_images_layoutparser(target_path,old_document=option_args.target_old_document)
             comparison['validation']['image']['number_images'] = len(images)
             comparison['image']['number_images'] = expected_results['number_images']
 

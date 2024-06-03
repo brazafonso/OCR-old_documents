@@ -5,7 +5,7 @@ import torch
 import layoutparser as lp
 import aux_utils.consts as consts
 from aux_utils.misc import *
-from document_image_utils.image import calculate_dpi
+from document_image_utils.image import calculate_dpi, identify_document_images
 from aux_utils.box import Box
 from PIL import Image
 from sympy import ceiling
@@ -118,7 +118,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
 
 
 
-def identify_document_images(image_path:str,conf:float=0.5,old_document:bool=True,logs:bool=False)->list[Box]:
+def identify_document_images_layoutparser(image_path:str,conf:float=0.5,old_document:bool=True,logs:bool=False)->list[Box]:
     '''Identify document image elements from image, using layout parser.
     Identified image elements (old document):
     - Photograph
@@ -219,9 +219,14 @@ def remove_image_blocks(image_path:str,blocks:list[Box],logs:bool=False)->cv2.Ma
 
 
 
-def remove_document_images(image_path:str,conf:float=0.5,old_document:bool=True,save_blocks:bool=False,save_blocks_path:str=None,logs:bool=False)->cv2.Mat:
+def remove_document_images(image_path:str,method:str='leptonica',conf:float=0.5,old_document:bool=True,save_blocks:bool=False,save_blocks_path:str=None,logs:bool=False)->cv2.Mat:
     '''Remove document images from document'''
-    blocks = identify_document_images(image_path,conf=conf,old_document=old_document,logs=logs)
+
+    blocks = []
+    if method == 'leptonica':
+        blocks = identify_document_images(image_path,logs=logs)
+    else:
+        blocks = identify_document_images_layoutparser(image_path,conf=conf,old_document=old_document,logs=logs)
 
     # save blocks and their positions
     if save_blocks and save_blocks_path:
