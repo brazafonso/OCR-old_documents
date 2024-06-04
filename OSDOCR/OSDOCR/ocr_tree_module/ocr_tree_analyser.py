@@ -1367,6 +1367,7 @@ def topologic_order_context(ocr_results:OCR_Tree,area:Box=None,ignore_delimiters
     else:
         blocks = ocr_results.get_boxes_level(2,ignore_type=ignore_type)
 
+
     t_graph = topologic_graph(ocr_results,area,clean_graph=False,log=False)
 
     # calculate attraction of edges
@@ -1750,8 +1751,30 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
 
 
 
+def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,logs:bool=False)->list[OCR_Tree]:
+    '''Calculates level 2 OCR Tree reading order and returns these blocks in an ordered list'''
+    ordered_blocks = []
 
-def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,logs:bool=False)->list[OCR_Tree]:
+    image_info = get_image_info(image_path)
+    journal_template = estimate_journal_template(ocr_results,image_info)
+    columns_area = image_info
+    columns_area.remove_box_area(journal_template['header'])
+    columns_area.remove_box_area(journal_template['footer'])
+
+    # run topologic_order context
+    t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
+
+    order_list = sort_topologic_order(t_graph,sort_weight=True)
+
+    for block_id in order_list:
+        block = t_graph.get_node(block_id).value
+        ordered_blocks.append(block)
+
+    return ordered_blocks
+
+
+
+def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,calculate_reading_order:bool=True,logs:bool=False)->list[int]|list[OCR_Tree]:
     '''Extract articles from document using OCR results and image information'''
 
     
@@ -1763,11 +1786,15 @@ def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
-    order_list = sort_topologic_order(t_graph,sort_weight=True)
+
+    if calculate_reading_order:
+        order_list = sort_topologic_order(t_graph,sort_weight=True)
+    else:
+        order_list = [block.id for block in ocr_results.get_boxes_level(2,ignore_type=[] if not ignore_delimiters else ['delimiter']) if t_graph.contains_id(block.id)]
 
 
     # isolate articles
     articles = graph_isolate_articles(t_graph,order_list=order_list,logs=logs)
 
 
-    return articles
+    return order_list,articles

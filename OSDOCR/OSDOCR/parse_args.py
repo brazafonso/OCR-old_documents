@@ -7,7 +7,7 @@ preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','lightning
                          'image_preprocess','cut_document_margins','remove_document_images',
                          'image_upscaling']
 
-posprocessing_methods = ['clean_ocr','unite_blocks']
+posprocessing_methods = ['clean_ocr','unite_blocks','calculate_reading_order','extract_articles']
 
 skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
 

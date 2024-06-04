@@ -26,13 +26,20 @@ class Graph:
 
 
     def add_node(self,node:'Node'):
-        if not self.in_graph(node):
+        if not self.contains(node):
             self.nodes.append(node)
 
-    def in_graph(self,node:'Node'):
+    def contains(self,node:'Node'):
         '''Returns True if node is in self.nodes'''
         for n in self.nodes:
             if n.id == node.id:
+                return True
+        return False
+    
+    def contains_id(self,node_id:int):
+        '''Returns True if node_id is in self.nodes'''
+        for n in self.nodes:
+            if n.id == node_id:
                 return True
         return False
 

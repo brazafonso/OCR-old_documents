@@ -49,27 +49,16 @@ def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,args:argp
 
     save_target_metadata(o_taget,metadata)
 
-def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argparse.Namespace):
+
+def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argparse.Namespace):
     '''Extract articles from image'''
 
     metadata = get_target_metadata(o_target)
     target_img_path = metadata['target_path']
 
-    # get journal template
-    ## leaves only body
-    image_info = get_image_info(target_img_path)
-    journal_template = estimate_journal_template(ocr_results,image_info)
-    columns_area = image_info
-    columns_area.remove_box_area(journal_template['header'])
-    columns_area.remove_box_area(journal_template['footer'])
+    calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    order_list,articles = extract_articles(target_img_path,ocr_results,args.ignore_delimiters,calculate_reading_order,args.logs)
 
-    # run topologic_order context
-    t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=args.ignore_delimiters)
-    order_list = sort_topologic_order(t_graph,sort_weight=True)
-
-
-    # isolate articles
-    articles = graph_isolate_articles(t_graph,order_list=order_list,logs=args.debug)
     if args.debug:
         articles_img = draw_articles(articles,target_img_path)
         cv2.imwrite(f'{results_path}/articles.png',articles_img)
@@ -87,6 +76,56 @@ def extract_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:arg
     # save articles
     save_articles(articles,o_target,results_path,args)
 
+
+def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''Save default output'''
+    if args.logs:
+        print('SAVE DEFAULT OUTPUT')
+
+    metadata = get_target_metadata(o_target)
+    target_img_path = metadata['target_path']
+
+
+    calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    if calculate_reading_order:
+        blocks = order_ocr_tree(target_img_path,ocr_results,args.ignore_delimiters,args.logs)
+    else:
+        blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
+        blocks = sorted(blocks,key=lambda x: x.id)
+
+
+    if 'txt' in args.output_type:
+        with open(f'{results_path}/output.txt','w',encoding='utf-8') as f:
+            for block in blocks:
+                block_txt = block.to_text(args.text_confidence)
+                f.write(block_txt)
+
+    if 'markdown' in args.output_type:
+        with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+            for block in blocks:
+                block_txt = block.to_text(args.text_confidence)
+                f.write(block_txt)
+
+    
+
+
+def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''Output target results'''
+    if args.logs:
+        print('OUTPUT TARGET RESULTS')
+
+    metadata = get_target_metadata(o_target)
+    metadata['output'] = {}
+    save_target_metadata(o_target,metadata)
+
+
+    if args.target_type == 'newspaper' and not 'extract_articles' in args.skip_method:
+        # extract articles
+        if args.logs:
+            print('EXTRACT ARTICLES')
+        output_articles(o_target,ocr_results,results_path,args)
+    else:
+        save_output(ocr_results,o_target,results_path,args)
 
     
 
@@ -199,7 +238,7 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         if args.logs:
             print('REMOVE DOCUMENT IMAGES')
 
-        method = args.remove_document_images
+        method = args.remove_document_images[0]
         old_document = args.target_old_document
         # remove document images
             # also save them so they can be restored later
@@ -282,11 +321,11 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
         print(f'OCR: {target}')
 
     # binarize (may remove delimiters)
-    # binarize_tmp = binarize(target,denoise_strength=5)
-    # cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
-    # binarized_path = f'{results_path}/binarize.png'
+    binarize_tmp = binarize(target,denoise_strength=5)
+    cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
+    binarized_path = f'{results_path}/binarize.png'
 
-    run_tesseract(target,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+    run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)
@@ -456,22 +495,6 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
 
 
 
-def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
-    '''Output target results'''
-    if args.logs:
-        print('OUTPUT TARGET RESULTS')
-
-    metadata = get_target_metadata(o_target)
-    metadata['output'] = {}
-    save_target_metadata(o_target,metadata)
-
-
-    if args.target_type == 'newspaper':
-        # extract articles
-        if 'extract_articles' not in args.skip_method:
-            if args.logs:
-                print('EXTRACT ARTICLES')
-            extract_articles(o_target,ocr_results,results_path,args)
 
 
 
@@ -558,7 +581,7 @@ def run_target(target:str,args:argparse.Namespace):
         cv2.imwrite(f'{processed_path}/result_id_1.png',id_img)
 
     # categorize boxes
-    ocr_results = categorize_boxes(ocr_results,debug=args.debug)
+    ocr_results = categorize_boxes(ocr_results,conf=args.text_confidence,debug=args.debug)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)

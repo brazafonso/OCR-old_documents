@@ -314,6 +314,8 @@ def divide_journal_method(window:sg.Window,target:str,values:dict):
         body_tree.box = body_box
         page_tree.add_child(body_tree)
 
+        print('Body',body_box)
+
 
     if 'footer' in journal_areas:
         footer_box = journal_areas['footer']
@@ -322,6 +324,8 @@ def divide_journal_method(window:sg.Window,target:str,values:dict):
         footer_tree.box = footer_box
         page_tree.add_child(footer_tree)
 
+        print('Footer',footer_box)
+
 
     if 'header' in journal_areas:
         header_box = journal_areas['header']
@@ -329,6 +333,8 @@ def divide_journal_method(window:sg.Window,target:str,values:dict):
         header_tree = OCR_Tree()
         header_tree.box = header_box
         page_tree.add_child(header_tree)
+
+        print('Header',header_box)
 
 
     result_image_path = f'{processed_folder_path}/journal_areas.png'

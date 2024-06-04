@@ -100,7 +100,10 @@ def run_main(args:argparse.Namespace):
     # run targets
     if targets:
         for target in targets:
-            run_target(target,args)
+            if args.calibrate:
+                run_calibrate(args.calibrate[0],args.calibrate[1],args.calibrate_no_reuse == False,args.logs,args.debug)
+            else:
+                run_target(target,args)
 
 
 
@@ -134,11 +137,9 @@ if __name__ == '__main__':
         run_gui()
 
     # normal mode
-    elif not args.calibrate:
-        run_main(args)
-
     else:
-        run_calibrate(args.calibrate[0],args.calibrate[1],args.calibrate_no_reuse == False,args.logs,args.debug)
+        run_main(args)
+        
 
     # clean tmp folder files
     clean_tmp_folder()
