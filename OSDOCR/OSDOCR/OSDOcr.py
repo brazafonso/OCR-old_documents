@@ -9,7 +9,7 @@ from aux_utils import consts
 from gui.osdocr_gui import run_gui
 from ocr_tree_module.ocr_tree import *
 from preprocessing.image import *
-from pipeline import run_target
+from pipeline import run_target,run_target_split
 from ocr_tree_module.ocr_tree_analyser import *
 from validation.calibrate import run_calibrate
 
@@ -33,17 +33,24 @@ def run_test():
         # get_columns_pixels(target_image,method='WhittakerSmoother',logs=True)
         #get_journal_areas(ocr_results,logs=True)
         # Waifu2x test
-        result_image_path = f'{consts.result_path}/result_waifu2x.png'
+        # result_image_path = f'{consts.result_path}/result_waifu2x.png'
         
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
         # run_waifu2x(target_image,result_image_path=result_image_path,method='noise',noise_level=3,logs=True)
-        run_waifu2x(target_image,result_image_path=result_image_path,method='autoscale',noise_level=-1,logs=True)
+        # run_waifu2x(target_image,result_image_path=result_image_path,method='autoscale',noise_level=-1,logs=True)
 
         # detectron2 test
         # test_detectron2(target_image)
 
         # layout parser test
         # remove_document_images(target_image,logs=True)
+
+        # test run target split
+        results_path = f'{consts.result_path}/{path_to_id(target_image)}'
+        ocr_results = run_target_split(target_image,f'{results_path}/processed',tesseract_config={'l':'por'},logs=True)
+        img = draw_bounding_boxes(ocr_results,target_image)
+        cv2.imwrite('test.png',img)
+
 
 
    

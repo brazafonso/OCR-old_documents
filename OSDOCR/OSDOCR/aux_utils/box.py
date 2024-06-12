@@ -25,22 +25,19 @@ class Box:
             self.init(*args)
 
 
-    def init(self, left, right, top, bottom):
-        self.left = left
-        self.right = right
-        self.top = top
-        self.bottom = bottom
+    def init(self, left:int, right:int, top:int, bottom:int):
+        self.left = int(left)
+        self.right = int(right)
+        self.top = int(top)
+        self.bottom = int(bottom)
         self.width = right - left
         self.height = bottom - top
 
     def load_json(self,json_dict:dict):
-        if 'left' not in json_dict or 'right' not in json_dict or \
-            'top' not in json_dict or 'bottom' not in json_dict:
-            raise ValueError(f'Box must contain at least left, right, top and bottom values. Value : {json_dict}')
-
-        for key in json_dict:
-            setattr(self,key,json_dict[key])
-
+        self.left = json_dict['left']
+        self.right = json_dict['right']
+        self.top = json_dict['top']
+        self.bottom = json_dict['bottom']
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
@@ -76,13 +73,13 @@ class Box:
 
     def update(self, left:int=None, right:int=None, top:int=None, bottom:int=None):
         if left is not None:
-            self.left = left
+            self.left = int(left)
         if right is not None:
-            self.right = right
+            self.right = int(right)
         if top is not None:
-            self.top = top
+            self.top = int(top)
         if bottom is not None:
-            self.bottom = bottom
+            self.bottom = int(bottom)
 
         self.width = self.right - self.left
         self.height = self.bottom - self.top
@@ -194,10 +191,12 @@ class Box:
         '''Remove area from box (only if intersect)'''
         if area:
             inside = self.is_inside_box(area)
-            done = False
+            done = inside
+            # While intersecting
+            ## choose action (cut in direction) that removes the less area
             while not done:
                 intersect = self.intersects_box(area)
-                if intersect and not inside:
+                if intersect:
                     above = area.bottom < self.bottom
                     to_left = area.right < self.right
                     to_right = area.left > self.left
@@ -308,6 +307,30 @@ class Box:
             elif border == 'bottom':
                 self_point = self.bottom_middle_point()
                 box_point = box.top_middle_point()
+        # search for closest distance
+        ## simple naive approach
+        elif border == 'closest':
+            distance = None
+            vertical_distance = None
+            if self.within_horizontal_boxes(box):
+                if self.bottom < box.top:
+                    vertical_distance = abs(self.bottom - box.top)
+                else:
+                    vertical_distance = abs(self.center_point()[1] - box.center_point()[1])
+                    
+            horizontal_distance = None
+            if self.within_vertical_boxes(box):
+                if self.right < box.left:
+                    horizontal_distance = abs(self.right - box.left)
+                else:
+                    horizontal_distance = abs(self.center_point()[0] - box.center_point()[0])
+
+            distance = min(vertical_distance,horizontal_distance) if vertical_distance and horizontal_distance else [v for v in [vertical_distance,horizontal_distance] if v][0] if any([vertical_distance,horizontal_distance]) else None
+            if distance:
+                return distance
+            else:
+                self_point = self.center_point()
+                box_point = box.center_point()
         else:
             self_point = self.center_point()
             box_point = box.center_point()
@@ -332,3 +355,5 @@ class Box:
     def right_middle_point(self):
         '''Get right middle point of box'''
         return (self.right,self.top+self.height/2)
+    
+

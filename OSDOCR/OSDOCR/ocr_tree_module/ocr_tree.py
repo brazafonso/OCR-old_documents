@@ -22,6 +22,7 @@ class OCR_Tree:
     def __init__(self,*args):
         '''Initialize ocr_tree object\n
         Available constructors:\n
+        ocr_tree() - default empty constructor\n
         ocr_tree(level:int, page_num:int, block_num:int, par_num:int, line_num:int, word_num:int, box:Box, text:str='',conf:int=-1,id=None,type:str=None)\n
         ocr_tree(json_list:list[dict])\n
         ocr_tree(json_file:str)\n'''
@@ -612,6 +613,37 @@ class OCR_Tree:
                 conf += chlid_conf
                 count += child_count
             return conf,count
+        
+
+    def update_position(self,top:int=None,left:int=None,absolute:bool=False):
+        '''Update position of box and children.
+        
+        Arguments:
+            top (int, optional): Top position. Defaults to None.
+            left (int, optional): Left position. Defaults to None.
+            absolute (bool, optional): If True, positions are absolute, else values are added to current position. Defaults to False.'''
+        
+        if not any([top,left]):
+            return
+        
+        if top is not None:
+            if absolute:
+                self.box.top = top
+                self.box.bottom = top + self.box.height
+            else:
+                self.box.top += top
+                self.box.bottom += top
+        if left is not None:
+            if absolute:
+                self.box.left = left
+                self.box.right = left + self.box.width
+            else:
+                self.box.left += left
+                self.box.right += left
+
+        for child in self.children:
+            child.update_position(top=top,left=left,absolute=absolute)
+
     
 
 

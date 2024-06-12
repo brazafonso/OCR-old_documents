@@ -123,7 +123,7 @@ def save_results(ocr_results:OCR_Tree,image_path:str,results_path:str=None):
     cv2.imwrite(f'{results_path}/ocr_results.png',img)
 
     # save result data
-    result_dict_file = open(f'{results_path}/ocr_results.json','w')
+    result_dict_file = open(f'{results_path}/ocr_results.json','w',encoding='utf-8')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 

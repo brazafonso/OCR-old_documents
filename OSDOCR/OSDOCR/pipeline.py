@@ -303,6 +303,143 @@ def run_target_hocr(target:str,args:argparse.Namespace):
     return None
 
 
+
+
+def run_target_split(o_target:str,results_path:str,tesseract_config:dict,logs:bool=False,debug:bool=False)->OCR_Tree:
+    '''Segment target into Header, Body, Footer and run OCR on each part. Body is further split into columns.
+    
+    Final OCR results are then merged into single ocr_tree.'''
+
+    metadata = get_target_metadata(o_target)
+    target_path = metadata['target_path']
+
+    target_image = cv2.imread(target_path)
+    padding_vertical = int(0.01 * target_image.shape[0])
+    padding_horizontal = int(0.01 * target_image.shape[1])
+
+    # segment target
+    ## get header, body and footer (only body is guaranteed to be found)
+    ## split body into columns
+    header,body,footer = segment_document(target_image,logs=logs,debug=debug)
+
+    if logs:
+        print(f'Body: {body}')
+        print(f'Header: {header}')
+        print(f'Footer: {footer}')
+
+    header = header if header.valid() else None
+    footer = footer if footer.valid() else None
+
+    image_body = target_image[body.top:body.bottom,body.left:body.right]
+    image_header = target_image[header.top:header.bottom,header.left:header.right] if header else None
+    image_footer = target_image[footer.top:footer.bottom,footer.left:footer.right] if footer else None
+
+
+    columns = divide_columns(image_body,logs=debug)
+    columns_images = [image_body[column.top:column.bottom,column.left:column.right] for column in columns]
+
+    if logs:
+        print(f'Columns: {[c.__str__() for c in columns]}')
+
+    # save images into tmp files
+    ## create tmp folder
+    tmp_folder = f'{results_path}/tmp_segmentation'
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
+
+    ## save images
+    if header:
+        # add padding
+        avg_color = np.average(image_header,axis=(0,1))
+        image_header = cv2.copyMakeBorder(image_header,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        b_image_header = binarize(image_header,denoise_strength=5)
+        cv2.imwrite(f'{tmp_folder}/header.png',b_image_header)
+    if footer:
+        # add padding
+        avg_color = np.average(image_footer,axis=(0,1))
+        image_footer = cv2.copyMakeBorder(image_footer,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        b_image_footer = binarize(image_footer,denoise_strength=5)
+        cv2.imwrite(f'{tmp_folder}/footer.png',b_image_footer)
+    for i in range(len(columns_images)):
+        # add padding
+        avg_color = np.average(columns_images[i],axis=(0,1))
+        columns_images[i] = cv2.copyMakeBorder(columns_images[i],padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        b_columns_image = binarize(columns_images[i],denoise_strength=5)
+        cv2.imwrite(f'{tmp_folder}/column_{i}.png',b_columns_image)
+
+    # OCR
+    header_ocr = None
+    footer_ocr = None
+    columns_ocr = []
+    ## header
+    if header:
+        run_tesseract(f'{tmp_folder}/header.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        header_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
+
+    ## footer
+    if footer:
+        run_tesseract(f'{tmp_folder}/footer.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        footer_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
+
+    ## columns
+    for i in range(len(columns_images)):
+        run_tesseract(f'{tmp_folder}/column_{i}.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        column_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
+        columns_ocr.append(column_ocr)
+
+    # Merge ocr_trees
+
+    ## update position of header to match real position in target
+    if header:
+        # remove padding
+        header_ocr.update_position(top=-padding_vertical,left=-padding_horizontal,absolute=False)
+
+    ## update position of columns to match real position in target
+    add_top = header.bottom if header else 0 # value to add to all top positions
+    add_top -= padding_vertical # remove padding
+    for i in range(len(columns_ocr)):
+        column = columns_ocr[i]
+        column:OCR_Tree
+        # value to add according to columns to left of this column
+        add_left = -padding_horizontal
+        if i > 0:
+            add_left = columns[i].left
+
+        if logs:
+            print(f'update position of column {i} to {add_left} + {add_top}')
+
+        column.update_position(left=add_left,top=add_top,absolute=False)
+        columns[i] = column
+
+    ## update position of footer to match real position in target
+    if footer:
+        footer_ocr.update_position(top=body.bottom - padding_vertical,left=-padding_horizontal,absolute=False)
+
+    ## merge all ocr_trees
+    results_ocr = OCR_Tree()
+
+    if header:
+        results_ocr.join_trees(header_ocr)
+
+    for column in columns_ocr:
+        results_ocr.join_trees(column)
+
+    if footer:
+        results_ocr.join_trees(footer_ocr)
+
+    # save png
+    img = draw_bounding_boxes(results_ocr,target_image)
+    cv2.imwrite(f'{results_path}/ocr_results.png',img)
+
+    return results_ocr
+
+
+
+    
+
+
+
+
 def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     '''Run pipeline for single image.
     - Image preprocessing
@@ -320,12 +457,23 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     if args.logs:
         print(f'OCR: {target}')
 
-    # binarize (may remove delimiters)
-    binarize_tmp = binarize(target,denoise_strength=5)
-    cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
-    binarized_path = f'{results_path}/binarize.png'
+    
+    # OCR
+    ## Segment target and OCR each segment
+    if args.segmented_ocr:
+        ocr_results = run_target_split(o_target,results_path,args.tesseract_config,args.logs,args.debug)
+        # save ocr results
+        with open(f'{results_path}/ocr_results.json','w',encoding='utf-8') as f:
+            json.dump(ocr_results.to_json(),f,indent=4)
 
-    run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+    ## Simple OCR
+    else:
+        # binarize (may remove delimiters)
+        binarize_tmp = binarize(target,denoise_strength=5)
+        cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
+        binarized_path = f'{results_path}/binarize.png'
+
+        run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)

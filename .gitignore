@@ -3,7 +3,7 @@
 *.png
 *.json
 docs/jornais/*
-src/results/*
+results
 docs/tese/progresso.txt
 src/conf/conf.json
 *.log

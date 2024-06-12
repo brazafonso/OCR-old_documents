@@ -40,6 +40,11 @@ def read_configs():
             'target_image_path':'',
             'dimensions':{},
         }
+        # create config file
+        os.makedirs(os.path.abspath(consts.consts_path),exist_ok=True)
+        conf_file = open(consts.config_file_path,'w')
+        json.dump(conf,conf_file,indent=4)
+        conf_file.close()
     consts.config = conf
 
 def save_configs():

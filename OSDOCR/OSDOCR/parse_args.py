@@ -39,6 +39,7 @@ Components:
     parser.add_argument('--test'                        ,action='store_true'                                           ,help='Run tests')
     parser.add_argument('-g','--gui'                    ,action='store_true'                                           ,help='Run gui')
     parser.add_argument('target'                        ,type=str,nargs='*'                                            ,help='Target image path')
+    parser.add_argument('-sgocr','--segmented_ocr'      ,action='store_true'                                           ,help='Segment target and apply OCR in each segment, merging results into single tree (default: False).')
     parser.add_argument('-f','--file'                   ,type=str,nargs=1                                              ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
     parser.add_argument('-of','--output_folder'         ,type=str,nargs=1                                              ,help='Results folder')
     parser.add_argument('-ot','--output_type'           ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt','txt_simple'])

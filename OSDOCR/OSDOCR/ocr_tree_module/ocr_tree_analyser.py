@@ -592,11 +592,13 @@ def draw_journal_template(journal_data,image_path):
     return img
 
 
-def draw_bounding_boxes(ocr_results:OCR_Tree,image_path:str,draw_levels=[2],conf=60,id=False):
+def draw_bounding_boxes(ocr_results:OCR_Tree,img:Union[str,cv2.typing.MatLike],draw_levels=[2],conf=60,id=False):
     '''Draw bounding boxes on image of type MatLike from cv2\n
     Return image with bounding boxes'''
 
-    img = cv2.imread(image_path)
+    if isinstance(img,str):
+        img = cv2.imread(img)
+
     box_stack = [ocr_results]
     while box_stack:
         current_node = box_stack.pop()
