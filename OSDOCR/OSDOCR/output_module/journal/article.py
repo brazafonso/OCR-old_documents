@@ -1,9 +1,9 @@
 '''Module for journal article output'''
 
 import re
-from ocr_tree_module.ocr_tree_analyser import analyze_text
-from ocr_tree_module.ocr_tree import OCR_Tree
-from aux_utils.box import Box
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text
+from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
+from OSDOCR.aux_utils.box import Box
 
 
 class Article:

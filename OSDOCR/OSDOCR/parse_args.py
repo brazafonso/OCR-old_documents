@@ -1,6 +1,6 @@
 import argparse
-from aux_utils.parse_args import *
-from aux_utils import consts
+from .aux_utils.parse_args import *
+from .aux_utils import consts
 
 
 preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','lightning_correction',

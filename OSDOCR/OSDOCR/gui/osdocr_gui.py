@@ -2,9 +2,9 @@
 
 import os
 import PySimpleGUI as sg
-from aux_utils import consts
+from OSDOCR.aux_utils import consts
 from document_image_utils.image import *
-from aux_utils.misc import *
+from OSDOCR.aux_utils.misc import *
 from .layouts.main_layout import *
 from .layouts.extra_layout import *
 from .methods.methods import *

@@ -1,15 +1,15 @@
 import argparse
 import shutil
-from pipeline import run_target as ocr_pipeline
-from gui.aux_utils.utils import *
-from ocr_tree_module.information_extraction import journal_template_to_text
-from ocr_tree_module.ocr_tree import *
-from ocr_tree_module.ocr_tree_analyser import *
-from ocr_tree_module.ocr_tree_fix import *
-from ocr_engines.engine_utils import *
-from output_module.journal.article import Article
-from aux_utils.misc import *
-from preprocessing.image import remove_document_images,run_waifu2x
+from OSDOCR.pipeline import run_target as ocr_pipeline
+from OSDOCR.gui.aux_utils.utils import *
+from OSDOCR.ocr_tree_module.information_extraction import journal_template_to_text
+from OSDOCR.ocr_tree_module.ocr_tree import *
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import *
+from OSDOCR.ocr_tree_module.ocr_tree_fix import *
+from OSDOCR.ocr_engines.engine_utils import *
+from OSDOCR.output_module.journal.article import Article
+from OSDOCR.aux_utils.misc import *
+from OSDOCR.preprocessing.image import remove_document_images,run_waifu2x
 from document_image_utils.image import *
 
 

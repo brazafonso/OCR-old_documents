@@ -3,16 +3,16 @@ import os
 import shutil
 import sys
 import hashlib
-import aux_utils.consts as consts
+import OSDOCR.aux_utils.consts as consts
 from argparse import Namespace
-from aux_utils.misc import path_to_id
-from parse_args import process_args,preprocessing_methods,posprocessing_methods
-from pipeline import run_target
-from ocr_tree_module.ocr_tree import OCR_Tree
-from ocr_tree_module.ocr_tree_analyser import extract_articles
+from OSDOCR.aux_utils.misc import path_to_id
+from OSDOCR.parse_args import process_args,preprocessing_methods,posprocessing_methods
+from OSDOCR.pipeline import run_target
+from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import extract_articles
+from OSDOCR.preprocessing.image import identify_document_images
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document_image_utils.image import divide_columns
-from preprocessing.image import identify_document_images
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 

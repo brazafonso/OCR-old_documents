@@ -1,7 +1,7 @@
 import json
 import os
 import hashlib
-from aux_utils import consts
+from . import consts
 
 
 

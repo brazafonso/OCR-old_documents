@@ -2,7 +2,7 @@ import math
 import os
 import json
 import re
-from aux_utils.box import Box
+from OSDOCR.aux_utils.box import Box
 '''Module to generalize OCR result into box object\n'''
 
 

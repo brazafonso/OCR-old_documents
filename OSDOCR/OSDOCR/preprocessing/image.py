@@ -4,10 +4,10 @@ import cv2
 import numpy as np
 import torch
 import layoutparser as lp
-import aux_utils.consts as consts
-from aux_utils.misc import *
+import OSDOCR.aux_utils.consts as consts
+from OSDOCR.aux_utils.misc import *
+from OSDOCR.aux_utils.box import Box
 from document_image_utils.image import calculate_dpi, identify_document_images as identify_document_images_leptonica
-from aux_utils.box import Box
 from PIL import Image
 from sympy import ceiling
 

@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "OSDOCR"
-version = "0.1"
+version = "0.1.1"
 description = "Toolkit for ocr of old structured documents"
 authors = ["Gonçalo Afonso <brazafonso2001@gmail.com>"]
-readme = "README.md"
+#readme = "README.md"
 packages = [
     { include = "OSDOCR" }
 ]
@@ -22,3 +22,6 @@ pytest = "^7.2.2"
 
 [tool.pytest.ini_options]
 pythonpath = "OSDOCR"
+
+[tool.poetry.scripts]
+osdocr = "OSDOCR:main"

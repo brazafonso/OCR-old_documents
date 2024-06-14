@@ -1,7 +1,7 @@
-from ocr_tree_module.ocr_tree import OCR_Tree
-from aux_utils.box import Box
-from output_module.journal.article import Article
-from ocr_tree_module.ocr_tree_analyser import analyze_text
+from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
+from OSDOCR.aux_utils.box import Box
+from OSDOCR.output_module.journal.article import Article
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text
 
 def journal_template_to_text(journal_template:dict,ocr_results:OCR_Tree):
     '''Converts ocr_results to text using journal_template'''

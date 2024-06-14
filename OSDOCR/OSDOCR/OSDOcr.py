@@ -3,15 +3,15 @@
 import argparse
 import os
 import sys
-from parse_args import process_args
-from aux_utils.misc import *
-from aux_utils import consts
-from gui.osdocr_gui import run_gui
-from ocr_tree_module.ocr_tree import *
-from preprocessing.image import *
-from pipeline import run_target,run_target_split
-from ocr_tree_module.ocr_tree_analyser import *
-from validation.calibrate import run_calibrate
+from .parse_args import process_args
+from .aux_utils.misc import *
+from .aux_utils import consts
+from .gui.osdocr_gui import run_gui
+from .ocr_tree_module.ocr_tree import *
+from .preprocessing.image import *
+from .pipeline import run_target,run_target_split
+from .ocr_tree_module.ocr_tree_analyser import *
+from .validation.calibrate import run_calibrate
 
 
 
@@ -65,6 +65,10 @@ def run_test():
 def run_main(args:argparse.Namespace):
     '''Run main program. Allows single image or multiple image list'''
 
+    # create results folder
+    if not os.path.exists(consts.result_path):
+        os.makedirs(consts.result_path)
+
     targets = []
 
     # single target
@@ -117,10 +121,7 @@ def run_main(args:argparse.Namespace):
                 run_target(target,args)
 
 
-
-
-
-if __name__ == '__main__':
+def main():
     print('''
         =============================
         =============================
@@ -139,6 +140,7 @@ if __name__ == '__main__':
     if args.output_folder:
         consts.result_path = args.output_folder
 
+
     # test mode
     if args.test:
         run_test()
@@ -154,6 +156,11 @@ if __name__ == '__main__':
 
     # clean tmp folder files
     clean_tmp_folder()
+
+
+if __name__ == '__main__':
+    main()
+    
 
 
 

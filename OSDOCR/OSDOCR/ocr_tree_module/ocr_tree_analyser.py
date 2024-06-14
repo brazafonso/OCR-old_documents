@@ -7,10 +7,10 @@ import math
 from scipy.signal import *
 from pytesseract import Output
 from PIL import Image
-from aux_utils.graph import *
+from OSDOCR.aux_utils.graph import *
+from OSDOCR.aux_utils.box import *
 from document_image_utils.image import *
-from aux_utils.box import *
-from ocr_tree_module.ocr_tree import *
+from .ocr_tree import *
 from whittaker_eilers import WhittakerSmoother
 from document_image_utils.image import divide_columns
 

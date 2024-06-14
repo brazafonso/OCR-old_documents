@@ -1,6 +1,6 @@
-from ocr_tree_module.ocr_tree import *
-from ocr_tree_module.ocr_tree_analyser import *
-from aux_utils.box import Box
+from .ocr_tree import *
+from .ocr_tree_analyser import *
+from OSDOCR.aux_utils.box import Box
 
 def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=False)->OCR_Tree:
     '''Fix block bound boxes\n'''

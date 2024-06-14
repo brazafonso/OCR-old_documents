@@ -1,14 +1,14 @@
 
 import argparse
-from aux_utils.parse_args import *
-from aux_utils.misc import *
-from aux_utils import consts
-from ocr_tree_module.ocr_tree import *
-from ocr_tree_module.ocr_tree_analyser import *
-from ocr_tree_module.ocr_tree_fix import *
-from ocr_engines.engine_utils import *
-from output_module.journal.article import Article
-from preprocessing.image import *
+from OSDOCR.aux_utils.parse_args import *
+from OSDOCR.aux_utils.misc import *
+from OSDOCR.aux_utils import consts
+from OSDOCR.ocr_tree_module.ocr_tree import *
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import *
+from OSDOCR.ocr_tree_module.ocr_tree_fix import *
+from OSDOCR.ocr_engines.engine_utils import *
+from OSDOCR.output_module.journal.article import Article
+from OSDOCR.preprocessing.image import *
 
 
 def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,args:argparse.Namespace):

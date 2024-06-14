@@ -3,11 +3,11 @@ import pytesseract
 import json
 import os
 import cv2
-from aux_utils import consts
-from aux_utils.box import Box
-from aux_utils.misc import path_to_id
-from ocr_tree_module.ocr_tree import OCR_Tree
-from ocr_tree_module.ocr_tree_analyser import *
+from OSDOCR.aux_utils import consts
+from OSDOCR.aux_utils.box import Box
+from OSDOCR.aux_utils.misc import path_to_id
+from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import *
 
 
 
