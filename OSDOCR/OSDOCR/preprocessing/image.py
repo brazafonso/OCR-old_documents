@@ -1,3 +1,4 @@
+import shutil
 import PIL
 import cv2
 import numpy as np
@@ -5,11 +6,12 @@ import torch
 import layoutparser as lp
 import aux_utils.consts as consts
 from aux_utils.misc import *
-from document_image_utils.image import calculate_dpi, identify_document_images
+from document_image_utils.image import calculate_dpi, identify_document_images as identify_document_images_leptonica
 from aux_utils.box import Box
 from PIL import Image
 from sympy import ceiling
 
+file_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def create_waifu2x_model(method:str='scale2x',model_type:str='photo',noise_level:int=1) -> torch.nn.Module:
@@ -218,15 +220,23 @@ def remove_image_blocks(image_path:str,blocks:list[Box],logs:bool=False)->cv2.Ma
     return image
 
 
+def identify_document_images(image_path:str,method:str='leptonica',old_document:bool=True,conf:float=0.5,logs:bool=False)->list[Box]:
+    '''Identify document images from image'''
+
+    blocks = []
+    if method == 'leptonica':
+        blocks = identify_document_images_leptonica(image_path,logs=logs)
+    else:
+        blocks = identify_document_images_layoutparser(image_path,conf=conf,old_document=old_document,logs=logs)
+
+    return blocks
+
 
 def remove_document_images(image_path:str,method:str='leptonica',conf:float=0.5,old_document:bool=True,save_blocks:bool=False,save_blocks_path:str=None,logs:bool=False)->cv2.Mat:
     '''Remove document images from document'''
 
     blocks = []
-    if method == 'leptonica':
-        blocks = identify_document_images(image_path,logs=logs)
-    else:
-        blocks = identify_document_images_layoutparser(image_path,conf=conf,old_document=old_document,logs=logs)
+    blocks = identify_document_images(image_path,method=method,old_document=old_document,conf=conf,logs=logs)
 
     # save blocks and their positions
     if save_blocks and save_blocks_path:
@@ -252,3 +262,38 @@ def remove_document_images(image_path:str,method:str='leptonica',conf:float=0.5,
             json.dump(serialized_blocks,f,indent=4)
 
     return remove_image_blocks(image_path,blocks,logs=logs)
+
+
+def fix_illumination(image_path:str,logs:bool=False):
+    '''Fix illumination of image'''
+    from .models.HVI_CIDNet.net.CIDNet import CIDNet
+    from .models.HVI_CIDNet.data.data import get_SICE_eval_set
+    from torchvision import transforms
+    from torch.utils.data import DataLoader
+
+    # make tmp dir
+    if not os.path.exists(f'{file_path}/tmp'):
+        os.makedirs(f'{file_path}/tmp')
+
+    shutil.copy(image_path, f'{file_path}/tmp/image.png')
+
+    model = CIDNet().cuda()
+    model.load_state_dict(torch.load(f'{file_path}/models/HVI_CIDNet/weights/best_SSIM.pth'))
+    model.eval()
+
+    eval_data = DataLoader(dataset=get_SICE_eval_set(f'{file_path}/tmp'), batch_size=1, shuffle=False)
+
+
+    for batch in eval_data:
+        with torch.no_grad():
+            input, name, h, w = batch[0], batch[1], batch[2], batch[3]
+            input = input.to('cuda')
+            output = model(input) 
+        output = torch.clamp(output, 0, 1)
+        output = output[:, :, :h, :w]
+        output_img = transforms.ToPILImage()(output.squeeze(0))
+        output_img.save(f'{file_path}/tmp/{name[0]}')
+    
+    output_img = cv2.imread(f'{file_path}/tmp/{name[0]}')
+
+    return output_img

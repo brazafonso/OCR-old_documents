@@ -12,13 +12,13 @@ from ocr_tree_module.ocr_tree import OCR_Tree
 from ocr_tree_module.ocr_tree_analyser import extract_articles
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document_image_utils.image import divide_columns
-from preprocessing.image import identify_document_images_layoutparser
+from preprocessing.image import identify_document_images
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def prepare_pipeline_config(pipeline_config:str,target_image:str,default_args:str,results_folder:str,
-                            config:str,reuse_results:bool=False,logs:bool=False,debug:bool=False)->Namespace:
+                            reuse_results:bool=False,logs:bool=False,debug:bool=False)->Namespace:
     '''Prepare pipeline config for calibration'''
 
     # load pipeline args
@@ -33,7 +33,7 @@ def prepare_pipeline_config(pipeline_config:str,target_image:str,default_args:st
     pipeline_args.__setattr__('output_type',['txt_simple'])
     
     # results folder for config
-    consts.result_path = f'{results_folder}/{config}'
+    consts.result_path = results_folder
 
     # create results folder
     if not os.path.exists(consts.result_path):
@@ -186,8 +186,13 @@ def compare_results(results_folder:str,option:str,
             comparison['image']['number_columns'] = expected_results['number_columns']
 
         if 'number_images' in expected_results:
-            images = identify_document_images_layoutparser(target_path,old_document=option_args.target_old_document)
-            comparison['validation']['image']['number_images'] = len(images)
+            identify_images_Flag = 'remove_document_images' not in option_args.skip_method
+            n_images = 0
+            if identify_images_Flag:
+                method = option_args.remove_document_images[0]
+                old_document = option_args.target_old_document
+                n_images = len(identify_document_images(target_path,method=method,old_document=old_document,conf=0.5,logs=option_args.debug))
+            comparison['validation']['image']['number_images'] = n_images
             comparison['image']['number_images'] = expected_results['number_images']
 
         if 'number_articles' in expected_results:
@@ -323,6 +328,7 @@ def choose_best_pipeline_options(results_folder:str,logs:bool=False,debug:bool=F
     if logs:
         print('Choosing best pipeline options...')
 
+
     best_pipeline_options = {}
     best_preprocessing_score = 0
     best_posprocessing_score = 0
@@ -341,14 +347,14 @@ def choose_best_pipeline_options(results_folder:str,logs:bool=False,debug:bool=F
         if not best_pipeline_options:
             best_pipeline_options['config'] = pipeline_config_json
             best_pipeline_options['results'] = results_json
-            best_preprocessing_score = config_preprocessing_score(results_json,logs=logs)
-            best_posprocessing_score = config_posprocessing_score(results_json,logs=logs)
+            best_preprocessing_score = results_json['score']['preprocessing']
+            best_posprocessing_score = results_json['score']['posprocessing']
             continue
 
         # compare
 
         ## overall preprocessing
-        preprocessing_score = config_preprocessing_score(results_json,logs=logs)
+        preprocessing_score = results_json['score']['preprocessing']
 
         ### save config with best preprocessing score
         if preprocessing_score > best_preprocessing_score:
@@ -367,7 +373,7 @@ def choose_best_pipeline_options(results_folder:str,logs:bool=False,debug:bool=F
             best_preprocessing_score = preprocessing_score
 
         ## overall posprocessing
-        posprocessing_score = config_posprocessing_score(results_json,logs=logs)
+        posprocessing_score = results_json['score']['posprocessing']
 
         ### save config with best posprocessing score
         if posprocessing_score > best_posprocessing_score:
@@ -387,35 +393,42 @@ def choose_best_pipeline_options(results_folder:str,logs:bool=False,debug:bool=F
 
         ## option identify document images (target_old_document)
         ### compare image identification
-        expected_images = best_pipeline_options['results']['image']['number_images']
-        best_identified_images = best_pipeline_options['results']['validation']['image']['number_images']
-        if expected_images != best_identified_images:
-            current_config_identified_images = results_json['results']['validation']['image']['number_images']
-            if expected_images > best_identified_images and current_config_identified_images > best_identified_images:
-                best_pipeline_options['config'] = pipeline_config_json['target_old_document']
+        if best_pipeline_options['results']['score']['image_identification'] < results_json['score']['image_identification']:
+                best_pipeline_options['config']['target_old_document'] = pipeline_config_json['target_old_document']
 
     return best_pipeline_options['config']
 
 
-                
-
-def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results:bool=False,logs:bool=False,debug:bool=False)->dict:
-    '''Find the best calibration for OSDOCR using prepared ground truth data.
-        Possible files:
-        - target_image.<extension>
-        - ground_truth.txt
-        - parcial_ground_truth.txt
-    '''
-
-    if logs:
-        print('Running calibration...')
-        print('Calibration folder:',calibration_folder)
-
-    # check if calibration folder is valid
-    if not os.path.exists(calibration_folder):
-        print(f'Calibration folder not found: {calibration_folder}')
-        return
+def score_config(pipeline_results:dict,logs:bool=False,debug:bool=False)->dict:
+    '''Score single pipeline config. 
     
+    Scores results of preprocessing, posprocessing and some other metrics.
+    
+    Returns results in form of a dict.'''
+
+    results = {}
+
+    ## preprocessing
+    results['preprocessing'] = config_preprocessing_score(pipeline_results,logs=logs)
+
+    ## posprocessing
+    results['posprocessing'] = config_posprocessing_score(pipeline_results,logs=logs)
+
+    ## document image identification
+    expected_images = pipeline_results['image']['number_images']
+    identified_images = pipeline_results['validation']['image']['number_images']
+    results['image_identification'] = min(expected_images,identified_images) / max(expected_images,identified_images) if expected_images > 0 else 0
+
+    if debug:
+        print(results)
+
+    return results
+
+
+
+def run_test_config(config_path:str,calibration_folder:str,results_folder:str,
+                    reuse_results:bool=False,logs:bool=False,debug:bool=False):
+    '''Run test in a single pipeline config.'''
 
     # get target image
     target_image = None
@@ -440,6 +453,63 @@ def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results
     expected_results_path = f'{calibration_folder}/expected_results.json' if os.path.exists(f'{calibration_folder}/expected_results.json') else None
 
 
+    # create results folder
+    if not os.path.exists(results_folder):
+        os.mkdir(results_folder)
+
+
+    config_name = os.path.basename(config_path)
+
+    # default args for pipeline
+    sys.argv = [sys.argv[0]]
+    default_args:Namespace = process_args()
+
+    pipeline_args = prepare_pipeline_config(config_path,target_image,
+                                                    default_args,results_folder,reuse_results,logs,debug)
+        
+    # run pipeline
+    print(f'''
+        ================================
+        ||      Running pipeline      ||
+        ================================
+        || Config: {config_name[:19]}{' '*(19-len(config_name[:19]))}||
+        ================================''')
+    
+    run_target(target_image,pipeline_args)
+
+    # compare results
+    target_dir = path_to_id(target_image)
+    results = compare_results(f'{results_folder}/{target_dir}',config_name,
+                                ground_truth_path,partial_ground_truth_path,expected_results_path,
+                                pipeline_args,logs)
+    
+    score = score_config(results,logs,debug)
+
+    results['score'] = score
+
+    # save results
+    with open(f'{results_folder}/results.json','w',encoding='utf-8') as f:
+        json.dump(results,f,indent=4)
+                
+
+def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results:bool=False,logs:bool=False,debug:bool=False)->dict:
+    '''Find the best calibration for OSDOCR using prepared ground truth data.
+        Possible files:
+        - target_image.<extension>
+        - ground_truth.txt
+        - parcial_ground_truth.txt
+        - expected_results.json
+    '''
+
+    if logs:
+        print('Running calibration...')
+        print('Calibration folder:',calibration_folder)
+
+    # check if calibration folder is valid
+    if not os.path.exists(calibration_folder):
+        print(f'Calibration folder not found: {calibration_folder}')
+        return
+
     # modify results folder
     results_folder = f'{calibration_folder}/results'
 
@@ -447,42 +517,18 @@ def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)
 
-    # default args for pipeline
-    sys.argv = [sys.argv[0]]
-    default_args:Namespace = process_args()
+
 
     # for each pipeline option
     ## run pipeline and compare results with ground truth
     ## save comparison results
-    for config in os.listdir(pipeline_configs_path):
+    for config in sorted(os.listdir(pipeline_configs_path)):
         if config.endswith('.json'):
-
-            pipeline_args = prepare_pipeline_config(f'{pipeline_configs_path}/{config}',target_image,
-                                                    default_args,results_folder,config,reuse_results,logs,debug)
-        
-            # run pipeline
-            print(f'''
-                ================================
-                ||      Running pipeline      ||
-                ================================
-                || Config: {config[:19]}{' '*(19-len(config[:19]))}||
-                ================================''')
-            
-            run_target(target_image,pipeline_args)
-
-            # compare results
+            config_path = f'{pipeline_configs_path}/{config}'
             config_results_folder = f'{results_folder}/{config}'
-            target_dir = path_to_id(target_image)
-            results = compare_results(f'{config_results_folder}/{target_dir}',config,
-                                      ground_truth_path,partial_ground_truth_path,expected_results_path,
-                                      pipeline_args,logs)
+            run_test_config(config_path,calibration_folder,config_results_folder,reuse_results,logs,debug)
 
-            # save results
-            with open(f'{config_results_folder}/results.json','w',encoding='utf-8') as f:
-                json.dump(results,f,indent=4)
-
-
-
+            
     # compare all results and create best pipeline config
     best_config = choose_best_pipeline_options(results_folder,logs)
 

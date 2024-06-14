@@ -46,9 +46,13 @@ def run_test():
         # remove_document_images(target_image,logs=True)
 
         # test run target split
-        results_path = f'{consts.result_path}/{path_to_id(target_image)}'
-        ocr_results = run_target_split(target_image,f'{results_path}/processed',tesseract_config={'l':'por'},logs=True)
-        img = draw_bounding_boxes(ocr_results,target_image)
+        # results_path = f'{consts.result_path}/{path_to_id(target_image)}'
+        # ocr_results = run_target_split(target_image,f'{results_path}/processed',tesseract_config={'l':'por'},logs=True)
+        # img = draw_bounding_boxes(ocr_results,target_image)
+        # cv2.imwrite('test.png',img)
+
+        # run fix illumination
+        img = fix_illumination(target_image)
         cv2.imwrite('test.png',img)
 
 
