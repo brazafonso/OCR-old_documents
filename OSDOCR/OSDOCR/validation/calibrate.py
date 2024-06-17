@@ -492,7 +492,7 @@ def run_test_config(config_path:str,calibration_folder:str,results_folder:str,
         json.dump(results,f,indent=4)
                 
 
-def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results:bool=False,logs:bool=False,debug:bool=False)->dict:
+def run_calibrate(calibration_folder:str,pipeline_configs_path:str,results_folder:str=None,reuse_results:bool=False,logs:bool=False,debug:bool=False)->dict:
     '''Find the best calibration for OSDOCR using prepared ground truth data.
         Possible files:
         - target_image.<extension>
@@ -511,7 +511,9 @@ def run_calibrate(calibration_folder:str,pipeline_configs_path:str,reuse_results
         return
 
     # modify results folder
-    results_folder = f'{calibration_folder}/results'
+    if not results_folder:
+        results_folder = f'{calibration_folder}/results'
+    
 
     # create results folder
     if not os.path.exists(results_folder):

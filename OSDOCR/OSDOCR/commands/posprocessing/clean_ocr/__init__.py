@@ -46,6 +46,10 @@ def main():
     text_confidence = args.text_confidence[0]
     output_path = args.output[0]
 
+    # check if output path exists
+    if not os.path.exists(output_path):
+        os.makedirs(output_path, exist_ok=True)
+
     # find images if flag is set
     if find_images_flag:
         if find_images_flag == 1 and target_image:
