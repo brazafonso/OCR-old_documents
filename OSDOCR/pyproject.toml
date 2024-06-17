@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "OSDOCR"
-version = "0.1.3"
+version = "0.1.4"
 description = "Toolkit for ocr of old structured documents"
 authors = ["Gonçalo Afonso <brazafonso2001@gmail.com>"]
 #readme = "README.md"
@@ -27,3 +27,5 @@ pythonpath = "OSDOCR"
 osdocr = "OSDOCR:main"
 clean_ocr = "OSDOCR.commands.posprocessing.clean_ocr:main"
 validate_ocr = "OSDOCR.commands.validation:main"
+ocr_to_article = "OSDOCR.commands.output.articles:main"
+ocr_to_simple = "OSDOCR.commands.output.simple:main"

@@ -11,10 +11,8 @@ from OSDOCR.output_module.journal.article import Article
 from OSDOCR.preprocessing.image import *
 
 
-def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,args:argparse.Namespace):
+def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,output_types:list[str],min_text_conf:int):
     '''Save articles. Type of output is defined in args : markdown, html, txt'''
-    output_types = args.output_type
-    min_text_conf = args.text_confidence
     metadata = get_target_metadata(o_taget)
 
     if 'markdown' in output_types:
@@ -74,7 +72,7 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
 
 
     # save articles
-    save_articles(articles,o_target,results_path,args)
+    save_articles(articles,o_target,results_path,args.output_type,args.text_confidence)
 
 
 def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
