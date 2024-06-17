@@ -510,7 +510,8 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
 
 def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''Clean ocr_tree'''
-    ocr_results = bound_box_fix(ocr_results,2,None,find_images='remove_document_images' not in args.skip_method ,logs=args.debug)
+    find_images_flag = 'remove_document_images' not in args.skip_method
+    ocr_results = bound_box_fix(ocr_results,2,None,find_images=find_images_flag ,logs=args.debug)
 
     result_dict_file = open(f'{results_path}/clean_ocr.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)

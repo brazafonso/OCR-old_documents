@@ -2,7 +2,7 @@ from .ocr_tree import *
 from .ocr_tree_analyser import *
 from OSDOCR.aux_utils.box import Box
 
-def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=False)->OCR_Tree:
+def block_bound_box_fix(ocr_results:OCR_Tree,find_delimiters:bool=True,find_images:bool=True,logs:bool=False)->OCR_Tree:
     '''Fix block bound boxes\n'''
     i = 0
     current_box = None
@@ -32,7 +32,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=Fal
     while i< len(blocks):
         # get current box to analyse
         if not current_box and blocks[i].id not in checked_boxes:
-            if (not blocks[i].is_empty()) or blocks[i].is_delimiter():
+            if (not blocks[i].is_empty()) or blocks[i].is_delimiter(only_type=find_delimiters == False):
                 current_box = blocks[i]
                 i+=1
             else:
@@ -85,16 +85,16 @@ def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=Fal
             keys = list(boxes_to_check.keys())
             # get next not empty block
             while not current_box and boxes_to_check:
-                id = keys.pop(0)
                 current_box = boxes_to_check[id]
                 current_box:OCR_Tree
+                id = keys.pop(0)
                 del boxes_to_check[id]
                 checked_boxes.append(current_box.id)
                 # check if box is empty
                 # remove if true
-                if current_box.is_empty() and not current_box.is_delimiter():
+                if current_box.is_empty() and not current_box.is_delimiter(only_type=find_delimiters == False):
                     # if potential image (big box) dont remove
-                    if not current_box.box.height > text_analysis['normal_text_size']*3:
+                    if current_box.is_image(text_size=text_analysis['normal_text_size'],only_type= find_images == False):
                         ocr_results.remove_box_id(current_box.id)
                         current_box = None
                 i = 0
@@ -107,12 +107,12 @@ def block_bound_box_fix(ocr_results:OCR_Tree,find_images:bool=True,logs:bool=Fal
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool=True,logs:bool=False)->OCR_Tree:
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,find_images:bool=True,find_delimiters:bool=True,logs:bool=False)->OCR_Tree:
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
     if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results,find_images,logs)
+        new_ocr_results = block_bound_box_fix(ocr_results,find_images=find_images,find_delimiters=find_delimiters,logs=logs)
 
     return new_ocr_results
 

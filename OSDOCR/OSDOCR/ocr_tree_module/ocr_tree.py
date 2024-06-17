@@ -260,10 +260,22 @@ class OCR_Tree:
         return False
     
 
-    def is_delimiter(self,conf:int=0):
+    def is_delimiter(self,conf:int=0,only_type:bool=False)->bool:
         '''Check if box is delimiter'''
+        if only_type:
+            return self.type in ['delimiter']
+        
         if self.level == 2 and self.is_empty(conf):
             if self.box.width >= self.box.height*4 or self.box.height >= self.box.width*4:
+                return True
+        return False
+    
+    def is_image(self,conf:int=0,text_size:int=0,only_type:bool=False)->bool:
+        '''Check if box is image'''
+        if only_type:
+            return self.type in ['image']
+        if self.level == 2 and self.is_empty(conf=conf) and not self.is_delimiter(conf=conf):
+            if self.box.height > text_size*3:
                 return True
         return False
     

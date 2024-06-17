@@ -30,8 +30,8 @@ class Box:
         self.right = int(right)
         self.top = int(top)
         self.bottom = int(bottom)
-        self.width = right - left
-        self.height = bottom - top
+        self.width = self.right - self.left
+        self.height = self.bottom - self.top
 
     def load_json(self,json_dict:dict):
         self.left = json_dict['left']

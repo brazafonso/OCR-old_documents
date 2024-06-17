@@ -233,7 +233,7 @@ def identify_document_images(image_path:str,method:str='leptonica',old_document:
 
 
 def remove_document_images(image_path:str,method:str='leptonica',conf:float=0.5,old_document:bool=True,save_blocks:bool=False,save_blocks_path:str=None,logs:bool=False)->cv2.Mat:
-    '''Remove document images from document'''
+    '''Remove document images from document. Image blocks will be saved in save_blocks_path folder in file "blocks.json"'''
 
     blocks = []
     blocks = identify_document_images(image_path,method=method,old_document=old_document,conf=conf,logs=logs)
