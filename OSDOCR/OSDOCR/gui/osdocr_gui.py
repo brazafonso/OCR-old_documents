@@ -1,6 +1,7 @@
 '''Old Structured Document OCR - GUI'''
 
 import os
+import traceback
 import PySimpleGUI as sg
 from OSDOCR.aux_utils import consts
 from document_image_utils.image import *
@@ -42,6 +43,8 @@ def apply_method(window:sg.Window,values:dict,image_path:str,method:str):
         upscale_image_method(window,image_path,values)
     elif method == 'denoise_image':
         denoise_image_method(window,image_path,values)
+    elif method == 'light_correction':
+        light_correction_method(window,image_path,values)
     elif method == 'cut_margins':
         cut_margins_method(window,image_path,values)
     elif method == 'binarize':
@@ -252,6 +255,10 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
         # update apply button
         window['apply'].update(visible=True)
         window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Method:',visible=True)
+        window['select_list_1_1'].update(value='Leptonica',values=['Leptonica','Blocks'],visible=True)
+
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
         else:
@@ -307,6 +314,27 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
 
         window['select_list_text_1_1'].update(value='Noise Level:',visible=True)
         window['select_list_1_1'].update(value=1,values=[0,1,2,3],visible=True)
+
+        if os.path.exists(result_image):
+            update_image_element(window,'result_img',result_image)
+        else:
+            window['result_img'].update(visible=False)
+
+    elif method == 'light_correction':
+        target_image = latest_image
+        result_image = f'{processed_folder_path}/light_correction.png'
+        if o_image and os.path.exists(target_image):
+            update_image_element(window,'target_image_path',target_image)
+        else:
+            window['target_image_path'].update(visible=False)
+        # update apply button
+        window['apply'].update(visible=True)
+        window['checkbox_1_1'].update(visible=True)
+
+        window['select_list_text_1_1'].update(value='Model:',visible=True)
+        window['select_list_1_1'].update(value='best_SSIM',values=['best_SSIM','best_PSNR','LOL-Blur','SICE','SID','w_perc'],visible=True)
+
+        window['checkbox_1_2'].update(text='Split image:',visible=True)
 
         if os.path.exists(result_image):
             update_image_element(window,'result_img',result_image)
@@ -481,6 +509,8 @@ def run_gui():
                 except OCR_Tree_load_error:
                     sg.popup_error('Could not load OCR results. Please run OCR on the target.')
                 except Exception as e:
+                    print(e)
+                    print(traceback.format_exc())
                     sg.popup_error(e)
         elif 'config_pipeline' in event:
             config_pipeline(window,target_image)

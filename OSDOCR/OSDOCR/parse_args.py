@@ -3,7 +3,7 @@ from .aux_utils.parse_args import *
 from .aux_utils import consts
 
 
-preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','lightning_correction',
+preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','light_correction',
                          'image_preprocess','cut_document_margins','remove_document_images',
                          'image_upscaling','identify_document_delimiters']
 
@@ -75,6 +75,15 @@ Further options:
     - waifu2x
             * [-1,0,1,2,3]
                         ''',action=CustomAction_denoise_image)
+    parser.add_argument('-lc','--light_correction'      ,type=str,nargs='*' ,default=['best_SSIM']                      ,help='''
+Fix image illumination using a pre-trained model (default: best_SSIM).
+Available models:
+    - best_SSIM
+    - best_PSNR
+    - LOL-Blur
+    - SICE
+    - SID
+    - w_perc''')
     parser.add_argument('-rdi','--remove_document_images',type=str,nargs='*' ,default=['leptonica']                     ,help='Identify document images automatically (default: leptonica).',choices=['leptonica','layoutparser'])
     t = parser.add_argument('--tesseract_config'     ,type=str,nargs='*'    ,default=['__l','por']                      ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)
     parser.add_argument('--skip_method'              ,type=str,nargs='*'    ,default=[]                                 ,help='Skip method on target. Possible values: ' + ', '.join(skipable_methods),action=CustomAction_skip_method,choices=skipable_methods)

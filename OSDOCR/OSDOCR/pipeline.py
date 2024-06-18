@@ -284,10 +284,25 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
 
     # lightning correction
-    if 'lightning_correction' not in args.skip_method:
-        # TODO
-        pass
+    if 'light_correction' not in args.skip_method:
+        if args.logs:
+            print('LIGHTNING CORRECTION')
 
+        if args.light_correction:
+            model_weight = args.light_correction[0]
+            light_corrected = False
+
+            light_corrected_img = fix_illumination(processed_image_path,model_weight=model_weight,logs=args.debug)
+            if light_corrected_img is not None:
+                cv2.imwrite(processed_image_path,light_corrected_img)
+                light_corrected = True
+
+            if light_corrected:
+                # create step img
+                step_img_path = f'{results_path}/light_correction.png'
+                cv2.imwrite(step_img_path,light_corrected_img)
+
+                metadata['transformations'].append(('light_correction',method,method_config))
 
 
     # update metadata

@@ -264,26 +264,79 @@ def remove_document_images(image_path:str,method:str='leptonica',conf:float=0.5,
     return remove_image_blocks(image_path,blocks,logs=logs)
 
 
-def fix_illumination(image_path:str,logs:bool=False):
-    '''Fix illumination of image'''
+def fix_illumination(image_path:str,model_weight:str='best_SSIM',split_image:bool=True,logs:bool=False)->cv2.typing.MatLike:
+    '''Use model from HVI_CIDNet (https://github.com/Fediory/HVI-CIDNet) to fix illumination.
+
+    Split image parameter is used to improve time of processing, althoug for some models it might create different results (as they won't receive the whole picture as input).
+    
+    Available model weights (https://onedrive.live.com/?authkey=%21ACob5LruXUFfRwY&id=2985DB836826D183%21346&cid=2985DB836826D183):
+    - best_SSIM
+    - best_PSNR
+    - LOL-Blur
+    - SICE
+    - SID
+    - w_perc'''
     from .models.HVI_CIDNet.net.CIDNet import CIDNet
     from .models.HVI_CIDNet.data.data import get_SICE_eval_set
     from torchvision import transforms
     from torch.utils.data import DataLoader
 
-    # make tmp dir
+
+
+    weights_path = f'{file_path}/models/HVI_CIDNet/weights/{model_weight}.pth'    
+    # check if model exists
+    if not os.path.exists(weights_path):
+        print(f'Weights not found: {weights_path}. Please download it or check its path.')
+        return
+    
+
+    # make tmp dir and copy image
     if not os.path.exists(f'{file_path}/tmp'):
         os.makedirs(f'{file_path}/tmp')
+    else:
+        # clear tmp dir
+        for f in os.listdir(f'{file_path}/tmp'):
+            os.remove(f'{file_path}/tmp/{f}')
 
-    shutil.copy(image_path, f'{file_path}/tmp/image.png')
+    ## check image shape
 
+    ### if image is grayscale, convert it to RGB
+    image = cv2.imread(image_path)
+    h, w, c = image.shape
+    if c == 1:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+    ### if image is too big (area > 1000*1000), crop into batches
+    if h*w > 1000*1000 and split_image:
+        n_columns = ceiling(w/1000)
+        n_rows = ceiling(h/1000)
+        batches = []
+        for i in range(n_rows):
+            batches.append([])
+            for j in range(n_columns):
+                left = j*1000
+                top = i*1000
+                right = min(w, (j+1)*1000)
+                bottom = min(h, (i+1)*1000)
+                batches[i].append(image[top:bottom,left:right])
+    else:
+        batches = [[image]]
+
+    ## copy image/batches
+    for i,row in enumerate(batches):
+        for j,column in enumerate(row):
+            cv2.imwrite(f'{file_path}/tmp/{i}_{j}.png',column)
+
+
+    # load model
     model = CIDNet().cuda()
-    model.load_state_dict(torch.load(f'{file_path}/models/HVI_CIDNet/weights/best_SSIM.pth'))
+    model.load_state_dict(torch.load(weights_path))
     model.eval()
 
+    # load data/image
     eval_data = DataLoader(dataset=get_SICE_eval_set(f'{file_path}/tmp'), batch_size=1, shuffle=False)
 
-
+    # run model
     for batch in eval_data:
         with torch.no_grad():
             input, name, h, w = batch[0], batch[1], batch[2], batch[3]
@@ -294,6 +347,42 @@ def fix_illumination(image_path:str,logs:bool=False):
         output_img = transforms.ToPILImage()(output.squeeze(0))
         output_img.save(f'{file_path}/tmp/{name[0]}')
     
-    output_img = cv2.imread(f'{file_path}/tmp/{name[0]}')
+    # restore image
+    tmp_imgs = sorted(os.listdir(f'{file_path}/tmp'))
+    files = [[]]
+    current_row = 0
+    ## create matrix of files according to their coordinates
+    for tmp_img in tmp_imgs:
+        if tmp_img.endswith('.png'):
+            tmp_img_path = f'{file_path}/tmp/{tmp_img}'
+            tmp_img_name = tmp_img.split('.')[0]
+            row = int(tmp_img_name.split('_')[0])
+            if row != current_row:
+                files.append([tmp_img_path])
+            else:
+                files[current_row].append(tmp_img_path)
+
+            current_row = row
+
+    output_img = None
+    ## create output image
+    for row in files:
+        row_img = None
+        ## concat columns in row
+        for tmp_img in row:
+            if row_img is None:
+                row_img = cv2.imread(tmp_img)
+            else:
+                batch_img = cv2.imread(tmp_img)
+                row_img = cv2.hconcat([row_img,batch_img])
+
+        # concat row to output
+        if output_img is None:
+            output_img = row_img
+        else:
+            output_img = cv2.vconcat([output_img,row_img])
+
+    # remove tmp folder
+    shutil.rmtree(f'{file_path}/tmp')
 
     return output_img

@@ -50,6 +50,9 @@ def build_gui_main()->sg.Window:
             place(sg.Button('Denoise image',key='sidebar_method_denoise_image')),
         ],
         [
+            place(sg.Button('Fix illumination',key='sidebar_method_light_correction')),
+        ],
+        [
             place(sg.Button('Cut margins',key='sidebar_method_cut_margins')),
         ],
         [
@@ -73,7 +76,7 @@ def build_gui_main()->sg.Window:
         ],
         [
             place(sg.Text('Skew Direction:',key='select_list_text_1_1',visible=False)),
-            place(sg.Combo(['Auto','Clockwise','Counterclockwise'],default_value='Auto',key='select_list_1_1',enable_events=True,size=(5,10),visible=False)),
+            place(sg.Combo(['Auto','Clockwise','Counterclockwise'],default_value='Auto',key='select_list_1_1',enable_events=True,size=(10,10),visible=False)),
         ]
     ]
 

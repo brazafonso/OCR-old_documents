@@ -9,8 +9,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_fix import *
 from OSDOCR.ocr_engines.engine_utils import *
 from OSDOCR.output_module.journal.article import Article
 from OSDOCR.aux_utils.misc import *
-from OSDOCR.preprocessing.image import remove_document_images,run_waifu2x
-from document_image_utils.image import *
+from OSDOCR.preprocessing.image import fix_illumination, remove_document_images,run_waifu2x
 
 
 
@@ -301,40 +300,63 @@ def divide_journal_method(window:sg.Window,target:str,values:dict):
 
     logs = values['checkbox_1_1']
 
-    ocr_results = OCR_Tree(ocr_results_path)
-    journal_areas = get_journal_areas(ocr_results,logs=logs)
+    method = values['select_list_1_1'].strip().lower()
 
-    image_info = get_image_info(target_image)
-    page_tree = OCR_Tree()
+    if method == 'blocks':
 
-    if 'body' in journal_areas:
-        body_box = journal_areas['body']
-        body_box.update(right=image_info.right)
-        body_tree = OCR_Tree()
-        body_tree.box = body_box
-        page_tree.add_child(body_tree)
+        ocr_results = OCR_Tree(ocr_results_path)
+        journal_areas = get_journal_areas(ocr_results,logs=logs)
 
-        print('Body',body_box)
+        image_info = get_image_info(target_image)
+        page_tree = OCR_Tree()
 
+        if 'body' in journal_areas:
+            body_box = journal_areas['body']
+            body_box.update(right=image_info.right)
+            body_tree = OCR_Tree()
+            body_tree.box = body_box
+            page_tree.add_child(body_tree)
 
-    if 'footer' in journal_areas:
-        footer_box = journal_areas['footer']
-        footer_box.update(right=image_info.right)
-        footer_tree = OCR_Tree()
-        footer_tree.box = footer_box
-        page_tree.add_child(footer_tree)
-
-        print('Footer',footer_box)
+            print('Body',body_box)
 
 
-    if 'header' in journal_areas:
-        header_box = journal_areas['header']
-        header_box.update(right=image_info.right)
-        header_tree = OCR_Tree()
-        header_tree.box = header_box
-        page_tree.add_child(header_tree)
+        if 'footer' in journal_areas:
+            footer_box = journal_areas['footer']
+            footer_box.update(right=image_info.right)
+            footer_tree = OCR_Tree()
+            footer_tree.box = footer_box
+            page_tree.add_child(footer_tree)
 
-        print('Header',header_box)
+            print('Footer',footer_box)
+
+
+        if 'header' in journal_areas:
+            header_box = journal_areas['header']
+            header_box.update(right=image_info.right)
+            header_tree = OCR_Tree()
+            header_tree.box = header_box
+            page_tree.add_child(header_tree)
+
+            print('Header',header_box)
+
+    else:
+        header,body,footer = segment_document(target_image,logs=logs)
+        page_tree = OCR_Tree()
+
+        if header.valid():
+            header_tree = OCR_Tree()
+            header_tree.box = header
+            page_tree.add_child(header_tree)
+
+        if body.valid():
+            body_tree = OCR_Tree()
+            body_tree.box = body
+            page_tree.add_child(body_tree)
+
+        if footer.valid():
+            footer_tree = OCR_Tree()
+            footer_tree.box = footer
+            page_tree.add_child(footer_tree)
 
 
     result_image_path = f'{processed_folder_path}/journal_areas.png'
@@ -404,6 +426,28 @@ def denoise_image_method(window:sg.Window,target:str,values:dict):
     save_target_metadata(target,metadata)
 
     update_image_element(window,'result_img',denoise_image_path)
+
+
+def light_correction_method(window:sg.Window,target:str,values:dict):
+    '''Apply light correction method to image and update image element'''
+    results_path = f'{consts.result_path}/{path_to_id(target)}'
+    processed_folder_path = f'{results_path}/processed'
+    metadata = get_target_metadata(target)
+    target_image = metadata['target_path']
+
+    logs = values['checkbox_1_1']
+    model_weight = values['select_list_1_1']
+    split_image = values['checkbox_1_2']
+    
+    light_corrected_img = fix_illumination(target_image,model_weight=model_weight,split_image=split_image,logs=logs)
+
+    if light_corrected_img is not None:
+        cv2.imwrite(f'{processed_folder_path}/light_correction.png',light_corrected_img)
+        metadata['target_path'] = f'{processed_folder_path}/light_correction.png'
+        metadata['transformations'].append(('light_correction',model_weight))
+        save_target_metadata(target,metadata)
+
+        update_image_element(window,'result_img',light_corrected_img)
 
 
 def cut_margins_method(window:sg.Window,target:str,values:dict):
