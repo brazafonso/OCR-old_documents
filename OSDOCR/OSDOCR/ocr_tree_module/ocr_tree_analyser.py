@@ -1,18 +1,14 @@
 import random
 import re
-import pytesseract
+from typing import Tuple
 import cv2
-import jellyfish
 import math
 from scipy.signal import *
-from pytesseract import Output
-from PIL import Image
 from OSDOCR.aux_utils.graph import *
 from OSDOCR.aux_utils.box import *
 from document_image_utils.image import *
 from .ocr_tree import *
 from whittaker_eilers import WhittakerSmoother
-from document_image_utils.image import divide_columns
 
 
 
@@ -402,68 +398,7 @@ def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
 
 
 
-
-def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
-    'Rerun tesseract on within the boundings of a text box to improve its width and height precision'
-    progress_text = f'Progress: 0 / {len(ocr_results["text"])}'
-    window[progress_key].update(progress_text)
-    window.refresh()
-    original_img = Image.open(target_image_path)
-    for i in range(len(ocr_results['text'])):
-        if ocr_results[i].level == 5 and ocr_results[i].conf > 60:
-            (x, y, w, h) = (ocr_results[i].left, ocr_results[i].top, ocr_results[i].width, ocr_results[i].height)
-            img = original_img.crop((x-0.2*w,y-0.2*h,x+w*1.2,y+h*1.2))
-            new_values = pytesseract.image_to_data(img, output_type=Output.DICT,config='--psm 8',lang='por')
-            print(ocr_results[i].text)
-            print(new_values['text'])
-            print(new_values['conf'])
-            for j in range(len(new_values['text'])):
-                if new_values['level'][j] == 5 and jellyfish.levenshtein_distance(new_values['text'][j],ocr_results[i].text) < len(ocr_results[i].text)*0.3:
-                    print('Updated:',ocr_results[i].text,new_values['text'][j])
-                    print(' Old:',ocr_results[i].width,ocr_results[i].height)
-                    print(' New:',new_values['width'][j],new_values['height'][j])
-                    ocr_results[i].width = new_values['width'][j]
-                    ocr_results[i].height = new_values['height'][j]
-                    break
-        progress_text = f'Progress: {i} / {len(ocr_results["text"])}'
-        window[progress_key].update(progress_text)
-        window.refresh()
-    return ocr_results
-
-
-
-
-
-
-
-
-
-
-
-
-def join_aligned_delimiters(delimiters:list[OCR_Tree],orientation='horizontal'):
-    '''Join aligned delimiters\n'''
-    aligned_delimiters = []
-    for delimiter in delimiters:
-        delimiter_box = delimiter.box
-        delimiter_box.right = delimiter_box.left + delimiter_box.width
-        delimiter_box.bottom = delimiter_box.top + delimiter_box.height
-        if not aligned_delimiters:
-            aligned_delimiters.append(delimiter_box)
-        else:
-            joined = False
-            for aligned in aligned_delimiters:
-                if delimiter_box.is_aligned(aligned,orientation):
-                    aligned.join(delimiter_box)
-                    joined = True
-                    break
-            if not joined:
-                aligned_delimiters.append(delimiter_box)
-    return aligned_delimiters
-
-    
-
-def estimate_journal_header(ocr_results:OCR_Tree,image_info:Box):
+def estimate_journal_header(ocr_results:OCR_Tree,image_info:Box)->Box:
     '''Estimate journal header blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
 
@@ -520,10 +455,28 @@ def estimate_journal_header(ocr_results:OCR_Tree,image_info:Box):
     return header
 
 
+def join_aligned_delimiters(delimiters:list[OCR_Tree],orientation='horizontal'):
+    '''Join aligned delimiters\n'''
+    aligned_delimiters = []
+    for delimiter in delimiters:
+        delimiter_box = delimiter.box
+        delimiter_box.right = delimiter_box.left + delimiter_box.width
+        delimiter_box.bottom = delimiter_box.top + delimiter_box.height
+        if not aligned_delimiters:
+            aligned_delimiters.append(delimiter_box)
+        else:
+            joined = False
+            for aligned in aligned_delimiters:
+                if delimiter_box.is_aligned(aligned,orientation):
+                    aligned.join(delimiter_box)
+                    joined = True
+                    break
+            if not joined:
+                aligned_delimiters.append(delimiter_box)
+    return aligned_delimiters
 
 
-
-def estimate_journal_columns(ocr_results,image_info:Box,header=None,footer=None):
+def estimate_journal_columns(ocr_results:OCR_Tree,image_info:Box,header:Box=None,footer:Box=None)->list[Box]:
     '''Estimate journal columns blocks and dimensions\n
     Main focus on pivoting using potential delimiters'''
     columns = []
@@ -557,7 +510,7 @@ def estimate_journal_columns(ocr_results,image_info:Box,header=None,footer=None)
     return columns
 
     
-def estimate_journal_template(ocr_results,image_info):
+def estimate_journal_template(ocr_results:OCR_Tree,image_info:Box)->dict:
     '''Tries to estimate a journal's template, such as header and different columns'''
     # get header boxes
     header = estimate_journal_header(ocr_results,image_info)
@@ -573,10 +526,13 @@ def estimate_journal_template(ocr_results,image_info):
     }
 
 
-def draw_journal_template(journal_data,image_path):
+def draw_journal_template(journal_data:dict,image_path:Union[str,cv2.typing.MatLike])->cv2.typing.MatLike:
     '''Draw bounding boxes on journal image of path \'image_path\'\n'''
 
-    img = cv2.imread(image_path)
+    if isinstance(image_path,str):
+        img = cv2.imread(image_path)
+    else:
+        img = image_path
 
     # draw header
     if journal_data['header']:
@@ -592,7 +548,7 @@ def draw_journal_template(journal_data,image_path):
     return img
 
 
-def draw_bounding_boxes(ocr_results:OCR_Tree,img:Union[str,cv2.typing.MatLike],draw_levels=[2],conf=60,id=False):
+def draw_bounding_boxes(ocr_results:OCR_Tree,img:Union[str,cv2.typing.MatLike],draw_levels=[2],conf=60,id=False)->cv2.typing.MatLike:
     '''Draw bounding boxes on image of type MatLike from cv2\n
     Return image with bounding boxes'''
 
@@ -617,7 +573,7 @@ def draw_bounding_boxes(ocr_results:OCR_Tree,img:Union[str,cv2.typing.MatLike],d
     return img
 
 
-def draw_articles(articles:list[list[OCR_Tree]],image_path:str):
+def draw_articles(articles:list[list[OCR_Tree]],image_path:str)->cv2.typing.MatLike:
     '''Draw articles in image\n
     
     Choose a unique color for each article\n'''
@@ -647,7 +603,7 @@ def draw_articles(articles:list[list[OCR_Tree]],image_path:str):
             
 
 
-def next_top_block(blocks:list[OCR_Tree],origin:Box=Box(0,0,0,0)):
+def next_top_block(blocks:list[OCR_Tree],origin:Box=Box(0,0,0,0))->OCR_Tree:
     '''Get next top block\n
     Estimates block with best potential to be next top block\n
     Uses top and leftmost blocks for reference\n'''
@@ -721,12 +677,14 @@ def next_top_block(blocks:list[OCR_Tree],origin:Box=Box(0,0,0,0)):
     
 
 
-def calculate_reading_order_naive(ocr_results:OCR_Tree,area:Box=None):
+def calculate_reading_order_naive(ocr_results:OCR_Tree,area:Box=None)->OCR_Tree:
     '''Calculate reading order of ocr_tree of block level.
 
     Order left to right, top to bottom.
 
-    Naive approach: only takes into account boxes position, not taking into account context such as article group\n'''
+    Naive approach: only takes into account boxes position, not taking into account context such as article group\n
+    
+    Returns ocr_results with id reordered'''
 
     # id blocks
     ocr_results.clean_ids()
@@ -848,7 +806,7 @@ def calculate_reading_order_naive(ocr_results:OCR_Tree,area:Box=None):
 
 
 
-def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None):
+def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None)->OCR_Tree:
     '''Get next top block
     
     Estimates block with best potential to be next top block, using context such as block type as reference
@@ -986,14 +944,16 @@ def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None):
 
 
 
-def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None):
+def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None)->OCR_Tree:
     '''Calculate reading order of ocr_tree of block level.
 
     Order left to right, top to bottom.
 
     Naive approach: only takes into account boxes position, not taking into account context such as article group
     
-    Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n'''
+    Context approach: takes into account context such as caracteristics of blocks - title, caption, text, etc\n
+    
+    Returns: ocr_tree with id reordered'''
 
     # id blocks
     # ocr_results.clean_ids()
@@ -1081,7 +1041,7 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None):
 
 
 
-def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False):
+def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tree:
     '''Categorize blocks into different types
     
     Types:
@@ -1273,7 +1233,7 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,log
     return topologic_graph
 
 
-def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,log:bool=False)->list:
+def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,log:bool=False)->list[int]:
     '''Sort topologic graph into list\n
 
     Searches for first block in topologic graph, that has no blocks before it in order map, that are not already in order list\n
@@ -1757,11 +1717,8 @@ def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=Fa
     '''Calculates level 2 OCR Tree reading order and returns these blocks in an ordered list'''
     ordered_blocks = []
 
-    image_info = get_image_info(image_path)
-    journal_template = estimate_journal_template(ocr_results,image_info)
-    columns_area = image_info
-    columns_area.remove_box_area(journal_template['header'])
-    columns_area.remove_box_area(journal_template['footer'])
+    _,body,_ = segment_document(image=image_path)
+    columns_area = body
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
@@ -1776,15 +1733,11 @@ def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=Fa
 
 
 
-def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,calculate_reading_order:bool=True,logs:bool=False)->list[int]|list[OCR_Tree]:
+def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,calculate_reading_order:bool=True,logs:bool=False)->Tuple[list[int],list[OCR_Tree]]:
     '''Extract articles from document using OCR results and image information'''
 
-    
-    image_info = get_image_info(image_path)
-    journal_template = estimate_journal_template(ocr_results,image_info)
-    columns_area = image_info
-    columns_area.remove_box_area(journal_template['header'])
-    columns_area.remove_box_area(journal_template['footer'])
+    _,body,_ = segment_document(image=image_path)
+    columns_area = body
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
@@ -1792,6 +1745,8 @@ def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=
     if calculate_reading_order:
         order_list = sort_topologic_order(t_graph,sort_weight=True)
     else:
+        # current order of ids
+        ## small consideration if delimiters are ignored
         order_list = [block.id for block in ocr_results.get_boxes_level(2,ignore_type=[] if not ignore_delimiters else ['delimiter']) if t_graph.contains_id(block.id)]
 
 

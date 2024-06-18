@@ -36,18 +36,15 @@ def get_ocr_results(target,args= None):
     return ocr_results
 
 
-def get_reading_order(target,ocr_results,args=None):
+def get_reading_order(target:str,ocr_results:OCR_Tree,args=None):
     if not args:
         args = Namespace()
         args.ignore_delimiters = False
 
     # get journal template
     ## leaves only body
-    image_info = get_image_info(target)
-    journal_template = estimate_journal_template(ocr_results,image_info)
-    columns_area = image_info
-    columns_area.remove_box_area(journal_template['header'])
-    columns_area.remove_box_area(journal_template['footer'])
+    _,body,_ = segment_document(target)
+    columns_area = body
     
 
     # run topologic_order context

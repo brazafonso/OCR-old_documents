@@ -5,7 +5,7 @@ from .aux_utils import consts
 
 preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','lightning_correction',
                          'image_preprocess','cut_document_margins','remove_document_images',
-                         'image_upscaling']
+                         'image_upscaling','identify_document_delimiters']
 
 posprocessing_methods = ['clean_ocr','unite_blocks','calculate_reading_order','extract_articles']
 
@@ -47,7 +47,7 @@ Components:
     parser.add_argument('-tt','--target_type'           ,type=str,nargs=1   ,default='newspaper'                       ,help='Target type. Possible values: newspaper.')
     parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                             ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
     parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                             ,help='Force OCR engine to run again')
-    parser.add_argument('-id','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
+    parser.add_argument('-igd','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
     parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
     parser.add_argument('-upi','--upscaling_image'      ,type=str,nargs='*' ,default=['waifu2x']                       ,help='''
 Upscale image automatically (default: waifu2x). 

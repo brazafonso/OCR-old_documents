@@ -466,7 +466,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
 
     ## Simple OCR
     else:
-        # binarize (may remove delimiters)
+        # binarize
         binarize_tmp = binarize(target,denoise_strength=5)
         cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
         binarized_path = f'{results_path}/binarize.png'
@@ -501,6 +501,20 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
             json.dump(ocr_results.to_json(),result_dict_file,indent=4)
             result_dict_file.close()
 
+    # identify image delimiters
+    if 'identify_document_delimiters' not in args.skip_method:
+        delimiters = get_document_delimiters(target,logs=args.logs,debug=args.debug)
+        # add delimiters to ocr results
+        ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
+        page = ocr_results.get_boxes_level(1)[0]
+        for delimiter in delimiters:
+            ocr_block = OCR_Tree({'level':2,'box':delimiter,'type':'delimiter'})
+            page.add_child(ocr_block)
+
+        # save ocr results
+        result_dict_file = open(f'{results_path}/ocr_results.json','w')
+        json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+        result_dict_file.close()
 
     # get results
     return [OCR_Tree(f'{results_path}/ocr_results.json'),target]
@@ -509,8 +523,12 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
 def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''Clean ocr_tree'''
     find_images_flag = 'remove_document_images' not in args.skip_method
-    ocr_results = bound_box_fix(ocr_results,2,None,find_images=find_images_flag ,logs=args.debug)
+    find_delimiters_flag = 'identify_document_delimiters' not in args.skip_method
+    # clean blocks and bounding boxes
+    ocr_results = bound_box_fix(ocr_results,2,None,text_confidence=args.text_confidence,find_images=find_images_flag,find_delimiters=find_delimiters_flag ,logs=args.debug)
 
+
+    # save ocr results
     result_dict_file = open(f'{results_path}/clean_ocr.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
@@ -518,6 +536,7 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     metadata = get_target_metadata(o_target)
     target_img = metadata['target_path']
 
+    # draw boxes (for debug)
     image = draw_bounding_boxes(ocr_results,target_img,[2],id=True)
     cv2.imwrite(f'{results_path}/clean_ocr.png',image)
     csv = pd.DataFrame(ocr_results.to_dict())
@@ -535,7 +554,7 @@ def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:arg
     '''Unite ocr_tree'''
     
 
-    ocr_results = unite_blocks(ocr_results,logs=args.debug)
+    ocr_results = unite_blocks(ocr_results,conf=args.text_confidence,logs=args.debug)
 
 
     result_dict_file = open(f'{results_path}/result_united.json','w')
