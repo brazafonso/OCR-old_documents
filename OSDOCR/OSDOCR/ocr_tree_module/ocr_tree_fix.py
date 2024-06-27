@@ -245,7 +245,60 @@ def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
     return ocr_results
 
 
+def remvove_empty_boxes(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
+    'Remove empty boxes (with no text when considering given confidence threshold)'
 
+    if logs:
+        print('Removing empty boxes')
+        print('Original boxes:',len(ocr_results.get_boxes_level(2)))
+
+    # id boxes
+    ocr_results.id_boxes(level=[2])
+
+    blocks = ocr_results.get_boxes_level(2)
+    for block in blocks:
+        if block.is_empty(conf=conf):
+            ocr_results.remove_box_id(block.id,level=2)
+
+    if logs:
+        print('Remaining boxes:',len(ocr_results.get_boxes_level(2)))
+
+    return ocr_results
+
+
+def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
+    '''Fix delimiters. Adjust bounding boxes, and remove delimiters inside text.'''
+
+    if logs:
+        print('Fix delimiters')
+        print('Original boxes:',len(ocr_results.get_boxes_level(2)))
+
+    # id boxes
+    ocr_results.id_boxes(level=[2])
+
+    delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
+    blocks =  [b for b in ocr_results.get_boxes_level(2,ignore_type=['delimiter']) if not b.is_empty(conf=conf,only_text=True)]
+
+    # for each delimiter
+    ## check if intersects with other blocks
+    ### in which case adjust bounding box
+    ## check if inside other blocks
+    ### in which case remove delimiter
+    for delimiter in delimiters:
+        current_delimiter_box = delimiter.box
+        current_delimiter_id = delimiter.id
+        for block in blocks:
+            if current_delimiter_box.is_inside_box(block.box):
+                ocr_results.remove_box_id(current_delimiter_id,level=2)
+                break
+            elif current_delimiter_box.intersects_box(block.box):
+                current_delimiter_box.remove_box_area(block.box)
+
+
+    if logs:
+        print('Remaining boxes:',len(ocr_results.get_boxes_level(2)))
+
+    return ocr_results
 
 
 

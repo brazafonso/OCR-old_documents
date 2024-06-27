@@ -519,17 +519,35 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     # identify image delimiters
     if 'identify_document_delimiters' not in args.skip_method:
         delimiters = get_document_delimiters(target,logs=args.logs,debug=args.debug)
+
         # add delimiters to ocr results
         ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
+        # clean ocr results
+        ocr_results = remvove_empty_boxes(ocr_results,conf=args.text_confidence,logs=args.logs)
+
         page = ocr_results.get_boxes_level(1)[0]
         for delimiter in delimiters:
             ocr_block = OCR_Tree({'level':2,'box':delimiter,'type':'delimiter'})
             page.add_child(ocr_block)
 
+
+        # clean delimiters
+        ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,logs=args.logs)
+
+        if args.debug:
+            delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
+            print('delimiters:',len(delimiters))
+            img = draw_bounding_boxes(delimiters,target)
+            cv2.imwrite(f'{results_path}/delimiters_2.png',img)
+
         # save ocr results
         result_dict_file = open(f'{results_path}/ocr_results.json','w')
         json.dump(ocr_results.to_json(),result_dict_file,indent=4)
         result_dict_file.close()
+
+        # save image
+        img = draw_bounding_boxes(ocr_results,target)
+        cv2.imwrite(f'{results_path}/identify_document_delimiters.png',img)
 
     # get results
     return [OCR_Tree(f'{results_path}/ocr_results.json'),target]

@@ -132,8 +132,7 @@ class CustomAction_skip_method(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
         # if skip method "all" is given, add all methods
         if 'all' in values:
-
-            choices = parser.choices
+            choices = self.choices
             values = []
             for choice in choices:
                 if choice not in values:

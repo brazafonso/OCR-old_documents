@@ -321,6 +321,18 @@ class OCR_Tree:
                 if overlapped_lines/len(lines) >= 0.5:
                     return True
         return False
+    
+
+    def get_boxes_type(self,level:int,types:list[str])->list['OCR_Tree']:
+        '''Get boxes with type in ocr_results'''
+        group_boxes = []
+        if self.level == level and self.__getattribute__('type') and self.type in types:
+            group_boxes.append(self)
+        elif self.level < level:
+            for child in self.children:
+                group_boxes += child.get_boxes_type(level,types)
+        return group_boxes
+
 
     def get_delimiters(self,search_area:Box=None,orientation:str=None,conf:int=0):
         '''Get delimiters in ocr_results\n

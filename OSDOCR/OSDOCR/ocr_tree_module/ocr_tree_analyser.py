@@ -555,7 +555,7 @@ def draw_bounding_boxes(ocr_results:OCR_Tree,img:Union[str,cv2.typing.MatLike],d
     if isinstance(img,str):
         img = cv2.imread(img)
 
-    box_stack = [ocr_results]
+    box_stack = ocr_results if isinstance(ocr_results,list) else [ocr_results]
     while box_stack:
         current_node = box_stack.pop()
         if current_node.level in draw_levels:
@@ -1736,7 +1736,8 @@ def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=Fa
 def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,calculate_reading_order:bool=True,logs:bool=False)->Tuple[list[int],list[OCR_Tree]]:
     '''Extract articles from document using OCR results and image information'''
 
-    _,body,_ = segment_document(image=image_path)
+    delimiters = [b.box for b in ocr_results.get_boxes_type(level=2,types=['delimiter'])]
+    _,body,_ = segment_document_delimiters(image=image_path,delimiters=delimiters)
     columns_area = body
 
     # run topologic_order context
