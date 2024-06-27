@@ -36,20 +36,21 @@ Components:
             * TXT Simple
                                      
                                      ''',formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--test'                        ,action='store_true'                                           ,help='Run tests')
-    parser.add_argument('-g','--gui'                    ,action='store_true'                                           ,help='Run gui')
-    parser.add_argument('target'                        ,type=str,nargs='*'                                            ,help='Target image path')
-    parser.add_argument('-sgocr','--segmented_ocr'      ,action='store_true'                                           ,help='Segment target and apply OCR in each segment, merging results into single tree (default: False).')
-    parser.add_argument('-f','--file'                   ,type=str,nargs=1                                              ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
-    parser.add_argument('-of','--output_folder'         ,type=str,nargs=1                                              ,help='Results folder')
-    parser.add_argument('-ot','--output_type'           ,type=str,nargs='*' ,default=['markdown']                      ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt','txt_simple'])
-    parser.add_argument('-tc','--text_confidence'       ,type=int,nargs='?'   ,default=10                                ,help='Text confidence level. Possible values: 0-100.')
-    parser.add_argument('-tt','--target_type'           ,type=str,nargs=1   ,default='newspaper'                       ,help='Target type. Possible values: newspaper.')
-    parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                             ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
-    parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                             ,help='Force OCR engine to run again')
+    parser.add_argument('--test'                        ,action='store_true'                                            ,help='Run tests')
+    parser.add_argument('-g','--gui'                    ,action='store_true'                                            ,help='Run gui')
+    parser.add_argument('target'                        ,type=str,nargs='*'                                             ,help='Target image path')
+    parser.add_argument('-sgocr','--segmented_ocr'      ,action='store_true'                                            ,help='Segment target and apply OCR in each segment, merging results into single tree (default: False).')
+    parser.add_argument('-f','--file'                   ,type=str,nargs=1                                               ,help='File that lists multiple target image paths. Assumed simple txt, with one path per line')
+    parser.add_argument('-of','--output_folder'         ,type=str,nargs=1                                               ,help='Results folder')
+    parser.add_argument('-ot','--output_type'           ,type=str,nargs='*' ,default=['markdown']                       ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt','txt_simple'])
+    parser.add_argument('-tc','--text_confidence'       ,type=int,nargs='?'   ,default=10                               ,help='Text confidence level. Possible values: 0-100.')
+    parser.add_argument('-tt','--target_type'           ,type=str,nargs=1   ,default='newspaper'                        ,help='Target type. Possible values: newspaper.',choices=['newspaper'])
+    parser.add_argument('-ts','--target_segments'       ,type=str,nargs='*'   ,default=['header','body']                  ,help='Target segments, used for segmenting ocr results and processing output. Possible values: header, body, footer. Default: header,body. Body is always considered.',choices=['header','body','footer'])
+    parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                              ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
+    parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                              ,help='Force OCR engine to run again')
     parser.add_argument('-igd','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
-    parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'             ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
-    parser.add_argument('-upi','--upscaling_image'      ,type=str,nargs='*' ,default=['waifu2x']                       ,help='''
+    parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'              ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
+    parser.add_argument('-upi','--upscaling_image'      ,type=str,nargs='*' ,default=['waifu2x']                        ,help='''
 Upscale image automatically (default: waifu2x). 
 Further options: 
     - waifu2x

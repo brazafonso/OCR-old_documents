@@ -1733,11 +1733,13 @@ def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=Fa
 
 
 
-def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,calculate_reading_order:bool=True,logs:bool=False)->Tuple[list[int],list[OCR_Tree]]:
-    '''Extract articles from document using OCR results and image information'''
+def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,
+                     calculate_reading_order:bool=True,target_segments:list[str]=['header','body','footer'],
+                     logs:bool=False)->Tuple[list[int],list[OCR_Tree]]:
+    '''Extract articles from document using OCR results and image information. Articles are assumed to only be in body segment of target.'''
 
     delimiters = [b.box for b in ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-    _,body,_ = segment_document_delimiters(image=image_path,delimiters=delimiters)
+    _,body,_ = segment_document_delimiters(image=image_path,delimiters=delimiters,target_segments=target_segments)
     columns_area = body
 
     # run topologic_order context

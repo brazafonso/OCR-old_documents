@@ -55,7 +55,12 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
     target_img_path = metadata['target_path']
 
     calculate_reading_order = 'calculate_reading_order' not in args.skip_method
-    order_list,articles = extract_articles(target_img_path,ocr_results,args.ignore_delimiters,calculate_reading_order,args.logs)
+    order_list,articles = extract_articles(image_path=target_img_path,
+                                           ocr_results=ocr_results,
+                                           ignore_delimiters=args.ignore_delimiters,
+                                           calculate_reading_order=calculate_reading_order,
+                                           target_segments=args.target_segments,
+                                           logs=args.logs)
 
     if args.debug:
         articles_img = draw_articles(articles,target_img_path)
@@ -318,7 +323,7 @@ def run_target_hocr(target:str,args:argparse.Namespace):
 
 
 
-def run_target_split(o_target:str,results_path:str,tesseract_config:dict,logs:bool=False,debug:bool=False)->OCR_Tree:
+def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR_Tree:
     '''Segment target into Header, Body, Footer and run OCR on each part. Body is further split into columns.
     
     Final OCR results are then merged into single ocr_tree.'''
@@ -330,28 +335,33 @@ def run_target_split(o_target:str,results_path:str,tesseract_config:dict,logs:bo
     padding_vertical = int(0.01 * target_image.shape[0])
     padding_horizontal = int(0.01 * target_image.shape[1])
 
+    target_segments = args.target_segments
+    target_header = 'header' in target_segments
+    target_footer = 'footer' in target_segments
+
+
     # segment target
     ## get header, body and footer (only body is guaranteed to be found)
     ## split body into columns
-    header,body,footer = segment_document(target_image,logs=logs,debug=debug)
+    header,body,footer = segment_document(target_image,logs=args.logs,debug=args.debug)
 
-    if logs:
+    if args.logs:
         print(f'Body: {body}')
         print(f'Header: {header}')
         print(f'Footer: {footer}')
 
-    header = header if header.valid() else None
-    footer = footer if footer.valid() else None
+    header = header if header.valid() and target_header else None
+    footer = footer if footer.valid() and target_footer else None
 
     image_body = target_image[body.top:body.bottom,body.left:body.right]
     image_header = target_image[header.top:header.bottom,header.left:header.right] if header else None
     image_footer = target_image[footer.top:footer.bottom,footer.left:footer.right] if footer else None
 
 
-    columns = divide_columns(image_body,logs=debug)
+    columns = divide_columns(image_body,logs=args.logs)
     columns_images = [image_body[column.top:column.bottom,column.left:column.right] for column in columns]
 
-    if logs:
+    if args.logs:
         print(f'Columns: {[c.__str__() for c in columns]}')
 
     # save images into tmp files
@@ -386,17 +396,17 @@ def run_target_split(o_target:str,results_path:str,tesseract_config:dict,logs:bo
     columns_ocr = []
     ## header
     if header:
-        run_tesseract(f'{tmp_folder}/header.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        run_tesseract(f'{tmp_folder}/header.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
         header_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
 
     ## footer
     if footer:
-        run_tesseract(f'{tmp_folder}/footer.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        run_tesseract(f'{tmp_folder}/footer.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
         footer_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
 
     ## columns
     for i in range(len(columns_images)):
-        run_tesseract(f'{tmp_folder}/column_{i}.png',results_path=results_path,opts=tesseract_config,logs=debug)
+        run_tesseract(f'{tmp_folder}/column_{i}.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
         column_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
         columns_ocr.append(column_ocr)
 
@@ -418,7 +428,7 @@ def run_target_split(o_target:str,results_path:str,tesseract_config:dict,logs:bo
         if i > 0:
             add_left = columns[i].left
 
-        if logs:
+        if args.logs:
             print(f'update position of column {i} to {add_left} + {add_top}')
 
         column.update_position(left=add_left,top=add_top,absolute=False)
@@ -474,7 +484,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     # OCR
     ## Segment target and OCR each segment
     if args.segmented_ocr:
-        ocr_results = run_target_split(o_target,results_path,args.tesseract_config,args.logs,args.debug)
+        ocr_results = run_target_split(o_target,results_path,args)
         # save ocr results
         with open(f'{results_path}/ocr_results.json','w',encoding='utf-8') as f:
             json.dump(ocr_results.to_json(),f,indent=4)
