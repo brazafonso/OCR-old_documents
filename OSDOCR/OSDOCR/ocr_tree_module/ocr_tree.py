@@ -143,7 +143,18 @@ class OCR_Tree:
 
     def copy(self):
         '''Copy ocr_tree object'''
-        return OCR_Tree(self.level,self.page_num,self.block_num,self.par_num,self.line_num,self.word_num,self.box,self.text,self.conf,self.id,self.type)
+        ocr_tree = OCR_Tree()
+        # copy attributes
+        for k in self.__dict__.keys():
+            if k in ['children','parent','box']:
+                continue
+            setattr(ocr_tree,k,getattr(self,k))
+        ocr_tree.box = self.box.copy()
+        # copy children
+        for child in self.children:
+            ocr_tree.add_child(child.copy())
+
+        return ocr_tree
             
         
 
@@ -375,17 +386,17 @@ class OCR_Tree:
                 child.remove_box_id(id,level)
 
 
-    def get_boxes_in_area(self,area:Box,level:int=2,ignore_type:list[str]=[])->list['OCR_Tree']:
+    def get_boxes_in_area(self,area:Box,level:int=2,conf:int=-1,ignore_type:list[str]=[])->list['OCR_Tree']:
         '''Get boxes in area\n
         If level is -1, get all boxes in area'''
         boxes = []
         if area:
-            if (level == -1 or self.level == level ) and self.box.is_inside_box(area) and self.type not in ignore_type:
+            if (level == -1 or self.level == level ) and self.conf >= conf and self.box.is_inside_box(area) and self.type not in ignore_type:
                 boxes.append(self)
             elif self.level < level or level == -1:
                 for child in self.children:
                     child:OCR_Tree
-                    boxes += child.get_boxes_in_area(area,level,ignore_type)
+                    boxes += child.get_boxes_in_area(area,level,conf,ignore_type)
         return boxes
     
     def prune_children_area(self,area:Box=None):
@@ -667,6 +678,50 @@ class OCR_Tree:
 
         for child in self.children:
             child.update_position(top=top,left=left,absolute=absolute)
+
+
+    def update_box(self,left:int=None,right:int=None,top:int=None,bottom:int=None,children:bool=False):
+        '''Update box and children positions.
+        
+        Arguments:
+            left (int, optional): Left position. Defaults to None.
+            right (int, optional): Right position. Defaults to None.
+            top (int, optional): Top position. Defaults to None.
+            bottom (int, optional): Bottom position. Defaults to None.
+            children (bool, optional): If True, adjust coordinate instead of replacing. Defaults to False.
+            '''
+        
+        if not any([left,right,top,bottom]):
+            return
+        
+        if left:
+            if children:
+                self.box.update(left=max(self.box.left,left))
+            else:
+                self.box.update(left=left)
+
+        if right:
+            if children:
+                self.box.update(right=min(self.box.right,right))
+            else:
+                self.box.update(right=right)
+
+        if top:
+            if children:
+                self.box.update(top=max(self.box.top,top))
+            else:
+                self.box.update(top=top)
+
+        if bottom:
+            if children:
+                self.box.update(bottom=min(self.box.bottom,bottom))
+            else:
+                self.box.update(bottom=bottom)
+
+        for child in self.children:
+            child.update_box(left=left,right=right,top=top,bottom=bottom,children=True)
+        
+        
 
     
 

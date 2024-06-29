@@ -6,7 +6,7 @@ from PIL import Image
 import pytesseract
 import jellyfish
 
-def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimiters:bool=True,find_images:bool=True,logs:bool=False)->OCR_Tree:
+def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimiters:bool=True,find_images:bool=True,debug:bool=False)->OCR_Tree:
     '''Fix block bound boxes.   
     
     Removes empty blocks that are not potential delimiters or images; tries to remove intersections and empty overlapping blocks.
@@ -33,7 +33,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     for i,block in enumerate(blocks):
         if block.is_empty(conf=text_confidence,only_text=True):
             if block.box.area() >= image_area*0.8:
-                if logs:
+                if debug:
                     print(f'Removing Box : {block.id} is empty and too big')
                 ocr_results.remove_box_id(block.id)
                 blocks.pop(i)
@@ -41,7 +41,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
 
             if not find_delimiters:
                 if not block.is_delimiter(conf=text_confidence,only_type=True):
-                    if logs:
+                    if debug:
                         print(f'Removing Box : {block.id} is empty and not a delimiter')
                     ocr_results.remove_box_id(block.id)
                     blocks.pop(i)
@@ -49,7 +49,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
             
             if not find_images:
                 if not block.is_image(conf=text_confidence,only_type=True):
-                    if logs:
+                    if debug:
                         print(f'Removing Box : {block.id} is empty and not an image')
                     ocr_results.remove_box_id(block.id)
                     blocks.pop(i)
@@ -69,7 +69,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                 current_box = blocks[i]
                 i+=1
             else:
-                if logs:
+                if debug:
                     print(f'Removing Box : {blocks[i].id} is empty and not a delimiter')
                 ocr_results.remove_box_id(blocks[i].id)
                 blocks.pop(i)
@@ -81,14 +81,14 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
 
             # compared box inside current box
             if compare_box.is_empty(conf=text_confidence) and compare_box.box.is_inside_box(current_box.box):
-                if logs:
+                if debug:
                     print(f'Removing Box : {compare_box.id} is inside {current_box.id}')
                 ocr_results.remove_box_id(compare_box.id)
                 if compare_box.id in boxes_to_check: 
                     del boxes_to_check[compare_box.id]
             # current box inside compared box
             elif current_box.is_empty(conf=text_confidence) and current_box.box.is_inside_box(compare_box.box):
-                if logs:
+                if debug:
                     print(f'Removing Box : {current_box.id} is inside {compare_box.id}')
                 ocr_results.remove_box_id(current_box.id)
                 current_box = None
@@ -132,7 +132,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                         current_box = None
                 i = 0
 
-    if logs:
+    if debug:
         print(f'''
         Initial number of boxes: {og_len}
         Final number of boxes: {len(ocr_results.get_boxes_level(2))}
@@ -140,12 +140,49 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     return ocr_results
 
 
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box,text_confidence:int=10,find_images:bool=True,find_delimiters:bool=True,logs:bool=False)->OCR_Tree:
+def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=False)->OCR_Tree:
+    '''Fix bound boxes of blocks with text by reducing their sides when confidence of side text is too low.'''
+
+    blocks = ocr_results.get_boxes_level(2)
+    text_blocks = [b for b in blocks if b.to_text(conf=text_confidence).strip()]
+
+    for b in text_blocks:
+        block_min_left = None
+        block_max_right = None
+
+        # get min left point and max right point
+        lines = b.get_boxes_level(4)
+        for l in lines:
+            words = [w for w  in l.get_boxes_level(5,conf=text_confidence) if w.text.strip()]
+            if words:
+                first_word = words[0]
+                last_word = words[-1]
+                block_min_left = min(block_min_left,first_word.box.left) if block_min_left else first_word.box.left
+                block_max_right = max(block_max_right,last_word.box.right) if block_max_right else last_word.box.right
+
+        # update box
+        if block_min_left and block_max_right and (b.box.left < block_min_left or b.box.right > block_max_right):
+            new_left = max(b.box.left,block_min_left)
+            new_right = min(b.box.right,block_max_right)
+            if debug:
+                print(f'Updating box {b.id} with min left {new_left} and max right {new_right} | Old box: {b.box}')
+            b.update_box(left=new_left,right=new_right)
+
+    return ocr_results
+
+
+
+
+
+
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box=None,text_confidence:int=10,find_images:bool=True,find_delimiters:bool=True,debug:bool=False)->OCR_Tree:
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
     if level == 2:
-        new_ocr_results = block_bound_box_fix(ocr_results,text_confidence=text_confidence,find_images=find_images,find_delimiters=find_delimiters,logs=logs)
+        new_ocr_results = block_bound_box_fix(ocr_results,text_confidence=text_confidence,find_images=find_images,find_delimiters=find_delimiters,debug=debug)
+    elif level == 5:
+        new_ocr_results = text_bound_box_fix(ocr_results,text_confidence=text_confidence,debug=debug)
 
     return new_ocr_results
 
@@ -266,7 +303,7 @@ def remvove_empty_boxes(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_T
     return ocr_results
 
 
-def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
+def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=False)->OCR_Tree:
     '''Fix delimiters. Adjust bounding boxes, and remove delimiters inside text.'''
 
     if logs:
@@ -287,13 +324,179 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
     for delimiter in delimiters:
         current_delimiter_box = delimiter.box
         current_delimiter_id = delimiter.id
-        for block in blocks:
+        current_delimiter_orientation = current_delimiter_box.get_box_orientation()
+        j = 0
+        while j < len(blocks):
+            block = blocks[j]
+            # inside other blocks
             if current_delimiter_box.is_inside_box(block.box):
+                if debug:
+                    print(f'Removing delimiter {current_delimiter_id} inside block {block.id}')
                 ocr_results.remove_box_id(current_delimiter_id,level=2)
                 break
+            # intersects with other blocks
             elif current_delimiter_box.intersects_box(block.box):
-                current_delimiter_box.remove_box_area(block.box)
+                # cut block in two
+                ## get level 3 blocks in area
+                ### if delimiter is horizontal, cut area horizontally
+                if current_delimiter_orientation == 'horizontal':
+                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.left, 'bottom':current_delimiter_box.top+1})
+                    area_2 = Box({'left':block.box.left, 'top':current_delimiter_box.bottom-1, 'right':block.box.right, 'bottom':block.box.bottom})
+                ### if delimiter is vertical, cut area vertically
+                else:
+                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':current_delimiter_box.left-1, 'bottom':block.box.bottom})
+                    area_2 = Box({'left':current_delimiter_box.right+1, 'top':block.box.top, 'right':block.box.right, 'bottom':block.box.bottom})
 
+                # if delimiter passes through block, check block text if able to cut block in two
+                text_in_area_1 = block.get_boxes_in_area(area_1,level=5,conf=conf)
+                text_in_area_2 = block.get_boxes_in_area(area_2,level=5,conf=conf)
+                if not (len(text_in_area_1) > 1 and len(text_in_area_2) > 1):
+                    # can't cut block in two
+                    ## just adjust bounding box
+                    ### check if adjust block or delimiter
+                    if current_delimiter_orientation == 'horizontal':
+                        if block.box.right < current_delimiter_box.left or block.box.left > current_delimiter_box.right:
+                            # adjust block
+                            if debug:
+                                print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')       
+                            block.box.remove_box_area(current_delimiter_box)
+                        else:
+                            # adjust delimiter
+                            if debug:
+                                print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
+                            current_delimiter_box.remove_box_area(block.box)
+                    else:
+                        if block.box.top > current_delimiter_box.top or block.box.bottom < current_delimiter_box.bottom:
+                            # adjust block
+                            if debug:
+                                print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')  
+                            block.box.remove_box_area(current_delimiter_box)
+                        else:
+                            # adjust delimiter
+                            if debug:
+                                print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
+                            current_delimiter_box.remove_box_area(block.box)
+                else:
+                    if debug:
+                        print(f'Can cut block {block.id} in two with delimiter {current_delimiter_id}')
+                        print(f'Area 1: {area_1}')
+                        print(f'Area 2: {area_2}')
+                    # update first block
+                    blocks_1 = None
+                    blocks_2 = None
+                    ## blocks need to be gathered according to delimter orientation (division cut)
+                    ### if horizontal 
+                    #### gather all lines and check which belong to what area
+                    #### create new paragraphs according to lines
+                    ### if vertical
+                    #### gather all lines and paragraphs
+                    #### for each line check what words belong to what area
+
+                    # horizontal cut
+                    if current_delimiter_orientation == 'horizontal':
+                        lines = block.get_boxes_level(4)
+                        area_1_lines = []
+                        area_2_lines = []
+                        for line in lines:
+                            if line.box.is_inside_box(area_1):
+                                area_1_lines.append(line)
+                            else:
+                                area_2_lines.append(line)
+
+                        blocks_1 = []
+                        if area_1_lines:
+                            par_box = None
+                            par_lines = []
+                            cur_par = None
+                            for line in area_1_lines:
+                                if not par_box:
+                                    par_box = line.box
+                                    cur_par = line.par_num
+                                else:
+                                    if cur_par == line.par_num:
+                                        par_lines += [line]
+                                        par_box = par_box.join(line.box)
+                                    else:
+                                        par = OCR_Tree({'level':3,'box':par_box})
+                                        for line in par_lines:
+                                            par.add_child(line)
+                                        blocks_1.append(par)
+                                        par_box = line.box
+                                        par_lines = [line]
+                                        cur_par = line.par_num
+
+                            if par_lines:
+                                par = OCR_Tree({'level':3,'box':par_box})
+                                for line in par_lines:
+                                    par.add_child(line)
+                                blocks_1.append(par)
+
+                        if area_2_lines:
+                            par_box = None
+                            par_lines = []
+                            cur_par = None
+                            for line in area_2_lines:
+                                if not par_box:
+                                    par_box = line.box
+                                    cur_par = line.par_num
+                                else:
+                                    if cur_par == line.par_num:
+                                        par_lines += [line]
+                                        par_box = par_box.join(line.box)
+                                    else:
+                                        par = OCR_Tree({'level':3,'box':par_box})
+                                        for line in par_lines:
+                                            par.add_child(line)
+                                        blocks_2.append(par)
+                                        par_box = line.box
+                                        par_lines = [line]
+                                        cur_par = line.par_num
+
+                            if par_lines:
+                                par = OCR_Tree({'level':3,'box':par_box})
+                                for line in par_lines:
+                                    par.add_child(line)
+                                blocks_2.append(par)
+
+                    # vertical cut
+                    else:
+                        # id words
+                        ocr_results.id_boxes(level=[5])
+                        blocks_1 = [b.copy() for b in block.get_boxes_level(3)]
+                        blocks_2 = [b.copy() for b in block.get_boxes_level(3)]
+                        # only leave each word in one of the areas
+                        for i,p in enumerate(blocks_1):
+                            par_words = p.get_boxes_level(5)
+                            for w in par_words:
+                                if not w.box.is_inside_box(area_1):
+                                    blocks_1[i].remove_box_id(w.id,level=5)
+                                else:
+                                    blocks_2[i].remove_box_id(w.id,level=5)
+                            # update par boxes
+                            blocks_1[i].update_box(right=area_1.right)
+                            blocks_2[i].update_box(left=area_2.left)
+
+                    block_1 = OCR_Tree({'level':2,'box':area_1})
+                    for c in blocks_1:
+                        block_1.add_child(c)
+                    print(f'Block 1: {block_1.box}')
+
+                    # update second block
+                    block_2 = OCR_Tree({'level':2,'box':area_2})
+                    for c in blocks_2:
+                        block_2.add_child(c)
+                    # remove current block
+                    ocr_results.remove_box_id(block.id,level=2)
+                    # add new blocks
+                    page = ocr_results.get_boxes_level(1)[0]
+                    page.add_child(block_1)
+                    page.add_child(block_2)
+                    # add blocks to list
+                    blocks.append(block_1)
+                    blocks.append(block_2)
+                    # id boxes again
+                    ocr_results.id_boxes(level=[2])
+            j += 1
 
     if logs:
         print('Remaining boxes:',len(ocr_results.get_boxes_level(2)))
