@@ -659,7 +659,7 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
     if blocks_1:
         # update current block
         ## box 
-        block.box.update(left=area_1.left,top=area_1.top,right=area_2.right,bottom=area_2.bottom)
+        block.box.update(left=area_1.left,top=area_1.top,right=area_1.right,bottom=area_1.bottom)
         ## children
         block.children = []
         for b in blocks_1:
@@ -669,6 +669,8 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
 
         if not blocks_1 and (area_1.height == 0 or area_1.width == 0):
             # update current block with area 2
+            if debug:
+                print(f'Area 1 is empty. Update block with area 2')
             block.box.update(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
             block.children = []
             for b in blocks_2:
