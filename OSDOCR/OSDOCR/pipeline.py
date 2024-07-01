@@ -604,6 +604,11 @@ def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:arg
 
     ocr_results = unite_blocks(ocr_results,conf=args.text_confidence,logs=args.debug)
 
+    # small extra cleaning
+    ocr_results = remove_solo_words(ocr_results,conf=args.text_confidence,debug=args.debug)
+    ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,logs=args.logs,debug=args.debug)
+
+
 
     result_dict_file = open(f'{results_path}/result_united.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
@@ -702,6 +707,24 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
     # save metadata
     metadata['ocr_results_path'] = f'{results_path}/identify_document_images.json'
     metadata['transformations'].append('identify_images_ocr_results')
+    save_target_metadata(o_target,metadata)
+
+    return ocr_results
+
+
+def find_title_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''From ocr_results, searches within text blocks for titles and separatest them from the rest'''
+
+    ocr_results = find_text_titles(ocr_results,conf=args.text_confidence,id_blocks=False,categorize_blocks=False,debug=args.debug)
+
+    result_dict_file = open(f'{results_path}/find_titles.json','w')
+    json.dump(ocr_results.to_json(),result_dict_file,indent=4)
+    result_dict_file.close()
+
+    # save metadata
+    metadata = get_target_metadata(o_target)
+    metadata['ocr_results_path'] = f'{results_path}/find_titles.json'
+    metadata['transformations'].append('find_title_blocks')
     save_target_metadata(o_target,metadata)
 
     return ocr_results
@@ -806,6 +829,11 @@ def run_target(target:str,args:argparse.Namespace):
         if args.logs:
             print('UNITE BLOCKS')
         ocr_results = unite_ocr_blocks(ocr_results,original_target_path,processed_path,args)
+
+    if 'find_titles' not in args.skip_method:
+        if args.logs:
+            print('FIND TITLES')
+        ocr_results = find_title_blocks(ocr_results,original_target_path,processed_path,args)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)

@@ -227,7 +227,7 @@ class OCR_Tree:
     def get_boxes_level(self,level:int,ignore_type:list[str]=[],conf:int=-1)->list['OCR_Tree']:
         '''Get boxes with level in ocr_results'''
         group_boxes = []
-        if self.level == level and self.type not in ignore_type and self.conf >= conf:
+        if self.level == level and self.type not in ignore_type and (self.conf >= conf or self.level < 5):
             group_boxes.append(self)
         else:
             for child in self.children:
@@ -261,7 +261,7 @@ class OCR_Tree:
             if self.type in ['image']:
                 return False
         text = self.to_text(conf).strip()
-        empty = re.match(r'^\s*$',text)
+        empty = re.match(r'\s*$',text)
         return empty != None
     
     def text_is_title(self,normal_text_size:int,conf:int=0,range:float=0.1,level:int=5):
@@ -276,7 +276,7 @@ class OCR_Tree:
         if only_type:
             return self.type in ['delimiter']
         
-        if self.level == 2 and self.is_empty(conf):
+        if self.type in ['delimiter'] or (self.level == 2 and self.is_empty(conf)):
             if self.box.width >= self.box.height*4 or self.box.height >= self.box.width*4:
                 return True
         return False
@@ -285,15 +285,17 @@ class OCR_Tree:
         '''Check if box is image'''
         if only_type:
             return self.type in ['image']
-        if self.level == 2 and self.is_empty(conf=conf) and not self.is_delimiter(conf=conf):
+        if self.type in ['image'] or (self.level == 2 and self.is_empty(conf=conf) and not self.is_delimiter(conf=conf)):
             if self.box.height > text_size*3:
                 return True
         return False
     
     def is_vertical_text(self,conf:int=0):
         '''Check if box is vertical text'''
-        if self.level == 2 and not self.is_empty(conf,only_text=True):
+        if self.is_empty(conf,only_text=True):
             lines = self.get_boxes_level(4)
+            if not lines:
+                return False
             # single line
             if len(lines) == 1:
                 words = self.get_boxes_level(5)

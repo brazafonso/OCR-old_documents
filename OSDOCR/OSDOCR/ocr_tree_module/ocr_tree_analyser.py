@@ -1038,6 +1038,82 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None)->O
 
 
 
+def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:dict,conf:int=10,debug:bool=False)->str:
+    '''Categorize single block into a type. Returns block type'''
+    block_type = None
+
+    
+    # empty block
+    if target_block.is_empty(conf=conf):
+        if target_block.is_delimiter(conf=conf):
+            block_type = 'delimiter'
+        else:
+            block_type = 'other'
+        if debug:
+            print('Empty block:',target_block.id,'| Type:',block_type)
+    # non empty block
+    else:
+        block_text_size = target_block.calculate_mean_height(level=5,conf=conf)
+        block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,level=5,conf=conf)
+        blocks_directly_above = target_block.boxes_directly_above(blocks)
+
+        if debug:
+            print('Block:',target_block.id,'| Text size:',block_text_size)
+
+        if block_is_text_size or target_block.is_vertical_text(conf=conf):
+            # text block
+            block_type = 'text'
+            if debug:
+                print('Text block:',target_block.id,f'| Is vertical: {target_block.is_vertical_text(conf=conf)} | Is text size: {block_is_text_size}')
+        # greater than normal text size
+        elif block_text_size > block_analysis['normal_text_size']:
+            words = target_block.get_boxes_level(5,conf=conf)
+            words = [w for w in words if w.text.strip()]
+            # title block
+            ## less than 11 words
+            if len(words) < 10:
+                block_type = 'title'
+                if debug:
+                    print('Title block:',target_block.id,'| Text :',target_block.to_text(conf=conf).strip())
+            ## highlight (some kind of second title)
+            else:
+                block_type = 'highlight'
+                if debug:
+                    print('Hihghlight block:',target_block.id,'| Too many words:',len(words))
+
+        # smaller than normal text size and has image above
+        elif block_text_size < block_analysis['normal_text_size'] and len([b for b in blocks_directly_above if b.is_image(conf=conf)]) > 0:
+            # caption block
+            block_type = 'caption'
+            if debug:
+                print('Caption block:',target_block.id,'| Is text size: ',block_is_text_size)
+
+
+        # text characteristics
+        block_text = target_block.to_text(conf=conf).strip()
+        # if first character is lower case, starts with lower case
+        if not block_text[0].isupper() and not re.match(r'^-\s*[A-Z"]',block_text):
+            target_block.start_text = False
+        else:
+            target_block.start_text = True
+        # if last character is punctuation, ends text
+        if block_text[-1] in ['.','!','?']:
+            target_block.end_text = True
+        else:
+            target_block.end_text = False
+
+    if not block_type:
+        if not target_block.is_empty(conf=conf):
+            block_type = 'text'
+        else:
+            block_type = 'other'
+
+        if debug:
+            print('Block:',target_block.id,'| Type:',block_type)
+
+    return block_type
+
+
 
 
 
@@ -1065,65 +1141,11 @@ def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tre
 
     # categorize blocks
     for block in blocks:
-        # block has type
         if block.type:
             continue
-
-        # empty block
-        if block.is_empty(conf=conf):
-            if block.is_delimiter(conf=conf):
-                block.type = 'delimiter'
-            else:
-                block.type = 'other'
-            ## TODO: categorize empty such as images
-        # non empty block
-        else:
-            if block.is_text_size(box_analysis['normal_text_size'],level=4) or block.is_vertical_text(conf=conf):
-                # text block
-                block.type = 'text'
-                if debug:
-                    print('Text block:',block.id,f'| Is vertical: {block.is_vertical_text(conf=conf)} | Is text size: {block.is_text_size(box_analysis["normal_text_size"],level=4)}')
-            # greater than normal text size
-            elif block.calculate_mean_height(level=4) > box_analysis['normal_text_size']:
-                words = block.get_boxes_level(5,conf=conf)
-                words = [w for w in words if w.text.strip()]
-                # title block
-                ## less than 11 words
-                if len(words) < 10:
-                    block.type = 'title'
-                ## highlight (some kind of second title)
-                else:
-                    block.type = 'highlight'
-                    if debug:
-                        print('Hihghlight block:',block.id,'| Too many words:',len(words))
-
-            # smaller than normal text size
-            elif block.calculate_mean_height(level=4) < box_analysis['normal_text_size']:
-                # caption block
-                block.type = 'caption'
-                if debug:
-                    print('Caption block:',block.id,'| Is text size: ',block.is_text_size(box_analysis["normal_text_size"],level=4))
-            else:
-                # other
-                block.type = 'other'
-
-            # text characteristics
-            block_text = block.to_text(conf=conf).strip()
-            # if first character is lower case, starts with lower case
-            if not block_text[0].isupper() and not re.match(r'^-\s*[A-Z"]',block_text):
-                block.start_text = False
-            else:
-                block.start_text = True
-            # if last character is punctuation, ends text
-            if block_text[-1] in ['.','!','?']:
-                block.end_text = True
-            else:
-                block.end_text = False
+        type = categorize_box(block,blocks,box_analysis,conf=conf,debug=debug)
+        block.type = type
                 
-        if debug:
-            print(block,block.type)
-
-            
     return ocr_results
 
             

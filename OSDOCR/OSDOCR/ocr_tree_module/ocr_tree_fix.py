@@ -1,5 +1,5 @@
 from .ocr_tree import *
-from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text,categorize_boxes,categorize_box
 from OSDOCR.aux_utils.box import Box
 from pytesseract import Output
 from PIL import Image
@@ -149,24 +149,39 @@ def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=Fa
     for b in text_blocks:
         block_min_left = None
         block_max_right = None
+        block_min_top = None
+        block_max_bottom = None
 
-        # get min left point and max right point
+        # get adjusted box coordinates
         lines = b.get_boxes_level(4)
-        for l in lines:
+        for i,l in enumerate(lines):
             words = [w for w  in l.get_boxes_level(5,conf=text_confidence) if w.text.strip()]
             if words:
+                # get left and right
                 first_word = words[0]
                 last_word = words[-1]
                 block_min_left = min(block_min_left,first_word.box.left) if block_min_left else first_word.box.left
                 block_max_right = max(block_max_right,last_word.box.right) if block_max_right else last_word.box.right
 
+                # get top and bottom (first and last line)
+                if i == 0:
+                    top_most_word = sorted(words,key=lambda w: w.box.top)[0]
+                    block_min_top = top_most_word.box.top
+                if i == len(lines)-1:
+                    bottom_most_word = sorted(words,key=lambda w: w.box.bottom)[-1]
+                    block_max_bottom = bottom_most_word.box.bottom
+
+
         # update box
-        if block_min_left and block_max_right and (b.box.left < block_min_left or b.box.right > block_max_right):
+        if block_min_left and block_max_right and block_min_top and block_max_bottom and \
+              (b.box.left < block_min_left or b.box.right > block_max_right or b.box.top < block_min_top or b.box.bottom > block_max_bottom):
             new_left = max(b.box.left,block_min_left)
             new_right = min(b.box.right,block_max_right)
+            new_top = max(b.box.top,block_min_top)
+            new_bottom = min(b.box.bottom,block_max_bottom)
             if debug:
-                print(f'Updating box {b.id} with min left {new_left} and max right {new_right} | Old box: {b.box}')
-            b.update_box(left=new_left,right=new_right)
+                print(f'Updating box {b.id} with min left {new_left} and max right {new_right} and min top {new_top} and max bottom {new_bottom}| Old box: {b.box}')
+            b.update_box(left=new_left,right=new_right,top=new_top,bottom=new_bottom)
 
     return ocr_results
 
@@ -340,7 +355,7 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                 ## get level 3 blocks in area
                 ### if delimiter is horizontal, cut area horizontally
                 if current_delimiter_orientation == 'horizontal':
-                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.left, 'bottom':current_delimiter_box.top+1})
+                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.right, 'bottom':current_delimiter_box.top+1})
                     area_2 = Box({'left':block.box.left, 'top':current_delimiter_box.bottom-1, 'right':block.box.right, 'bottom':block.box.bottom})
                 ### if delimiter is vertical, cut area vertically
                 else:
@@ -381,118 +396,16 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                         print(f'Can cut block {block.id} in two with delimiter {current_delimiter_id}')
                         print(f'Area 1: {area_1}')
                         print(f'Area 2: {area_2}')
-                    # update first block
-                    blocks_1 = None
-                    blocks_2 = None
-                    ## blocks need to be gathered according to delimter orientation (division cut)
-                    ### if horizontal 
-                    #### gather all lines and check which belong to what area
-                    #### create new paragraphs according to lines
-                    ### if vertical
-                    #### gather all lines and paragraphs
-                    #### for each line check what words belong to what area
+                    new_blocks = split_block(block,current_delimiter_box,current_delimiter_orientation,conf=conf,debug=debug)
 
-                    # horizontal cut
-                    if current_delimiter_orientation == 'horizontal':
-                        lines = block.get_boxes_level(4)
-                        area_1_lines = []
-                        area_2_lines = []
-                        for line in lines:
-                            if line.box.is_inside_box(area_1):
-                                area_1_lines.append(line)
-                            else:
-                                area_2_lines.append(line)
-
-                        blocks_1 = []
-                        if area_1_lines:
-                            par_box = None
-                            par_lines = []
-                            cur_par = None
-                            for line in area_1_lines:
-                                if not par_box:
-                                    par_box = line.box
-                                    cur_par = line.par_num
-                                else:
-                                    if cur_par == line.par_num:
-                                        par_lines += [line]
-                                        par_box = par_box.join(line.box)
-                                    else:
-                                        par = OCR_Tree({'level':3,'box':par_box})
-                                        for line in par_lines:
-                                            par.add_child(line)
-                                        blocks_1.append(par)
-                                        par_box = line.box
-                                        par_lines = [line]
-                                        cur_par = line.par_num
-
-                            if par_lines:
-                                par = OCR_Tree({'level':3,'box':par_box})
-                                for line in par_lines:
-                                    par.add_child(line)
-                                blocks_1.append(par)
-
-                        if area_2_lines:
-                            par_box = None
-                            par_lines = []
-                            cur_par = None
-                            for line in area_2_lines:
-                                if not par_box:
-                                    par_box = line.box
-                                    cur_par = line.par_num
-                                else:
-                                    if cur_par == line.par_num:
-                                        par_lines += [line]
-                                        par_box = par_box.join(line.box)
-                                    else:
-                                        par = OCR_Tree({'level':3,'box':par_box})
-                                        for line in par_lines:
-                                            par.add_child(line)
-                                        blocks_2.append(par)
-                                        par_box = line.box
-                                        par_lines = [line]
-                                        cur_par = line.par_num
-
-                            if par_lines:
-                                par = OCR_Tree({'level':3,'box':par_box})
-                                for line in par_lines:
-                                    par.add_child(line)
-                                blocks_2.append(par)
-
-                    # vertical cut
-                    else:
-                        # id words
-                        ocr_results.id_boxes(level=[5])
-                        blocks_1 = [b.copy() for b in block.get_boxes_level(3)]
-                        blocks_2 = [b.copy() for b in block.get_boxes_level(3)]
-                        # only leave each word in one of the areas
-                        for i,p in enumerate(blocks_1):
-                            par_words = p.get_boxes_level(5)
-                            for w in par_words:
-                                if not w.box.is_inside_box(area_1):
-                                    blocks_1[i].remove_box_id(w.id,level=5)
-                                else:
-                                    blocks_2[i].remove_box_id(w.id,level=5)
-                            # update par boxes
-                            blocks_1[i].update_box(right=area_1.right)
-                            blocks_2[i].update_box(left=area_2.left)
-
-                    block_1 = OCR_Tree({'level':2,'box':area_1})
-                    for c in blocks_1:
-                        block_1.add_child(c)
+                    block_1 = new_blocks[0]
                     print(f'Block 1: {block_1.box}')
 
-                    # update second block
-                    block_2 = OCR_Tree({'level':2,'box':area_2})
-                    for c in blocks_2:
-                        block_2.add_child(c)
-                    # remove current block
-                    ocr_results.remove_box_id(block.id,level=2)
+                    block_2 = new_blocks[1]
                     # add new blocks
                     page = ocr_results.get_boxes_level(1)[0]
-                    page.add_child(block_1)
                     page.add_child(block_2)
                     # add blocks to list
-                    blocks.append(block_1)
                     blocks.append(block_2)
                     # id boxes again
                     ocr_results.id_boxes(level=[2])
@@ -503,6 +416,276 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
 
     return ocr_results
 
+
+
+def remove_solo_words(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tree:
+    '''Remove boxes with single words that are inside of other boxes. Bloxes need to be IDed and typed before calling this function.'''
+
+    blocks = ocr_results.get_boxes_level(2)
+
+    i = 0
+    while i < len(blocks):
+        block = blocks[i]
+        if not block.is_empty(conf=conf):
+            text = block.to_text(conf=conf)
+            # check if text is single word and inside of other boxes of different type
+            if len(text.strip().split(' ')) == 1:
+                for b in blocks:
+                    if b.id != block.id and block.box.is_inside_box(b.box):
+                        if b.type != block.type:
+                            if debug:
+                                print(f'Removing solo word: {block.id} | inside {b.id} | type: {block.type} | {text}')
+                            ocr_results.remove_box_id(block.id,level=2)
+                            blocks.pop(i)
+                            i -= 1
+                            break
+
+        i += 1
+    return ocr_results
+
+
+
+def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,categorize_blocks:bool=True,debug:bool=False)->OCR_Tree:
+    '''From ocr_results, searches within text blocks for titles and separatest them from the rest.
+    Potential titles should be lines that are taller than normal text size, and come after closed text, or are in the beggining of the block.'''
+
+    if id_blocks:
+        ocr_results.id_boxes(level=[2])
+
+    if categorize_blocks:
+        ocr_results = categorize_boxes(ocr_results,conf=conf,debug=debug)
+
+    ocr_analysis = analyze_text(ocr_results,conf=conf)
+
+    page = ocr_results.get_boxes_level(1)[0]
+    blocks = [b for b in ocr_results.get_boxes_level(2) if b.type == 'text']
+    last_id = sorted([b.id for b in blocks])[-1] + 1
+    i = 0
+    # find titles in text blocks
+    while i < len(blocks):
+        block = blocks[i]
+        # id lines in block
+        block.id_boxes(level=[4])
+        lines = block.get_boxes_level(4)
+        if len(lines) < 2:
+            i += 1
+            continue
+        j = 0
+        for j,line in enumerate(lines):
+            potential_title = []
+            line_category = categorize_box(line,blocks,ocr_analysis,conf=conf)
+            if line_category == 'title':
+                if j > 0:
+                    last_line = lines[j-1]
+                    last_line_text = last_line.to_text(conf=conf).strip()
+                else:
+                    last_line_text = ''
+                # check if last line is ended
+                if not re.search(r'[\d\w]+',last_line_text) or last_line_text[-1] in ['.','?','!']:
+                    potential_title.append(line)
+                    # check next lines for title continuation
+                    for j in range(j+1,len(lines)):
+                        next_line = lines[j]
+                        next_line_category = categorize_box(next_line,blocks,ocr_analysis,conf=conf)
+                        if next_line_category == 'title':
+                            potential_title.append(next_line)
+                        else:
+                            break
+            if potential_title:
+                # adjust current blocks and create new title block
+                ## create new title block
+                title_block = OCR_Tree({'level':2,'box':potential_title[0].box,'type':'title','id':last_id})
+                ### create paragraph for lines
+                title_block_par = OCR_Tree({'level':3,'box':potential_title[0].box})
+                ### add lines to paragraph
+                for line in potential_title:
+                    title_block_par.add_child(line.copy())
+                ### add paragraph to title block
+                title_block.add_child(title_block_par)
+                ### add title block to ocr results
+                page.add_child(title_block)
+                last_id += 1
+
+                if debug:
+                    print(f'Found title: {title_block.to_text(conf=conf)}')
+
+                ## adjust current blocks
+                new_blocks = split_block(block,title_block.box,orientation='horizontal',conf=conf,debug=debug)
+
+                if len(new_blocks) > 1:
+                    # add new block
+                    new_block = new_blocks[-1]
+                    new_block.id = last_id
+                    new_block.type = 'text'
+                    last_id += 1
+                    page.add_child(new_block)
+                    blocks.append(new_block)
+
+                break
+            j += 1
+
+        i += 1
+    return ocr_results
+
+
+
+def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:int=10,debug:bool=False)->list['OCR_Tree']:
+    '''Splits block into new blocks, based on delimiter and cut direction. Adjust text inside blocks to fit new area.'''
+    new_blocks = [block]
+
+    if not delimiter.intersects_box(block.box):
+        return new_blocks
+
+    if debug:
+        print(f'Splitting block {block.id}')
+
+    if orientation == 'horizontal':
+        if debug:
+            print('Splitting block by x')
+
+        area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.right, 'bottom':delimiter.top})
+        area_2 = Box({'left':block.box.left, 'top':delimiter.bottom, 'right':block.box.right, 'bottom':block.box.bottom})
+    elif orientation == 'vertical':
+        if debug:
+            print('Splitting block by y')
+
+        area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':delimiter.left, 'bottom':block.box.bottom})
+        area_2 = Box({'left':delimiter.right, 'top':block.box.top, 'right':block.box.right, 'bottom':block.box.bottom})
+
+
+    if debug:
+        print(f'Area 1: {area_1}')
+        print(f'Area 2: {area_2}')
+
+    # update first block
+    blocks_1 = []
+    blocks_2 = []
+    ## blocks need to be gathered according to delimter orientation (division cut)
+    ### if horizontal 
+    #### gather all lines and check which belong to what area
+    #### create new paragraphs according to lines
+    ### if vertical
+    #### gather all lines and paragraphs
+    #### for each line check what words belong to what area
+
+    # horizontal cut
+    if orientation == 'horizontal':
+        lines = block.get_boxes_level(4)
+        area_1_lines = []
+        area_2_lines = []
+        for line in lines:
+            if line.box.is_inside_box(area_1):
+                area_1_lines.append(line)
+            elif line.box.is_inside_box(area_2):
+                area_2_lines.append(line)
+
+        blocks_1 = []
+        if area_1_lines:
+            par_box = None
+            par_lines = []
+            cur_par = None
+            for line in area_1_lines:
+                if not par_box:
+                    par_box = line.box
+                    cur_par = line.par_num
+                    par_lines.append(line)
+                else:
+                    if cur_par == line.par_num:
+                        par_lines.append(line)
+                        par_box.join(line.box)
+                    else:
+                        # conclude paragraph
+                        par = OCR_Tree({'level':3,'box':par_box})
+                        for line in par_lines:
+                            par.add_child(line)
+                        blocks_1.append(par)
+                        # create new paragraph
+                        par_box = line.box
+                        par_lines = [line]
+                        cur_par = line.par_num
+            # add last paragraph
+            if par_lines:
+                par = OCR_Tree({'level':3,'box':par_box})
+                for line in par_lines:
+                    par.add_child(line)
+                blocks_1.append(par)
+
+        if area_2_lines:
+            par_box = None
+            par_lines = []
+            cur_par = None
+            for line in area_2_lines:
+                if not par_box:
+                    par_box = line.box
+                    cur_par = line.par_num
+                    par_lines.append(line)
+                else:
+                    if cur_par == line.par_num:
+                        par_lines.append(line)
+                        par_box = par_box.join(line.box)
+                    else:
+                        par = OCR_Tree({'level':3,'box':par_box})
+                        for line in par_lines:
+                            par.add_child(line)
+                        blocks_2.append(par)
+                        par_box = line.box
+                        par_lines = [line]
+                        cur_par = line.par_num
+
+            if par_lines:
+                par = OCR_Tree({'level':3,'box':par_box})
+                for line in par_lines:
+                    par.add_child(line)
+                blocks_2.append(par)
+
+    # vertical cut
+    else:
+        # id words
+        block.id_boxes(level=[5])
+        blocks_1 = [b.copy() for b in block.get_boxes_level(3)]
+        blocks_2 = [b.copy() for b in block.get_boxes_level(3)]
+        # only leave each word in one of the areas
+        for i,p in enumerate(blocks_1):
+            par_words = p.get_boxes_level(5)
+            for w in par_words:
+                if not w.box.is_inside_box(area_1):
+                    blocks_1[i].remove_box_id(w.id,level=5)
+                if not w.box.is_inside_box(area_2):
+                    blocks_2[i].remove_box_id(w.id,level=5)
+            # update par boxes
+            blocks_1[i].update_box(right=area_1.right)
+            blocks_2[i].update_box(left=area_2.left)
+
+    if blocks_1:
+        # update current block
+        ## box 
+        block.box.update(left=area_1.left,top=area_1.top,right=area_2.right,bottom=area_2.bottom)
+        ## children
+        block.children = []
+        for b in blocks_1:
+            block.add_child(b)
+    
+    if blocks_2:
+
+        if not blocks_1 and (area_1.height == 0 or area_1.width == 0):
+            # update current block with area 2
+            block.box.update(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
+            block.children = []
+            for b in blocks_2:
+                block.add_child(b)
+
+
+        else:
+            # create second block
+            new_block = OCR_Tree({'level':block.level,'box':area_2})
+
+            for b in blocks_2:
+                new_block.add_child(b)
+
+            new_blocks = [block,new_block]
+    
+
+    return new_blocks
 
 
 
