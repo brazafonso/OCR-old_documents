@@ -292,7 +292,7 @@ class OCR_Tree:
     
     def is_vertical_text(self,conf:int=0):
         '''Check if box is vertical text'''
-        if self.is_empty(conf,only_text=True):
+        if not self.is_empty(conf,only_text=True):
             lines = self.get_boxes_level(4)
             if not lines:
                 return False
@@ -333,6 +333,7 @@ class OCR_Tree:
                 
                 if overlapped_lines/len(lines) >= 0.5:
                     return True
+                
         return False
     
 

@@ -622,7 +622,7 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                 else:
                     if cur_par == line.par_num:
                         par_lines.append(line)
-                        par_box = par_box.join(line.box)
+                        par_box.join(line.box)
                     else:
                         par = OCR_Tree({'level':3,'box':par_box})
                         for line in par_lines:
