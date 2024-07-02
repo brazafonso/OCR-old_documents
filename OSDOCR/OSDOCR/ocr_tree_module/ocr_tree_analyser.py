@@ -1054,7 +1054,7 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
     # non empty block
     else:
         block_text_size = target_block.calculate_mean_height(level=5,conf=conf)
-        block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,level=5,conf=conf)
+        block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,level=5,conf=conf,range=0.1)
         blocks_directly_above = target_block.boxes_directly_above(blocks)
 
         if debug:
