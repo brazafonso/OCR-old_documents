@@ -343,7 +343,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
     # segment target
     ## get header, body and footer (only body is guaranteed to be found)
     ## split body into columns
-    header,body,footer = segment_document(target_image,logs=args.logs,debug=args.debug)
+    header,body,footer = segment_document(target_image)
 
     if args.logs:
         print(f'Body: {body}')
@@ -358,7 +358,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
     image_footer = target_image[footer.top:footer.bottom,footer.left:footer.right] if footer else None
 
 
-    columns = divide_columns(image_body,logs=args.logs)
+    columns = divide_columns(image_body)
     columns_images = [image_body[column.top:column.bottom,column.left:column.right] for column in columns]
 
     if args.logs:
@@ -372,7 +372,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
 
     ## save images
     if header:
-        # add padding
+        # add padding (for better OCR, in case text is too close to edge)
         avg_color = np.average(image_header,axis=(0,1))
         image_header = cv2.copyMakeBorder(image_header,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
         b_image_header = binarize(image_header,denoise_strength=5)
@@ -426,7 +426,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
         # value to add according to columns to left of this column
         add_left = -padding_horizontal
         if i > 0:
-            add_left = columns[i].left
+            add_left = columns[i].left - padding_horizontal
 
         if args.logs:
             print(f'update position of column {i} to {add_left} + {add_top}')
@@ -528,7 +528,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
 
     # identify image delimiters
     if 'identify_document_delimiters' not in args.skip_method:
-        delimiters = get_document_delimiters(target,logs=args.logs)
+        delimiters = get_document_delimiters(target,debug=False)
 
         # add delimiters to ocr results
         ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
