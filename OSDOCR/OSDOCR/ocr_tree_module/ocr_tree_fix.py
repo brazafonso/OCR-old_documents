@@ -329,7 +329,7 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
     ocr_results.id_boxes(level=[2])
 
     delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
-    blocks =  [b for b in ocr_results.get_boxes_level(2,ignore_type=['delimiter']) if not b.is_empty(conf=conf,only_text=True)]
+    blocks =  [b for b in ocr_results.get_boxes_level(2,ignore_type=['delimiter']) if not b.is_empty(conf=conf,only_text=True) or b.is_image(only_type=True)]
 
     # for each delimiter
     ## check if intersects with other blocks
@@ -351,64 +351,78 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                 break
             # intersects with other blocks
             elif current_delimiter_box.intersects_box(block.box):
-                # cut block in two
-                ## get level 3 blocks in area
-                ### if delimiter is horizontal, cut area horizontally
-                if current_delimiter_orientation == 'horizontal':
-                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.right, 'bottom':current_delimiter_box.top+1})
-                    area_2 = Box({'left':block.box.left, 'top':current_delimiter_box.bottom-1, 'right':block.box.right, 'bottom':block.box.bottom})
-                ### if delimiter is vertical, cut area vertically
-                else:
-                    area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':current_delimiter_box.left-1, 'bottom':block.box.bottom})
-                    area_2 = Box({'left':current_delimiter_box.right+1, 'top':block.box.top, 'right':block.box.right, 'bottom':block.box.bottom})
-
-                # if delimiter passes through block, check block text if able to cut block in two
-                text_in_area_1 = block.get_boxes_in_area(area_1,level=5,conf=conf)
-                text_in_area_2 = block.get_boxes_in_area(area_2,level=5,conf=conf)
-                if not (len(text_in_area_1) > 1 and len(text_in_area_2) > 1):
-                    # can't cut block in two
-                    ## just adjust bounding box
-                    ### check if adjust block or delimiter
-                    if current_delimiter_orientation == 'horizontal':
-                        if block.box.right < current_delimiter_box.left or block.box.left > current_delimiter_box.right:
-                            # adjust block
-                            if debug:
-                                print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')       
-                            block.box.remove_box_area(current_delimiter_box)
-                        else:
-                            # adjust delimiter
-                            if debug:
-                                print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
-                            current_delimiter_box.remove_box_area(block.box)
+                # intercepting with image, probably is a border of a canvas
+                if block.is_image(only_type=True):
+                    intercept_area = block.box.intersect_area_box(current_delimiter_box).area()
+                    delimiter_area = current_delimiter_box.area()
+                    ## if more than 50% of delimiter is inside image, remove delimiter
+                    if intercept_area/delimiter_area >= 0.5:
+                        if debug:
+                            print(f'Removing delimiter {current_delimiter_id} inside image {block.id}')
+                        ocr_results.remove_box_id(current_delimiter_id,level=2)
+                        break
                     else:
-                        if block.box.top > current_delimiter_box.top or block.box.bottom < current_delimiter_box.bottom:
-                            # adjust block
-                            if debug:
-                                print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')  
-                            block.box.remove_box_area(current_delimiter_box)
-                        else:
-                            # adjust delimiter
-                            if debug:
-                                print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
-                            current_delimiter_box.remove_box_area(block.box)
+                        # adjust delimiter
+                        current_delimiter_box.remove_box_area(block.box)
                 else:
-                    if debug:
-                        print(f'Can cut block {block.id} in two with delimiter {current_delimiter_id}')
-                        print(f'Area 1: {area_1}')
-                        print(f'Area 2: {area_2}')
-                    new_blocks = split_block(block,current_delimiter_box,current_delimiter_orientation,conf=conf,debug=debug)
+                    # cut block in two
+                    ## get level 3 blocks in area
+                    ### if delimiter is horizontal, cut area horizontally
+                    if current_delimiter_orientation == 'horizontal':
+                        area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':block.box.right, 'bottom':current_delimiter_box.top+1})
+                        area_2 = Box({'left':block.box.left, 'top':current_delimiter_box.bottom-1, 'right':block.box.right, 'bottom':block.box.bottom})
+                    ### if delimiter is vertical, cut area vertically
+                    else:
+                        area_1 = Box({'left':block.box.left, 'top':block.box.top, 'right':current_delimiter_box.left-1, 'bottom':block.box.bottom})
+                        area_2 = Box({'left':current_delimiter_box.right+1, 'top':block.box.top, 'right':block.box.right, 'bottom':block.box.bottom})
 
-                    block_1 = new_blocks[0]
-                    print(f'Block 1: {block_1.box}')
+                    # if delimiter passes through block, check block text if able to cut block in two
+                    text_in_area_1 = block.get_boxes_in_area(area_1,level=5,conf=conf)
+                    text_in_area_2 = block.get_boxes_in_area(area_2,level=5,conf=conf)
+                    if not (len(text_in_area_1) > 1 and len(text_in_area_2) > 1):
+                        # can't cut block in two
+                        ## just adjust bounding box
+                        ### check if adjust block or delimiter
+                        if current_delimiter_orientation == 'horizontal':
+                            if block.box.right < current_delimiter_box.left or block.box.left > current_delimiter_box.right:
+                                # adjust block
+                                if debug:
+                                    print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')       
+                                block.box.remove_box_area(current_delimiter_box)
+                            else:
+                                # adjust delimiter
+                                if debug:
+                                    print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
+                                current_delimiter_box.remove_box_area(block.box)
+                        else:
+                            if block.box.top > current_delimiter_box.top or block.box.bottom < current_delimiter_box.bottom:
+                                # adjust block
+                                if debug:
+                                    print(f'Adjusting bounding box of block {block.id} | intersection with delimiter {current_delimiter_id}')  
+                                block.box.remove_box_area(current_delimiter_box)
+                            else:
+                                # adjust delimiter
+                                if debug:
+                                    print(f'Adjusting bounding box of delimiter {current_delimiter_id} | intersection with block {block.id}')
+                                current_delimiter_box.remove_box_area(block.box)
+                    else:
+                        if debug:
+                            print(f'Can cut block {block.id} in two with delimiter {current_delimiter_id}')
+                            print(f'Area 1: {area_1}')
+                            print(f'Area 2: {area_2}')
+                        new_blocks = split_block(block,current_delimiter_box,current_delimiter_orientation,conf=conf,debug=debug)
 
-                    block_2 = new_blocks[1]
-                    # add new blocks
-                    page = ocr_results.get_boxes_level(1)[0]
-                    page.add_child(block_2)
-                    # add blocks to list
-                    blocks.append(block_2)
-                    # id boxes again
-                    ocr_results.id_boxes(level=[2])
+                        block_1 = new_blocks[0]
+                        print(f'Block 1: {block_1.box}')
+
+                        block_2 = new_blocks[1]
+                        # add new blocks
+                        page = ocr_results.get_boxes_level(1)[0]
+                        page.add_child(block_2)
+                        # add blocks to list
+                        blocks.append(block_2)
+                        # id boxes again
+                        ocr_results.id_boxes(level=[2])
             j += 1
 
     if logs:

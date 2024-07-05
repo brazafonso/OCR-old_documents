@@ -3,6 +3,7 @@
 
 
 import math
+from typing import Union
 
 
 
@@ -162,28 +163,35 @@ class Box:
         '''Get intersect area box between two boxes'''
         area_box = Box(0,0,0,0)
         
+        left = 0
+        right = 0
+        bottom = 0
+        top = 0
         if self.left <= box.left:
-            area_box.left = box.left
+            left = box.left
         else:
-            area_box.left = self.left
+            left = self.left
 
         if self.right >= box.right:
-            area_box.right = box.right
+            right = box.right
         else:
-            area_box.right = self.right
+            right = self.right
 
         if self.top <= box.top:
-            area_box.top = box.top
+            top = box.top
         else:
-            area_box.top = self.top
+            top = self.top
 
         if self.bottom >= box.bottom:
-            area_box.bottom = box.bottom
+            bottom = box.bottom
         else:
-            area_box.bottom = self.bottom
+            bottom = self.bottom
+
+        area_box.update(left=left,right=right,top=top,bottom=bottom)
 
         if not area_box.valid():
             return None
+        
 
         return area_box
 
@@ -287,7 +295,7 @@ class Box:
 
     
 
-    def distance_to(self,box:'Box',border:str=None):
+    def distance_to(self,box:'Box',border:str=None,range_x:Union[int,float]=0.3,range_y:Union[int,float]=0.3,range_type:str='relative'):
         '''Get distance to box
         
         Uses euclidean distance between center points of boxes
@@ -312,18 +320,14 @@ class Box:
         elif border == 'closest':
             distance = None
             vertical_distance = None
-            if self.within_horizontal_boxes(box):
-                if self.bottom < box.top:
-                    vertical_distance = abs(self.bottom - box.top)
-                else:
-                    vertical_distance = abs(self.center_point()[1] - box.center_point()[1])
+            center_point = self.center_point()
+            box_center_point = box.center_point()
+            if self.within_horizontal_boxes(box,range=range_x,range_type=range_type):
+                vertical_distance = min(abs(center_point[1] - box_center_point[1]),abs(self.bottom - box.top),abs(self.top - box.bottom))
                     
             horizontal_distance = None
-            if self.within_vertical_boxes(box):
-                if self.right < box.left:
-                    horizontal_distance = abs(self.right - box.left)
-                else:
-                    horizontal_distance = abs(self.center_point()[0] - box.center_point()[0])
+            if self.within_vertical_boxes(box,range=range_y,range_type=range_type):
+                horizontal_distance = min(abs(center_point[0] - box_center_point[0]),abs(self.right - box.left),abs(self.left - box.right))
 
             distance = min(vertical_distance,horizontal_distance) if vertical_distance and horizontal_distance else [v for v in [vertical_distance,horizontal_distance] if v][0] if any([vertical_distance,horizontal_distance]) else None
             if distance:
@@ -335,6 +339,7 @@ class Box:
             self_point = self.center_point()
             box_point = box.center_point()
         return math.sqrt((self_point[0]-box_point[0])**2 + (self_point[1]-box_point[1])**2)
+    
     
     def center_point(self):
         '''Get center point of box'''

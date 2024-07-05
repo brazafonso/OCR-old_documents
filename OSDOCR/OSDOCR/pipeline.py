@@ -316,6 +316,25 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
     return processed_image_path
 
 
+def binarize_image(o_target:Union[str,cv2.typing.MatLike],args:argparse.Namespace):
+    '''Binarize image'''
+    binarized = None
+    if isinstance(o_target,str):
+        binarized = cv2.imread(o_target)
+    else:
+        binarized = o_target.copy()
+
+    if 'binarize_image' not in args.skip_method:
+        method = args.binarize_image[0]
+        if method == 'fax':
+            binarized = binarize_fax(binarized)
+        elif method == 'otsu':
+            denoise_strength = args.binarize_image[1] if len(args.binarize_image) > 1 else None
+            binarized = binarize(binarized,denoise_strength=denoise_strength)
+
+    return binarized
+
+
 def run_target_hocr(target:str,args:argparse.Namespace):
     '''Run pipeline for single OCR target. TODO'''
     return None
@@ -375,19 +394,19 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
         # add padding (for better OCR, in case text is too close to edge)
         avg_color = np.average(image_header,axis=(0,1))
         image_header = cv2.copyMakeBorder(image_header,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
-        b_image_header = binarize(image_header,denoise_strength=5)
+        b_image_header = binarize_image(image_header,args)
         cv2.imwrite(f'{tmp_folder}/header.png',b_image_header)
     if footer:
         # add padding
         avg_color = np.average(image_footer,axis=(0,1))
         image_footer = cv2.copyMakeBorder(image_footer,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
-        b_image_footer = binarize(image_footer,denoise_strength=5)
+        b_image_footer = binarize_image(image_footer,args)
         cv2.imwrite(f'{tmp_folder}/footer.png',b_image_footer)
     for i in range(len(columns_images)):
         # add padding
         avg_color = np.average(columns_images[i],axis=(0,1))
         columns_images[i] = cv2.copyMakeBorder(columns_images[i],padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
-        b_columns_image = binarize(columns_images[i],denoise_strength=5)
+        b_columns_image = binarize_image(columns_images[i],args)
         cv2.imwrite(f'{tmp_folder}/column_{i}.png',b_columns_image)
 
     # OCR
@@ -492,7 +511,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     ## Simple OCR
     else:
         # binarize
-        binarize_tmp = binarize(target,denoise_strength=5)
+        binarize_tmp = binarize_image(target,args)
         cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
         binarized_path = f'{results_path}/binarize.png'
 

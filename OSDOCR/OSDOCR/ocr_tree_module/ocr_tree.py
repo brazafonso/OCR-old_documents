@@ -155,6 +155,21 @@ class OCR_Tree:
             ocr_tree.add_child(child.copy())
 
         return ocr_tree
+    
+
+    def attribute_is_value(self,attribute:str,value):
+        '''Check if attribute is value'''
+        if hasattr(self,attribute):
+            attr_v = getattr(self,attribute)
+            if isinstance(value,list):
+                if isinstance(attr_v,list):
+                    return value == attr_v
+                else:
+                    return attr_v in value
+            else:
+                return attr_v == value  
+        else:
+            return False
             
         
 
