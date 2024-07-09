@@ -576,12 +576,16 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     '''Clean ocr_tree'''
     find_images_flag = 'remove_document_images' not in args.skip_method
     find_delimiters_flag = 'identify_document_delimiters' not in args.skip_method
+    split_whitespaces_flag = 'split_whitespaces' not in args.skip_method
 
     metadata = get_target_metadata(o_target)
     target_img = metadata['target_path']
 
     # clean bounding boxes according to text confidence
     ocr_results = bound_box_fix(ocr_results,5,None,text_confidence=args.text_confidence ,debug=args.debug)
+
+    if split_whitespaces_flag:
+        ocr_results = split_whitespaces(ocr_results,conf=args.text_confidence,dif_ratio=args.split_whitespace,debug=args.debug)
 
     # clean delimiters
     if find_delimiters_flag:

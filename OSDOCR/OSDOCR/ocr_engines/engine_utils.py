@@ -25,6 +25,7 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=F
     dpi = None
     lang = None
     psm = None
+    c_parms = None
 
     if opts:
         if 'l' in opts:
@@ -33,6 +34,8 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=F
             psm = opts['psm']
         if 'dpi' in opts:
             dpi = opts['dpi']
+        if 'c' in opts:
+            c_parms = opts['c']
 
     if lang:
         config_str += f'-l {lang} '
@@ -42,6 +45,9 @@ def tesseract_search_img(img:(str|cv2.typing.MatLike),opts:dict=None,logs:bool=F
 
     if dpi:
         config_str += f'--dpi {dpi} '
+
+    if c_parms:
+        config_str += f'-c {c_parms}'
 
 
     data_dict = {}

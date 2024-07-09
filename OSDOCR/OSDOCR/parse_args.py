@@ -7,7 +7,7 @@ preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','light_cor
                          'image_preprocess','cut_document_margins','remove_document_images',
                          'image_upscaling','identify_document_delimiters']
 
-posprocessing_methods = ['clean_ocr','unite_blocks','calculate_reading_order','extract_articles']
+posprocessing_methods = ['clean_ocr','split_whitespace','unite_blocks','calculate_reading_order','extract_articles']
 
 skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
 
@@ -49,6 +49,7 @@ Components:
     parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                              ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
     parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                              ,help='Force OCR engine to run again')
     parser.add_argument('-igd','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
+    parser.add_argument('-sw','--split_whitespace'      ,type=str,nargs=1   ,default=3                                  ,help="Ratio of whitespace sequence, compared to line's words distances, to split the line (default: 3)")
     parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'              ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
     parser.add_argument('-upi','--upscaling_image'      ,type=str,nargs='*' ,default=['waifu2x']                        ,help='''
 Upscale image automatically (default: waifu2x). 

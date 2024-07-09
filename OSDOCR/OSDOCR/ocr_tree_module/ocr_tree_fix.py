@@ -1,3 +1,5 @@
+import numpy as np
+from scipy import stats
 from .ocr_tree import *
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text,categorize_boxes,categorize_box
 from OSDOCR.aux_utils.box import Box
@@ -705,3 +707,101 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
 
 
 
+def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:bool=False)->OCR_Tree:
+    '''If a block contains sequence of whitespaces of ratio 'dif_ratio' compared to normal word distance, split the block into two blocks.
+    
+    Only possible if block has single line, or every line has similar amount of whitespaces in the same position.'''
+
+    if debug:
+        print('Splitting whitespaces...')
+
+    text_analysis = analyze_text(ocr_results,conf=conf)
+    avg_word_dist = text_analysis['average_word_distance']
+
+    # id blocks
+    ocr_results.id_boxes(level=[2])
+
+    # get blocks with text
+    blocks = [b for b in ocr_results.get_boxes_level(2) if not b.is_empty(conf=conf,only_text=True)]
+    last_id = 0
+    for b in blocks:
+        if b.id >= last_id:
+            last_id = b.id + 1
+
+    
+    for block in blocks:
+
+        # get lines
+        lines = block.get_boxes_level(4)
+        line_seq_positions = []     # list of positions of whitespaces in each line
+        valid_split = True
+
+        # for each line, check if it contains a valid sequence of whitespaces
+        ## saves the coordinates of the first and last whitespace in the sequence
+        for line in lines:
+            line_words = line.get_boxes_level(5)
+            line_seq_position = [None,None]
+            line_word_dists = []
+            line_word_pairs = []
+
+            for i,word in enumerate(line_words[:-1]):
+                line_word_dists.append(line_words[i+1].box.left - word.box.right)
+                line_word_pairs.append((word,line_words[i+1]))
+
+            # identify word distance outliers
+            line_word_dists = [d for d in line_word_dists if d > 0]
+            if line_word_dists:
+                # get average (adjusted with overall word distance)
+                average = (sum(line_word_dists)/len(line_word_dists) + avg_word_dist)/2
+                # check if any of the dists are bigger than 'dif_ratio' times the median
+                for i,d in enumerate(line_word_dists):
+                    if d >= dif_ratio*average:
+                        line_seq_position[0] = line_word_pairs[i][0].box.right
+                        line_seq_position[1] = line_word_pairs[i][1].box.left
+                        break
+
+                if not line_seq_position[0]:
+                    valid_split = False
+                    break
+                else:
+                    line_seq_positions.append(line_seq_position)
+
+                
+
+        if valid_split and line_seq_positions:
+            # check max matching coordinates for split
+            ## first check if all intervals intercept
+            interception = True
+            widest_interval = max(line_seq_positions,key=lambda x: x[1]-x[0])
+            for interval in line_seq_positions:
+                # check left and right
+                if interval[0] > widest_interval[1] or interval[1] < widest_interval[0]:
+                    interception = False
+                    break
+            ## if all intervals intercept, check widest common interval
+            if interception:
+                if debug:
+                    print(f'Valid split found for block {block.id} | nº of lines: {len(line_seq_positions)} | widest interval: {widest_interval}')
+                left = widest_interval[0]
+                right = widest_interval[1]
+                for interval in line_seq_positions:
+                    if interval[0] > left:
+                        left = interval[0]
+                    if interval[1] < right:
+                        right = interval[1]
+
+                # split block
+                delimiter = Box(left,right,block.box.top,block.box.bottom)
+                blocks = split_block(block,delimiter,orientation='vertical',conf=conf)
+                block = blocks[0]
+                new_block = blocks[1] if len(blocks) == 2 else None
+
+                # add new block
+                if new_block:
+                    new_block.id = last_id
+                    last_id += 1
+                    page = ocr_results.get_boxes_level(1)[0]
+                    page.add_child(new_block)
+                    blocks.append(new_block)
+
+    return ocr_results

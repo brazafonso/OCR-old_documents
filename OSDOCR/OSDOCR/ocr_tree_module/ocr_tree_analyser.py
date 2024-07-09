@@ -392,6 +392,20 @@ def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
     analyze_results.update(text_sizes)
     columns = get_columns(ocr_results,method='WhittakerSmoother',logs=False)
     analyze_results.update({'columns':columns})
+    # average word distance
+    distance_sum = 0
+    distance_count = 0
+    lines = ocr_results.get_boxes_level(4)
+    for line in lines:
+        words = line.get_boxes_level(5,conf=conf)
+        for word in words[:-1]:
+            word_dist = words[words.index(word)+1].box.left - word.box.right
+            distance_sum += word_dist
+            distance_count += 1
+    if distance_count:
+        analyze_results['average_word_distance'] = distance_sum/distance_count
+    else:
+        analyze_results['average_word_distance'] = 0
 
 
     return analyze_results

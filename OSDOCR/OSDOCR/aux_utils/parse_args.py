@@ -68,6 +68,7 @@ Options (seperated by '__')
 - __dpi int 
 - __l str (default 'por')
 - __psm int 
+- __c str (default 'preserve_interword_spaces=1')
     
     '''
     def __init__(self, *args, **kwargs):
@@ -80,7 +81,7 @@ Options (seperated by '__')
 
     def __call__(self, parser, namespace, values, option_string):
         final_values = {}
-        known_flags = ['dpi','l','psm']
+        known_flags = ['dpi','l','psm','c']
         i = 0
         while i < len(values):
             if '__' in values[i]:

@@ -276,8 +276,8 @@ class OCR_Tree:
             if self.type in ['image']:
                 return False
         text = self.to_text(conf).strip()
-        empty = re.match(r'\s*$',text)
-        return empty != None
+        has_text = re.search(r'[\w\d]+',text)
+        return has_text == None
     
     def text_is_title(self,normal_text_size:int,conf:int=0,range:float=0.1,level:int=5):
         '''Check if text is title'''
