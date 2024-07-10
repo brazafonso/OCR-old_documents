@@ -58,6 +58,9 @@ def build_gui_main()->sg.Window:
         [
             place(sg.Button('Binarize',key='sidebar_method_binarize')),
         ],
+        [
+            place(sg.Button('OCR Editor',key='sidebar_method_ocr_editor')),
+        ],
     ]
 
     first_layout_1 = [
@@ -163,6 +166,6 @@ def build_gui_main()->sg.Window:
         ]
     ]
 
-    window = sg.Window('OCR',layout,finalize=True,resizable=True,size=(1200,800))
+    window = sg.Window('OCR',layout,finalize=True,resizable=True,size=(1200,800),relative_location=(500,100))
     window.bind('<Configure>',"Event")
     return window

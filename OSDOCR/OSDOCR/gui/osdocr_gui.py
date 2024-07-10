@@ -9,6 +9,7 @@ from OSDOCR.aux_utils.misc import *
 from .layouts.main_layout import *
 from .layouts.extra_layout import *
 from .methods.methods import *
+from .ocr_editor import run_gui as run_ocr_editor_gui
 
 
 
@@ -373,6 +374,9 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             update_image_element(window,'result_img',result_image)
         else:
             window['result_img'].update(visible=False)
+
+    elif method == 'ocr_editor':
+        run_ocr_editor_gui()
 
     ## TAB 2
     elif method == 'ocr_pipeline':

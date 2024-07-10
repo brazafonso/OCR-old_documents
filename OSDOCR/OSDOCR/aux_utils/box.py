@@ -85,6 +85,12 @@ class Box:
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
+
+    def move(self, x:int, y:int):
+        self.left += x
+        self.right += x
+        self.top += y
+        self.bottom += y
     
     def valid(self):
         '''Check if box is valid'''
@@ -361,4 +367,20 @@ class Box:
         '''Get right middle point of box'''
         return (self.right,self.top+self.height/2)
     
+    def distance_to_point(self,x:int,y:int):
+        '''Get distance to point'''
+        center_x,center_y = self.center_point()
+        dx = abs(center_x - x) - (self.width * 0.5)
+        dy = abs(center_y - y) - (self.height * 0.5)
+        return math.sqrt((dx * (dx > 0)) ** 2 + (dy * (dy > 0)) ** 2)
+    
+    def vertices(self):
+        '''Get vertices of box.
+        Order:
+            - top left
+            - top right
+            - bottom right
+            - bottom left
+        '''
+        return [(self.left,self.top),(self.right,self.top),(self.right,self.bottom),(self.left,self.bottom)]
 
