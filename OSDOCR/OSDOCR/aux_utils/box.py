@@ -82,6 +82,12 @@ class Box:
         if bottom is not None:
             self.bottom = int(bottom)
 
+        # fix inverted box
+        if self.left > self.right:
+            self.left, self.right = self.right, self.left
+        if self.top > self.bottom:
+            self.top, self.bottom = self.bottom, self.top
+
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 

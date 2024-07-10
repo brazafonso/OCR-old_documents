@@ -8,7 +8,7 @@ import matplotlib.patches
 import matplotlib.pyplot as plt
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Circle, Rectangle
 from matplotlib.animation import FuncAnimation
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
@@ -71,17 +71,25 @@ def update(frame):
     # update position of boxes and id texts
     for block in bounding_boxes.values():
         box = block['box']
+        # update rectangle
         rect = block['rectangle']
         rect.set_xy((box.left, box.top))
         rect.set_width(box.width)
         rect.set_height(box.height)
+        # update vertices
+        vertices_circles = block['vertices_circles']
+        vertices = box.vertices()
+        for i,vertex in enumerate(vertices):
+            vertices_circles[i].set_center(vertex)
+        # update id text
         id_text = block['id_text']
         id_text_x = box.left+15
         id_text_y = box.top+30
         id_text.set_x(id_text_x)
         id_text.set_y(id_text_y)
 
-        assets.append(block['rectangle'])
+        assets.append(rect)
+        assets.extend(vertices_circles)
         assets.append(id_text)
     return assets
 
@@ -180,6 +188,14 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
         # draw bounding box (rectangle)
         bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor='g',facecolor='none')
         plot.add_patch(bounding_box)
+        vertices = box.vertices()
+        vertices_circles = []
+        # draw vertices
+        for vertex in vertices:
+            x,y = vertex
+            vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
+            plot.add_patch(vertex_circle)
+            vertices_circles.append(vertex_circle)
         # draw id text in top left corner of bounding box
         id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
         plot.add_artist(id_text)
@@ -189,7 +205,8 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
             'rectangle':bounding_box,
             'box':box,
             'id_text' : id_text,
-            'id' : block.id
+            'id' : block.id,
+            'vertices_circles' : vertices_circles
         }
         
 
@@ -289,6 +306,41 @@ def canvas_on_mouse_move(event):
                 box.move(move_x,move_y)
                 bounding_boxes[highlighted_block['id']]['box'] = box
 
+                # print(f'moved {move_x},{move_y} ! {box}')
+
+        elif currenct_action == 'expand':
+            # calculate new dimensions
+            ## start position
+            last_x = last_mouse_position[0]
+            last_y = last_mouse_position[1]
+            ## mouse position
+            new_x = event.xdata
+            new_y = event.ydata
+            ## check which vertex is being moved (closest vertex)
+            box = highlighted_block['box']
+            vertices = box.vertices()
+            distances = [(v_i,math.sqrt((x-last_x)**2+(y-last_y)**2)) for v_i,(x,y) in enumerate(vertices)]
+            closest_vertex = min(distances,key=lambda x: x[1])
+            v_i = closest_vertex[0]
+            
+            dx = new_x - last_x
+            dy = new_y - last_y
+            if dx:
+                # left vertices update left position
+                if v_i in [0,3]:
+                    box.update(left=new_x)
+                else:
+                    box.update(right=new_x)
+
+            if dy:
+                # top vertices update top position
+                if v_i in [0,1]:
+                    box.update(top=new_y)
+                else:
+                    box.update(bottom=new_y)
+
+                # update box
+                bounding_boxes[highlighted_block['id']]['box'] = box
                 # print(f'moved {move_x},{move_y} ! {box}')
 
     last_mouse_position = (event.xdata,event.ydata)
