@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
+from matplotlib.animation import FuncAnimation
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
 import matplotlib.text
@@ -25,6 +26,8 @@ matplotlib.use('TkAgg')
 image_plot = None
 current_image_path = None
 figure_canvas_agg = None
+figure = None
+animation = None
 ## variables for ocr results
 bounding_boxes = {}
 ## actions
@@ -42,12 +45,15 @@ def clear_canvas():
     print('Clear canvas')
     if image_plot:
         image_plot = None
+    if animation:
+        animation.event_source.stop()
     if figure_canvas_agg:
         figure_canvas_agg.get_tk_widget().forget()
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
-    global figure_canvas_agg
+    global figure_canvas_agg,animation
+    animation = FuncAnimation(figure, update, frames=60, blit=True,interval=1000/60,repeat=True)
     # update canvas
     canvas = window['canvas']
     ## use TKinter canvas
@@ -55,35 +61,56 @@ def update_canvas(window:sg.Window,figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, tkcanvas)
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+    
 
+
+def update(frame):
+    '''Update canvas'''
+    global bounding_boxes
+    assets = []
+    # update position of boxes and id texts
+    for block in bounding_boxes.values():
+        box = block['box']
+        rect = block['rectangle']
+        rect.set_xy((box.left, box.top))
+        rect.set_width(box.width)
+        rect.set_height(box.height)
+        id_text = block['id_text']
+        id_text_x = box.left+15
+        id_text_y = box.top+30
+        id_text.set_x(id_text_x)
+        id_text.set_y(id_text_y)
+
+        assets.append(block['rectangle'])
+        assets.append(id_text)
+    return assets
 
 def create_plot(path:str):
     '''Create plot with image'''
-    global ppi
+    global ppi,figure
     # read image
     image = cv2.imread(path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # change image size
     sizes = image.shape
-    fig = plt.figure(figsize=(sizes[1]/ppi,sizes[0]/ppi))
-    # remove axes
-    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    figure = plt.figure(figsize=(sizes[1]/ppi,sizes[0]/ppi))
+    ax = plt.Axes(figure, [0., 0., 1., 1.])
     ax.set_axis_off()
-    fig.add_axes(ax)
-
+    figure.add_axes(ax)
     # connect events
     # fig.canvas.mpl_connect('draw_event', canvas_on_draw)
-    fig.canvas.mpl_connect('button_press_event', canvas_on_button_press)
+    figure.canvas.mpl_connect('button_press_event', canvas_on_button_press)
     # fig.canvas.mpl_connect('key_press_event', canvas_on_key_press)
-    fig.canvas.mpl_connect('button_release_event', canvas_on_button_release)
-    fig.canvas.mpl_connect('motion_notify_event', canvas_on_mouse_move)
+    figure.canvas.mpl_connect('button_release_event', canvas_on_button_release)
+    figure.canvas.mpl_connect('motion_notify_event', canvas_on_mouse_move)
 
     ax.imshow(image)
+
     return ax
 
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
-    global image_plot,figure_canvas_agg,current_image_path,ppi
+    global image_plot,figure,figure_canvas_agg,current_image_path,ppi
     if values['target_input']:
         path = values['target_input']
         results_path = f'{consts.result_path}/{path_to_id(path)}'
@@ -106,7 +133,6 @@ def update_canvas_image(window:sg.Window,values:dict):
         clear_canvas()
         # create new plot
         image_plot = create_plot(target_img_path)
-        figure = image_plot.get_figure()
         # update canvas
         update_canvas(window,figure)
 
@@ -133,7 +159,7 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
 
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
-    global image_plot,figure_canvas_agg,ppi,current_image_path,bounding_boxes
+    global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes
 
     # get new plot to draw ocr results
     plot = create_plot(current_image_path)
@@ -169,9 +195,6 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
 
     # clear canvas
     clear_canvas()
-    # update plot
-    image_plot = plot
-    figure = image_plot.get_figure()
     # update canvas
     update_canvas(window,figure)
 
@@ -191,7 +214,7 @@ def closest_block(click_x,click_y):
         closest_block = min(distances,key=lambda x: x['distance'])
         closest_block_id = closest_block['id']
         closest_block_dist = closest_block['distance']
-        print(f'closest block {closest_block_id} distance {closest_block_dist}')
+        # print(f'closest block {closest_block_id} distance {closest_block_dist}')
         # check if distance is less than max_block_dist
         if closest_block_dist <= max_block_dist:
             block_id = closest_block_id
@@ -209,7 +232,7 @@ def canvas_on_button_press(event):
         currenct_action_start = (click_x,click_y)
         block_id = closest_block(click_x,click_y)
         if block_id is not None:
-            print(f'closest block {block_id}')
+            # print(f'closest block {block_id}')
             block = bounding_boxes[block_id]
             highlighted_block = block
             block_box = block['box']
@@ -227,7 +250,7 @@ def canvas_on_button_press(event):
                 v_distance = min(v_distances,key=lambda x: x[1])
                 if v_distance[1] > 5:
                     currenct_action = 'move'
-                    print(f'move action ! {block_box}')
+                    # print(f'move action ! {block_box}')
                     # move
                 else:
                     currenct_action = 'expand'
@@ -256,33 +279,29 @@ def canvas_on_mouse_move(event):
             ## mouse position
             new_x = event.xdata
             new_y = event.ydata
-            print(f'mouse move {last_x},{last_y} -> {new_x},{new_y}')
+            # print(f'mouse move {last_x},{last_y} -> {new_x},{new_y}')
             ## distance moved
             move_x = new_x - last_x
             move_y = new_y - last_y
             if move_x or move_y:
-                ## rectangle coordinates
-                highlighted_block_rect = highlighted_block['rectangle']
-                rect_x = highlighted_block_rect.get_x()
-                rect_y = highlighted_block_rect.get_y()
-                # move rectangle
-                highlighted_block_rect.set_x(rect_x + move_x)
-                highlighted_block_rect.set_y(rect_y + move_y)
                 # update box
                 box = highlighted_block['box']
                 box.move(move_x,move_y)
-                # update id text position
-                id_text = highlighted_block['id_text']
-                id_text_x,id_text_y = id_text.get_position()
-                id_text.set_x(id_text_x + move_x)
-                id_text.set_y(id_text_y + move_y)
-                # update canvas
-                figure = image_plot.get_figure()
-                figure.canvas.draw()
+                bounding_boxes[highlighted_block['id']]['box'] = box
 
-                print(f'moved {move_x},{move_y} ! {box}')
+                # print(f'moved {move_x},{move_y} ! {box}')
 
     last_mouse_position = (event.xdata,event.ydata)
+
+
+def destroy_canvas():
+    global image_plot,figure_canvas_agg
+    if image_plot is not None:
+        image_plot.remove()
+        image_plot = None
+    if figure_canvas_agg is not None:
+        figure_canvas_agg.get_tk_widget().forget()
+        figure_canvas_agg = None
 
 
 
@@ -291,13 +310,15 @@ def run_gui():
     '''Run GUI'''
 
     window = ocr_editor_layour()
-
-    update_canvas_image(window,window._ReadNonBlocking()[1])
-    update_canvas_ocr_results(window,window._ReadNonBlocking()[1])
+    event,values = window._ReadNonBlocking()
+    if values:
+        update_canvas_image(window,values)
+        update_canvas_ocr_results(window,values)
 
     while True:
         event,values = window.read()
         if event == sg.WIN_CLOSED:
+            destroy_canvas()
             break
         elif event == 'target_input':
             update_canvas_image(window,values)
