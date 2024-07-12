@@ -32,6 +32,11 @@ def ocr_editor_layour()->sg.Window:
     # canvas (editor)
     canvas = [
         [
+            place(sg.Button('Save',key='save_ocr_results')),
+            place(sg.Button('Save as copy',key='save_ocr_results_copy')),
+            place(sg.Button('Reset',key='reset_ocr_results')),
+        ],
+        [
             place(sg.Canvas(key='canvas',size=(1200,800),expand_x=True,expand_y=True))
         ]
     ]
@@ -40,7 +45,7 @@ def ocr_editor_layour()->sg.Window:
     body = [
         [
             sg.Column(side_bar,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True),
-            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True),
+            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,key='canvas_body'),
         ]
     ]
 

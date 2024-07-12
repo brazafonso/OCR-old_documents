@@ -92,11 +92,14 @@ class Box:
         self.height = self.bottom - self.top
 
 
-    def move(self, x:int, y:int):
-        self.left += x
-        self.right += x
-        self.top += y
-        self.bottom += y
+    def move(self, x:int=0, y:int=0):
+        '''Move box'''
+        if x:
+            self.left += x
+            self.right += x
+        if y:
+            self.top += y
+            self.bottom += y
     
     def valid(self):
         '''Check if box is valid'''

@@ -126,6 +126,10 @@ class OCR_Tree:
             data += child.to_json()
         return data
     
+    def save_json(self,file:str):
+        with open(file,'w') as f:
+            json.dump(self.to_json(),f,indent=4)
+    
     def to_dict(self,result:dict=None):
         if not result:
             result = {k:[] for k in self.__dict__.keys()}
@@ -681,21 +685,67 @@ class OCR_Tree:
         
         if top is not None:
             if absolute:
-                self.box.top = top
-                self.box.bottom = top + self.box.height
+                self.box.update(top=top,bottom=top+self.box.height)
             else:
-                self.box.top += top
-                self.box.bottom += top
+                self.box.move(y=top)
         if left is not None:
             if absolute:
-                self.box.left = left
-                self.box.right = left + self.box.width
+                self.box.update(left=left,right=left+self.box.width)
             else:
-                self.box.left += left
-                self.box.right += left
+                self.box.move(x=left)
 
         for child in self.children:
             child.update_position(top=top,left=left,absolute=absolute)
+
+
+    def update_size(self,top:int=None,left:int=None,bottom:int=None,right:int=None,absolute:bool=False):
+        '''Update size of box and children.'''
+
+        if not any([top,left,bottom,right]):
+            return
+
+        old_top = self.box.top
+        old_left = self.box.left
+        old_bottom = self.box.bottom
+        old_right = self.box.right
+
+        if top is not None:
+            if absolute:
+                self.box.update(top=top)
+            else:
+                self.box.update(top=self.box.top + top)
+
+        if left is not None:
+            if absolute:
+                self.box.update(left=left)
+            else:
+                self.box.update(left=self.box.left + left)
+
+        if bottom is not None:
+            if absolute:
+                self.box.update(bottom=bottom)
+            else:
+                self.box.update(bottom=self.box.bottom + bottom)
+
+        if right is not None:
+            if absolute:
+                self.box.update(right=right)
+            else:
+                self.box.update(right=self.box.right + right)
+
+        # update children on edges
+        for child in self.children:
+            update_top = top is not None and child.box.top == old_top
+            update_left = left is not None and child.box.left == old_left
+            update_bottom = bottom is not None and child.box.bottom == old_bottom
+            update_right = right is not None and child.box.right == old_right
+            if update_top or update_left or update_bottom or update_right:
+                new_top = top if update_top else None
+                new_left = left if update_left else None
+                new_bottom = bottom if update_bottom else None
+                new_right = right if update_right else None
+                child.update_size(top=new_top,left=new_left,bottom=new_bottom,right=new_right,absolute=absolute)
+
 
 
     def update_box(self,left:int=None,right:int=None,top:int=None,bottom:int=None,children:bool=False):
