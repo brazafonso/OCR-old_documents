@@ -440,7 +440,7 @@ class OCR_Tree:
             child.prune_children_area(area)
     
 
-    def type_color(self)->tuple[int,int,int]:
+    def type_color(self,rgb:bool=False,normalize:bool=False)->tuple[int,int,int]:
         '''Get block color, in bgr value, based on type
         
         Colors:
@@ -451,21 +451,23 @@ class OCR_Tree:
             - delimiter: blue
             - caption : white
             - other: green'''
-        
+        color = (0,1,0) if normalize else (0,255,0)
         if self.type == 'text':
-            return (0,255,255)
+            color = (1,1,0) if normalize else (255,255,0)
         elif self.type == 'image':
-            return (0,0,0)
+            color = (0,0,0)
         elif self.type == 'title':
-            return (0,0,255)
+            color = (0,0,1) if normalize else (0,0,255)
         elif self.type == 'highlight':
-            return (153,0,204)
+            color = (0.6,0,0.8) if normalize else (153,0,204)
         elif self.type == 'delimiter':
-            return (255,0,0)
+            color = (1,0,0) if normalize else (255,0,0)
         elif self.type == 'caption':
-            return (255,255,255)
-        else:
-            return (0,255,0)
+            color = (1,1,1) if normalize else (255,255,255)
+
+        if rgb:
+            color = (color[2],color[1],color[0])
+        return color
         
 
     def boxes_below(self,blocks:list["OCR_Tree"])->list["OCR_Tree"]:

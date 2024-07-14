@@ -80,3 +80,19 @@ def place(elem):
     :return: A column element containing the provided element
     '''
     return sg.Column([[elem]], pad=(0,0))
+
+
+
+def rgb_to_hex(rgb:tuple[int,int,int]) -> str:
+    '''Convert rgb tuple to hex string'''
+    return '#%02x%02x%02x' % rgb
+
+
+def get_average_inverse_color(path:str)->tuple:
+    '''Get average inverse color of image. Returns tuple (R,G,B) normalized to 0-1'''
+    image = cv2.imread(path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    average_color = np.average(image, axis=(0, 1))
+    inverted = 255 - average_color
+
+    return tuple(inverted/255)

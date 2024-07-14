@@ -16,6 +16,7 @@ import matplotlib.text
 import matplotlib.typing
 import numpy as np
 from .layouts.hocr_editor import *
+from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 
 # allow matplotlib to use tkinter
@@ -29,6 +30,7 @@ current_image_path = None
 figure_canvas_agg = None
 figure = None
 animation = None
+default_edge_color = None
 ## variables for ocr results
 bounding_boxes = {}
 current_ocr_results = None
@@ -153,9 +155,12 @@ def create_plot(path:str):
 
     return ax
 
+
+
+
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
-    global image_plot,figure,figure_canvas_agg,current_image_path,ppi
+    global image_plot,figure,figure_canvas_agg,current_image_path,ppi,default_edge_color
     if values['target_input']:
         path = values['target_input']
         results_path = f'{consts.result_path}/{path_to_id(path)}'
@@ -174,7 +179,13 @@ def update_canvas_image(window:sg.Window,values:dict):
             return
         
         current_image_path = target_img_path
-        
+
+        # update default edge color for ocr results
+        default_edge_color = get_average_inverse_color(target_img_path)
+        color = default_edge_color * 255
+        color = (int(color[0]),int(color[1]),int(color[2]))
+        window['text_default_color'].update(text_color = rgb_to_hex(color))
+
         clear_canvas()
         # create new plot
         image_plot = create_plot(target_img_path)
@@ -205,7 +216,7 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
 
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
-    global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes
+    global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes,default_edge_color
 
     # get new plot to draw ocr results
     image_plot = create_plot(current_image_path)
@@ -224,7 +235,7 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
         right = box.right
         bottom = box.bottom
         # draw bounding box (rectangle)
-        bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor='g',facecolor='none')
+        bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor=default_edge_color,facecolor='none')
         image_plot.add_patch(bounding_box)
         vertices = box.vertices()
         vertices_circles = []
@@ -282,7 +293,7 @@ def canvas_on_button_press(event):
     print(f'click {event}')
     # left click
     if event.button == 1:
-        # calculare closest block
+        # calculate closest block
         click_x = event.xdata
         click_y = event.ydata
         currenct_action_start = (click_x,click_y)
@@ -315,8 +326,34 @@ def canvas_on_button_press(event):
             else:
                 currenct_action = 'expand'
 
+            # update block info in sidebar
+
         else:
+            highlighted_block = None
             print('no block found')
+
+
+        sidebar_update_block_info()
+
+def sidebar_update_block_info():
+    global window,highlighted_block
+
+    if highlighted_block:
+        block = highlighted_block['block']
+        block:OCR_Tree
+        # update block info
+        ## id
+        window['text_block_id'].update(block.id)
+        ## type
+        if block.type:
+            window['list_block_type'].update(block.type)
+        ## text
+        window['input_block_text'].update(block.to_text(conf=0))
+    else:
+        # clear block info
+        window['text_block_id'].update('')
+        window['list_block_type'].update('')
+        window['input_block_text'].update('')
 
 
 def canvas_on_button_release(event):
@@ -449,9 +486,24 @@ def reset_ocr_results(window:sg.Window):
         # draw ocr results in canvas
         draw_ocr_results(current_ocr_results,window)
 
+
+def toggle_ocr_results_block_type(bounding_boxes:dict,default_color:str='#283b5b',toogle:bool=False):
+    '''Change color of bounding boxes based on block type'''
+
+    for b in bounding_boxes.values():
+        rectangle = b['rectangle']
+        block = b['block']
+        block:OCR_Tree
+        block_color = default_color
+        if toogle and block.type:
+            block_color = block.type_color(normalize=True,rgb=True)
+        
+        rectangle.set_edgecolor(block_color)
+
+
 def run_gui():
     '''Run GUI'''
-    global window,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure
+    global window,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure,default_edge_color
 
     window = ocr_editor_layour()
     event,values = window._ReadNonBlocking()
@@ -484,6 +536,8 @@ def run_gui():
             save_ocr_results(save_as_copy=True)
         elif event == 'reset_ocr_results':
             reset_ocr_results(window)
+        elif event == 'checkbox_toggle_block_type':
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
         else:
             print(f'event {event} not implemented')
     window.close()

@@ -23,7 +23,7 @@ def ocr_editor_layour()->sg.Window:
     ]
 
     # side bar for methods (palceholder)
-    side_bar = [
+    left_side_bar = [
         [
             place(sg.Button('Placeholder',key='method_placeholder')),
         ]
@@ -37,15 +37,80 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Reset',key='reset_ocr_results')),
         ],
         [
-            place(sg.Canvas(key='canvas',size=(1200,800),expand_x=True,expand_y=True))
+            place(sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True))
         ]
     ]
+
+    block_type_legend = [
+        [
+            place(sg.Text('Toogle Block Type: ')),
+            place(sg.Checkbox(text='',key='checkbox_toggle_block_type',enable_events=True)),
+        ],
+        [
+            place(sg.Text('Box Type: ')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Title',text_color='red')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Text',text_color='yellow')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Image',text_color='black')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Highlight',text_color='purple')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Caption',text_color='white')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Delimiter',text_color='blue')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('Other',text_color='green')),
+        ],
+        [
+            place(sg.Text('* ')),
+            place(sg.Text('DEFAULT COLOR',key='text_default_color')),
+        ]
+    ]
+
+    block_info = [
+        [
+            place(sg.Text('Block ')),place(sg.Text('',key='text_block_id')),
+        ],
+        [
+            place(sg.Text('Type: ')),place(sg.Combo(['title','text','image','highlight','caption','delimiter','other'],default_value='',key='list_block_type',enable_events=True)),
+        ],
+        [
+            place(sg.Text('Text: '))
+        ],
+        [
+            place(sg.Input(default_text='',key='input_block_text',enable_events=True))
+        ],
+        [
+            place(sg.Button('Save',key='button_save_block')),place(sg.Button('Delete',key='button_delete_block'))
+        ]
+    ]
+
+    # side bar for info about ocr results
+    right_side_bar = block_type_legend + block_info
+
 
     # body, composed of side bar and canvas
     body = [
         [
-            sg.Column(side_bar,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True),
+            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
             sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,key='canvas_body'),
+            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
         ]
     ]
 
