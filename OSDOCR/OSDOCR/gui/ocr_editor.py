@@ -37,9 +37,10 @@ current_ocr_results = None
 current_ocr_results_path = None
 ## actions
 currenct_action = None
+currenct_action_start = None
 last_key = None
 last_mouse_position = None
-highlighted_block = None
+highlighted_blocks = []
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
@@ -129,6 +130,7 @@ def update(frame):
             assets.append(rect)
             assets.extend(vertices_circles)
             assets.append(id_text)
+
     return assets
 
 def create_plot(path:str):
@@ -256,7 +258,8 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
             'box':box,
             'id_text' : id_text,
             'id' : block.id,
-            'vertices_circles' : vertices_circles
+            'vertices_circles' : vertices_circles,
+            'click_count' : 0
         }
         
 
@@ -288,8 +291,34 @@ def closest_block(click_x,click_y):
     return block_id
 
 
+def sidebar_update_block_info():
+    global window,highlighted_blocks
+
+    if highlighted_blocks:
+        block = highlighted_blocks[-1]['block']
+        block:OCR_Tree
+        # update block info
+        ## id
+        window['text_block_id'].update(block.id)
+        ## coordinates
+        window['text_block_coords'].update(f'({block.box.left},{block.box.top}) - ({block.box.right},{block.box.bottom})')
+        ## type
+        if block.type:
+            window['list_block_type'].update(block.type)
+        ## text
+        text_delimiters = {3: '#Par#'}
+        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters))
+    else:
+        # clear block info
+        window['text_block_id'].update('')
+        window['text_block_coords'].update('')
+        window['list_block_type'].update('')
+        window['input_block_text'].update('')
+
+
+
 def canvas_on_button_press(event):
-    global currenct_action,currenct_action_start,bounding_boxes,highlighted_block
+    global currenct_action,currenct_action_start,bounding_boxes,highlighted_blocks
     print(f'click {event}')
     # left click
     if event.button == 1:
@@ -301,7 +330,18 @@ def canvas_on_button_press(event):
         if block_id is not None:
             # print(f'closest block {block_id}')
             block = bounding_boxes[block_id]
-            highlighted_block = block
+            ## check if block is already highlighted
+            if block in highlighted_blocks:
+                ## change to last index
+                highlighted_blocks.remove(block)
+                block['click_count'] += 1
+            else:
+                block['click_count'] = 1
+
+            highlighted_blocks.append(block)
+            # update rectangle to have transparent red facecolor
+            rectangle = block['rectangle']
+            rectangle.set_facecolor((1,0,0,0.1))
             block_box = block['box']
             block_box:Box
             distance = block_box.distance_to_point(click_x,click_y)
@@ -329,45 +369,44 @@ def canvas_on_button_press(event):
             # update block info in sidebar
 
         else:
-            highlighted_block = None
+            if highlighted_blocks:
+                for block in highlighted_blocks:
+                    # clear facecolor
+                    rectangle = block['rectangle']
+                    rectangle.set_facecolor((1,1,1,0))
+                    # reset click count
+                    block['click_count'] = 0
+                    
+            highlighted_blocks = []
             print('no block found')
 
 
         sidebar_update_block_info()
 
-def sidebar_update_block_info():
-    global window,highlighted_block
 
-    if highlighted_block:
-        block = highlighted_block['block']
-        block:OCR_Tree
-        # update block info
-        ## id
-        window['text_block_id'].update(block.id)
-        ## coordinates
-        window['text_block_coords'].update(f'({block.box.left},{block.box.top}) - ({block.box.right},{block.box.bottom})')
-        ## type
-        if block.type:
-            window['list_block_type'].update(block.type)
-        ## text
-        text_delimiters = {3: '#Par#'}
-        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters))
-    else:
-        # clear block info
-        window['text_block_id'].update('')
-        window['text_block_coords'].update('')
-        window['list_block_type'].update('')
-        window['input_block_text'].update('')
 
 
 def canvas_on_button_release(event):
-    global currenct_action
+    global currenct_action,currenct_action_start
     print(f'release {event}')
+    release_x = event.xdata
+    release_y = event.ydata
+    # if click on a block and highlighted_blocks and click without moving, diselect block
+    if highlighted_blocks and (currenct_action_start[0] == release_x and currenct_action_start[1] == release_y):
+        block_id = closest_block(release_x,release_y)
+        if block_id is not None:
+            block = bounding_boxes[block_id]
+            block_box = block['block'].box
+            block_box:Box
+            if block_box.distance_to_point(release_x,release_y) == 0 and block['click_count'] > 1:
+                highlighted_blocks.remove(block)
+                block['rectangle'].set_facecolor((1,1,1,0))
+
     currenct_action = None
 
 def canvas_on_mouse_move(event):
-    global currenct_action,last_mouse_position,bounding_boxes,highlighted_block,image_plot
-    if currenct_action and highlighted_block and last_mouse_position:
+    global currenct_action,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
+    if currenct_action and highlighted_blocks and last_mouse_position:
         if currenct_action == 'move':
             # calculate new position
             ## start position
@@ -381,12 +420,13 @@ def canvas_on_mouse_move(event):
             move_x = new_x - last_x
             move_y = new_y - last_y
             if move_x or move_y:
-                # update box
-                block = highlighted_block['block']
-                # print(f'moving {move_x},{move_y} ! {block.box}')
-                block.update_position(top=move_y,left=move_x)
-                bounding_boxes[highlighted_block['id']]['box'] = block.box
-                # print(f'moved {move_x},{move_y} ! {block.box}')
+                for highlighted_block in highlighted_blocks:
+                    # update box
+                    block = highlighted_block['block']
+                    # print(f'moving {move_x},{move_y} ! {block.box}')
+                    block.update_position(top=move_y,left=move_x)
+                    bounding_boxes[highlighted_block['id']]['box'] = block.box
+                    # print(f'moved {move_x},{move_y} ! {block.box}')
 
         elif currenct_action == 'expand':
             # calculate new dimensions
@@ -397,7 +437,7 @@ def canvas_on_mouse_move(event):
             new_x = event.xdata
             new_y = event.ydata
             ## check which vertex is being moved (closest vertex)
-            block = highlighted_block['block']
+            block = highlighted_blocks[-1]['block']
             box = block.box
             vertices = box.vertices()
             distances = [(v_i,math.sqrt((x-last_x)**2+(y-last_y)**2)) for v_i,(x,y) in enumerate(vertices)]
@@ -421,7 +461,7 @@ def canvas_on_mouse_move(event):
                     block.update_size(bottom=dy)
 
                 # update box
-                bounding_boxes[highlighted_block['id']]['box'] = box
+                bounding_boxes[highlighted_blocks[-1]['id']]['box'] = box
                 # print(f'moved {move_x},{move_y} ! {box}')
 
     last_mouse_position = (event.xdata,event.ydata)
@@ -509,12 +549,12 @@ def save_ocr_block_changes(values:dict):
     '''Save changes to current highlighted block. 
     The coordinates will be divided equally within the block.
     Confidence of words will be set to 100.'''
-    global current_ocr_results,highlighted_block
+    global current_ocr_results,highlighted_blocks
 
-    if current_ocr_results and highlighted_block:
-        block = highlighted_block['block']
+    if current_ocr_results and highlighted_blocks:
+        block = highlighted_blocks[-1]['block']
         block:OCR_Tree
-        rectangle = highlighted_block['rectangle']
+        rectangle = highlighted_blocks[-1]['rectangle']
         # get new info from frame 'frame_block_info'
         ## block type ('list_block_type')
         block_type = values['list_block_type']
