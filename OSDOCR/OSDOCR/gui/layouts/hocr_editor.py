@@ -85,16 +85,20 @@ def ocr_editor_layour()->sg.Window:
 
     block_info = [
         [
-            place(sg.Text('Block ')),place(sg.Text('',key='text_block_id')),
+            place(sg.Text('Block ')),
+            place(sg.Text('',key='text_block_id')),
+            place(sg.Text('Coordinates: ')),
+            place(sg.Text('',key='text_block_coords')),
         ],
         [
-            place(sg.Text('Type: ')),place(sg.Combo(['title','text','image','highlight','caption','delimiter','other'],default_value='',key='list_block_type',enable_events=True)),
+            place(sg.Text('Type: ')),
+            place(sg.Combo(['title','text','image','highlight','caption','delimiter','other'],default_value='',key='list_block_type',enable_events=True)),
         ],
         [
             place(sg.Text('Text: '))
         ],
         [
-            place(sg.Input(default_text='',key='input_block_text',enable_events=True))
+            place(sg.Multiline(default_text='',key='input_block_text',enable_events=True,size=(50,10),auto_size_text=True,autoscroll=True))
         ],
         [
             place(sg.Button('Save',key='button_save_block')),place(sg.Button('Delete',key='button_delete_block'))
@@ -102,7 +106,14 @@ def ocr_editor_layour()->sg.Window:
     ]
 
     # side bar for info about ocr results
-    right_side_bar = block_type_legend + block_info
+    right_side_bar = [
+        [
+            sg.Frame('',block_type_legend)
+        ],
+        [
+            sg.Frame('',block_info,key='frame_block_info')
+        ]
+    ]
 
 
     # body, composed of side bar and canvas

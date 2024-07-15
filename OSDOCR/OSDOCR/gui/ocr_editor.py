@@ -344,14 +344,18 @@ def sidebar_update_block_info():
         # update block info
         ## id
         window['text_block_id'].update(block.id)
+        ## coordinates
+        window['text_block_coords'].update(f'({block.box.left},{block.box.top}) - ({block.box.right},{block.box.bottom})')
         ## type
         if block.type:
             window['list_block_type'].update(block.type)
         ## text
-        window['input_block_text'].update(block.to_text(conf=0))
+        text_delimiters = {3: '#Par#'}
+        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters))
     else:
         # clear block info
         window['text_block_id'].update('')
+        window['text_block_coords'].update('')
         window['list_block_type'].update('')
         window['input_block_text'].update('')
 
@@ -501,6 +505,81 @@ def toggle_ocr_results_block_type(bounding_boxes:dict,default_color:str='#283b5b
         rectangle.set_edgecolor(block_color)
 
 
+def save_ocr_block_changes(values:dict):
+    '''Save changes to current highlighted block. 
+    The coordinates will be divided equally within the block.
+    Confidence of words will be set to 100.'''
+    global current_ocr_results,highlighted_block
+
+    if current_ocr_results and highlighted_block:
+        block = highlighted_block['block']
+        block:OCR_Tree
+        rectangle = highlighted_block['rectangle']
+        # get new info from frame 'frame_block_info'
+        ## block type ('list_block_type')
+        block_type = values['list_block_type']
+        ## block text ('input_block_text')
+        block_text = values['input_block_text']
+        ### turn block text into OCR Tree
+        #### count number of paragraphs in line, to be able to divide coordinates equally
+        lines = [l for l in block_text.split('\n') if l.strip()]
+        pars = [[]]
+        for i,line in enumerate(lines):
+            if re.match(r'^\s*#Par#\s*$',line,re.IGNORECASE):
+                ## ignore if current paragraph is empty
+                if len(pars[-1]) > 0:
+                    pars.append([])
+            else:
+                pars[-1].append(line)
+
+        #### create OCR Trees
+        par_height = int(block.box.height / len(pars))
+        new_children = []
+        ##### par level
+        for i,par in enumerate(pars):
+            par_children = []
+            par_top = block.box.top + par_height * i
+            par_left = block.box.left
+            par_right = block.box.right
+            par_bottom = par_top + par_height
+
+            ##### line level
+            for line in par:
+                line_height = int(par_height / len(par))
+                line_top = par_top
+                line_left = par_left
+                line_right = par_right
+                line_bottom = line_top + line_height
+                line_tree = OCR_Tree({'level':4,'box':{'left':line_left,'top':line_top,'right':line_right,'bottom':line_bottom}})
+                line_words = [w for w in line.split(' ') if w.strip()]
+
+                ##### word level
+                for j,word in enumerate(line_words):
+                    word_width = int(par_right - par_left) // len(line_words)
+                    word_top = line_top
+                    word_left = line_left + word_width * j
+                    word_right = word_left + word_width
+                    word_bottom = line_bottom
+                    word_tree = OCR_Tree({'level':5,'box':{'left':word_left,'top':word_top,'right':word_right,'bottom':word_bottom},'text':word,'conf':100})
+                    line_tree.add_child(word_tree)
+
+                par_children.append(line_tree)
+
+            if par_children:
+                par_tree = OCR_Tree({'level':3,'box':{'left':par_left,'top':par_top,'right':par_right,'bottom':par_bottom},'children':par_children})
+                new_children.append(par_tree)
+
+        block.children = new_children
+        # change block type
+        if block_type and block_type != block.type:
+            block.type = block_type
+            ## change color of rectangle if type color is toogled
+            if values['checkbox_toggle_block_type']:
+                color = block.type_color(normalize=True,rgb=True)
+                print(color)
+                rectangle.set_edgecolor(color)
+
+
 def run_gui():
     '''Run GUI'''
     global window,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure,default_edge_color
@@ -538,6 +617,8 @@ def run_gui():
             reset_ocr_results(window)
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
+        elif event == 'button_save_block':
+            save_ocr_block_changes(values=values)
         else:
             print(f'event {event} not implemented')
     window.close()

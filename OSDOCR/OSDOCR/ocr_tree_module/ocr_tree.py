@@ -385,17 +385,30 @@ class OCR_Tree:
         return delimiters
     
 
-    def to_text(self,conf:int=0):
-        '''Return text in ocr_results'''
+    def to_text(self,conf:int=0,text_delimiters:dict=None):
+        '''Return text in ocr_results.
+        
+        Arguments:
+            conf {int} -- confidence threshold
+            text_delimiters {dict} -- delimiters dictionary. default: {5:' ',4:'\n',3:'\n\t'}
+        '''
         text = ''
+        text_delimiter = ''
+        line_delimiter = ''
+        par_delimiter = ''
+        if text_delimiters:
+            text_delimiter = text_delimiters.get(5,' ')
+            line_delimiter = text_delimiters.get(4,'')
+            par_delimiter = text_delimiters.get(3,'')
+
         if self.level == 5 and self.conf >= conf:
-            text += self.text + ' '
+            text += self.text + ' ' + text_delimiter
         elif self.level == 4:
-            text += '\n'
+            text += '\n' + line_delimiter
         elif self.level == 3:
-            text += '\n\t'
+            text += '\n\t' + par_delimiter
         for child in self.children:
-            text += child.to_text(conf)
+            text += child.to_text(conf,text_delimiters)
         return text
     
     def remove_box_id(self,id:int,level:int=2):
@@ -453,7 +466,7 @@ class OCR_Tree:
             - other: green'''
         color = (0,1,0) if normalize else (0,255,0)
         if self.type == 'text':
-            color = (1,1,0) if normalize else (255,255,0)
+            color = (0,1,1) if normalize else (0,255,255)
         elif self.type == 'image':
             color = (0,0,0)
         elif self.type == 'title':
