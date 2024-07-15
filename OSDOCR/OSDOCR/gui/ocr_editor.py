@@ -301,7 +301,11 @@ def sidebar_update_block_info():
         ## id
         window['text_block_id'].update(block.id)
         ## coordinates
-        window['text_block_coords'].update(f'({block.box.left},{block.box.top}) - ({block.box.right},{block.box.bottom})')
+        left = int(block.box.left)
+        top = int(block.box.top)
+        right = int(block.box.right)
+        bottom = int(block.box.bottom)
+        window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
         ## type
         if block.type:
             window['list_block_type'].update(block.type)
@@ -314,6 +318,8 @@ def sidebar_update_block_info():
         window['text_block_coords'].update('')
         window['list_block_type'].update('')
         window['input_block_text'].update('')
+
+
 
 
 
@@ -382,6 +388,7 @@ def canvas_on_button_press(event):
 
 
         sidebar_update_block_info()
+
 
 
 
@@ -463,6 +470,8 @@ def canvas_on_mouse_move(event):
                 # update box
                 bounding_boxes[highlighted_blocks[-1]['id']]['box'] = box
                 # print(f'moved {move_x},{move_y} ! {box}')
+
+        sidebar_update_block_info()
 
     last_mouse_position = (event.xdata,event.ydata)
 
@@ -584,23 +593,23 @@ def save_ocr_block_changes(values:dict):
             par_bottom = par_top + par_height
 
             ##### line level
-            for line in par:
+            for j,line in enumerate(par):
                 line_height = int(par_height / len(par))
                 line_top = par_top
                 line_left = par_left
                 line_right = par_right
                 line_bottom = line_top + line_height
-                line_tree = OCR_Tree({'level':4,'box':{'left':line_left,'top':line_top,'right':line_right,'bottom':line_bottom}})
+                line_tree = OCR_Tree({'level':4,'box':{'left':line_left,'top':line_top,'right':line_right,'bottom':line_bottom},'par_num':i,'line_num':j})
                 line_words = [w for w in line.split(' ') if w.strip()]
 
                 ##### word level
-                for j,word in enumerate(line_words):
+                for m,word in enumerate(line_words):
                     word_width = int(par_right - par_left) // len(line_words)
                     word_top = line_top
-                    word_left = line_left + word_width * j
+                    word_left = line_left + word_width * m
                     word_right = word_left + word_width
                     word_bottom = line_bottom
-                    word_tree = OCR_Tree({'level':5,'box':{'left':word_left,'top':word_top,'right':word_right,'bottom':word_bottom},'text':word,'conf':100})
+                    word_tree = OCR_Tree({'level':5,'box':{'left':word_left,'top':word_top,'right':word_right,'bottom':word_bottom},'text':word,'conf':100,'par_num':i,'line_num':j,'word_num':m})
                     line_tree.add_child(word_tree)
 
                 par_children.append(line_tree)
@@ -620,9 +629,47 @@ def save_ocr_block_changes(values:dict):
                 rectangle.set_edgecolor(color)
 
 
+def delete_ocr_block():
+    '''Delete highlighted ocr block'''
+    global highlighted_blocks,current_ocr_results,bounding_boxes
+    if highlighted_blocks:
+        block = highlighted_blocks[-1]
+        ## remove block from ocr_results
+        current_ocr_results.remove_box_id(block['block'].id)
+        ## remove block from bounding_boxes
+        del bounding_boxes[block['block'].id]
+        ## remove block from highlighted_blocks
+        highlighted_blocks.remove(block)
+
+
+def join_ocr_blocks():
+    '''Join highlighted ocr blocks'''
+    global highlighted_blocks,bounding_boxes,current_ocr_results
+
+    if not highlighted_blocks:
+        return
+    
+    blocks = highlighted_blocks.copy()
+    # sort blocks by highest
+    blocks.sort(key=lambda b:b['block'].box.top)
+    while len(blocks) > 1:
+        first = blocks[0]['block']
+        second = blocks[1]['block']
+        first.join_trees(second)
+        # remove second block
+        ## remove second block from ocr_results
+        current_ocr_results.remove_box_id(second.id)
+        ## remove second block from bounding_boxes
+        del bounding_boxes[second.id]
+        ## remove second block from highlighted_blocks
+        highlighted_blocks.remove(blocks[1])
+        ## remove second block from blocks
+        blocks.remove(blocks[1])
+
+
 def run_gui():
     '''Run GUI'''
-    global window,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure,default_edge_color
+    global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure,default_edge_color
 
     window = ocr_editor_layour()
     event,values = window._ReadNonBlocking()
@@ -659,6 +706,12 @@ def run_gui():
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
+        elif event == 'button_delete_block':
+            delete_ocr_block()
+            sidebar_update_block_info()
+        elif event == 'method_join':
+            join_ocr_blocks()
+            sidebar_update_block_info()
         else:
             print(f'event {event} not implemented')
     window.close()

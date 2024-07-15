@@ -25,15 +25,15 @@ def ocr_editor_layour()->sg.Window:
     # side bar for methods (palceholder)
     left_side_bar = [
         [
-            place(sg.Button('Placeholder',key='method_placeholder')),
+            place(sg.Button('Join Blocks',key='method_join')),
         ]
     ]
 
     # canvas (editor)
     canvas = [
         [
-            place(sg.Button('Save',key='save_ocr_results')),
             place(sg.Button('Save as copy',key='save_ocr_results_copy')),
+            place(sg.Button('Save',key='save_ocr_results')),
             place(sg.Button('Reset',key='reset_ocr_results')),
         ],
         [
