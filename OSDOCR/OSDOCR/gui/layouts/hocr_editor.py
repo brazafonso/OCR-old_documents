@@ -104,8 +104,11 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Multiline(default_text='',key='input_block_text',enable_events=True,size=(50,10),auto_size_text=True,autoscroll=True))
         ],
         [
+            place(sg.Button('OCR',key='button_ocr_block'))
+        ],
+        [
             place(sg.Button('Save',key='button_save_block')),place(sg.Button('Delete',key='button_delete_block'))
-        ]
+        ],
     ]
 
     # side bar for info about ocr results

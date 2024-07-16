@@ -1,6 +1,7 @@
 '''OCR Editor  - GUI'''
 
 import os
+import shutil
 import traceback
 import cv2
 import matplotlib
@@ -18,6 +19,7 @@ import numpy as np
 from .layouts.hocr_editor import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
+from OSDOCR.ocr_engines.engine_utils import run_tesseract
 
 # allow matplotlib to use tkinter
 matplotlib.use('TkAgg')
@@ -707,6 +709,44 @@ def delete_ocr_block():
         highlighted_blocks.remove(block)
 
 
+def apply_ocr_block():
+    '''Apply OCR on highlighted ocr block'''
+    global highlighted_blocks,current_image_path
+    if highlighted_blocks:
+        block = highlighted_blocks[-1]
+        ocr_block = block['block']
+        ocr_block:OCR_Tree
+        box = ocr_block.box
+        # cut part of image
+        image = cv2.imread(current_image_path)
+        left = int(box.left)
+        top = int(box.top)
+        right = int(box.right)
+        bottom = int(box.bottom)
+        image = image[top:bottom,left:right]
+        # add some padding
+        padding = 20
+        avg_color = np.average(image,axis=(0,1))
+        image = cv2.copyMakeBorder(image,padding,padding,padding,padding,cv2.BORDER_CONSTANT,value=avg_color)
+        # save tmp image
+        dir_path = os.path.dirname(current_image_path)
+        tmp_dir = f'{dir_path}/tmp'
+        os.makedirs(tmp_dir,exist_ok=True)
+        tmp_path = f'{tmp_dir}/tmp.png'
+        cv2.imwrite(tmp_path,image)
+        # run ocr
+        run_tesseract(tmp_path,results_path=tmp_dir,opts={'l':'por'})
+        # load ocr results
+        ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json')
+        ## move ocr results to position of ocr block
+        ocr_results.update_position(top=box.top,left=box.left)
+        new_children = ocr_results.get_boxes_level(3)
+        ocr_block.children = new_children
+        # # remove tmp dir
+        # shutil.rmtree(tmp_dir)
+        
+
+
 def join_ocr_blocks():
     '''Join highlighted ocr blocks'''
     global highlighted_blocks,bounding_boxes,current_ocr_results
@@ -773,6 +813,9 @@ def run_gui():
             save_ocr_block_changes(values=values)
         elif event == 'button_delete_block':
             delete_ocr_block()
+            sidebar_update_block_info()
+        elif event == 'button_ocr_block':
+            apply_ocr_block()
             sidebar_update_block_info()
         elif event == 'method_join':
             join_ocr_blocks()
