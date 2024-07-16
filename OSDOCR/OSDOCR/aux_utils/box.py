@@ -35,10 +35,10 @@ class Box:
         self.height = self.bottom - self.top
 
     def load_json(self,json_dict:dict):
-        self.left = json_dict['left']
-        self.right = json_dict['right']
-        self.top = json_dict['top']
-        self.bottom = json_dict['bottom']
+        self.left = int(json_dict['left'])
+        self.right = int(json_dict['right'])
+        self.top = int(json_dict['top'])
+        self.bottom = int(json_dict['bottom'])
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
@@ -393,3 +393,14 @@ class Box:
         '''
         return [(self.left,self.top),(self.right,self.top),(self.right,self.bottom),(self.left,self.bottom)]
 
+
+    def closest_edge_point(self,x:int,y:int)->str:
+        '''Get closest edge point to point. 
+        Returns edge name (left, right, top, bottom)'''
+        center_x,center_y = self.center_point()
+        dx = abs(center_x - x)
+        dy = abs(center_y - y)
+        if dx > dy:
+            return 'right' if x > center_x else 'left'
+        else:
+            return 'top' if y > center_y else 'bottom'

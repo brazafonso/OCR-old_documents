@@ -8,18 +8,20 @@ import matplotlib
 import matplotlib.patches
 import matplotlib.pyplot as plt
 import PySimpleGUI as sg
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Circle, Rectangle
-from matplotlib.animation import FuncAnimation
-from OSDOCR.aux_utils import consts
-from OSDOCR.aux_utils.misc import *
 import matplotlib.text
 import matplotlib.typing
 import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.patches import Circle, Rectangle
+from matplotlib.lines import Line2D
+from matplotlib.animation import FuncAnimation
+from OSDOCR.aux_utils import consts
+from OSDOCR.aux_utils.misc import *
 from .layouts.hocr_editor import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
+from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block
 
 # allow matplotlib to use tkinter
 matplotlib.use('TkAgg')
@@ -37,11 +39,18 @@ default_edge_color = None
 bounding_boxes = {}
 current_ocr_results = None
 current_ocr_results_path = None
+text_conf = 30
 ## actions
-currenct_action = None
-currenct_action_start = None
+'''
+Possible actions:
+    - move
+    - expand
+    - split_block
+'''
+current_action = None
+current_action_start = None
 last_key = None
-last_mouse_position = None
+last_mouse_position = (0,0)
 highlighted_blocks = []
 ## constants
 ppi = 300   # default pixels per inch
@@ -102,9 +111,29 @@ def update_canvas(window:sg.Window,figure):
     
 
 
+def split_action_assets():
+    '''Create assets for split action'''
+    global current_action,last_mouse_position,highlighted_blocks,default_edge_color,image_plot
+    assets = []
+    if current_action == 'split_block':
+        x,y = last_mouse_position
+        if x is not None and y is not None:
+            block = highlighted_blocks[-1]['block']
+            orientation,line = split_line(x,y,block)
+            if orientation and line:
+                x_data = [line.left, line.right]
+                y_data = [line.top, line.bottom]
+                line_asset = Line2D(x_data,y_data,linewidth=2, color=default_edge_color,
+                                    marker='o', markersize=5, markerfacecolor=default_edge_color, 
+                                    markeredgewidth=2, markeredgecolor='black',linestyle='--')
+
+                assets.append(line_asset)
+                image_plot.add_line(line_asset)
+    return assets
+
 def update(frame):
     '''Update canvas'''
-    global bounding_boxes
+    global bounding_boxes,current_action,last_mouse_position,highlighted_blocks
     assets = []
     if bounding_boxes:
         # update position of boxes and id texts
@@ -130,6 +159,11 @@ def update(frame):
             assets.append(rect)
             assets.extend(vertices_circles)
             assets.append(id_text)
+
+        # case of split block action
+        if current_action == 'split_block':
+            split_assets = split_action_assets()
+            assets.extend(split_assets)
 
     return assets
 
@@ -216,6 +250,43 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         draw_ocr_results(current_ocr_results,window)
 
 
+def create_ocr_block_assets(block:OCR_Tree):
+    '''Create ocr block assets and add them to canvas figure'''
+    global image_plot,bounding_boxes,default_edge_color
+    # bounding box
+    box = block.box
+    left = box.left
+    top = box.top
+    right = box.right
+    bottom = box.bottom
+    # draw bounding box (rectangle)
+    bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor=default_edge_color,facecolor='none')
+    image_plot.add_patch(bounding_box)
+    vertices = box.vertices()
+    vertices_circles = []
+    # draw vertices
+    for vertex in vertices:
+        x,y = vertex
+        vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
+        image_plot.add_patch(vertex_circle)
+        vertices_circles.append(vertex_circle)
+    # draw id text in top left corner of bounding box
+    id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
+    image_plot.add_artist(id_text)
+
+    # save bounding box in dictionary
+    bounding_boxes[block.id] = {
+        'rectangle':bounding_box,
+        'block':block,
+        'box':box,
+        'id_text' : id_text,
+        'id' : block.id,
+        'vertices_circles' : vertices_circles,
+        'click_count' : 0
+    }
+
+    
+
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
     global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes,default_edge_color
@@ -230,39 +301,8 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     bounding_boxes = {}
     # draw ocr results
     for block in blocks:
-        # bounding box
-        box = block.box
-        left = box.left
-        top = box.top
-        right = box.right
-        bottom = box.bottom
-        # draw bounding box (rectangle)
-        bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor=default_edge_color,facecolor='none')
-        image_plot.add_patch(bounding_box)
-        vertices = box.vertices()
-        vertices_circles = []
-        # draw vertices
-        for vertex in vertices:
-            x,y = vertex
-            vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
-            image_plot.add_patch(vertex_circle)
-            vertices_circles.append(vertex_circle)
-        # draw id text in top left corner of bounding box
-        id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
-        image_plot.add_artist(id_text)
-
-        # save bounding box in dictionary
-        bounding_boxes[block.id] = {
-            'rectangle':bounding_box,
-            'block':block,
-            'box':box,
-            'id_text' : id_text,
-            'id' : block.id,
-            'vertices_circles' : vertices_circles,
-            'click_count' : 0
-        }
+        create_ocr_block_assets(block)
         
-
     # clear canvas
     clear_canvas()
     # update canvas
@@ -354,101 +394,81 @@ def create_new_ocr_block(x:int=None,y:int=None):
     page = current_ocr_results.get_boxes_level(level=1)[-1]
     page.add_child(new_block)
     ## bounding boxes
-    box = new_block.box
-    left = box.left
-    top = box.top
-    right = box.right
-    bottom = box.bottom
-    new_rect = Rectangle((x,y),width=50,height=50,edgecolor=default_edge_color,facecolor='none',linewidth=1)
-    image_plot.add_patch(new_rect)
-    vertices_circles = []
-    vertices = box.vertices()
-    for vertex in vertices:
-            x,y = vertex
-            vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
-            image_plot.add_patch(vertex_circle)
-            vertices_circles.append(vertex_circle)
-    # draw id text in top left corner of bounding box
-    id_text = matplotlib.text.Text(left+15,top+30,new_block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
-    image_plot.add_artist(id_text)
-    bounding_boxes[new_id] = {
-        'rectangle':new_rect,
-        'block':new_block,
-        'box':new_block.box,
-        'id_text' : id_text,
-        'id' : new_id,
-        'vertices_circles' : vertices_circles,
-        'click_count' : 0
-    }
+    create_ocr_block_assets(new_block)
 
 
 
 
 def canvas_on_button_press(event):
-    global currenct_action,currenct_action_start,bounding_boxes,highlighted_blocks
+    global current_action,current_action_start,bounding_boxes,highlighted_blocks
     print(f'click {event}')
     # left click
     if event.button == 1:
         # calculate closest block
         click_x = event.xdata
         click_y = event.ydata
-        currenct_action_start = (click_x,click_y)
-        block_id = closest_block(click_x,click_y)
-        if block_id is not None:
-            # print(f'closest block {block_id}')
-            block = bounding_boxes[block_id]
-            ## check if block is already highlighted
-            if block in highlighted_blocks:
-                ## change to last index
-                highlighted_blocks.remove(block)
-                block['click_count'] += 1
-            else:
-                block['click_count'] = 1
-
-            highlighted_blocks.append(block)
-            # update rectangle to have transparent red facecolor
-            rectangle = block['rectangle']
-            rectangle.set_facecolor((1,0,0,0.1))
-            block_box = block['box']
-            block_box:Box
-            distance = block_box.distance_to_point(click_x,click_y)
-            # check what action to activate
-            ## move, if distance is 0 and not close enough to any of the vertices
-            ## expand otherwhise
-
-            ### check if move
-            if distance == 0:
-                # check distance to vertices
-                vertices = block_box.vertices()
-                v_distances = enumerate([math.sqrt((x-click_x)**2+(y-click_y)**2) for x,y in vertices])
-                v_distance = min(v_distances,key=lambda x: x[1])
-                if v_distance[1] > 5:
-                    currenct_action = 'move'
-                    # print(f'move action ! {block_box}')
-                    # move
+        if not current_action or current_action != 'split_block':
+            current_action_start = (click_x,click_y)
+            block_id = closest_block(click_x,click_y)
+            if block_id is not None:
+                # print(f'closest block {block_id}')
+                block = bounding_boxes[block_id]
+                ## check if block is already highlighted
+                if block in highlighted_blocks:
+                    ## change to last index
+                    highlighted_blocks.remove(block)
+                    block['click_count'] += 1
                 else:
-                    currenct_action = 'expand'
-            
-            ### expand
+                    block['click_count'] = 1
+
+                highlighted_blocks.append(block)
+                # update rectangle to have transparent red facecolor
+                rectangle = block['rectangle']
+                rectangle.set_facecolor((1,0,0,0.1))
+                block_box = block['box']
+                block_box:Box
+                distance = block_box.distance_to_point(click_x,click_y)
+                # check what action to activate
+                ## move, if distance is 0 and not close enough to any of the vertices
+                ## expand otherwhise
+
+                ### check if move
+                if distance == 0:
+                    # check distance to vertices
+                    vertices = block_box.vertices()
+                    v_distances = enumerate([math.sqrt((x-click_x)**2+(y-click_y)**2) for x,y in vertices])
+                    v_distance = min(v_distances,key=lambda x: x[1])
+                    if v_distance[1] > 5:
+                        current_action = 'move'
+                        # print(f'move action ! {block_box}')
+                        # move
+                    else:
+                        current_action = 'expand'
+                
+                ### expand
+                else:
+                    current_action = 'expand'
+
+                # update block info in sidebar
+
             else:
-                currenct_action = 'expand'
+                if highlighted_blocks:
+                    for block in highlighted_blocks:
+                        # clear facecolor
+                        rectangle = block['rectangle']
+                        rectangle.set_facecolor((1,1,1,0))
+                        # reset click count
+                        block['click_count'] = 0
+                        
+                highlighted_blocks = []
+                print('no block found')
 
-            # update block info in sidebar
+            sidebar_update_block_info()
 
-        else:
-            if highlighted_blocks:
-                for block in highlighted_blocks:
-                    # clear facecolor
-                    rectangle = block['rectangle']
-                    rectangle.set_facecolor((1,1,1,0))
-                    # reset click count
-                    block['click_count'] = 0
-                    
-            highlighted_blocks = []
-            print('no block found')
-
-
-        sidebar_update_block_info()
+        elif current_action == 'split_block':
+            # if first click (no current_action_start)
+            split_ocr_block(int(click_x),int(click_y))
+            current_action = None
     # middle click
     elif event.button == 2:
         ## create new block
@@ -461,12 +481,12 @@ def canvas_on_button_press(event):
 
 
 def canvas_on_button_release(event):
-    global currenct_action,currenct_action_start
+    global current_action,current_action_start
     print(f'release {event}')
     release_x = event.xdata
     release_y = event.ydata
     # if click on a block and highlighted_blocks and click without moving, diselect block
-    if highlighted_blocks and (currenct_action_start[0] == release_x and currenct_action_start[1] == release_y):
+    if highlighted_blocks and (current_action_start[0] == release_x and current_action_start[1] == release_y):
         block_id = closest_block(release_x,release_y)
         if block_id is not None:
             block = bounding_boxes[block_id]
@@ -475,13 +495,15 @@ def canvas_on_button_release(event):
             if block_box.distance_to_point(release_x,release_y) == 0 and block['click_count'] > 1:
                 highlighted_blocks.remove(block)
                 block['rectangle'].set_facecolor((1,1,1,0))
+                # update block info in sidebar
+                sidebar_update_block_info()
 
-    currenct_action = None
+    current_action = None
 
 def canvas_on_mouse_move(event):
-    global currenct_action,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
-    if currenct_action and highlighted_blocks and last_mouse_position:
-        if currenct_action == 'move':
+    global current_action,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
+    if current_action and highlighted_blocks and last_mouse_position:
+        if current_action == 'move':
             # calculate new position
             ## start position
             last_x = last_mouse_position[0]
@@ -502,7 +524,7 @@ def canvas_on_mouse_move(event):
                     bounding_boxes[highlighted_block['id']]['box'] = block.box
                     # print(f'moved {move_x},{move_y} ! {block.box}')
 
-        elif currenct_action == 'expand':
+        elif current_action == 'expand':
             # calculate new dimensions
             ## start position
             last_x = last_mouse_position[0]
@@ -772,9 +794,74 @@ def join_ocr_blocks():
         blocks.remove(blocks[1])
 
 
+
+def split_line(x:int,y:int,block:OCR_Tree)->Union[str,Box]:
+    '''Gets split line for ocr block. Returns orientation and split line box.
+    
+    Returns:
+        Orientation: 'horizontal' or 'vertical'
+        Box: Split line box
+    '''
+    # get split line
+    split_delimiter = None
+    orientation = None
+    ## get closest edge to mouse click
+    closest_edge = block.box.closest_edge_point(x,y)
+    ### horizontal split
+    if closest_edge in ['left','right']:
+        orientation = 'horizontal'
+        left = block.box.left
+        right = block.box.right
+        top = y if y <= block.box.bottom and y >= block.box.top else block.box.top if y < block.box.top else block.box.bottom
+        bottom = top + 1
+        split_delimiter = Box({'left': left,'right': right,'top': top,'bottom': bottom})
+    ### vertical split
+    elif closest_edge in ['top','bottom']:
+        orientation = 'vertical'
+        top = block.box.top
+        bottom = block.box.bottom
+        left = x if x <= block.box.right and x >= block.box.left else block.box.left if x < block.box.left else block.box.right
+        right = left + 1
+        split_delimiter = Box({'left': left,'right': right,'top': top,'bottom': bottom})
+
+    return orientation,split_delimiter
+
+
+def split_ocr_block(x:int,y:int):
+    '''Split ocr block. x,y is position of mouse click and will be used to calculate split line.'''
+    global highlighted_blocks,current_ocr_results
+    if highlighted_blocks and len(highlighted_blocks) == 1:
+        block = highlighted_blocks[0]['block']
+        block:OCR_Tree
+        orientation,split_delimiter = split_line(x,y,block)
+        # split block
+        if split_delimiter:
+            print(f'Splitting block: {block.id}')
+            print(block.box)
+            blocks = split_block(block,split_delimiter,orientation=orientation,conf=0,keep_all=True,debug=False)
+            print(blocks[0].box)
+            if len(blocks) > 1:
+                new_block = blocks[1]
+                # add new block
+                ## get last id
+                last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
+                new_block.id = last_id
+                ## add new block to ocr_results
+                page = current_ocr_results.get_boxes_level(1)[0]
+                page.children.append(new_block)
+                ## create assets
+                create_ocr_block_assets(new_block)
+
+            # update sidebar block info
+            sidebar_update_block_info()
+
+
+
 def run_gui():
     '''Run GUI'''
-    global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,bounding_boxes,ppi,animation,figure,default_edge_color
+    global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
+            bounding_boxes,ppi,animation,figure,default_edge_color,\
+            current_action
 
     window = ocr_editor_layour()
     event,values = window._ReadNonBlocking()
@@ -817,11 +904,17 @@ def run_gui():
         elif event == 'button_ocr_block':
             apply_ocr_block()
             sidebar_update_block_info()
+        elif event == 'method_new_block':
+            create_new_ocr_block()
         elif event == 'method_join':
             join_ocr_blocks()
             sidebar_update_block_info()
-        elif event == 'method_new_block':
-            create_new_ocr_block()
+        elif event == 'method_split':
+            # needs to have a single highlighted block
+            if len(highlighted_blocks) == 1:
+                current_action = 'split_block'
+            else:
+                sg.popup('Pleas select a single block to split')
         else:
             print(f'event {event} not implemented')
     window.close()

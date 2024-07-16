@@ -30,6 +30,9 @@ def ocr_editor_layour()->sg.Window:
         [
             place(sg.Button('Join Blocks',key='method_join')),
         ],
+        [
+            place(sg.Button('Split Blocks',key='method_split')),
+        ]
     ]
 
     # canvas (editor)

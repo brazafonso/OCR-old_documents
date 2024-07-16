@@ -545,7 +545,7 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
 
 
 
-def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:int=10,debug:bool=False)->list['OCR_Tree']:
+def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:int=10,keep_all:bool=False,debug:bool=False)->list['OCR_Tree']:
     '''Splits block into new blocks, based on delimiter and cut direction. Adjust text inside blocks to fit new area.'''
     new_blocks = [block]
 
@@ -594,6 +594,12 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                 area_1_lines.append(line)
             elif line.box.is_inside_box(area_2):
                 area_2_lines.append(line)
+            elif keep_all:
+                # add to area with biggest intersection
+                if area_1.intersect_area_box(line.box).area() > area_2.intersect_area_box(line.box).area():
+                    area_1_lines.append(line)
+                else:
+                    area_2_lines.append(line)
 
         blocks_1 = []
         if area_1_lines:
@@ -664,10 +670,16 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
         for i,p in enumerate(blocks_1):
             par_words = p.get_boxes_level(5)
             for w in par_words:
-                if not w.box.is_inside_box(area_1):
-                    blocks_1[i].remove_box_id(w.id,level=5)
-                if not w.box.is_inside_box(area_2):
+                if w.box.is_inside_box(area_1):
                     blocks_2[i].remove_box_id(w.id,level=5)
+                elif w.box.is_inside_box(area_2):
+                    blocks_1[i].remove_box_id(w.id,level=5)
+                elif keep_all:
+                    # add to area with biggest intersection
+                    if area_1.intersect_area_box(w.box).area() > area_2.intersect_area_box(w.box).area():
+                        blocks_2[i].remove_box_id(w.id,level=5)
+                    else:
+                        blocks_1[i].remove_box_id(w.id,level=5)
             # update par boxes
             blocks_1[i].update_box(right=area_1.right)
             blocks_2[i].update_box(left=area_2.left)
