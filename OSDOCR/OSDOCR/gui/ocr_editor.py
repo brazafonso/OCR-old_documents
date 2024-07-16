@@ -51,8 +51,6 @@ def clear_canvas():
     global image_plot,figure_canvas_agg,animation
     print('Clear canvas')
     try:
-        if image_plot:
-            image_plot = None
         if animation:
             animation.event_source.stop()
         if figure_canvas_agg:
@@ -321,6 +319,67 @@ def sidebar_update_block_info():
 
 
 
+def create_new_ocr_block(x:int=None,y:int=None):
+    '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
+    global bounding_boxes,current_ocr_results,figure,default_edge_color,image_plot
+
+    if x is None and y is None:
+        # create new block at middle of canvas
+        points = image_plot.get_window_extent().get_points()
+        w = points[1][0] - points[0][0]
+        h = points[1][1] - points[0][1]
+        x = int(w/2)
+        y = int(h/2)
+    
+    # create new ocr block
+    ## get last id
+    last_id = 0
+    if current_ocr_results is not None:
+        last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id
+    new_id = last_id + 1
+    new_block = OCR_Tree({
+        'level':2,
+        'id':new_id,
+        'box':Box({
+            'left':x,
+            'top':y,
+            'right':x+50,
+            'bottom':y+50}),
+    })
+
+    # add new block
+    ## ocr results
+    page = current_ocr_results.get_boxes_level(level=1)[-1]
+    page.add_child(new_block)
+    ## bounding boxes
+    box = new_block.box
+    left = box.left
+    top = box.top
+    right = box.right
+    bottom = box.bottom
+    new_rect = Rectangle((x,y),width=50,height=50,edgecolor=default_edge_color,facecolor='none',linewidth=1)
+    image_plot.add_patch(new_rect)
+    vertices_circles = []
+    vertices = box.vertices()
+    for vertex in vertices:
+            x,y = vertex
+            vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
+            image_plot.add_patch(vertex_circle)
+            vertices_circles.append(vertex_circle)
+    # draw id text in top left corner of bounding box
+    id_text = matplotlib.text.Text(left+15,top+30,new_block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
+    image_plot.add_artist(id_text)
+    bounding_boxes[new_id] = {
+        'rectangle':new_rect,
+        'block':new_block,
+        'box':new_block.box,
+        'id_text' : id_text,
+        'id' : new_id,
+        'vertices_circles' : vertices_circles,
+        'click_count' : 0
+    }
+
+
 
 
 def canvas_on_button_press(event):
@@ -388,6 +447,12 @@ def canvas_on_button_press(event):
 
 
         sidebar_update_block_info()
+    # middle click
+    elif event.button == 2:
+        ## create new block
+        click_x = event.xdata
+        click_y = event.ydata
+        create_new_ocr_block(x=click_x,y=click_y)
 
 
 
@@ -712,6 +777,8 @@ def run_gui():
         elif event == 'method_join':
             join_ocr_blocks()
             sidebar_update_block_info()
+        elif event == 'method_new_block':
+            create_new_ocr_block()
         else:
             print(f'event {event} not implemented')
     window.close()

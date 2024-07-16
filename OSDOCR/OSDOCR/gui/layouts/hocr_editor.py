@@ -25,8 +25,11 @@ def ocr_editor_layour()->sg.Window:
     # side bar for methods (palceholder)
     left_side_bar = [
         [
+            place(sg.Button('New Block',key='method_new_block')),
+        ],
+        [
             place(sg.Button('Join Blocks',key='method_join')),
-        ]
+        ],
     ]
 
     # canvas (editor)
