@@ -619,12 +619,24 @@ def save_ocr_results(path:str=None,save_as_copy:bool=False):
 
         current_ocr_results.save_json(save_path)
 
+def reset_highlighted_blocks():
+    '''Reset highlighted blocks'''
+    global highlighted_blocks
+    for b in highlighted_blocks:
+        rectangle = b['rectangle']
+        rectangle.set_facecolor('none')
+    highlighted_blocks = []
+
 
 def reset_ocr_results(window:sg.Window):
     '''Reset ocr results'''
-    global current_ocr_results
+    global current_ocr_results,highlighted_blocks,current_action
     if current_ocr_results and current_ocr_results_path:
+        # reload ocr results
         current_ocr_results = OCR_Tree(current_ocr_results_path)
+        # reset variables
+        reset_highlighted_blocks()
+        current_action = None
         # draw ocr results in canvas
         draw_ocr_results(current_ocr_results,window)
 
@@ -894,6 +906,7 @@ def run_gui():
             save_ocr_results(save_as_copy=True)
         elif event == 'reset_ocr_results':
             reset_ocr_results(window)
+            sidebar_update_block_info()
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
         elif event == 'button_save_block':
