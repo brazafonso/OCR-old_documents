@@ -397,10 +397,37 @@ class Box:
     def closest_edge_point(self,x:int,y:int)->str:
         '''Get closest edge point to point. 
         Returns edge name (left, right, top, bottom)'''
-        center_x,center_y = self.center_point()
-        dx = abs(center_x - x)
-        dy = abs(center_y - y)
-        if dx > dy:
-            return 'right' if x > center_x else 'left'
-        else:
-            return 'top' if y > center_y else 'bottom'
+        closest_edge = None
+        closest_edge_dist = None
+        left_edge = [(self.left,self.top),(self.left,self.bottom),'left']
+        right_edge = [(self.right,self.top),(self.right,self.bottom),'right']
+        top_edge = [(self.left,self.top),(self.right,self.top),'top']
+        bottom_edge = [(self.left,self.bottom),(self.right,self.bottom),'bottom']
+        edges = [left_edge,right_edge,top_edge,bottom_edge]
+        for vertex_1,vertex_2,edge in edges:
+            dist = None
+            # check if point is within edge range
+            ## horizontal
+            if x >= vertex_1[0] and x <= vertex_2[0]:
+                dist = abs(y - vertex_1[1])
+            ## vertical
+            elif y >= vertex_1[1] and y <= vertex_2[1]:
+                dist = abs(x - vertex_1[0])
+            ## distance to vertex of edge
+            else:
+                if x < vertex_1[0]:
+                    if y < vertex_1[1]:
+                        dist = math.sqrt((vertex_1[0] - x)**2 + (vertex_1[1] - y)**2)
+                    else:
+                        dist = math.sqrt((vertex_1[0] - x)**2 + (vertex_2[1] - y)**2)
+                else:
+                    if y < vertex_1[1]:
+                        dist = math.sqrt((vertex_2[0] - x)**2 + (vertex_1[1] - y)**2)
+                    else:
+                        dist = math.sqrt((vertex_2[0] - x)**2 + (vertex_2[1] - y)**2)
+
+            if dist and (not closest_edge_dist or dist < closest_edge_dist):
+                closest_edge = edge
+                closest_edge_dist = dist
+
+        return closest_edge
