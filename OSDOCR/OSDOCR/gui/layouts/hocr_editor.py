@@ -53,40 +53,52 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Checkbox(text='',key='checkbox_toggle_block_type',enable_events=True)),
         ],
         [
-            place(sg.Text('Box Type: ')),
+            place(sg.Text('Filter Box Type: ')),
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_title_text')),
+            place(sg.Text('Title',enable_events=True,key='box_type_title_text')),
+            place(sg.Text('',size=(2,1),text_color='red',background_color='red',enable_events=True,key='box_type_title_text')),
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_text_text')),
+            place(sg.Text('Text',enable_events=True,key='box_type_text_text')),
+            place(sg.Text('',size=(2,1),text_color='yellow',background_color='yellow',enable_events=True,key='box_type_text_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_image_text')),
+            place(sg.Text('Image',enable_events=True,key='box_type_image_text')),
+            place(sg.Text('',size=(2,1),text_color='black',background_color='black',enable_events=True,key='box_type_image_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_highlight_text')),
+            place(sg.Text('Highlight',enable_events=True,key='box_type_highlight_text')),
+            place(sg.Text('',size=(2,1),text_color='purple',background_color='purple',enable_events=True,key='box_type_highlight_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_caption_text')),
+            place(sg.Text('Caption',enable_events=True,key='box_type_caption_text')),
+            place(sg.Text('',size=(2,1),text_color='white',background_color='white',enable_events=True,key='box_type_caption_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_delimiter_text')),
+            place(sg.Text('Delimiter',enable_events=True,key='box_type_delimiter_text')),
+            place(sg.Text('',size=(2,1),text_color='blue',background_color='blue',enable_events=True,key='box_type_delimiter_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_other_text')),
+            place(sg.Text('Other',enable_events=True,key='box_type_other_text')),
+            place(sg.Text('',size=(2,1),text_color='green',background_color='green',enable_events=True,key='box_type_other_text'))
+        ],
+        [
+            place(sg.Text('* ',enable_events=True,key='box_type_all_text')),
+            place(sg.Text('ALL',enable_events=True,key='box_type_all_text')),
         ],
         [
             place(sg.Text('* ')),
-            place(sg.Text('Title',text_color='red')),
+            place(sg.Text('DEFAULT COLOR')),
+            place(sg.Text('',size=(2,1),text_color='black',background_color='black',key='text_default_color'))
         ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Text',text_color='yellow')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Image',text_color='black')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Highlight',text_color='purple')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Caption',text_color='white')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Delimiter',text_color='blue')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('Other',text_color='green')),
-        ],
-        [
-            place(sg.Text('* ')),
-            place(sg.Text('DEFAULT COLOR',key='text_default_color')),
-        ]
     ]
 
     block_info = [

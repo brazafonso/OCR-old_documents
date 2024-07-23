@@ -28,6 +28,7 @@ matplotlib.use('TkAgg')
 
 # global variables
 window = None
+block_filter = None
 ## variables for canvas
 image_plot = None
 current_image_path = None
@@ -133,12 +134,16 @@ def split_action_assets():
 
 def update(frame):
     '''Update canvas'''
-    global bounding_boxes,current_action,last_mouse_position,highlighted_blocks
+    global bounding_boxes,current_action,last_mouse_position,highlighted_blocks,block_filter
     assets = []
     if bounding_boxes:
         # update position of boxes and id texts
         for block in bounding_boxes.values():
             box = block['box']
+            # if filter is set, check if block is valid
+            if block_filter:
+                if not block_filter(block['block']):
+                    continue
             # update rectangle
             rect = block['rectangle']
             rect.set_xy((box.left, box.top))
@@ -220,7 +225,7 @@ def update_canvas_image(window:sg.Window,values:dict):
         default_edge_color = get_average_inverse_color(target_img_path)
         color = default_edge_color * 255
         color = (int(color[0]),int(color[1]),int(color[2]))
-        window['text_default_color'].update(text_color = rgb_to_hex(color))
+        window['text_default_color'].update(text_color = rgb_to_hex(color),background_color = rgb_to_hex(color))
 
         clear_canvas()
         # create new plot
@@ -868,12 +873,36 @@ def split_ocr_block(x:int,y:int):
             sidebar_update_block_info()
 
 
+def refresh_highlighted_blocks():
+    '''Refresh highlighted blocks. Check if they are still valid'''
+    global highlighted_blocks,block_filter
+
+    print('Refreshing highlighted blocks')
+    i = 0
+    while i < len(highlighted_blocks):
+        b = highlighted_blocks[i]
+        valid = True
+        block = b['block']
+        rectangle = b['rectangle']
+        # if block filter, check if block is still valid
+        if block_filter is not None:
+            if not block_filter(block):
+                valid = False
+
+        if not valid:
+            highlighted_blocks.remove(b)
+            rectangle.set_facecolor('none')
+            print(f'Removed block {block.id} from highlighted_blocks')
+        else:
+            i += 1
+
+
 
 def run_gui():
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
-            current_action
+            current_action,block_filter
 
     window = ocr_editor_layour()
     event,values = window._ReadNonBlocking()
@@ -887,6 +916,7 @@ def run_gui():
         if event == sg.WIN_CLOSED:
             destroy_canvas()
             break
+        # choose image
         elif event == 'target_input':
             if current_image_path:
                 # reset variables
@@ -898,36 +928,53 @@ def run_gui():
         
             update_canvas_image(window,values)
             print('Chose target image')
+        # choose ocr results
         elif event == 'ocr_results_input':
             update_canvas_ocr_results(window,values)
+        # save ocr results
         elif event == 'save_ocr_results':
             save_ocr_results()
+        # save ocr results as copy
         elif event == 'save_ocr_results_copy':
             save_ocr_results(save_as_copy=True)
+        # reset ocr results
         elif event == 'reset_ocr_results':
             reset_ocr_results(window)
             sidebar_update_block_info()
+        # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
+        # save block changes
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
+        # delete block
         elif event == 'button_delete_block':
             delete_ocr_block()
             sidebar_update_block_info()
+        # ocr block
         elif event == 'button_ocr_block':
             apply_ocr_block()
             sidebar_update_block_info()
+        # create new block
         elif event == 'method_new_block':
             create_new_ocr_block()
+        # join blocks
         elif event == 'method_join':
             join_ocr_blocks()
             sidebar_update_block_info()
+        # split blocks
         elif event == 'method_split':
             # needs to have a single highlighted block
             if len(highlighted_blocks) == 1:
                 current_action = 'split_block'
             else:
-                sg.popup('Pleas select a single block to split')
+                sg.popup('Please select a single block to split')
+        # filter blocks
+        elif 'box_type' in event:
+            block_type = event.split('_')[2]
+            block_filter = lambda b: b.type == block_type if block_type != 'all' else True
+            refresh_highlighted_blocks()
+            sidebar_update_block_info()
         else:
             print(f'event {event} not implemented')
     window.close()
