@@ -287,7 +287,8 @@ def create_ocr_block_assets(block:OCR_Tree):
         'id_text' : id_text,
         'id' : block.id,
         'vertices_circles' : vertices_circles,
-        'click_count' : 0
+        'click_count' : 0,
+        'z' : 1
     }
 
     
@@ -322,11 +323,16 @@ def closest_block(click_x,click_y):
         # calculate distances
         calculate_distances = np.vectorize(lambda x: {
             'distance':x['box'].distance_to_point(click_x,click_y),
-            'id':x['id']
+            'id':x['id'],
+            'z' : x['z']
             })
         distances = calculate_distances(list(bounding_boxes.values()))
         # get closest
-        closest_block = min(distances,key=lambda x: x['distance'])
+        closest_block = sorted(distances,key=lambda x: x['distance'])
+        ## choose the one with greatest z value
+        min_dist = closest_block[0]['distance']
+        same_dist_blocks = [x for x in closest_block if x['distance'] == min_dist]
+        closest_block = sorted(same_dist_blocks,key=lambda x: x['z'])[-1]
         closest_block_id = closest_block['id']
         closest_block_dist = closest_block['distance']
         # print(f'closest block {closest_block_id} distance {closest_block_dist}')
@@ -897,6 +903,31 @@ def refresh_highlighted_blocks():
             i += 1
 
 
+def send_blocks_to_back(boxes:list):
+    '''Send highlighted blocks to back. Decreases z value'''
+    for b in boxes:
+        b['z'] -= 1
+        # decrease gamma of rectangle edges
+        rectangle = b['rectangle']
+        color = rectangle.get_edgecolor()
+        z = b['z']
+        gamma = max(1-0.1*abs(1-z),0.1)
+        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
+
+
+def send_blocks_to_front(boxes:list):
+    '''Send highlighted blocks to front. Increases z value'''
+    for b in boxes:
+        b['z'] += 1
+        # decrease gamma of rectangle edges
+        rectangle = b['rectangle']
+        color = rectangle.get_edgecolor()
+        z = b['z'] if b['z'] <= 1 else 1
+        gamma = max(1-0.1*abs(1-z),0.1)
+        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
+        
+
+
 
 def run_gui():
     '''Run GUI'''
@@ -975,6 +1006,14 @@ def run_gui():
             block_filter = lambda b: b.type == block_type if block_type != 'all' else True
             refresh_highlighted_blocks()
             sidebar_update_block_info()
+        # context menu send to back
+        elif 'context_menu_send_to_back' in event:
+            if len(highlighted_blocks) > 0:
+                send_blocks_to_back(highlighted_blocks)
+        # context menu send to front
+        elif 'context_menu_send_to_front' in event:
+            if len(highlighted_blocks) > 0:
+                send_blocks_to_front(highlighted_blocks)
         else:
             print(f'event {event} not implemented')
     window.close()

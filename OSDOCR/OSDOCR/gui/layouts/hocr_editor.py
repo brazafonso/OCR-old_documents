@@ -35,6 +35,7 @@ def ocr_editor_layour()->sg.Window:
         ]
     ]
 
+
     # canvas (editor)
     canvas = [
         [
@@ -137,11 +138,19 @@ def ocr_editor_layour()->sg.Window:
     ]
 
 
+    context_menu = [
+        '',
+        [
+            'Send to front::context_menu_send_to_front',
+            'Send to back::context_menu_send_to_back',
+        ]
+    ]
+
     # body, composed of side bar and canvas
     body = [
         [
             sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
-            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,key='canvas_body'),
+            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,key='canvas_body',right_click_menu=context_menu),
             sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
         ]
     ]
