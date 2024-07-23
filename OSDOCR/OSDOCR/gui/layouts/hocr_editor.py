@@ -42,6 +42,8 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Save as copy',key='save_ocr_results_copy')),
             place(sg.Button('Save',key='save_ocr_results')),
             place(sg.Button('Reset',key='reset_ocr_results')),
+            place(sg.Button('<-',key='undo_ocr_results')),
+            place(sg.Button('->',key='redo_ocr_results')),
         ],
         [
             place(sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True))

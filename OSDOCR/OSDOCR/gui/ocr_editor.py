@@ -1,6 +1,7 @@
 '''OCR Editor  - GUI'''
 
 import os
+import random
 import shutil
 import traceback
 import cv2
@@ -23,6 +24,8 @@ from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
 from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block
 
+file_path = os.path.dirname(os.path.realpath(__file__))
+
 # allow matplotlib to use tkinter
 matplotlib.use('TkAgg')
 
@@ -41,6 +44,9 @@ bounding_boxes = {}
 current_ocr_results = None
 current_ocr_results_path = None
 text_conf = 30
+cache_ocr_results = []
+current_cache_ocr_results_index = -1
+max_cache_ocr_results_size = 10
 ## actions
 '''
 Possible actions:
@@ -56,6 +62,57 @@ highlighted_blocks = []
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
+
+
+
+def add_ocr_result_cache(ocr_result:OCR_Tree):
+    '''Add ocr result to cache'''
+    global cache_ocr_results,current_cache_ocr_results_index
+    print('Add ocr result to cache')
+    if len(cache_ocr_results) >= max_cache_ocr_results_size:
+        cache_ocr_results.pop(0)
+
+    if current_cache_ocr_results_index+1 > len(cache_ocr_results)-1:
+        cache_ocr_results.append(ocr_result.copy())
+    else:
+        cache_ocr_results[current_cache_ocr_results_index + 1] = ocr_result.copy()
+    current_cache_ocr_results_index += 1
+    # clean old cache
+    clean_ocr_result_cache(current_cache_ocr_results_index+1)
+
+def pop_ocr_result_cache():
+    '''Pop ocr result from cache'''
+    global cache_ocr_results
+    if len(cache_ocr_results) > 0:
+        cache_ocr_results.pop(0)
+
+def clean_ocr_result_cache(position:int=0):
+    '''Clean ocr result cache from position and up'''
+    global cache_ocr_results,current_cache_ocr_results_index
+    print('Clean ocr result cache | position: ',position)
+    if len(cache_ocr_results) > 0 and position < len(cache_ocr_results):
+        cache_ocr_results = cache_ocr_results[:position]
+
+
+def undo_operation():
+    '''Undo last opeartion'''
+    global current_cache_ocr_results_index,current_ocr_results,window,bounding_boxes
+    print('Undo operation')
+    if current_cache_ocr_results_index > 0:
+        current_cache_ocr_results_index -= 1
+        current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
+        reset_highlighted_blocks()
+        refresh_ocr_results()
+
+def redo_operation():
+    '''Redo last opeartion'''
+    global current_cache_ocr_results_index,current_ocr_results,window
+    print('Redo operation')
+    if current_cache_ocr_results_index < len(cache_ocr_results)-1:
+        current_cache_ocr_results_index += 1
+        current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
+        reset_highlighted_blocks()
+        refresh_ocr_results()
 
 
 def clear_canvas():
@@ -88,6 +145,16 @@ def refresh_canvas():
 
         # warn column of content change
         update_canvas_column(window)
+
+def refresh_ocr_results():
+    '''Refresh ocr results and bounding boxes'''
+    global current_ocr_results,bounding_boxes
+    if current_ocr_results:
+        # reset bounding boxes
+        bounding_boxes = {}
+        blocks = current_ocr_results.get_boxes_level(level=2)
+        for block in blocks:
+            create_ocr_block_assets(block)
 
 
 def update_canvas_column(window:sg.Window):
@@ -253,6 +320,8 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         current_ocr_results = OCR_Tree(current_ocr_results_path)
         ## draw ocr results in canvas
         draw_ocr_results(current_ocr_results,window)
+        # update browse location for 'ocr_results_input'
+        window['ocr_results_input'].InitialFolder = os.path.dirname(current_ocr_results_path)
 
 
 def create_ocr_block_assets(block:OCR_Tree):
@@ -431,6 +500,7 @@ def canvas_on_button_press(event):
                     block['click_count'] += 1
                 else:
                     block['click_count'] = 1
+                    block['z'] = 2
 
                 highlighted_blocks.append(block)
                 # update rectangle to have transparent red facecolor
@@ -470,6 +540,7 @@ def canvas_on_button_press(event):
                         rectangle.set_facecolor((1,1,1,0))
                         # reset click count
                         block['click_count'] = 0
+                        block['z'] = 1
                         
                 highlighted_blocks = []
                 print('no block found')
@@ -480,6 +551,7 @@ def canvas_on_button_press(event):
             # if first click (no current_action_start)
             split_ocr_block(int(click_x),int(click_y))
             current_action = None
+            add_ocr_result_cache(current_ocr_results)
     # middle click
     elif event.button == 2:
         ## create new block
@@ -492,7 +564,7 @@ def canvas_on_button_press(event):
 
 
 def canvas_on_button_release(event):
-    global current_action,current_action_start
+    global current_action,current_action_start,current_ocr_results
     print(f'release {event}')
     release_x = event.xdata
     release_y = event.ydata
@@ -508,11 +580,14 @@ def canvas_on_button_release(event):
                 block['rectangle'].set_facecolor((1,1,1,0))
                 # update block info in sidebar
                 sidebar_update_block_info()
+    elif highlighted_blocks and (current_action_start[0] != release_x or current_action_start[1] != release_y):
+        if current_action in ['move','expand']:
+            add_ocr_result_cache(current_ocr_results)
 
     current_action = None
 
 def canvas_on_mouse_move(event):
-    global current_action,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
+    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
     if current_action and highlighted_blocks and last_mouse_position:
         if current_action == 'move':
             # calculate new position
@@ -588,7 +663,12 @@ def canvas_on_key_press(event):
         print(f'ppi {ppi}')
         # reset canvas
         refresh_canvas()
-
+    elif event.key == 'ctrl+z' and last_key == 'ctrl+shift':
+        redo_operation()
+        sidebar_update_block_info()
+    elif event.key == 'ctrl+z':
+        undo_operation()
+        sidebar_update_block_info()
 
     last_key = event.key
 
@@ -642,6 +722,7 @@ def reset_highlighted_blocks():
 def reset_ocr_results(window:sg.Window):
     '''Reset ocr results'''
     global current_ocr_results,highlighted_blocks,current_action
+    print('Reset ocr results')
     if current_ocr_results and current_ocr_results_path:
         # reload ocr results
         current_ocr_results = OCR_Tree(current_ocr_results_path)
@@ -935,11 +1016,24 @@ def run_gui():
             bounding_boxes,ppi,animation,figure,default_edge_color,\
             current_action,block_filter
 
+    # create tmp folder for ocr editor
+    tmp_folder_path = f'{file_path}/ocr_editor_tmp'
+    if not os.path.exists(tmp_folder_path):
+        os.mkdir(tmp_folder_path)
+    # clean tmp folder
+    for f in os.listdir(tmp_folder_path):
+        if os.path.isfile(os.path.join(tmp_folder_path, f)):
+            os.remove(os.path.join(tmp_folder_path, f))
+        else:
+            shutil.rmtree(os.path.join(tmp_folder_path, f))
+
+
     window = ocr_editor_layour()
     event,values = window._ReadNonBlocking()
     if values:
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)
+        add_ocr_result_cache(current_ocr_results)
 
     while True:
         event,values = window.read()
@@ -956,12 +1050,14 @@ def run_gui():
                 current_ocr_results_path = None
                 bounding_boxes = None
                 ppi = 300
-        
+                clean_ocr_result_cache()
+            
             update_canvas_image(window,values)
             print('Chose target image')
         # choose ocr results
         elif event == 'ocr_results_input':
             update_canvas_ocr_results(window,values)
+            add_ocr_result_cache(current_ocr_results)
         # save ocr results
         elif event == 'save_ocr_results':
             save_ocr_results()
@@ -972,27 +1068,33 @@ def run_gui():
         elif event == 'reset_ocr_results':
             reset_ocr_results(window)
             sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
         # save block changes
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
+            add_ocr_result_cache(current_ocr_results)
         # delete block
         elif event == 'button_delete_block':
             delete_ocr_block()
             sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         # ocr block
         elif event == 'button_ocr_block':
             apply_ocr_block()
             sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         # create new block
         elif event == 'method_new_block':
             create_new_ocr_block()
+            add_ocr_result_cache(current_ocr_results)
         # join blocks
         elif event == 'method_join':
             join_ocr_blocks()
             sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         # split blocks
         elif event == 'method_split':
             # needs to have a single highlighted block
@@ -1014,6 +1116,14 @@ def run_gui():
         elif 'context_menu_send_to_front' in event:
             if len(highlighted_blocks) > 0:
                 send_blocks_to_front(highlighted_blocks)
+        # undo last operation
+        elif event == 'undo_ocr_results':
+            undo_operation()
+            sidebar_update_block_info()
+        # redo last operation
+        elif event == 'redo_ocr_results':
+            redo_operation()
+            sidebar_update_block_info()
         else:
             print(f'event {event} not implemented')
     window.close()
