@@ -3,6 +3,7 @@
 import os
 import random
 import shutil
+import time
 import traceback
 import cv2
 import matplotlib
@@ -18,7 +19,7 @@ from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
-from .layouts.hocr_editor import *
+from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
@@ -59,6 +60,8 @@ current_action_start = None
 last_key = None
 last_mouse_position = (0,0)
 highlighted_blocks = []
+focused_block = None
+last_activity_time = time.time()
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
@@ -77,6 +80,7 @@ def add_ocr_result_cache(ocr_result:OCR_Tree):
     else:
         cache_ocr_results[current_cache_ocr_results_index + 1] = ocr_result.copy()
     current_cache_ocr_results_index += 1
+    # ocr_result.save_json(f'{file_path}/ocr_editor_tmp/ocr_result_{current_cache_ocr_results_index}.json')
     # clean old cache
     clean_ocr_result_cache(current_cache_ocr_results_index+1)
 
@@ -419,7 +423,7 @@ def sidebar_update_block_info():
         block:OCR_Tree
         # update block info
         ## id
-        window['text_block_id'].update(block.id)
+        window['input_block_id'].update(block.id)
         ## coordinates
         left = int(block.box.left)
         top = int(block.box.top)
@@ -434,7 +438,7 @@ def sidebar_update_block_info():
         window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters))
     else:
         # clear block info
-        window['text_block_id'].update('')
+        window['input_block_id'].update('')
         window['text_block_coords'].update('')
         window['list_block_type'].update('')
         window['input_block_text'].update('')
@@ -480,7 +484,7 @@ def create_new_ocr_block(x:int=None,y:int=None):
 
 
 def canvas_on_button_press(event):
-    global current_action,current_action_start,bounding_boxes,highlighted_blocks
+    global current_action,current_action_start,bounding_boxes,highlighted_blocks,last_activity_time,focused_block
     print(f'click {event}')
     # left click
     if event.button == 1:
@@ -503,6 +507,7 @@ def canvas_on_button_press(event):
                     block['z'] = 2
 
                 highlighted_blocks.append(block)
+                focused_block = block
                 # update rectangle to have transparent red facecolor
                 rectangle = block['rectangle']
                 rectangle.set_facecolor((1,0,0,0.1))
@@ -533,16 +538,7 @@ def canvas_on_button_press(event):
                 # update block info in sidebar
 
             else:
-                if highlighted_blocks:
-                    for block in highlighted_blocks:
-                        # clear facecolor
-                        rectangle = block['rectangle']
-                        rectangle.set_facecolor((1,1,1,0))
-                        # reset click count
-                        block['click_count'] = 0
-                        block['z'] = 1
-                        
-                highlighted_blocks = []
+                reset_highlighted_blocks()
                 print('no block found')
 
             sidebar_update_block_info()
@@ -558,6 +554,8 @@ def canvas_on_button_press(event):
         click_x = event.xdata
         click_y = event.ydata
         create_new_ocr_block(x=click_x,y=click_y)
+
+    last_activity_time = time.time()
 
 
 
@@ -587,7 +585,7 @@ def canvas_on_button_release(event):
     current_action = None
 
 def canvas_on_mouse_move(event):
-    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot
+    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot,last_activity_time
     if current_action and highlighted_blocks and last_mouse_position:
         if current_action == 'move':
             # calculate new position
@@ -649,10 +647,13 @@ def canvas_on_mouse_move(event):
         sidebar_update_block_info()
 
     last_mouse_position = (event.xdata,event.ydata)
+    last_activity_time = time.time()
 
 
 def canvas_on_key_press(event):
-    global last_key,ppi
+    global last_key,ppi,highlighted_blocks,current_action_start,\
+            last_mouse_position,bounding_boxes,last_activity_time,\
+            focused_block,current_ocr_results
     print(f'key {event.key}')
     if event.key == 'ctrl++':
         ppi -= 30
@@ -669,13 +670,30 @@ def canvas_on_key_press(event):
     elif event.key == 'ctrl+z':
         undo_operation()
         sidebar_update_block_info()
+    elif str(event.key).isdigit():
+        if len(highlighted_blocks) > 0:
+            # update block id
+            target_block = highlighted_blocks[-1]
+            new_id = int(event.key)
+            ## check if continous id update
+            if focused_block['id'] == target_block['id']:
+                diff_time = time.time() - last_activity_time
+                if str(last_key).isdigit() and diff_time < 1:
+                    new_id = int(f'{target_block["id"]}{new_id}')
+            
+            target_block['id'] = new_id
+            target_block['block'].id = new_id
+            target_block['id_text'].set_text(f'{new_id}')
+            refresh_blocks_ids()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
 
     last_key = event.key
+    last_activity_time = time.time()
 
 
 def canvas_on_key_release(event):
-    global last_key
-    last_key = None
+    return
 
 
 def destroy_canvas():
@@ -712,11 +730,15 @@ def save_ocr_results(path:str=None,save_as_copy:bool=False):
 
 def reset_highlighted_blocks():
     '''Reset highlighted blocks'''
-    global highlighted_blocks
+    global highlighted_blocks,focused_block
     for b in highlighted_blocks:
         rectangle = b['rectangle']
-        rectangle.set_facecolor('none')
+        rectangle.set_facecolor((1,1,1,0))
+        # reset click count
+        b['click_count'] = 0
+        b['z'] = 1
     highlighted_blocks = []
+    focused_block = None
 
 
 def reset_ocr_results(window:sg.Window):
@@ -752,16 +774,18 @@ def save_ocr_block_changes(values:dict):
     The coordinates will be divided equally within the block.
     Confidence of words will be set to 100.'''
     global current_ocr_results,highlighted_blocks
-
     if current_ocr_results and highlighted_blocks:
-        block = highlighted_blocks[-1]['block']
+        target_block = highlighted_blocks[-1]
+        block = target_block['block']
         block:OCR_Tree
-        rectangle = highlighted_blocks[-1]['rectangle']
+        rectangle = target_block['rectangle']
         # get new info from frame 'frame_block_info'
         ## block type ('list_block_type')
         block_type = values['list_block_type']
         ## block text ('input_block_text')
         block_text = values['input_block_text']
+        ## block id ('input_block_id')
+        block_id = values['input_block_id']
         ### turn block text into OCR Tree
         #### count number of paragraphs in line, to be able to divide coordinates equally
         lines = [l for l in block_text.split('\n') if l.strip()]
@@ -818,8 +842,17 @@ def save_ocr_block_changes(values:dict):
             ## change color of rectangle if type color is toogled
             if values['checkbox_toggle_block_type']:
                 color = block.type_color(normalize=True,rgb=True)
-                print(color)
                 rectangle.set_edgecolor(color)
+
+        # change block id
+        if block_id and block_id.isdigit() and block_id != block.id:
+            block.id = int(block_id)
+            target_block['id'] = int(block_id)
+            target_block['id_text'].set_text(f'{block_id}')
+            # refresh id of all blocks
+            refresh_blocks_ids()
+
+        add_ocr_result_cache(current_ocr_results)
 
 
 def delete_ocr_block():
@@ -1008,7 +1041,24 @@ def send_blocks_to_front(boxes:list):
         rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
         
 
+def refresh_blocks_ids():
+    '''Refresh block ids'''
+    global bounding_boxes
+    unique_ids = set()
+    new_bounding_boxes = {}
+    for b in bounding_boxes.values():
+        id = b['id']
+        if id in unique_ids:
+            b['id'] += 1
+            b['block'].id = b['id']
+            b['id_text'].set_text(f'{b["id"]}')
+            id = b['id']
 
+        print(f'Refreshing block id: {id} | {id in unique_ids}')
+        unique_ids.add(id)
+        new_bounding_boxes[id] = b
+
+    bounding_boxes = new_bounding_boxes
 
 def run_gui():
     '''Run GUI'''

@@ -107,7 +107,7 @@ def ocr_editor_layour()->sg.Window:
     block_info = [
         [
             place(sg.Text('Block ')),
-            place(sg.Text('',key='text_block_id')),
+            place(sg.Input('',key='input_block_id',size=(3,1))),
             place(sg.Text('Coordinates: ')),
             place(sg.Text('',key='text_block_coords')),
         ],
