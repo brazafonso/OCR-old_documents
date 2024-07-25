@@ -32,7 +32,10 @@ def ocr_editor_layour()->sg.Window:
         ],
         [
             place(sg.Button('Split Blocks',key='method_split')),
-        ]
+        ],
+        [
+            place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
+        ],
     ]
 
 

@@ -201,7 +201,7 @@ class OCR_Tree:
         for child in self.children:
             child.reset_level(level + 1)
 
-    def id_boxes(self,level:list[int]=[2],ids:dict=None,delimiters:bool=True,area:Box=None):
+    def id_boxes(self,level:list[int]=[2],ids:dict=None,delimiters:bool=True,area:Box=None,override:bool=True):
         '''Id boxes in ocr_results
         
         Args:
@@ -213,11 +213,16 @@ class OCR_Tree:
             ids = {l:0 for l in level}
         if self.level in level:
             if (delimiters or not self.is_delimiter()) and (not area or self.box.is_inside_box(area)):
-                self.id = ids[self.level]
-                ids[self.level] += 1
+                if self.id is None or override:
+                    self.id = ids[self.level]
+                    ids[self.level] += 1
+                else:
+                    # update level id if same or greater than current level id
+                    if self.id >= ids[self.level]:
+                        ids[self.level] = self.id + 1
         if self.level < max(level):
             for child in self.children:
-                child.id_boxes(level,ids,delimiters,area)
+                child.id_boxes(level,ids,delimiters,area,override)
 
     def clean_ids(self,level:list[int]=[2]):
         '''Clean ids in ocr_results

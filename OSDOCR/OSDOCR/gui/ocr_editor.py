@@ -24,6 +24,7 @@ from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
 from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -373,7 +374,7 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     image_plot = create_plot(current_image_path)
 
     # id blocks and get them
-    ocr_results.id_boxes(level=[2])
+    ocr_results.id_boxes(level=[2],override=False)
     blocks = ocr_results.get_boxes_level(level=2)
 
     bounding_boxes = {}
@@ -1063,11 +1064,45 @@ def refresh_blocks_ids():
             b['id_text'].set_text(f'{b["id"]}')
             id = b['id']
 
-        print(f'Refreshing block id: {id} | {id in unique_ids}')
         unique_ids.add(id)
         new_bounding_boxes[id] = b
 
     bounding_boxes = new_bounding_boxes
+
+
+
+def calculate_reading_order_method():
+    '''Calculate reading order method'''
+    global current_ocr_results,current_image_path,bounding_boxes
+    if current_ocr_results:
+        # get block order
+        ## blocks returned are only part of the body of the image
+        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results)
+        ordered_block_ids = [b.id for b in ordered_blocks]
+        # update ids values
+        last_id = len(ordered_blocks) - 1
+        for b in bounding_boxes.values():
+            if b['id'] not in ordered_block_ids:
+                # block not in order
+                ## update id to be after last_id
+                b['id'] = last_id
+                b['block'].id = b['id']
+                b['id_text'].set_text(f'{b["id"]}')
+                last_id += 1
+            else:
+                # block in order
+                ## update id to be position in order list
+                new_id = ordered_block_ids.index(b['id'])
+                b['id'] = new_id
+                b['block'].id = b['id']
+                b['id_text'].set_text(f'{b["id"]}')
+
+        # update ids text
+        refresh_blocks_ids()
+
+
+
+
 
 def run_gui():
     '''Run GUI'''
@@ -1183,6 +1218,11 @@ def run_gui():
         elif event == 'redo_ocr_results':
             redo_operation()
             sidebar_update_block_info()
+        # calculate reading order method
+        elif event == 'method_calculate_reading_order':
+            calculate_reading_order_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         else:
             print(f'event {event} not implemented')
     window.close()
