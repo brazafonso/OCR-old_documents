@@ -93,7 +93,6 @@ def pop_ocr_result_cache():
 def clean_ocr_result_cache(position:int=0):
     '''Clean ocr result cache from position and up'''
     global cache_ocr_results,current_cache_ocr_results_index
-    print('Clean ocr result cache | position: ',position)
     if len(cache_ocr_results) > 0 and position < len(cache_ocr_results):
         cache_ocr_results = cache_ocr_results[:position]
 
@@ -102,7 +101,7 @@ def undo_operation():
     '''Undo last opeartion'''
     global current_cache_ocr_results_index,current_ocr_results,window,bounding_boxes
     print('Undo operation')
-    if current_cache_ocr_results_index > 0:
+    if current_cache_ocr_results_index > 0 and len(cache_ocr_results) > 0:
         current_cache_ocr_results_index -= 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
         reset_highlighted_blocks()
@@ -853,6 +852,7 @@ def save_ocr_block_changes(values:dict):
             refresh_blocks_ids()
 
         add_ocr_result_cache(current_ocr_results)
+        sidebar_update_block_info()
 
 
 def delete_ocr_block():
@@ -916,19 +916,28 @@ def join_ocr_blocks():
     blocks = highlighted_blocks.copy()
     # sort blocks by highest
     blocks.sort(key=lambda b:b['block'].box.top)
+    blocks_tree = [b['block'] for b in blocks]
     while len(blocks) > 1:
         first = blocks[0]['block']
+        first_block = blocks[0]
         second = blocks[1]['block']
-        first.join_trees(second)
+        second_block = blocks[1]
+        orientation = 'horizontal' if second in first.boxes_directly_right(blocks_tree) or first in second.boxes_directly_right(blocks_tree) else 'vertical'
+        # if horizontal, sort by left
+        if orientation == 'horizontal':
+            if first.box.left > second.box.left:
+                first,second = second,first
+                first_block,second_block = second_block,first_block
+        first.join_trees(second,orientation=orientation)
         # remove second block
         ## remove second block from ocr_results
         current_ocr_results.remove_box_id(second.id)
         ## remove second block from bounding_boxes
         del bounding_boxes[second.id]
         ## remove second block from highlighted_blocks
-        highlighted_blocks.remove(blocks[1])
+        highlighted_blocks.remove(second_block)
         ## remove second block from blocks
-        blocks.remove(blocks[1])
+        blocks.remove(second_block)
 
 
 

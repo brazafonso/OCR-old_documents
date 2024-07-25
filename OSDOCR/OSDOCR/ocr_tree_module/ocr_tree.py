@@ -638,17 +638,78 @@ class OCR_Tree:
 
 
 
-    def join_trees(self,tree:'OCR_Tree'):
+    def join_trees(self,tree:'OCR_Tree',orientation:str='vertical'):
         '''Join trees of the same level'''
         if self.level == tree.level:
-            # add tree childrens
-            ## adapt children metadata to make sense in new tree (block_num,par_num)
-            if self.children:
-                last_child : OCR_Tree = self.children[-1]
-                tree.update_children_metadata(reference_block=last_child.block_num,reference_par=last_child.par_num)
-            self.children += tree.children
+            if orientation not in ['vertical','horizontal']:
+                raise ValueError('orientation must be vertical or horizontal')
+            if orientation == 'vertical':
+                # join tree bellow self
+                # add tree childrens
+                ## adapt children metadata to make sense in new tree (block_num,par_num)
+                if self.children:
+                    last_child : OCR_Tree = self.children[-1]
+                    tree.update_children_metadata(reference_block=last_child.block_num,reference_par=last_child.par_num)
+                self.children += tree.children
+            else:
+                self_children = self.children
+                tree_children = tree.children
+                # when in last level, children are sorted from left to right
+                if tree_children and not tree_children[0].children:
+                    tree_children = sorted(tree_children,key=lambda b: b.box.left)
+                # check if not intersecting
+                ## add in free space
+                # if intersecting, join with intersecting child
+                for child in tree_children:
+                    # if not lowest level, check where to insert
+                    if child.children:
+                        # sort children by top
+                        self_children = sorted(self_children,key=lambda b: b.box.top)
+                        ## check if can be inserted in top or bottom
+                        if self_children[0].box.top > child.box.bottom:
+                            self.children = [child] + self.children
+                        elif self_children[-1].box.bottom < child.box.top:
+                            self.children += [child]
+                        else:
+                            joined = False
+                            for i in range(len(self_children)):
+                                # slot to insert
+                                if self_children[i].box.bottom < child.box.top and self_children[i+1].box.top > child.box.bottom:
+                                    # insert in the middle
+                                    self.children = self_children[:i] + [child] + self_children[i:]
+                                    joined = True
+                                    # if intercept, will have to use recursive join
+                                elif self_children[i].box.intersects_box(child.box,extend_horizontal=True):
+                                    intersect_height = min(self_children[i].box.bottom,child.box.bottom) - max(self_children[i].box.top,child.box.top)
+                                    # if intersecting with more than 70% of child, join the two
+                                    if intersect_height / child.box.height >= 0.7 or intersect_height / self_children[i].box.height >= 0.7:
+                                        if self_children[i].children:
+                                            self_children[i].join_trees(child,orientation=orientation)
+                                        else:
+                                            self.children = self_children[:i+1] + [child] + self_children[i+1:]
+                                        joined = True
+                                    else:
+                                        # find lowest place to insert
+                                        for j in range(i,len(self_children)):
+                                            if not self_children[j].box.bottom < child.box.bottom:
+                                                self.children = self_children[:j] + [child] + self_children[j:]
+                                                joined = True
+                                                break
+                                        # if not found, insert at the end
+                                        if not joined:
+                                            self.children+=[child]
+                                            joined = True
+                                if joined:
+                                    break
+                    # if lowest level, insert at the end
+                    else:
+                        self.children += [child]
+                    
+                    self_children = self.children
+
             # join boxes
             self.box.join(tree.box)
+
 
 
     def update_children_metadata(self,reference_block:int,reference_par:int):
