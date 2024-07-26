@@ -23,7 +23,7 @@ from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
-from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces,block_bound_box_fix
+from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -1190,11 +1190,37 @@ def fix_ocr_block_intersections_method():
             create_ocr_block_assets(block)
 
         refresh_highlighted_blocks()
-    else:
+    elif current_ocr_results:
         block_bound_box_fix(current_ocr_results)
         # update assets
         for b in bounding_boxes.values():
             create_ocr_block_assets(b['block'])
+
+
+def adjust_bounding_boxes_method():
+    '''Adjust bounding boxes method. Adjusts bounding boxes according with inside text and text confidence.
+    If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
+    global current_ocr_results,bounding_boxes,highlighted_blocks
+    if highlighted_blocks:
+        # apply fix
+        tree = current_ocr_results.copy()
+        tree = text_bound_box_fix(tree,debug=True)
+        for highlighted_block in highlighted_blocks:
+            block = highlighted_block['block']
+            # update highlighted block
+            block = tree.get_box_id(id=highlighted_block['id'],level=2)
+            # update assets
+            create_ocr_block_assets(block)
+
+        refresh_highlighted_blocks()
+    elif current_ocr_results:
+        # apply fix
+        text_bound_box_fix(current_ocr_results,debug=True)
+
+        # update assets
+        for b in bounding_boxes.values():
+            create_ocr_block_assets(b['block'])
+    
 
 def run_gui():
     '''Run GUI'''
@@ -1334,10 +1360,10 @@ def run_gui():
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # adjust bounding boxes
-        # elif event == 'method_adjust_bounding_boxes':
-        #     adjust_bounding_boxes()
-        #     sidebar_update_block_info()
-        #     add_ocr_result_cache(current_ocr_results)
+        elif event == 'method_adjust_bounding_boxes':
+            adjust_bounding_boxes_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
         else:
             print(f'event {event} not implemented')
         
