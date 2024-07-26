@@ -33,6 +33,7 @@ matplotlib.use('TkAgg')
 
 # global variables
 window = None
+last_window_size = None
 block_filter = None
 ## variables for canvas
 image_plot = None
@@ -67,6 +68,21 @@ last_activity_time = time.time()
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
 
+
+
+def refresh_layout():
+    '''Refresh layout so sizes are updated'''
+    global window
+    print('Refresh layout')
+    window_size = window.size
+    print('Window size:',window_size)
+    # update body columns
+    ## ratios of | 1/5 | 3/5 | 1/5 |
+    window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]/5,'height':None})
+    window['body_canvas'].Widget.canvas.configure({'width':window_size[0]/5*3,'height':None})
+    window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]/5,'height':None})
+
+    window.refresh()
 
 
 def add_ocr_result_cache(ocr_result:OCR_Tree):
@@ -165,7 +181,7 @@ def update_canvas_column(window:sg.Window):
     '''Update canvas column'''
     print('Update canvas column')
     window.refresh()
-    window['canvas_body'].contents_changed()
+    window['body_canvas'].contents_changed()
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
@@ -681,10 +697,7 @@ def canvas_on_key_press(event):
                 if str(last_key).isdigit() and diff_time < 1:
                     new_id = int(f'{target_block["id"]}{new_id}')
             
-            target_block['id'] = new_id
-            target_block['block'].id = new_id
-            target_block['id_text'].set_text(f'{new_id}')
-            refresh_blocks_ids()
+            change_block_id(target_block['id'],int(new_id))
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
 
@@ -846,11 +859,7 @@ def save_ocr_block_changes(values:dict):
 
         # change block id
         if block_id and block_id.isdigit() and block_id != block.id:
-            block.id = int(block_id)
-            target_block['id'] = int(block_id)
-            target_block['id_text'].set_text(f'{block_id}')
-            # refresh id of all blocks
-            refresh_blocks_ids()
+            change_block_id(block.id,int(block_id))
 
         add_ocr_result_cache(current_ocr_results)
         sidebar_update_block_info()
@@ -1070,6 +1079,24 @@ def refresh_blocks_ids():
     bounding_boxes = new_bounding_boxes
 
 
+def change_block_id(id:int,new_id:int):
+    '''Change block id'''
+    global bounding_boxes
+    if id in bounding_boxes:
+        b = bounding_boxes[id]
+        b['id'] = new_id
+        b['block'].id = b['id']
+        b['id_text'].set_text(f'{b["id"]}')
+
+        # if new id is already in use, change id of block that use it
+        if new_id in bounding_boxes:
+            b = bounding_boxes[new_id]
+            b['id'] = new_id + 1
+            b['block'].id = new_id + 1
+            b['id_text'].set_text(f'{new_id+1}')
+        refresh_blocks_ids()
+
+
 
 def calculate_reading_order_method():
     '''Calculate reading order method'''
@@ -1108,7 +1135,7 @@ def run_gui():
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
-            current_action,block_filter
+            current_action,block_filter,last_window_size
 
     # create tmp folder for ocr editor
     tmp_folder_path = f'{file_path}/ocr_editor_tmp'
@@ -1123,6 +1150,7 @@ def run_gui():
 
 
     window = ocr_editor_layour()
+    last_window_size = window.size
     event,values = window._ReadNonBlocking()
     if values:
         update_canvas_image(window,values)
@@ -1225,4 +1253,11 @@ def run_gui():
             add_ocr_result_cache(current_ocr_results)
         else:
             print(f'event {event} not implemented')
+        
+        # window size changed
+        if last_window_size != window.size:
+            refresh_layout()
+            update_canvas_column(window)
+
+        last_window_size = window.size
     window.close()

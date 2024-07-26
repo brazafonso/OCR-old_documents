@@ -10,6 +10,9 @@ browse_file_input_value = '/home/braz/projetos/OCR-old_documents/results/2-1____
 
 def ocr_editor_layour()->sg.Window:
     '''Build window for ocr results editor'''
+
+    window_size = (1200,800)
+    window_location = (500,100)
     
     # target image and ocr results selector
     upper_row = [
@@ -154,9 +157,9 @@ def ocr_editor_layour()->sg.Window:
     # body, composed of side bar and canvas
     body = [
         [
-            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
-            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,key='canvas_body',right_click_menu=context_menu),
-            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True),
+            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=(window_size[0]/5,None),key='body_left_side_bar'),
+            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,right_click_menu=context_menu,size=(window_size[0]/5*3,None),key='body_canvas'),
+            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=(window_size[0]/5,None),key='body_right_side_bar'),
         ]
     ]
 
@@ -169,6 +172,6 @@ def ocr_editor_layour()->sg.Window:
     ]
 
 
-    window = sg.Window('OCR Editor',editor,finalize=True,resizable=True,size=(1200,800),relative_location=(500,100))
+    window = sg.Window('OCR Editor',editor,finalize=True,resizable=True,size=window_size,relative_location=window_location)
     window.bind('<Configure>',"Event")
     return window
