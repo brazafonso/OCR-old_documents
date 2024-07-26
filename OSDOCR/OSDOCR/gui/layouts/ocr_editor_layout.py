@@ -40,6 +40,12 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Split Whitespaces',key='method_split_whitespaces')),
         ],
         [
+            place(sg.Button('Fix intersections',key='method_fix_intersections')),
+        ],
+        [
+            place(sg.Button('Adjust bounding boxes',key='method_adjust_bounding_boxes')),
+        ],
+        [
             place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
         ],
     ]

@@ -23,7 +23,7 @@ from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
-from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces
+from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces,block_bound_box_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -379,6 +379,7 @@ def create_ocr_block_assets(block:OCR_Tree):
         'click_count' : 0,
         'z' : 1
     }
+
 
     
 
@@ -1014,9 +1015,9 @@ def split_ocr_block(x:int,y:int):
             sidebar_update_block_info()
 
 
-def split_ocr_blocks_by_whitespaces():
+def split_ocr_blocks_by_whitespaces_method():
     '''Split ocr blocks by whitespaces. If highlighted blocks, apply only on them. Else, apply on all blocks'''
-    global highlighted_blocks,current_ocr_results,bounding_boxes
+    global highlighted_blocks,current_ocr_results,bounding_boxes,image_plot,animation,figure_canvas_agg
     blocks = highlighted_blocks if highlighted_blocks else bounding_boxes.values()
     last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
 
@@ -1025,16 +1026,16 @@ def split_ocr_blocks_by_whitespaces():
     for block in blocks:
         block_tree = block['block']
         block_tree:OCR_Tree
-        block_id = block_tree.id
+        print(block_tree.box)
         page = OCR_Tree({'level':1,'box':block_tree.box})
         page.add_child(block_tree)
-        split_tree = split_whitespaces(page,conf=0,debug=True)
+        split_tree = split_whitespaces(page,conf=0)
         split_tree_blocks = split_tree.get_boxes_level(level=2)
 
         if len(split_tree_blocks) > 1:
             split_tree_blocks.sort(key=lambda b: b.id)
-            # update block
-            block['block'] = split_tree_blocks[0]
+            # # update block
+            # bounding_boxes[block['id']]['block'] = split_tree_blocks[0]
             create_ocr_block_assets(split_tree_blocks[0])
             # add new block
             new_block = split_tree_blocks[-1]
@@ -1049,15 +1050,21 @@ def split_ocr_blocks_by_whitespaces():
         # create assets
         create_ocr_block_assets(new_block)
 
+    if highlighted_blocks:
+        refresh_highlighted_blocks()
+    
+
 
 
 def refresh_highlighted_blocks():
     '''Refresh highlighted blocks. Check if they are still valid'''
-    global highlighted_blocks,block_filter
+    global bounding_boxes,highlighted_blocks,block_filter
 
-    print('Refreshing highlighted blocks')
+    print('Refreshing highlighted blocks | Highlighted blocks:',len(highlighted_blocks))
     i = 0
     while i < len(highlighted_blocks):
+        b = highlighted_blocks[i]
+        highlighted_blocks[i] = bounding_boxes[b['id']]
         b = highlighted_blocks[i]
         valid = True
         block = b['block']
@@ -1072,6 +1079,7 @@ def refresh_highlighted_blocks():
             rectangle.set_facecolor('none')
             print(f'Removed block {block.id} from highlighted_blocks')
         else:
+            rectangle.set_facecolor((1,0,0,0.1))
             i += 1
 
 
@@ -1167,8 +1175,26 @@ def calculate_reading_order_method():
         refresh_blocks_ids()
 
 
+def fix_ocr_block_intersections_method():
+    '''Fix ocr block intersections method. If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
+    global highlighted_blocks,current_ocr_results,bounding_boxes
+    if highlighted_blocks:
+        # apply fix
+        tree = current_ocr_results.copy()
+        tree = block_bound_box_fix(tree,find_delimiters=False,find_images=False,debug=True)
+        for highlighted_block in highlighted_blocks:
+            block = highlighted_block['block']
+            # update highlighted block
+            block = tree.get_box_id(id=highlighted_block['id'],level=2)
+            # update assets
+            create_ocr_block_assets(block)
 
-
+        refresh_highlighted_blocks()
+    else:
+        block_bound_box_fix(current_ocr_results)
+        # update assets
+        for b in bounding_boxes.values():
+            create_ocr_block_assets(b['block'])
 
 def run_gui():
     '''Run GUI'''
@@ -1299,9 +1325,19 @@ def run_gui():
             add_ocr_result_cache(current_ocr_results)
         # split whitespaces method
         elif event == 'method_split_whitespaces':
-            split_ocr_blocks_by_whitespaces()
+            split_ocr_blocks_by_whitespaces_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # fix intersections
+        elif event == 'method_fix_intersections':
+            fix_ocr_block_intersections_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # adjust bounding boxes
+        # elif event == 'method_adjust_bounding_boxes':
+        #     adjust_bounding_boxes()
+        #     sidebar_update_block_info()
+        #     add_ocr_result_cache(current_ocr_results)
         else:
             print(f'event {event} not implemented')
         

@@ -28,6 +28,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     blocks = ocr_results.get_boxes_level(2)
 
     
+    og_len = len(blocks)
     # remove blocks that have no text and take more than 80% of image
     ## if no flags for finding delimiters or images are set, remove all empty blocks
     image_box = ocr_results.get_boxes_level(0)[0].box
@@ -60,7 +61,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
 
     boxes_to_check = {}
     checked_boxes = []
-    og_len = len(blocks)
+    i= 0
     # iterate over all block boxes
     # if two boxes of the same level are overlaping, delete the inside one
     # assumes that the inside box is a duplicate of information from outside box
@@ -78,7 +79,6 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
             continue
         # check if boxes are within each other
         if current_box and blocks[i].id != current_box.id:
-            #print('Comparing boxes',current_box.id,blocks[i].id)
             compare_box = blocks[i]
 
             # compared box inside current box
@@ -120,9 +120,9 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
             keys = list(boxes_to_check.keys())
             # get next not empty block
             while not current_box and boxes_to_check:
+                id = keys.pop(0)
                 current_box = boxes_to_check[id]
                 current_box:OCR_Tree
-                id = keys.pop(0)
                 del boxes_to_check[id]
                 checked_boxes.append(current_box.id)
                 # check if box is empty
