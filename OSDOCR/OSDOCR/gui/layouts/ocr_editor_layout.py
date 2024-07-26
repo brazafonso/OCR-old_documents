@@ -37,6 +37,9 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Split Blocks',key='method_split')),
         ],
         [
+            place(sg.Button('Split Whitespaces',key='method_split_whitespaces')),
+        ],
+        [
             place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
         ],
     ]
@@ -50,6 +53,8 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Reset',key='reset_ocr_results')),
             place(sg.Button('<-',key='undo_ocr_results')),
             place(sg.Button('->',key='redo_ocr_results')),
+            place(sg.Button('Zoom In',key='zoom_in')),
+            place(sg.Button('Zoom Out',key='zoom_out')),
         ],
         [
             place(sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True))

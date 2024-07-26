@@ -175,6 +175,17 @@ class OCR_Tree:
         else:
             return False
             
+
+    def update(self,new_ocr_tree:'OCR_Tree'):
+        '''Update ocr_tree object'''
+        for k in new_ocr_tree.__dict__.keys():
+            if k in ['children','parent']:
+                continue
+            setattr(self,k,getattr(new_ocr_tree,k))
+        self.box = new_ocr_tree.box.copy()
+        self.children = []
+        for child in new_ocr_tree.children:
+            self.add_child(child.copy())
         
 
     def __str__(self):

@@ -23,7 +23,7 @@ from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
-from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block
+from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -672,14 +672,9 @@ def canvas_on_key_press(event):
             focused_block,current_ocr_results
     print(f'key {event.key}')
     if event.key == 'ctrl++':
-        ppi -= 30
-        print(f'ppi {ppi}')
-        refresh_canvas()
+        zoom_canvas(factor=-30)
     elif event.key == 'ctrl+-':
-        ppi += 30
-        print(f'ppi {ppi}')
-        # reset canvas
-        refresh_canvas()
+        zoom_canvas(factor=30)
     elif event.key == 'ctrl+z' and last_key == 'ctrl+shift':
         redo_operation()
         sidebar_update_block_info()
@@ -717,6 +712,13 @@ def destroy_canvas():
     if figure_canvas_agg is not None:
         figure_canvas_agg.get_tk_widget().forget()
         figure_canvas_agg = None
+
+def zoom_canvas(factor:int=1):
+    '''Zoom canvas, altering ppi value by factor'''
+    global ppi
+    ppi += factor
+    # refresh canvas
+    refresh_canvas()
 
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
@@ -1012,6 +1014,43 @@ def split_ocr_block(x:int,y:int):
             sidebar_update_block_info()
 
 
+def split_ocr_blocks_by_whitespaces():
+    '''Split ocr blocks by whitespaces. If highlighted blocks, apply only on them. Else, apply on all blocks'''
+    global highlighted_blocks,current_ocr_results,bounding_boxes
+    blocks = highlighted_blocks if highlighted_blocks else bounding_boxes.values()
+    last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
+
+    new_blocks = []
+
+    for block in blocks:
+        block_tree = block['block']
+        block_tree:OCR_Tree
+        block_id = block_tree.id
+        page = OCR_Tree({'level':1,'box':block_tree.box})
+        page.add_child(block_tree)
+        split_tree = split_whitespaces(page,conf=0,debug=True)
+        split_tree_blocks = split_tree.get_boxes_level(level=2)
+
+        if len(split_tree_blocks) > 1:
+            split_tree_blocks.sort(key=lambda b: b.id)
+            # update block
+            block['block'] = split_tree_blocks[0]
+            create_ocr_block_assets(split_tree_blocks[0])
+            # add new block
+            new_block = split_tree_blocks[-1]
+            new_block.id = last_id
+            last_id += 1
+            new_blocks.append(new_block)
+
+    for new_block in new_blocks:
+        # add new block to ocr_results
+        page = current_ocr_results.get_boxes_level(1)[0]
+        page.add_child(new_block)
+        # create assets
+        create_ocr_block_assets(new_block)
+
+
+
 def refresh_highlighted_blocks():
     '''Refresh highlighted blocks. Check if they are still valid'''
     global highlighted_blocks,block_filter
@@ -1156,6 +1195,7 @@ def run_gui():
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)
         add_ocr_result_cache(current_ocr_results)
+        update_canvas_column(window)
 
     while True:
         event,values = window.read()
@@ -1191,6 +1231,12 @@ def run_gui():
             reset_ocr_results(window)
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # zoom in   
+        elif event == 'zoom_in':
+            zoom_canvas(factor=-30)
+        # zoom out
+        elif event == 'zoom_out':
+            zoom_canvas(factor=30)
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
@@ -1249,6 +1295,11 @@ def run_gui():
         # calculate reading order method
         elif event == 'method_calculate_reading_order':
             calculate_reading_order_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # split whitespaces method
+        elif event == 'method_split_whitespaces':
+            split_ocr_blocks_by_whitespaces()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         else:

@@ -731,7 +731,7 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
     avg_word_dist = text_analysis['average_word_distance']
 
     # id blocks
-    ocr_results.id_boxes(level=[2])
+    ocr_results.id_boxes(level=[2],override=False)
 
     # get blocks with text
     blocks = [b for b in ocr_results.get_boxes_level(2) if not b.is_empty(conf=conf,only_text=True)]
@@ -804,8 +804,8 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
 
                 # split block
                 delimiter = Box(left,right,block.box.top,block.box.bottom)
-                blocks = split_block(block,delimiter,orientation='vertical',conf=conf)
-                block = blocks[0]
+                blocks = split_block(block,delimiter,orientation='vertical',keep_all=True,conf=conf,debug=debug)
+                block.update(blocks[0])
                 new_block = blocks[1] if len(blocks) == 2 else None
 
                 # add new block
