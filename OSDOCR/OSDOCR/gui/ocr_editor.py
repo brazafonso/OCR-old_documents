@@ -296,7 +296,7 @@ def update_canvas_image(window:sg.Window,values:dict):
 
         if not metadata:
             # message to OCR image first
-            sg.popup('Please OCR image first')
+            sg.popup(f'Please OCR image first - {path} | {results_path}')
             return
 
         target_img_path = metadata['target_path']
@@ -327,8 +327,8 @@ def update_canvas_image(window:sg.Window,values:dict):
 
 def update_canvas_ocr_results(window:sg.Window,values:dict):
     '''Update canvas ocr_results element. Creates new plot with ocr_results'''
-    global current_ocr_results,current_ocr_results_path
-    if values['ocr_results_input']:
+    global current_ocr_results,current_ocr_results_path,current_image_path
+    if values['ocr_results_input'] and current_image_path:
         current_ocr_results_path = values['ocr_results_input']
 
         if not os.path.exists(current_ocr_results_path):
@@ -1230,7 +1230,7 @@ def adjust_bounding_boxes_method():
             create_ocr_block_assets(b['block'])
     
 
-def run_gui():
+def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
@@ -1250,12 +1250,18 @@ def run_gui():
 
     window = ocr_editor_layour()
     last_window_size = window.size
-    event,values = window._ReadNonBlocking()
+    event,values = window._ReadNonBlocking()    # for development
+    if input_image_path:
+        values['target_input'] = input_image_path
+    if input_ocr_results_path:
+        values['ocr_results_input'] = input_ocr_results_path
+
     if values:
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)
-        add_ocr_result_cache(current_ocr_results)
-        update_canvas_column(window)
+        if current_ocr_results:
+            add_ocr_result_cache(current_ocr_results)
+            update_canvas_column(window)
 
     while True:
         event,values = window.read()

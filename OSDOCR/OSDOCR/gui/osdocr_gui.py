@@ -79,7 +79,6 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
     results_path = f'{consts.result_path}/{path_to_id(o_image)}'
     processed_folder_path = f'{results_path}/processed'
     latest_image = get_last_image_path(o_image)
-    print(latest_image)
 
 
     window['target_image_path'].update(visible=False)
@@ -376,7 +375,7 @@ def update_method_layout(window:sg.Window,method:str,o_image:str=None):
             window['result_img'].update(visible=False)
 
     elif method == 'ocr_editor':
-        run_ocr_editor_gui()
+        run_ocr_editor_gui(input_image_path=o_image)
 
     ## TAB 2
     elif method == 'ocr_pipeline':
