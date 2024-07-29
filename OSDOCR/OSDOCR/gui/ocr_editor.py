@@ -1030,23 +1030,25 @@ def split_ocr_blocks_by_whitespaces_method():
     last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
 
     new_blocks = []
+    # split by whitespaces on whole results
+    split_tree = split_whitespaces(current_ocr_results.copy(),conf=0,debug=False)
+    split_tree_blocks = split_tree.get_boxes_level(level=2)
+    split_tree_blocks.sort(key=lambda b: b.id)
 
+    # for each of the relevant blocks, check if they were split
+    ## if so, add new block result of split
     for block in blocks:
         block_tree = block['block']
         block_tree:OCR_Tree
-        print(block_tree.box)
-        page = OCR_Tree({'level':1,'box':block_tree.box})
-        page.add_child(block_tree)
-        split_tree = split_whitespaces(page,conf=0)
-        split_tree_blocks = split_tree.get_boxes_level(level=2)
-
-        if len(split_tree_blocks) > 1:
-            split_tree_blocks.sort(key=lambda b: b.id)
+        # get same block in split tree
+        split_tree_counter_part = split_tree.get_box_id(block_tree.id)
+        # check if box stayed the same
+        if not block_tree.box == split_tree_counter_part.box:
+            print(f'Splitting block {block_tree.id} | new block: {last_id}')
             # # update block
-            # bounding_boxes[block['id']]['block'] = split_tree_blocks[0]
-            create_ocr_block_assets(split_tree_blocks[0])
+            create_ocr_block_assets(split_tree_counter_part)
             # add new block
-            new_block = split_tree_blocks[-1]
+            new_block = split_tree.get_box_id(last_id)
             new_block.id = last_id
             last_id += 1
             new_blocks.append(new_block)

@@ -735,12 +735,9 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
 
     # get blocks with text
     blocks = [b for b in ocr_results.get_boxes_level(2) if not b.is_empty(conf=conf,only_text=True)]
-    last_id = 0
-    for b in blocks:
-        if b.id >= last_id:
-            last_id = b.id + 1
+    last_id = max(ocr_results.get_boxes_level(2),key=lambda b:b.id).id + 1
 
-    
+    # blocks.sort(key=lambda b:b.id)
     for block in blocks:
 
         # get lines
@@ -811,6 +808,8 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                 # add new block
                 if new_block:
                     new_block.id = last_id
+                    if debug:
+                        print(f'Adding new block {new_block.id}')
                     last_id += 1
                     page = ocr_results.get_boxes_level(1)[0]
                     page.add_child(new_block)

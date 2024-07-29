@@ -42,6 +42,13 @@ class Box:
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
+    def __eq__(self, comparison: object) -> bool:
+        '''Check if two boxes are equal (same dimensions)'''
+        if isinstance(comparison,Box):
+            return self.left == comparison.left and self.right == comparison.right and self.top == comparison.top and self.bottom == comparison.bottom
+        else:
+            return False
+
     def copy(self):
         return Box(self.left,self.right,self.top,self.bottom)
 
