@@ -497,6 +497,21 @@ def create_new_ocr_block(x:int=None,y:int=None):
     ## bounding boxes
     create_ocr_block_assets(new_block)
 
+def highlight_block(block:dict):
+    '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
+    global highlighted_blocks
+    highlighted_blocks_ids = [x['id'] for x in highlighted_blocks]
+
+    if block['id'] not in highlighted_blocks_ids:
+        block['click_count'] = 1
+        block['z'] = 2
+    else:
+        block['click_count'] += 1
+        index = highlighted_blocks_ids.index(block['id'])
+        highlighted_blocks.pop(index)
+
+    highlighted_blocks.append(block)
+        
 
 
 
@@ -514,16 +529,9 @@ def canvas_on_button_press(event):
             if block_id is not None:
                 # print(f'closest block {block_id}')
                 block = bounding_boxes[block_id]
-                ## check if block is already highlighted
-                if block in highlighted_blocks:
-                    ## change to last index
-                    highlighted_blocks.remove(block)
-                    block['click_count'] += 1
-                else:
-                    block['click_count'] = 1
-                    block['z'] = 2
+                # highlight block
+                highlight_block(block)
 
-                highlighted_blocks.append(block)
                 focused_block = block
                 # update rectangle to have transparent red facecolor
                 rectangle = block['rectangle']
