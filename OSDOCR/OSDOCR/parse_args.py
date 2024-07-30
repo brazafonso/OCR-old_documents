@@ -22,6 +22,7 @@ Components:
             - INPUT:
             * Image 
             * hOCR
+            * json
             
             - PIPELINE:
             * A : Image input

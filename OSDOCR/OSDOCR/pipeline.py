@@ -791,7 +791,7 @@ def run_target(target:str,args:argparse.Namespace):
 
     image_target = True
     # check if target is hOCR
-    if target.endswith('.hocr'):
+    if target.endswith(['.hocr','.json']):
         image_target = False
 
     ocr_results = None

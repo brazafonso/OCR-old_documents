@@ -61,13 +61,14 @@ def run_test():
         # pytesseract.run_tesseract(target_image, 'output',extension='hocr', lang='por', config="hocr")
 
         # hocr to ocr tree
-        hocr_results = 'output.hocr'
+        hocr_results = 'test.hocr'
         from .ocr_tree_module.ocr_tree import OCR_Tree
         ocr_results = OCR_Tree(hocr_results)
         ocr_results.save_json('test.json',indent=4)
         ocr_results.id_boxes()
         img = draw_bounding_boxes(ocr_results,target_image,id=True)
         cv2.imwrite('test.png',img)
+        ocr_results.save_hocr('test.hocr')
 
 
 

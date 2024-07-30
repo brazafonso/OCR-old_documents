@@ -136,7 +136,7 @@ class OCR_Tree:
         element_type = element.get('type',None)
         # level
         element_level = re.search(r'(\w+?)_',element_id).group(1)
-        level_map = {'page':1,'block':2,'par':3,'line':4,'word':5}
+        level_map = {'document':0,'page':1,'block':2,'par':3,'line':4,'word':5}
         level = level_map.get(element_level,None)
         if level is None:
             return None
@@ -193,7 +193,6 @@ class OCR_Tree:
                 'conf':node_data['conf'],
                 'id':node_data['id'],
                 'type':node_data['type']
-
             })
         box_stack = [self]
         block_num = 0
@@ -224,10 +223,11 @@ class OCR_Tree:
                 current_node.add_child(node)
                 box_stack.append(node)
             elif node.level == current_node.level:
-                box_stack.pop()
-                current_node = box_stack[-1]
-                current_node.add_child(node)
-                box_stack.append(node)
+                if len(box_stack) > 1:
+                    box_stack.pop()
+                    current_node = box_stack[-1]
+                    current_node.add_child(node)
+                    box_stack.append(node)
             else:
                 while node.level != current_node.level + 1:
                     box_stack.pop()
@@ -268,6 +268,7 @@ class OCR_Tree:
         for child in self.children:
             data += child.to_json()
         return data
+        
     
     def save_json(self,file:str,indent:int=4):
         with open(file,'w') as f:
@@ -287,6 +288,83 @@ class OCR_Tree:
         for child in self.children:
             child.to_dict(result)
         return result
+    
+    def to_hocr(self,indent_level:int=0):
+        '''Convert ocr_tree to hocr'''
+        hocr = ''
+        if not indent_level:
+            indent_level = 0
+            # initial metadata
+            hocr = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+ <head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+  <meta name='ocr-system' content='tesseract 4.1.1' />
+  <meta name='ocr-capabilities' content='ocr_page ocr_carea ocr_par ocr_line ocrx_word ocrp_wconf'/>
+ </head>
+ <body>
+'''
+            indent_level = 3
+        # self to hocr
+        tree_class = {
+            0:'ocr_document',
+            1:'ocr_page',
+            2:'ocr_carea',
+            3:'ocr_par',
+            4:'ocr_line',
+            5:'ocrx_word'}[self.level]
+        
+        tag = {
+            0:'div',
+            1:'div',
+            2:'div',
+            3:'p',
+            4:'span',
+            5:'span'}[self.level]
+        
+        element_type = {
+            0:'document',
+            1:'page',
+            2:'block',
+            3:'par',
+            4:'line',
+            5:'word'}[self.level]
+        
+        bbox_str = f'bbox {self.box.left} {self.box.top} {self.box.right} {self.box.bottom}'
+        conf_str = f'x_wconf {self.conf}' if self.conf != -1 else ''
+        title_str = 'title="' +';'.join([bbox_str,conf_str]) + '"'
+        type_str = f'type="{self.type}"' if self.type else ''
+        id_str = f'id="{element_type}_1_{self.id}"' if self.id else f'id="{element_type}_1_0"'
+        hocr += f'{indent_level*" "}<{tag} class="{tree_class}" {id_str} {title_str} {type_str}>'
+
+        if self.children:
+            indent_level += 1
+            # children to hocr
+            for child in self.children:
+                hocr += '\n' + child.to_hocr(indent_level=indent_level)
+            indent_level -= 1
+            hocr += f'\n{indent_level*" "}'
+        else:
+            # add text
+            hocr += self.text
+
+        # close element
+        hocr += f'</{tag}>'
+
+        # close document
+        if indent_level == 3:
+            hocr += '''
+ </body>
+</html>'''
+        return hocr
+    
+
+    def save_hocr(self,file:str):
+        with open(file,'w') as f:
+            f.write(self.to_hocr())
 
     def copy(self):
         '''Copy ocr_tree object'''
