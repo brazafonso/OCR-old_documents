@@ -336,7 +336,7 @@ def binarize_image(o_target:Union[str,cv2.typing.MatLike],args:argparse.Namespac
 
 
 def run_target_hocr(target:str,args:argparse.Namespace):
-    '''Run pipeline for single OCR target. TODO'''
+    '''Run pipeline for single OCR target.'''
     return None
 
 
@@ -768,7 +768,7 @@ def run_target(target:str,args:argparse.Namespace):
     4. Convert to ocr_tree
 
 
-    - B : hOCR
+    - B : hOCR/json
     1. Convert to ocr_tree
 
     - General
@@ -789,25 +789,27 @@ def run_target(target:str,args:argparse.Namespace):
         print(f'Processing: {target}')
         print(f'Options: {args}')
 
-    image_target = True
+    apply_ocr = True
+    ocr_results_path = args.target_ocr_results[0]
+    ocr_results_path:str
     # check if target is hOCR
-    if target.endswith(['.hocr','.json']):
-        image_target = False
+    if ocr_results_path and ocr_results_path.endswith(('.hocr','.json')) and os.path.exists(ocr_results_path):
+        apply_ocr = False
 
     ocr_results = None
 
-    if not image_target:
-        ocr_results = run_target_hocr(target,args)
+    # use existing ocr results
+    if not apply_ocr:
+        if args.debug:
+            print('Using existing ocr results. |',ocr_results_path)
+        ocr_results = OCR_Tree(ocr_results_path)
+    # apply ocr
     else:
         force_ocr = args.force_ocr
         # check if target has been ocrd before or force
         if force_ocr or not metadata['ocr']:
             ocr_results,_ = run_target_image(original_target_path,processed_path,args)
             
-            # # identify images in target and modify ocr_results accordingly
-            # if 'identify_document_images' not in args.skip_method:
-            #     ocr_results = identify_images_ocr_results(ocr_results,original_target_path,processed_path,args)
-
             # get most recent metadata
             metadata = get_target_metadata(original_target_path)
 
@@ -821,7 +823,6 @@ def run_target(target:str,args:argparse.Namespace):
                 sys.exit(1)
 
     target = metadata['target_path']
-
 
     # id boxes
     ocr_results.id_boxes([2])

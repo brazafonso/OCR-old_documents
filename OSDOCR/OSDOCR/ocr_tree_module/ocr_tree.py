@@ -90,7 +90,6 @@ class OCR_Tree:
 
     def from_json(self,json_list:list[dict]):
         '''Load ocr_results from json list'''
-        print('from_json')
         for k in json_list[0].keys():
             if k != 'box':
                 setattr(self,k,json_list[0][k])
