@@ -20,8 +20,8 @@ def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,output_ty
         with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
             for article in articles:
                 article = Article(article,min_text_conf)
-                f.write(article.to_md())
-                f.write('\n'+'==='*40 + '\n')
+                f.write(article.to_md(f'{results_path}'))
+                f.write('\n')
 
         metadata['output']['markdown'] = f'{results_path}/articles.md'
 
@@ -538,6 +538,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
             for block in blocks:
                 ocr_block = OCR_Tree({'level':2,'box':block,'type':'image'})
                 ocr_block.image_id = block['id']
+                ocr_block.image_path = f'{blocks_path}/{block["id"]}.png'
                 page.add_child(ocr_block)
 
             # save ocr results
@@ -790,7 +791,7 @@ def run_target(target:str,args:argparse.Namespace):
         print(f'Options: {args}')
 
     apply_ocr = True
-    ocr_results_path = args.target_ocr_results[0]
+    ocr_results_path = args.target_ocr_results[0] if args.target_ocr_results else None
     ocr_results_path:str
     # check if target is hOCR
     if ocr_results_path and ocr_results_path.endswith(('.hocr','.json')) and os.path.exists(ocr_results_path):

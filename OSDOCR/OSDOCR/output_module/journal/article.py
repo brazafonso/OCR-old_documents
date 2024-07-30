@@ -1,5 +1,6 @@
 '''Module for journal article output'''
 
+import os
 import re
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text
 from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
@@ -22,7 +23,7 @@ class Article:
         self.subtitle = []
         self.authors = []
         self.abstract = None
-        self.body = None
+        self.body = []
         self.bounding_box = None
         self.original_ocr_tree = None
         self.metadata = None
@@ -96,12 +97,39 @@ class Article:
             body_boxes = [b for b in ocr_trees if b != title_box]
         else:
             body_boxes = ocr_trees
-        self.body = ' '.join([box.to_text() for box in body_boxes])
+        # create body list
+        ## if box is of type image, add tuple ("image",image_path)
+        ## if box is of type text, add tuple ("text",text)
+        item = None
+        for box in body_boxes:
+           new_item = None
+           if box.type == 'image':
+               image_path = ''
+               try:
+                   image_path = box.__getattribute__('image_path')
+               except:
+                   pass
+               new_item = ('image',image_path)
+           else:
+               new_item = ('text',box.to_text())
+           
+           if item:
+               if item[0] == new_item[0] and item[0] == 'text':
+                   # join text
+                   item = (item[0],item[1] + ' ' + new_item[1])
+               else:
+                   self.body.append(item)
+                   item = new_item
+           else:
+               item = new_item
+
+        if item:
+            self.body.append(item)
 
 
 
 
-    def init(self,title:str,authors:list[str],abstract:str,body:str,bounding_box:Box):
+    def init(self,title:str,authors:list[str],abstract:str,body:list[(str,str)],bounding_box:Box):
         '''Initialize Article object from title, authors, abstract, body and bounding box'''
         self.title = title
         self.authors = authors
@@ -136,26 +164,38 @@ class Article:
     def __str__(self):
         return f'Article(title={self.title},authors={self.authors},bounding_box={self.bounding_box})'
     
-    def to_md(self):
-        '''Returns article in markdown format'''
+    def to_md(self,output_path:str):
+        '''Returns article in markdown format.Output path is optional, used to create relative image paths.'''
         text = ''
+        # title
         clean_title = 'Default Title'
         if self.title:
             clean_title = re.sub(r'\s\s+', ' ', self.title)
+            clean_title = re.sub(r'\n', ' ', clean_title)
         text += f'''# {clean_title}
         '''
+        
+        # body
         text += f'''
-## Authors
-        {", ".join(self.authors)}
-        '''
-        text += f'''
-## Abstract
-        {self.abstract}
-        '''
-        text += f'''
-## Body
-        {self.body}
-        '''
+------------------------------------------------------------------'''
+
+        for item in self.body:
+            if item[0] == 'text':
+                text += f'{item[1]}'
+            elif item[0] == 'image':
+                # check if image path is valid
+                text += '\n\n'
+                if os.path.exists(item[1]):
+                    print(output_path,item[1])
+                    relative_image_path = os.path.relpath(item[1],output_path)
+                    print(relative_image_path)
+                    text += f'![image]({relative_image_path})'
+                else:
+                    text += f'![image](image)'
+                text += '\n\n'
+
+        text +=f'''
+------------------------------------------------------------------'''
         return text
     
 
