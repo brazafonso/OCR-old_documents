@@ -52,7 +52,21 @@ def run_test():
         # cv2.imwrite('test.png',img)
 
         # run fix illumination
-        img = fix_illumination(target_image)
+        # img = fix_illumination(target_image)
+        # cv2.imwrite('test.png',img)
+
+
+        # tesseract to hocr
+        # from pytesseract import pytesseract
+        # pytesseract.run_tesseract(target_image, 'output',extension='hocr', lang='por', config="hocr")
+
+        # hocr to ocr tree
+        hocr_results = 'output.hocr'
+        from .ocr_tree_module.ocr_tree import OCR_Tree
+        ocr_results = OCR_Tree(hocr_results)
+        ocr_results.save_json('test.json',indent=4)
+        ocr_results.id_boxes()
+        img = draw_bounding_boxes(ocr_results,target_image,id=True)
         cv2.imwrite('test.png',img)
 
 

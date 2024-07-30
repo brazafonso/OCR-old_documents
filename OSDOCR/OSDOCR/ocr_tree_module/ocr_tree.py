@@ -2,6 +2,8 @@ import math
 import os
 import json
 import re
+import bs4
+from bs4 import BeautifulSoup
 from OSDOCR.aux_utils.box import Box
 '''Module to generalize OCR result into box object\n'''
 
@@ -53,8 +55,12 @@ class OCR_Tree:
             # from file
             elif isinstance(args[0],str):
                 if os.path.isfile(args[0]):
-                    with open(args[0],'r') as f:
-                        self.from_json(json.load(f))
+                    if args[0].endswith('.json'):
+                        with open(args[0],'r') as f:
+                            self.from_json(json.load(f))
+                    elif args[0].endswith('.hocr'):
+                        with open(args[0],'r') as f:
+                            self.from_hocr(f.read())
                 else:
                     raise OCR_Tree_load_error(f'File {args[0]} not found')
         # normal method
@@ -84,6 +90,7 @@ class OCR_Tree:
 
     def from_json(self,json_list:list[dict]):
         '''Load ocr_results from json list'''
+        print('from_json')
         for k in json_list[0].keys():
             if k != 'box':
                 setattr(self,k,json_list[0][k])
@@ -109,6 +116,142 @@ class OCR_Tree:
                 node_stack.append(node)
 
 
+    def hocr_element_to_dict(self,element:bs4.element)->dict:
+        '''Convert hocr title information to dict'''
+        data = {
+            'text':'',
+            'bbox':{
+                'left':0,
+                'top':0,
+                'right':0,
+                'bottom':0
+            },
+            'conf':-1,
+            'level':0,
+            'id':None,
+            'type':None
+        }
+        element_title = element['title']
+        element_id = element['id']
+        element_type = element.get('type',None)
+        # level
+        element_level = re.search(r'(\w+?)_',element_id).group(1)
+        level_map = {'page':1,'block':2,'par':3,'line':4,'word':5}
+        level = level_map.get(element_level,None)
+        if level is None:
+            return None
+        data['level'] = level
+        # bounding box
+        bbox = re.search(r'(bbox\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+))',element_title)
+        if bbox:
+            data['bbox'] = {
+                'left':int(bbox.group(2)),
+                'top':int(bbox.group(3)),
+                'right':int(bbox.group(4)),
+                'bottom':int(bbox.group(5))
+            }
+        # text conf
+        text_conf = re.search(r'x_wconf\s+(\d+)',element_title)
+        if text_conf:
+            data['conf'] = int(text_conf.group(1))
+        # text
+        text = element.get_text()
+        if text:
+            data['text'] = text
+        # element number
+        if element_id:
+            id = re.search(r'\w+?_\d+_(\d+)',element_id)
+            if id:
+                data['id'] = int(id.group(1))
+        # element type
+        if element_type:
+            data['type'] = element_type
+
+        return data
+
+
+
+    def from_hocr(self,hocr:str,new_tree:bool=True):
+        '''Load ocr_results from hocr string'''
+        page = BeautifulSoup(hocr,features='xml')
+        element = page.find('body')
+        # create ocr_tree
+        if new_tree:
+            self.init(**{'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,'box':Box(0,0,0,0),'text':'','conf':-1})
+        else:
+            element = element.find_next()
+            node_data = self.hocr_element_to_dict(element)
+            self.init(**{
+                'level':node_data['level'],
+                'page_num':0,
+                'block_num':node_data['id'] if node_data['id'] else 0,
+                'par_num':par_num if node_data['level'] == 3 else 0,
+                'line_num':line_num if node_data['level'] == 4 else 0,
+                'word_num':word_num if node_data['level'] == 5 else 0,
+                'box':Box(node_data['bbox']),
+                'text':node_data['text'],
+                'conf':node_data['conf'],
+                'id':node_data['id'],
+                'type':node_data['type']
+
+            })
+        box_stack = [self]
+        block_num = 0
+        par_num = 0
+        line_num = 0
+        word_num = 0
+        # loop through all elements
+        while element:=element.find_next():
+            current_node = box_stack[-1]
+            node_data = self.hocr_element_to_dict(element)
+            if node_data is None:
+                continue
+            node = OCR_Tree({
+                'level':node_data['level'],
+                'page_num':0,
+                'block_num':node_data['id'],
+                'par_num':par_num if node_data['level'] == 3 else 0,
+                'line_num':line_num if node_data['level'] == 4 else 0,
+                'word_num':word_num if node_data['level'] == 5 else 0,
+                'box':Box(node_data['bbox']),
+                'text':node_data['text'],
+                'conf':node_data['conf'],
+                'id':node_data['id'],
+                'type':node_data['type']
+
+            })
+            if node.level == current_node.level + 1:
+                current_node.add_child(node)
+                box_stack.append(node)
+            elif node.level == current_node.level:
+                box_stack.pop()
+                current_node = box_stack[-1]
+                current_node.add_child(node)
+                box_stack.append(node)
+            else:
+                while node.level != current_node.level + 1:
+                    box_stack.pop()
+                    current_node = box_stack[-1]
+                current_node.add_child(node)
+                box_stack.append(node)
+            # update metadata numbers
+            if node.level == 2:
+                block_num += 1
+                par_num = 0
+                line_num = 0
+                word_num = 0
+            elif node.level == 3:
+                par_num += 1
+                line_num = 0
+                word_num = 0
+            elif node.level == 4:
+                line_num += 1
+                word_num = 0
+            elif node.level == 5:
+                word_num += 1
+
+
+
     def to_json(self):
         data = []
         self_dict = {}
@@ -126,9 +269,9 @@ class OCR_Tree:
             data += child.to_json()
         return data
     
-    def save_json(self,file:str):
+    def save_json(self,file:str,indent:int=4):
         with open(file,'w') as f:
-            json.dump(self.to_json(),f,indent=4)
+            json.dump(self.to_json(),f,indent=indent)
     
     def to_dict(self,result:dict=None):
         if not result:
