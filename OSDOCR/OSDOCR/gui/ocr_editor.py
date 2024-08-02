@@ -68,7 +68,15 @@ last_activity_time = time.time()
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
 
+def get_bounding_boxes()->dict:
+    '''Get bounding boxes'''
+    global bounding_boxes,block_filter
+    return_boxes = {}
+    for k,block in bounding_boxes.items():
+        if block_filter is None or block_filter(block['block']):
+            return_boxes[k] = block
 
+    return return_boxes
 
 def refresh_layout():
     '''Refresh layout so sizes are updated'''
@@ -116,7 +124,7 @@ def clean_ocr_result_cache(position:int=0):
 
 def undo_operation():
     '''Undo last opeartion'''
-    global current_cache_ocr_results_index,current_ocr_results,window,bounding_boxes
+    global current_cache_ocr_results_index,current_ocr_results,window
     print('Undo operation')
     if current_cache_ocr_results_index > 0 and len(cache_ocr_results) > 0:
         current_cache_ocr_results_index -= 1
@@ -185,8 +193,9 @@ def update_canvas_column(window:sg.Window):
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
-    global figure_canvas_agg,animation,bounding_boxes
+    global figure_canvas_agg,animation
     if figure:
+        bounding_boxes = get_bounding_boxes()
         if bounding_boxes:
             animation = FuncAnimation(figure, update, frames=60, blit=True,interval=1000/60,repeat=True)
         # update canvas
@@ -197,6 +206,7 @@ def update_canvas(window:sg.Window,figure):
         figure_canvas_agg.draw()
         figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
     
+
 
 
 def split_action_assets():
@@ -221,8 +231,9 @@ def split_action_assets():
 
 def update(frame):
     '''Update canvas'''
-    global bounding_boxes,current_action,last_mouse_position,highlighted_blocks,block_filter
+    global current_action,last_mouse_position,highlighted_blocks,block_filter
     assets = []
+    bounding_boxes = get_bounding_boxes()
     if bounding_boxes:
         # update position of boxes and id texts
         for block in bounding_boxes.values():
@@ -347,6 +358,11 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
 def create_ocr_block_assets(block:OCR_Tree):
     '''Create ocr block assets and add them to canvas figure'''
     global image_plot,bounding_boxes,default_edge_color
+    # check if block id exists
+    block_id = block.id
+    if block_id in bounding_boxes:
+        # if exists, change to biggest id
+        block.id = max(bounding_boxes.keys())+1
     # bounding box
     box = block.box
     left = box.left
@@ -407,8 +423,10 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
 
 def closest_block(click_x,click_y):
     '''Get closest block to click. Returns block id'''
-    global bounding_boxes,max_block_dist
+    global max_block_dist
     block_id = None
+    bounding_boxes = get_bounding_boxes()
+
     if bounding_boxes:
         # calculate distances
         calculate_distances = np.vectorize(lambda x: {
@@ -464,7 +482,7 @@ def sidebar_update_block_info():
 
 def create_new_ocr_block(x:int=None,y:int=None):
     '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
-    global bounding_boxes,current_ocr_results,figure,default_edge_color,image_plot
+    global current_ocr_results,figure,default_edge_color,image_plot
 
     if x is None and y is None:
         # create new block at middle of canvas
@@ -677,7 +695,7 @@ def canvas_on_mouse_move(event):
 
 def canvas_on_key_press(event):
     global last_key,ppi,highlighted_blocks,current_action_start,\
-            last_mouse_position,bounding_boxes,last_activity_time,\
+            last_mouse_position,last_activity_time,\
             focused_block,current_ocr_results
     print(f'key {event.key}')
     if event.key == 'ctrl++':
@@ -1025,7 +1043,8 @@ def split_ocr_block(x:int,y:int):
 
 def split_ocr_blocks_by_whitespaces_method():
     '''Split ocr blocks by whitespaces. If highlighted blocks, apply only on them. Else, apply on all blocks'''
-    global highlighted_blocks,current_ocr_results,bounding_boxes,image_plot,animation,figure_canvas_agg
+    global highlighted_blocks,current_ocr_results,image_plot,animation,figure_canvas_agg
+    bounding_boxes = get_bounding_boxes()
     blocks = highlighted_blocks if highlighted_blocks else bounding_boxes.values()
     last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
 
@@ -1288,6 +1307,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'ocr_results_input':
             update_canvas_ocr_results(window,values)
             add_ocr_result_cache(current_ocr_results)
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
         # save ocr results
         elif event == 'save_ocr_results':
             save_ocr_results()
@@ -1356,10 +1376,12 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'undo_ocr_results':
             undo_operation()
             sidebar_update_block_info()
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
         # redo last operation
         elif event == 'redo_ocr_results':
             redo_operation()
             sidebar_update_block_info()
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
         # calculate reading order method
         elif event == 'method_calculate_reading_order':
             calculate_reading_order_method()
@@ -1378,6 +1400,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # adjust bounding boxes
         elif event == 'method_adjust_bounding_boxes':
             adjust_bounding_boxes_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # refresh block ids
+        elif event == 'method_refresh_block_id':
+            refresh_blocks_ids()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         else:

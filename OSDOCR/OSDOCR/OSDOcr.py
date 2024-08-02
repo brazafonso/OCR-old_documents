@@ -58,6 +58,7 @@ def run_test():
 
         # tesseract to hocr
         # from pytesseract import pytesseract
+        # target_image = "/home/braz/projetos/OCR-old_documents/results/1-09______a20b0f35bae56a523a0a1e300dec23e4/processed/processed.png"
         # pytesseract.run_tesseract(target_image, 'output',extension='hocr', lang='por', config="hocr")
 
         # hocr to ocr tree

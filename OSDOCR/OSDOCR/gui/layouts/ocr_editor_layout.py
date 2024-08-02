@@ -48,6 +48,9 @@ def ocr_editor_layour()->sg.Window:
         [
             place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
         ],
+        [
+            place(sg.Button('Refresh block id',key='method_refresh_block_id')),
+        ]
     ]
 
 
