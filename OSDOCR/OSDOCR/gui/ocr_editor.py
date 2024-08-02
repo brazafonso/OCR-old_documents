@@ -72,9 +72,10 @@ def get_bounding_boxes()->dict:
     '''Get bounding boxes'''
     global bounding_boxes,block_filter
     return_boxes = {}
-    for k,block in bounding_boxes.items():
-        if block_filter is None or block_filter(block['block']):
-            return_boxes[k] = block
+    if bounding_boxes:
+        for k,block in bounding_boxes.items():
+            if block_filter is None or block_filter(block['block']):
+                return_boxes[k] = block
 
     return return_boxes
 
@@ -307,7 +308,7 @@ def update_canvas_image(window:sg.Window,values:dict):
 
         if not metadata:
             # message to OCR image first
-            sg.popup(f'Please OCR image first - {path} | {results_path}')
+            sg.popup(f'Please OCR image first - {path} | {results_path}',title='Error',keep_on_top=True,non_blocking=True)
             return
 
         target_img_path = metadata['target_path']
@@ -1306,6 +1307,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 current_ocr_results_path = None
                 bounding_boxes = None
                 ppi = 300
+                animation.pause()
                 clean_ocr_result_cache()
             
             update_canvas_image(window,values)
