@@ -45,7 +45,8 @@ class Box:
     def __eq__(self, comparison: object) -> bool:
         '''Check if two boxes are equal (same dimensions)'''
         if isinstance(comparison,Box):
-            return self.left == comparison.left and self.right == comparison.right and self.top == comparison.top and self.bottom == comparison.bottom
+            return int(self.left) == int(comparison.left) and int(self.right) == int(comparison.right) \
+                and int(self.top) == int(comparison.top) and int(self.bottom) == int(comparison.bottom)
         else:
             return False
 

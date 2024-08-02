@@ -692,6 +692,8 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
         block.children = []
         for b in blocks_1:
             block.add_child(b)
+
+        block.update_box(left=area_1.left,top=area_1.top,right=area_1.right,bottom=area_1.bottom)
     
     if blocks_2:
 
@@ -704,6 +706,8 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
             for b in blocks_2:
                 block.add_child(b)
 
+            block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
+
 
         else:
             # create second block
@@ -711,6 +715,8 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
 
             for b in blocks_2:
                 new_block.add_child(b)
+
+            new_block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
 
             new_blocks = [block,new_block]
     
@@ -778,6 +784,9 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                 
 
         if valid_split and line_seq_positions:
+            if debug:
+                print(f'Valid split found for block {block.id} | nº of lines: {len(line_seq_positions)}')
+
             # check max matching coordinates for split
             ## first check if all intervals intercept
             interception = True
@@ -814,5 +823,8 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                     page = ocr_results.get_boxes_level(1)[0]
                     page.add_child(new_block)
                     blocks.append(new_block)
+                else:
+                    if debug:
+                        print('No new block added')
 
     return ocr_results

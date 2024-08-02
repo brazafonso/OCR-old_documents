@@ -716,8 +716,12 @@ def canvas_on_key_press(event):
             ## check if continous id update
             if focused_block['id'] == target_block['id']:
                 diff_time = time.time() - last_activity_time
-                if str(last_key).isdigit() and diff_time < 1:
-                    new_id = int(f'{target_block["id"]}{new_id}')
+                if str(last_key).isdigit():
+                    # if less than 0.5 seconds between updates, append number
+                    if  diff_time < 0.5:
+                        new_id = int(f'{target_block["id"]}{new_id}')
+                else:
+                    new_id = target_block['id']
             
             change_block_id(target_block['id'],int(new_id))
             sidebar_update_block_info()
@@ -1022,9 +1026,7 @@ def split_ocr_block(x:int,y:int):
         # split block
         if split_delimiter:
             print(f'Splitting block: {block.id}')
-            print(block.box)
-            blocks = split_block(block,split_delimiter,orientation=orientation,conf=0,keep_all=True,debug=False)
-            print(blocks[0].box)
+            blocks = split_block(block,split_delimiter,orientation=orientation,conf=0,keep_all=True,debug=True)
             if len(blocks) > 1:
                 new_block = blocks[1]
                 # add new block
@@ -1050,7 +1052,7 @@ def split_ocr_blocks_by_whitespaces_method():
 
     new_blocks = []
     # split by whitespaces on whole results
-    split_tree = split_whitespaces(current_ocr_results.copy(),conf=0,debug=False)
+    split_tree = split_whitespaces(current_ocr_results.copy(),conf=0,debug=True)
     split_tree_blocks = split_tree.get_boxes_level(level=2)
     split_tree_blocks.sort(key=lambda b: b.id)
 
@@ -1068,9 +1070,10 @@ def split_ocr_blocks_by_whitespaces_method():
             create_ocr_block_assets(split_tree_counter_part)
             # add new block
             new_block = split_tree.get_box_id(last_id)
-            new_block.id = last_id
-            last_id += 1
-            new_blocks.append(new_block)
+            if new_block:
+                new_block.id = last_id
+                last_id += 1
+                new_blocks.append(new_block)
 
     for new_block in new_blocks:
         # add new block to ocr_results
