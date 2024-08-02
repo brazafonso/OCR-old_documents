@@ -549,6 +549,9 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
     '''Splits block into new blocks, based on delimiter and cut direction. Adjust text inside blocks to fit new area.'''
     new_blocks = [block]
 
+    if debug:
+        print(f'Bloack 1 | Original children len: {len(block.children)}')
+
     if not delimiter.intersects_box(block.box):
         return new_blocks
 
@@ -618,8 +621,8 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                     else:
                         # conclude paragraph
                         par = OCR_Tree({'level':3,'box':par_box})
-                        for line in par_lines:
-                            par.add_child(line)
+                        for par_line in par_lines:
+                            par.add_child(par_line)
                         blocks_1.append(par)
                         # create new paragraph
                         par_box = line.box
@@ -637,19 +640,24 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
             par_lines = []
             cur_par = None
             for line in area_2_lines:
+                # create new paragraph
                 if not par_box:
                     par_box = line.box
                     cur_par = line.par_num
                     par_lines.append(line)
                 else:
+                    # continue paragraph
                     if cur_par == line.par_num:
                         par_lines.append(line)
                         par_box.join(line.box)
+                    # conclude paragraph
                     else:
                         par = OCR_Tree({'level':3,'box':par_box})
-                        for line in par_lines:
-                            par.add_child(line)
+                        # add lines to paragraph
+                        for par_line in par_lines:
+                            par.add_child(par_line)
                         blocks_2.append(par)
+                        # create new paragraph
                         par_box = line.box
                         par_lines = [line]
                         cur_par = line.par_num
@@ -688,10 +696,14 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
         # update current block
         ## box 
         block.box.update(left=area_1.left,top=area_1.top,right=area_1.right,bottom=area_1.bottom)
+        
         ## children
         block.children = []
         for b in blocks_1:
             block.add_child(b)
+
+        if debug:
+            print(f'Bloack 1 | New children len: {len(block.children)}')
 
         block.update_box(left=area_1.left,top=area_1.top,right=area_1.right,bottom=area_1.bottom)
     
@@ -699,12 +711,17 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
 
         if not blocks_1 and (area_1.height == 0 or area_1.width == 0):
             # update current block with area 2
+            block.box.update(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
+
             if debug:
                 print(f'Area 1 is empty. Update block with area 2')
-            block.box.update(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
+
             block.children = []
             for b in blocks_2:
                 block.add_child(b)
+
+            if debug:
+                print(f'Bloack 1 | New children len: {len(block.children)}')
 
             block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
 
@@ -712,10 +729,12 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
         else:
             # create second block
             new_block = OCR_Tree({'level':block.level,'box':area_2})
-
+            
             for b in blocks_2:
                 new_block.add_child(b)
 
+            if debug:
+                print(f'Bloack 2 | New children len: {len(new_block.children)}')
             new_block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
 
             new_blocks = [block,new_block]
