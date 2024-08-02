@@ -126,7 +126,7 @@ def undo_operation():
     '''Undo last opeartion'''
     global current_cache_ocr_results_index,current_ocr_results,window
     print('Undo operation')
-    if current_cache_ocr_results_index > 0 and len(cache_ocr_results) > 0:
+    if len(cache_ocr_results) > 0 and current_cache_ocr_results_index > 0 and current_cache_ocr_results_index < len(cache_ocr_results):
         current_cache_ocr_results_index -= 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
         reset_highlighted_blocks()
@@ -182,7 +182,7 @@ def refresh_ocr_results():
         bounding_boxes = {}
         blocks = current_ocr_results.get_boxes_level(level=2)
         for block in blocks:
-            create_ocr_block_assets(block)
+            create_ocr_block_assets(block,override=False)
 
 
 def update_canvas_column(window:sg.Window):
@@ -355,12 +355,12 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         window['ocr_results_input'].InitialFolder = os.path.dirname(current_ocr_results_path)
 
 
-def create_ocr_block_assets(block:OCR_Tree):
+def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     '''Create ocr block assets and add them to canvas figure'''
     global image_plot,bounding_boxes,default_edge_color
     # check if block id exists
     block_id = block.id
-    if block_id in bounding_boxes:
+    if block_id in bounding_boxes and not override:
         # if exists, change to biggest id
         block.id = max(bounding_boxes.keys())+1
     # bounding box
@@ -413,7 +413,7 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     bounding_boxes = {}
     # draw ocr results
     for block in blocks:
-        create_ocr_block_assets(block)
+        create_ocr_block_assets(block,override=False)
         
     # clear canvas
     clear_canvas()
@@ -513,7 +513,7 @@ def create_new_ocr_block(x:int=None,y:int=None):
     page = current_ocr_results.get_boxes_level(level=1)[-1]
     page.add_child(new_block)
     ## bounding boxes
-    create_ocr_block_assets(new_block)
+    create_ocr_block_assets(new_block,override=False)
 
 def highlight_block(block:dict):
     '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
@@ -1065,12 +1065,14 @@ def split_ocr_blocks_by_whitespaces_method():
         split_tree_counter_part = split_tree.get_box_id(block_tree.id)
         # check if box stayed the same
         if not block_tree.box == split_tree_counter_part.box:
-            print(f'Splitting block {block_tree.id} | new block: {last_id}')
-            # # update block
+            print(f'Splitting block {block_tree.id} | box: {split_tree_counter_part.box}')
+            # update block
+            block_tree.update(split_tree_counter_part)
             create_ocr_block_assets(split_tree_counter_part)
             # add new block
             new_block = split_tree.get_box_id(last_id)
             if new_block:
+                print(f'new block: {last_id} | box: {new_block.box}')
                 new_block.id = last_id
                 last_id += 1
                 new_blocks.append(new_block)
@@ -1218,6 +1220,7 @@ def fix_ocr_block_intersections_method():
             block = highlighted_block['block']
             # update highlighted block
             block = tree.get_box_id(id=highlighted_block['id'],level=2)
+            current_ocr_results.get_box_id(id=highlighted_block['id']).update(block)
             # update assets
             create_ocr_block_assets(block)
 
@@ -1241,6 +1244,7 @@ def adjust_bounding_boxes_method():
             block = highlighted_block['block']
             # update highlighted block
             block = tree.get_box_id(id=highlighted_block['id'],level=2)
+            current_ocr_results.get_box_id(id=highlighted_block['id']).update(block)
             # update assets
             create_ocr_block_assets(block)
 

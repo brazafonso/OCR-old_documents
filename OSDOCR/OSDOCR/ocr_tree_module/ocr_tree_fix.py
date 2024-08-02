@@ -550,7 +550,7 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
     new_blocks = [block]
 
     if debug:
-        print(f'Bloack 1 | Original children len: {len(block.children)}')
+        print(f'Block 1 | Original children len: {len(block.children)}')
 
     if not delimiter.intersects_box(block.box):
         return new_blocks
@@ -703,9 +703,12 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
             block.add_child(b)
 
         if debug:
-            print(f'Bloack 1 | New children len: {len(block.children)}')
+            print(f'Block 1 | New children len: {len(block.children)}')
 
         block.update_box(left=area_1.left,top=area_1.top,right=area_1.right,bottom=area_1.bottom)
+
+        if debug:
+            print(f'Block 1 | New box: {block.box}')
     
     if blocks_2:
 
@@ -721,9 +724,12 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                 block.add_child(b)
 
             if debug:
-                print(f'Bloack 1 | New children len: {len(block.children)}')
+                print(f'Block 1 | New children len: {len(block.children)}')
 
             block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
+
+            if debug:
+                print(f'Block 1 | New box: {block.box}')
 
 
         else:
@@ -734,10 +740,13 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                 new_block.add_child(b)
 
             if debug:
-                print(f'Bloack 2 | New children len: {len(new_block.children)}')
+                print(f'Block 2 | New children len: {len(new_block.children)}')
             new_block.update_box(left=area_2.left,top=area_2.top,right=area_2.right,bottom=area_2.bottom)
 
             new_blocks = [block,new_block]
+
+            if debug:
+                print(f'Block 2 | New box: {new_block.box}')
     
 
     return new_blocks
@@ -833,11 +842,14 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                 block.update(blocks[0])
                 new_block = blocks[1] if len(blocks) == 2 else None
 
+                if debug:
+                    print(f'Block: {block.id} | Box: {block.box}')
+
                 # add new block
                 if new_block:
                     new_block.id = last_id
                     if debug:
-                        print(f'Adding new block {new_block.id}')
+                        print(f'Adding new block {new_block.id} | Box: {new_block.box}')
                     last_id += 1
                     page = ocr_results.get_boxes_level(1)[0]
                     page.add_child(new_block)
