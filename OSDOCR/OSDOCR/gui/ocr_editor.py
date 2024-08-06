@@ -305,18 +305,14 @@ def update_canvas_image(window:sg.Window,values:dict):
         path = values['target_input']
         results_path = f'{consts.result_path}/{path_to_id(path)}'
         metadata = get_target_metadata(path)
+        browse_file_initial_folder = None
 
         if not metadata:
-            # message to OCR image first
-            sg.popup(f'Please OCR image first - {path} | {results_path}',title='Error',keep_on_top=True,non_blocking=True)
-            return
-
-        target_img_path = metadata['target_path']
-
-        if not os.path.exists(target_img_path):
-            # message to OCR image first
-            sg.popup('Please rerun OCR on target image first')
-            return
+            target_img_path = path
+            browse_file_initial_folder = os.path.dirname(path)
+        else:
+            target_img_path = metadata['target_path']
+            browse_file_initial_folder = f'{results_path}/processed'
         
         current_image_path = target_img_path
 
@@ -333,7 +329,7 @@ def update_canvas_image(window:sg.Window,values:dict):
         update_canvas(window,figure)
 
         # update browse location for 'ocr_results_input'
-        window['browse_file'].InitialFolder = f'{results_path}/processed'
+        window['browse_file'].InitialFolder = browse_file_initial_folder
         # update browse location for 'target_input'
         window['browse_image'].InitialFolder = os.path.dirname(path)
 
