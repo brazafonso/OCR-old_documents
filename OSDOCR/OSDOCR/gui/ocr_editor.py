@@ -19,12 +19,14 @@ from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
+
+from OSDOCR.output_module.journal.article import Article
 from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
 from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
-from OSDOCR.ocr_tree_module.ocr_tree_analyser import order_ocr_tree
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles, order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -1253,6 +1255,53 @@ def adjust_bounding_boxes_method():
         # update assets
         for b in bounding_boxes.values():
             create_ocr_block_assets(b['block'])
+
+
+def categorize_blocks_method():
+    '''Categorize blocks method. If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
+    global current_ocr_results,bounding_boxes,highlighted_blocks,bounding_boxes,default_edge_color,window
+    if highlighted_blocks:
+        # apply categorize
+        tree = current_ocr_results.copy()
+        tree = categorize_boxes(tree,conf=30)
+
+        for highlighted_block in highlighted_blocks:
+            block = highlighted_block['block']
+            # update highlighted block
+            block = tree.get_box_id(id=highlighted_block['id'],level=2)
+            current_ocr_results.get_box_id(id=highlighted_block['id']).update(block)
+            # update assets
+            create_ocr_block_assets(block)
+
+        refresh_highlighted_blocks()
+    elif current_ocr_results:
+        # apply categorize
+        categorize_boxes(current_ocr_results,conf=30)
+
+        # update assets
+        for b in bounding_boxes.values():
+            create_ocr_block_assets(b['block'])
+
+    toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
+
+
+def generate_output_md():
+    '''Generate output markdown'''
+    global current_ocr_results,current_ocr_results_path,current_image_path
+    if current_ocr_results and current_image_path:
+        # get articles
+        _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+
+        # generate output
+        results_path = os.path.dirname(current_ocr_results_path)
+        min_text_conf = 30
+        with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
+            for article in articles:
+                article = Article(article,min_text_conf)
+                f.write(article.to_md(f'{results_path}'))
+                f.write('\n')
+        
+        print(f'Output generated: {results_path}/articles.md')
     
 
 def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
@@ -1330,6 +1379,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # zoom out
         elif event == 'zoom_out':
             zoom_canvas(factor=30)
+        # generate md
+        elif event == 'generate_md':
+            generate_output_md()
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
@@ -1405,6 +1457,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # adjust bounding boxes
         elif event == 'method_adjust_bounding_boxes':
             adjust_bounding_boxes_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # categorize blocks
+        elif event == 'method_categorize_blocks':
+            categorize_blocks_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # refresh block ids

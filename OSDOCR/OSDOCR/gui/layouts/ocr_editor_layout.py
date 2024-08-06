@@ -49,6 +49,9 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
         ],
         [
+            place(sg.Button('Categorize blocks',key='method_categorize_blocks')),
+        ],
+        [
             place(sg.Button('Refresh block id',key='method_refresh_block_id')),
         ]
     ]
@@ -64,6 +67,7 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('->',key='redo_ocr_results')),
             place(sg.Button('Zoom In',key='zoom_in')),
             place(sg.Button('Zoom Out',key='zoom_out')),
+            place(sg.Button('Generate MD',key='generate_md')),
         ],
         [
             place(sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True))
