@@ -52,6 +52,7 @@ text_conf = 30
 cache_ocr_results = []
 current_cache_ocr_results_index = -1
 max_cache_ocr_results_size = 10
+ocr_results_articles = {}
 ## actions
 '''
 Possible actions:
@@ -132,7 +133,6 @@ def undo_operation():
     if len(cache_ocr_results) > 0 and current_cache_ocr_results_index > 0 and current_cache_ocr_results_index < len(cache_ocr_results):
         current_cache_ocr_results_index -= 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
-        reset_highlighted_blocks()
         refresh_ocr_results()
 
 def redo_operation():
@@ -142,7 +142,6 @@ def redo_operation():
     if current_cache_ocr_results_index < len(cache_ocr_results)-1:
         current_cache_ocr_results_index += 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
-        reset_highlighted_blocks()
         refresh_ocr_results()
 
 
@@ -179,10 +178,12 @@ def refresh_canvas():
 
 def refresh_ocr_results():
     '''Refresh ocr results and bounding boxes'''
-    global current_ocr_results,bounding_boxes,window,default_edge_color
+    global current_ocr_results,bounding_boxes,window,default_edge_color,ocr_results_articles
     if current_ocr_results:
         # reset bounding boxes
         bounding_boxes = {}
+        # reset articles
+        ocr_results_articles = {}
         # reset highlighted blocks
         reset_highlighted_blocks()
         blocks = current_ocr_results.get_boxes_level(level=2)
@@ -358,6 +359,20 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         window['ocr_results_input'].InitialFolder = os.path.dirname(current_ocr_results_path)
 
 
+def update_sidebar_articles():
+    '''Update sidebar articles information'''
+    global window,ocr_results_articles
+
+    data = []
+
+    # create buttons for each article
+    for i,_ in enumerate(ocr_results_articles):
+        data += [f'{i}']
+
+    window['table_articles'].update(values=data)
+
+    
+
 def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     '''Create ocr block assets and add them to canvas figure'''
     global image_plot,bounding_boxes,default_edge_color
@@ -422,6 +437,19 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     clear_canvas()
     # update canvas
     update_canvas(window,figure)
+
+def draw_articles():
+    '''Draw articles in ocr editor'''
+    global ocr_results_articles,bounding_boxes
+    if ocr_results_articles:
+        for i,article in ocr_results_articles.items():
+            article_color = article['color']
+            for block in article['article']:
+                block:OCR_Tree
+                bb_block = bounding_boxes[block.id]
+                rect = bb_block['rectangle']
+                # update edge color
+                rect.set_edgecolor(article_color)
 
 
 def closest_block(click_x,click_y):
@@ -522,6 +550,9 @@ def highlight_block(block:dict):
     '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
     global highlighted_blocks
     highlighted_blocks_ids = [x['id'] for x in highlighted_blocks]
+    # update rectangle to have transparent red facecolor
+    rectangle = block['rectangle']
+    rectangle.set_facecolor((1,0,0,0.1))
     if block['id'] not in highlighted_blocks_ids:
         block['click_count'] = 1
         block['z'] = 2
@@ -553,9 +584,6 @@ def canvas_on_button_press(event):
                 highlight_block(block)
 
                 focused_block = block
-                # update rectangle to have transparent red facecolor
-                rectangle = block['rectangle']
-                rectangle.set_facecolor((1,0,0,0.1))
                 block_box = block['box']
                 block_box:Box
                 distance = block_box.distance_to_point(click_x,click_y)
@@ -1286,7 +1314,6 @@ def categorize_blocks_method():
     toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
 
 
-
 def find_titles_method():
     '''Find titles method.'''
     global current_ocr_results,bounding_boxes
@@ -1296,6 +1323,43 @@ def find_titles_method():
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()
+
+def find_articles_method():
+    '''Find articles method.'''
+    global current_ocr_results,current_image_path,ocr_results_articles
+    if current_ocr_results and current_image_path:
+        # reset articles
+        ocr_results_articles = {}
+        _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+        # choose color for each article
+        colors = []
+        for _ in articles:
+            unique_color = False
+            color = None
+            while not unique_color:
+                color = (random.randint(0,255)/255,random.randint(0,255)/255,random.randint(0,255)/255)
+                if color not in colors:
+                    unique_color = True
+            colors.append(color)
+
+        ocr_results_articles = {i:{'color':colors[i],'article':articles[i]} for i in range(len(articles))}
+
+        draw_articles()
+        update_sidebar_articles()
+
+def highlight_article(id:int):
+    '''Highlight blocks of an article'''
+    global ocr_results_articles,bounding_boxes
+    print(f'Highlight article {id}')
+    if id in ocr_results_articles:
+        # reset highlighted blocks
+        reset_highlighted_blocks()
+
+        for block in ocr_results_articles[id]['article']:
+            if block.id in bounding_boxes:
+                # update highlighted block
+                b = bounding_boxes[block.id]
+                highlight_block(b)
 
 def generate_output_md():
     '''Generate output markdown'''
@@ -1414,6 +1478,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             apply_ocr_block()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # article button
+        elif 'table_articles' in event[0]:
+            article_id = event[2][0]
+            highlight_article(article_id)
         # create new block
         elif event == 'method_new_block':
             create_new_ocr_block()
@@ -1482,6 +1550,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # find titles
         elif event == 'method_find_titles':
             find_titles_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # find articles
+        elif event == 'method_find_articles':
+            find_articles_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # refresh block ids

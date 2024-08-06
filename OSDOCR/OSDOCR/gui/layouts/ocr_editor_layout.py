@@ -55,6 +55,9 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Find Titles',key='method_find_titles')),
         ],
         [
+            place(sg.Button('Find Articles',key='method_find_articles')),
+        ],
+        [
             place(sg.Button('Refresh block id',key='method_refresh_block_id')),
         ]
     ]
@@ -156,6 +159,12 @@ def ocr_editor_layour()->sg.Window:
         ],
     ]
 
+
+    article_info = [
+        [place(sg.Table(values=[],headings=['Articles: '],auto_size_columns=False,def_col_width=10,key='table_articles',expand_x=True,expand_y=True,enable_events=True,enable_click_events=True,visible=True))],
+    ]
+
+
     # side bar for info about ocr results
     right_side_bar = [
         [
@@ -163,6 +172,9 @@ def ocr_editor_layour()->sg.Window:
         ],
         [
             sg.Frame('',block_info,key='frame_block_info')
+        ],
+        [
+            sg.Frame('',article_info,key='frame_article_info')
         ]
     ]
 
