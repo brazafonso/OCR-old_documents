@@ -52,6 +52,9 @@ def ocr_editor_layour()->sg.Window:
             place(sg.Button('Categorize blocks',key='method_categorize_blocks')),
         ],
         [
+            place(sg.Button('Find Titles',key='method_find_titles')),
+        ],
+        [
             place(sg.Button('Refresh block id',key='method_refresh_block_id')),
         ]
     ]

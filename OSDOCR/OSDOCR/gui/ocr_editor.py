@@ -25,7 +25,7 @@ from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
-from OSDOCR.ocr_tree_module.ocr_tree_fix import split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
+from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles, order_ocr_tree
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -179,13 +179,17 @@ def refresh_canvas():
 
 def refresh_ocr_results():
     '''Refresh ocr results and bounding boxes'''
-    global current_ocr_results,bounding_boxes
+    global current_ocr_results,bounding_boxes,window,default_edge_color
     if current_ocr_results:
         # reset bounding boxes
         bounding_boxes = {}
+        # reset highlighted blocks
+        reset_highlighted_blocks()
         blocks = current_ocr_results.get_boxes_level(level=2)
         for block in blocks:
             create_ocr_block_assets(block,override=False)
+
+        toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
 
 
 def update_canvas_column(window:sg.Window):
@@ -518,7 +522,6 @@ def highlight_block(block:dict):
     '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
     global highlighted_blocks
     highlighted_blocks_ids = [x['id'] for x in highlighted_blocks]
-
     if block['id'] not in highlighted_blocks_ids:
         block['click_count'] = 1
         block['z'] = 2
@@ -645,10 +648,8 @@ def canvas_on_mouse_move(event):
                 for highlighted_block in highlighted_blocks:
                     # update box
                     block = highlighted_block['block']
-                    # print(f'moving {move_x},{move_y} ! {block.box}')
                     block.update_position(top=move_y,left=move_x)
                     bounding_boxes[highlighted_block['id']]['box'] = block.box
-                    # print(f'moved {move_x},{move_y} ! {block.box}')
 
         elif current_action == 'expand':
             # calculate new dimensions
@@ -1285,6 +1286,17 @@ def categorize_blocks_method():
     toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
 
 
+
+def find_titles_method():
+    '''Find titles method.'''
+    global current_ocr_results,bounding_boxes
+    if current_ocr_results:
+        og_block_num = len(current_ocr_results.get_boxes_level(2))
+        find_text_titles(current_ocr_results,conf=30,id_blocks=False)
+        new_block_num = len(current_ocr_results.get_boxes_level(2))
+        if og_block_num != new_block_num:
+            refresh_ocr_results()
+
 def generate_output_md():
     '''Generate output markdown'''
     global current_ocr_results,current_ocr_results_path,current_image_path
@@ -1302,6 +1314,9 @@ def generate_output_md():
                 f.write('\n')
         
         print(f'Output generated: {results_path}/articles.md')
+
+
+
     
 
 def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
@@ -1462,6 +1477,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # categorize blocks
         elif event == 'method_categorize_blocks':
             categorize_blocks_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # find titles
+        elif event == 'method_find_titles':
+            find_titles_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # refresh block ids

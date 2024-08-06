@@ -994,16 +994,15 @@ class OCR_Tree:
         
         if not any([top,left]):
             return
-        
         if top is not None:
             if absolute:
                 self.box.update(top=top,bottom=top+self.box.height)
-            else:
+            elif top:
                 self.box.move(y=top)
         if left is not None:
             if absolute:
                 self.box.update(left=left,right=left+self.box.width)
-            else:
+            elif left:
                 self.box.move(x=left)
 
         for child in self.children:

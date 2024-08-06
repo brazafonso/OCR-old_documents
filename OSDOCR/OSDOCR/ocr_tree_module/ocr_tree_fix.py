@@ -512,7 +512,7 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
                 ## create new title block
                 title_block = OCR_Tree({'level':2,'box':potential_title[0].box,'type':'title','id':last_id})
                 ### create paragraph for lines
-                title_block_par = OCR_Tree({'level':3,'box':potential_title[0].box})
+                title_block_par = OCR_Tree({'level':3,'box':potential_title[0].box.copy()})
                 ### add lines to paragraph
                 for line in potential_title:
                     title_block_par.add_child(line.copy())
