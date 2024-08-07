@@ -970,7 +970,7 @@ class OCR_Tree:
                     self.remove_box_id(b.id)
 
 
-    def average_conf(self,level:int=2)->tuple[int,int]:
+    def conf_sum(self,level:int=2)->tuple[int,int]:
         '''Get average confidence of boxes in level'''
         if self.level == level:
             return self.conf, 1

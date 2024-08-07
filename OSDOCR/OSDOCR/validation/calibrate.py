@@ -82,7 +82,7 @@ def compare_results(results_folder:str,option:str,
     # check ocr results
     ocr_results_path = metadata['ocr_results_path']
     ocr_results = OCR_Tree(ocr_results_path)
-    ocr_totaltext_conf, ocr_number_text_blocks = ocr_results.average_conf(level=5)
+    ocr_totaltext_conf, ocr_number_text_blocks = ocr_results.conf_sum(level=5)
     ocr_average_text_conf = ocr_totaltext_conf / ocr_number_text_blocks
     ocr_text_blocks = [t for t in ocr_results.get_boxes_level(level=5)]
 

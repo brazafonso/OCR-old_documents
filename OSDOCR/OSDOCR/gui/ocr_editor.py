@@ -946,7 +946,11 @@ def save_ocr_block_changes(values:dict):
                 par_tree = OCR_Tree({'level':3,'box':{'left':par_left,'top':par_top,'right':par_right,'bottom':par_bottom},'children':par_children})
                 new_children.append(par_tree)
 
-        block.children = new_children
+        # change block children if text changed
+        updated_block = OCR_Tree({'level':2,'box':block.box,'children':new_children})
+        if updated_block.to_text().strip() != block.to_text().strip():
+            block.children = new_children
+
         # change block type
         if block_type and block_type != block.type:
             block.type = block_type
