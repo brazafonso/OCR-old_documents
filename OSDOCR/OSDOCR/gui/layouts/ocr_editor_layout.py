@@ -167,6 +167,16 @@ def ocr_editor_layour()->sg.Window:
         [
             place(sg.Table(values=[],headings=['Articles: '],auto_size_columns=False,def_col_width=10,key='table_articles',expand_x=True,expand_y=True,enable_events=True,enable_click_events=True,visible=True,select_mode=sg.TABLE_SELECT_MODE_BROWSE)),
             sg.Column(
+              [
+                  [
+                      sg.Button('↑',key='button_move_article_up'),
+                  ],
+                  [
+                      sg.Button('↓',key='button_move_article_down'),
+                  ],
+              ]  
+            ),
+            sg.Column(
                 [
                     [
                         sg.Button('Add Article',key='button_add_article'),
@@ -178,7 +188,7 @@ def ocr_editor_layour()->sg.Window:
                         sg.Button('Delete Article',key='button_delete_article'),
                     ],
                 ]
-            )
+            ),
         ],
     ]
 

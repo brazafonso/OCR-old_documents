@@ -1478,6 +1478,24 @@ def delete_article_method(article_id:int):
         del ocr_results_articles[article_id]
         refresh_articles()
 
+def move_article_method(article_id:int, up:bool=True):
+    '''Move article method'''
+    global ocr_results_articles
+    if article_id in ocr_results_articles:
+        keys = list(ocr_results_articles.keys())
+        article_index = keys.index(article_id)
+        if up and article_index-1 >= 0:
+            # change key order, so that the article is moved one space up
+            keys.remove(article_id)
+            keys.insert(article_index-1,article_id)
+            ocr_results_articles = {k: ocr_results_articles[k] for k in keys}
+        elif not up and article_index+1 < len(keys):
+            # change key order, so that the article is moved one space down
+            keys.remove(article_id)
+            keys.insert(article_index+1,article_id)
+            ocr_results_articles = {k: ocr_results_articles[k] for k in keys}
+        refresh_articles()
+
     
 
 def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
@@ -1610,6 +1628,16 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             if selected_row is not None:
                 article_id = int(window['table_articles'].get()[selected_row][0])
                 delete_article_method(article_id)
+                update_sidebar_articles()
+                draw_articles()
+                reset_highlighted_blocks()
+        # move article up
+        elif 'button_move_article' in event:
+            selected_row = values['table_articles'][0] if len(values['table_articles']) > 0 else None
+            if selected_row is not None:
+                article_id = int(window['table_articles'].get()[selected_row][0])
+                direction_up = True if event.split('_')[-1] == 'up' else False
+                move_article_method(article_id,up=direction_up)
                 update_sidebar_articles()
                 draw_articles()
                 reset_highlighted_blocks()
