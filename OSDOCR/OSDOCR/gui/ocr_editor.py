@@ -303,8 +303,6 @@ def create_plot(path:str):
     return ax
 
 
-
-
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
     global image_plot,figure,figure_canvas_agg,current_image_path,ppi,default_edge_color
@@ -366,8 +364,8 @@ def update_sidebar_articles():
     data = []
 
     # create buttons for each article
-    for i,_ in enumerate(ocr_results_articles):
-        data += [f'{i}']
+    for k in ocr_results_articles:
+        data += [f'{k}']
 
     window['table_articles'].update(values=data)
 
@@ -438,19 +436,55 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     # update canvas
     update_canvas(window,figure)
 
+
+def unique_article_color(used_colors:list=[]):
+    '''Get unique article color'''
+    unique_color = False
+    color = None
+    while not unique_color:
+        color = (random.randint(0,255)/255,random.randint(0,255)/255,random.randint(0,255)/255)
+        if color not in used_colors:
+            unique_color = True
+    return color
+
+def unique_article_id(used_ids:list=[]):
+    '''Get unique article id'''
+    unique_id = False
+    id = 0
+    while not unique_id:
+        if id not in used_ids:
+            unique_id = True
+        else:
+            id += 1
+    return id
+
 def draw_articles():
     '''Draw articles in ocr editor'''
-    global ocr_results_articles,bounding_boxes
-    if ocr_results_articles:
-        for i,article in ocr_results_articles.items():
-            article_color = article['color']
-            for block in article['article']:
-                block:OCR_Tree
-                bb_block = bounding_boxes[block.id]
-                rect = bb_block['rectangle']
-                # update edge color
-                rect.set_edgecolor(article_color)
+    global ocr_results_articles,bounding_boxes,default_edge_color,window
+    # reset color of all blocks
+    toggle_ocr_results_block_type(bounding_boxes,default_edge_color,window['checkbox_toggle_block_type'])
+    # update color of blocks in articles
+    for i,article in ocr_results_articles.items():
+        article_color = article['color']
+        for block in article['article']:
+            block:OCR_Tree
+            bb_block = bounding_boxes[block.id]
+            rect = bb_block['rectangle']
+            # update edge color
+            rect.set_edgecolor(article_color)
 
+    window['checkbox_toggle_articles'].update(True)
+
+
+def refresh_articles():
+    '''Refresh articles in ocr editor. Remove articles that have no blocks'''
+    global ocr_results_articles
+    if ocr_results_articles:
+        og_len = len(ocr_results_articles)
+        ocr_results_articles = {k:v for k,v in ocr_results_articles.items() if len(v['article']) > 0}
+        new_len = len(ocr_results_articles)
+        if new_len != og_len:
+            update_sidebar_articles()
 
 def closest_block(click_x,click_y):
     '''Get closest block to click. Returns block id'''
@@ -831,6 +865,7 @@ def reset_ocr_results(window:sg.Window):
 
 def toggle_ocr_results_block_type(bounding_boxes:dict,default_color:str='#283b5b',toogle:bool=False):
     '''Change color of bounding boxes based on block type'''
+    global window
 
     for b in bounding_boxes.values():
         rectangle = b['rectangle']
@@ -841,6 +876,8 @@ def toggle_ocr_results_block_type(bounding_boxes:dict,default_color:str='#283b5b
             block_color = block.type_color(normalize=True,rgb=True)
         
         rectangle.set_edgecolor(block_color)
+
+    window['checkbox_toggle_block_type'].update(toogle)
 
 
 def save_ocr_block_changes(values:dict):
@@ -1334,13 +1371,8 @@ def find_articles_method():
         # choose color for each article
         colors = []
         for _ in articles:
-            unique_color = False
-            color = None
-            while not unique_color:
-                color = (random.randint(0,255)/255,random.randint(0,255)/255,random.randint(0,255)/255)
-                if color not in colors:
-                    unique_color = True
-            colors.append(color)
+            article_color = unique_article_color(colors)
+            colors.append(article_color)
 
         ocr_results_articles = {i:{'color':colors[i],'article':articles[i]} for i in range(len(articles))}
 
@@ -1363,10 +1395,15 @@ def highlight_article(id:int):
 
 def generate_output_md():
     '''Generate output markdown'''
-    global current_ocr_results,current_ocr_results_path,current_image_path
+    global current_ocr_results,current_ocr_results_path,current_image_path,ocr_results_articles
     if current_ocr_results and current_image_path:
+        articles = []
         # get articles
-        _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+        if not ocr_results_articles:
+            _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+        else:
+            for id in ocr_results_articles:
+                articles.append(ocr_results_articles[id]['article'])
 
         # generate output
         results_path = os.path.dirname(current_ocr_results_path)
@@ -1380,6 +1417,66 @@ def generate_output_md():
         print(f'Output generated: {results_path}/articles.md')
 
 
+def add_article_method():
+    '''Add article method'''
+    global current_ocr_results,ocr_results_articles,highlighted_blocks
+    if current_ocr_results and highlighted_blocks:
+        # check if highlighted blocks are in articles; if so, remove them from articles
+        for block in highlighted_blocks:
+            for _,article in ocr_results_articles.items():
+                if len([b for b in article['article'] if b.id == block['id']]) > 0:
+                    article['article'] = [b for b in article['article'] if b.id != block['id']]
+
+        refresh_articles()
+
+        # create new article with highlighted blocks
+        article = []
+        for block in highlighted_blocks:
+            article.append(block['block'])
+        article_color = unique_article_color([a['color'] for a in ocr_results_articles.values()])
+        article_id = unique_article_id(list(ocr_results_articles.keys()))
+        ocr_results_articles[article_id] = {'color':article_color,'article':article}
+
+
+def update_article_method(article_id:int):
+    '''Update article method'''
+    global ocr_results_articles,highlighted_blocks
+    if article_id in ocr_results_articles and highlighted_blocks:
+        # check if highlighted blocks are in articles; if so, remove them from articles
+        for block in highlighted_blocks:
+            for id,article in ocr_results_articles.items():
+                if id == article_id:
+                    continue
+                if len([b for b in article['article'] if b.id == block['id']]) > 0:
+                    article['article'] = [b for b in article['article'] if b.id != block['id']]
+
+
+        # update article with highlighted blocks
+        article = ocr_results_articles[article_id]['article']
+        highlighted_blocks_ids = set([b['id'] for b in highlighted_blocks])
+        ## remove blocks that have not been highlighted
+        for block in article:
+            if block.id not in highlighted_blocks_ids:
+                article.remove(block)
+
+        article_blocks_ids = set([b.id for b in article])
+        ## add blocks that have been highlighted
+        for block in highlighted_blocks:
+            if block['id'] not in article_blocks_ids:
+                article.append(block['block'])
+
+        ocr_results_articles[article_id]['article'] = article
+
+        refresh_articles()
+
+
+
+def delete_article_method(article_id:int):
+    '''Delete article method'''
+    global ocr_results_articles
+    if article_id in ocr_results_articles:
+        del ocr_results_articles[article_id]
+        refresh_articles()
 
     
 
@@ -1478,10 +1575,44 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             apply_ocr_block()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # toggle articles
+        elif event == 'checkbox_toggle_articles':
+            toogle = values[event]
+            if toogle:
+                draw_articles()
+            else:
+                toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
         # article button
         elif 'table_articles' in event[0]:
-            article_id = event[2][0]
-            highlight_article(article_id)
+            row,_ = event[2]
+            if row is not None:
+                article_id = int(window['table_articles'].get()[row][0])
+                highlight_article(article_id)
+        # add article
+        elif event == 'button_add_article':
+            add_article_method()
+            update_sidebar_articles()
+            draw_articles()
+            reset_highlighted_blocks()
+        # update article
+        elif event == 'button_update_article':
+            selected_row = values['table_articles'][0] if len(values['table_articles']) > 0 else None
+            if selected_row is not None:
+                article_id = int(window['table_articles'].get()[selected_row][0])
+                update_article_method(article_id)
+                update_sidebar_articles()
+                draw_articles()
+                reset_highlighted_blocks()
+        # delete article
+        elif event == 'button_delete_article':
+            # get selected value in article table
+            selected_row = values['table_articles'][0] if len(values['table_articles']) > 0 else None
+            if selected_row is not None:
+                article_id = int(window['table_articles'].get()[selected_row][0])
+                delete_article_method(article_id)
+                update_sidebar_articles()
+                draw_articles()
+                reset_highlighted_blocks()
         # create new block
         elif event == 'method_new_block':
             create_new_ocr_block()

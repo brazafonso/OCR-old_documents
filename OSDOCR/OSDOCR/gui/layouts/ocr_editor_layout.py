@@ -161,7 +161,25 @@ def ocr_editor_layour()->sg.Window:
 
 
     article_info = [
-        [place(sg.Table(values=[],headings=['Articles: '],auto_size_columns=False,def_col_width=10,key='table_articles',expand_x=True,expand_y=True,enable_events=True,enable_click_events=True,visible=True))],
+        [
+            place(sg.Checkbox(text='Toogle Articles: ',key='checkbox_toggle_articles',enable_events=True)),
+        ],
+        [
+            place(sg.Table(values=[],headings=['Articles: '],auto_size_columns=False,def_col_width=10,key='table_articles',expand_x=True,expand_y=True,enable_events=True,enable_click_events=True,visible=True,select_mode=sg.TABLE_SELECT_MODE_BROWSE)),
+            sg.Column(
+                [
+                    [
+                        sg.Button('Add Article',key='button_add_article'),
+                    ],
+                    [
+                        sg.Button('Update Article',key='button_update_article'),
+                    ],
+                    [
+                        sg.Button('Delete Article',key='button_delete_article'),
+                    ],
+                ]
+            )
+        ],
     ]
 
 
