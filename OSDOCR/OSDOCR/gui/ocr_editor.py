@@ -534,8 +534,8 @@ def sidebar_update_block_info():
         if block.type:
             window['list_block_type'].update(block.type)
         ## text
-        text_delimiters = {3: '#Par#'}
-        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters))
+        text_delimiters = {3: '\n'}
+        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters).strip())
     else:
         # clear block info
         window['input_block_id'].update('')
@@ -899,15 +899,17 @@ def save_ocr_block_changes(values:dict):
         block_id = values['input_block_id']
         ### turn block text into OCR Tree
         #### count number of paragraphs in line, to be able to divide coordinates equally
-        lines = [l for l in block_text.split('\n') if l.strip()]
-        pars = [[]]
-        for i,line in enumerate(lines):
-            if re.match(r'^\s*#Par#\s*$',line,re.IGNORECASE):
-                ## ignore if current paragraph is empty
-                if len(pars[-1]) > 0:
-                    pars.append([])
-            else:
-                pars[-1].append(line)
+        pars = [par for par in block_text.split('\n\n') if par.strip()]
+        for i,par in enumerate(pars):
+            par_lines = par.split('\n')
+            j = 0
+            while j < len(par_lines):
+                par_l = par_lines[j]
+                if not par_l.strip():
+                    par_lines.pop(j)
+                else:
+                    j += 1
+            pars[i] = par_lines
 
         #### create OCR Trees
         par_height = int(block.box.height / len(pars))
