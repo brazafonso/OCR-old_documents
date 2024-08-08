@@ -17,9 +17,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation
+from document_image_utils.image import segment_document_delimiters
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
-
 from OSDOCR.output_module.journal.article import Article
 from .layouts.ocr_editor_layout import *
 from .aux_utils.utils import *
@@ -1251,10 +1251,13 @@ def change_block_id(id:int,new_id:int):
 def calculate_reading_order_method():
     '''Calculate reading order method'''
     global current_ocr_results,current_image_path,bounding_boxes
-    if current_ocr_results:
+    if current_ocr_results and current_image_path:
         # get block order
+        ## get body area using delimiters
+        delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
+        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,target_segments=['header','body'])[1]
         ## blocks returned are only part of the body of the image
-        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results)
+        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,area=body_area)
         ordered_block_ids = [b.id for b in ordered_blocks]
         # update ids values
         last_id = len(ordered_blocks) - 1

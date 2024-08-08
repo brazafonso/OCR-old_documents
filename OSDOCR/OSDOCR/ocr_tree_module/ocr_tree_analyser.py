@@ -1749,12 +1749,15 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
 
 
 
-def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,logs:bool=False)->list[OCR_Tree]:
+def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,area:Box=None,ignore_delimiters:bool=False,logs:bool=False)->list[OCR_Tree]:
     '''Calculates level 2 OCR Tree reading order and returns these blocks in an ordered list'''
     ordered_blocks = []
 
-    _,body,_ = segment_document(image=image_path)
-    columns_area = body
+    if area is None:
+        _,body,_ = segment_document(image=image_path)
+        columns_area = body
+    else:
+        columns_area = area
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters)
