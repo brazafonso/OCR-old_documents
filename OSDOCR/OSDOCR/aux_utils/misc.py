@@ -122,9 +122,10 @@ def get_metadata(results_path:str):
 def save_target_metadata(target_path:str,metadata:dict):
     '''Save target metadata'''
     results_folder = f'{consts.result_path}/{path_to_id(target_path)}'
-    metadata_file = open(f'{results_folder}/metadata.json','w')
-    json.dump(metadata,metadata_file,indent=4)
-    metadata_file.close()
+    if os.path.exists(f'{results_folder}/metadata.json'):
+        metadata_file = open(f'{results_folder}/metadata.json','w')
+        json.dump(metadata,metadata_file,indent=4)
+        metadata_file.close()
 
 def save_metadata(results_path:str,metadata:dict):
     '''Save target metadata'''

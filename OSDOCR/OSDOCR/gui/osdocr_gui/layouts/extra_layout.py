@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from ..aux_utils.utils import place
+from ...aux_utils.utils import place
 from OSDOCR.aux_utils import consts
 
 def build_gui_config_pipeline()->sg.Window:

@@ -1,6 +1,6 @@
 import os
 import PySimpleGUI as sg
-from ..aux_utils.utils import place
+from ...aux_utils.utils import place
 from OSDOCR.aux_utils import consts
 
 
@@ -8,7 +8,7 @@ from OSDOCR.aux_utils import consts
 browse_img_input_value = '/home/braz/projetos/OCR-old_documents/study_cases/simple template/2-1.jpg'
 browse_file_input_value = '/home/braz/projetos/OCR-old_documents/results/2-1______88a3d1a9c2e7707cb70e8f9afa569005/processed/clean_ocr.json'
 
-def ocr_editor_layour()->sg.Window:
+def ocr_editor_layout()->sg.Window:
     '''Build window for ocr results editor'''
 
     window_size = (1200,800)
@@ -21,7 +21,9 @@ def ocr_editor_layour()->sg.Window:
                 place(sg.Input(default_text=browse_img_input_value,key='target_input',enable_events=True)),
 
                 place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),button_text="Choose OCR Results",key='browse_file',target='ocr_results_input',initial_folder=os.getcwd())),
-                place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',enable_events=True))
+                place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',enable_events=True)),
+
+                place(sg.Button('Config',key='configurations_button')),
         ]
     ]
 
@@ -225,14 +227,143 @@ def ocr_editor_layour()->sg.Window:
     ]
 
     # main layout
-    editor = [
+    editor_main = [
         [
             upper_row,
             body
         ]
     ]
 
-
-    window = sg.Window('OCR Editor',editor,finalize=True,resizable=True,size=window_size,relative_location=window_location)
+    window = sg.Window('OCR Editor',editor_main,finalize=True,resizable=True,size=window_size,relative_location=window_location)
     window.bind('<Configure>',"Event")
     return window
+
+
+
+def configurations_layout()->sg.Window:
+    '''Window for configurations'''
+
+    # normal configurations
+    ## text confidence (input)
+    ## type of document (select : newspaper, other)
+    ## ignore delimiters (checkbox)
+    ## calculate reading order (checkbox)
+    ## target segments (header, body, footer - checkbox)
+    ## output type (select : newspaper, simple)
+    ## use pipeline results (checkbox)
+    ## output path (folder)
+    
+    simple_options = [
+        [
+            place(sg.Text('Text Confidence: ')),
+            place(sg.Slider(range=(0,100),default_value=70,key='slider_text_confidence',orientation='h',enable_events=True))
+        ],
+        [
+            place(sg.Text('Type of Document: ')),
+            place(sg.Combo(['newspaper','other'],default_value='newspaper',key='list_type_of_document',enable_events=True))
+        ],
+        [
+            place(sg.Checkbox(text='Ignore Delimiters: ',key='checkbox_ignore_delimiters',enable_events=True))
+        ],
+        [
+            place(sg.Checkbox(text='Calculate Reading Order: ',key='checkbox_calculate_reading_order',enable_events=True))
+        ],
+        [
+            place(sg.Text(text='Target Segments: ')),
+            place(sg.Checkbox(text='Header',key='checkbox_target_header',enable_events=True)),
+            place(sg.Checkbox(text='Body',key='checkbox_target_body',enable_events=True)),
+            place(sg.Checkbox(text='Footer',key='checkbox_target_footer',enable_events=True))
+        ],
+        [
+            place(sg.Text('Output Type: ')),
+            place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',enable_events=True))
+        ],
+        [
+            place(sg.Checkbox(text='Use Pipeline Results: ',key='checkbox_use_pipeline_results',enable_events=True))
+        ],
+        [
+            place(sg.Text('Output Path: ')),
+            place(sg.FolderBrowse(key='folder_output_path',enable_events=True))
+        ],
+    ]
+
+    simple_options_frame = [
+        [
+            place(sg.Frame('Basic Options',simple_options))
+        ]
+    ]
+
+    # OCR pipeline configurations
+    ## preprocessing
+    ### fix rotation (select : auto,clockwise,counter-clockwise, none)
+    ### upscaling_image (select : none, waifu2x)
+    ### denoise_image (select : none, waifu2x)
+    ### fix_illumination (checkbox)
+    ### binarize (select : none, fax, otsu)
+    ## tesseract options
+    ### dpi (input)
+    ### psm (input)
+    ### l (select : eng, por)
+
+    pipeline_preprocessing_options = [
+        [
+            place(sg.Text('Preprocessing: ')),
+            place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',key='list_preprocessing',enable_events=True))
+        ],
+        [
+            place(sg.Text('Upscaling Image: ')),
+            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_upscaling_image',enable_events=True))
+        ],
+        [
+            place(sg.Text('Denoise Image: ')),
+            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_denoise_image',enable_events=True))
+        ],
+        [
+            place(sg.Checkbox(text='Fix Illumination: ',key='checkbox_fix_illumination',enable_events=True))
+        ],
+        [
+            place(sg.Text('Binarize: ')),
+            place(sg.Combo(['none','fax','otsu'],default_value='none',key='list_binarize',enable_events=True))
+        ]
+    ]
+
+    pipeline_tesseract_options = [
+        [
+            place(sg.Text('DPI: ')),
+            place(sg.InputText(key='input_dpi',enable_events=True))
+        ],
+        [
+            place(sg.Text('PSM: ')),
+            place(sg.InputText(key='input_psm',enable_events=True))
+        ],
+        [
+            place(sg.Text('Language: ')),
+            place(sg.Combo(['eng','por'],default_value='eng',key='list_l',enable_events=True))
+        ]
+    ]
+
+    pipeline_options = [
+        [
+            place(sg.Frame('Preprocessing',pipeline_preprocessing_options))
+        ],
+        [
+            place(sg.Frame('Tesseract',pipeline_tesseract_options))
+        ]
+    ]
+
+    pipeline_options_frame = [
+        [
+            place(sg.Frame('OCR Pipeline',pipeline_options))
+        ]
+    ]
+
+    # final layout
+    layout = [
+        [
+            place(sg.Frame('Simple',simple_options_frame)),
+            place(sg.Frame('OCR Pipeline',pipeline_options_frame))
+        ]
+    ]
+
+    return sg.Window('OCR Editor', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True)
+    

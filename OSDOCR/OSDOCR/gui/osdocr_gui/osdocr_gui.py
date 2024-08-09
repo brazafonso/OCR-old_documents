@@ -9,7 +9,7 @@ from OSDOCR.aux_utils.misc import *
 from .layouts.main_layout import *
 from .layouts.extra_layout import *
 from .methods.methods import *
-from .ocr_editor import run_gui as run_ocr_editor_gui
+from ..ocr_editor.ocr_editor import run_gui as run_ocr_editor_gui
 
 
 

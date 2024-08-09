@@ -6,7 +6,7 @@ import sys
 from .parse_args import process_args
 from .aux_utils.misc import *
 from .aux_utils import consts
-from .gui.osdocr_gui import run_gui
+from .gui.osdocr_gui.osdocr_gui import run_gui
 from .ocr_tree_module.ocr_tree import *
 from .preprocessing.image import *
 from .pipeline import run_target,run_target_split

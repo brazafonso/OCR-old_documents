@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from OSDOCR.gui.ocr_editor import run_gui
+from OSDOCR.gui.ocr_editor.ocr_editor import run_gui
 
 run_path = os.getcwd()
 

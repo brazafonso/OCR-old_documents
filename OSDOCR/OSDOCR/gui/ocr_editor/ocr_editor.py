@@ -22,7 +22,7 @@ from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
 from OSDOCR.output_module.journal.article import Article
 from .layouts.ocr_editor_layout import *
-from .aux_utils.utils import *
+from ..aux_utils.utils import *
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_engines.engine_utils import run_tesseract
 from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
@@ -1525,7 +1525,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             shutil.rmtree(os.path.join(tmp_folder_path, f))
 
 
-    window = ocr_editor_layour()
+    window = ocr_editor_layout()
     last_window_size = window.size
     event,values = window._ReadNonBlocking()    # for development
     if input_image_path:
@@ -1546,6 +1546,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         if event == sg.WIN_CLOSED:
             destroy_canvas()
             break
+        #---------------------------------
+        # MAIN FRAME EVENTS
+        #---------------------------------
         # choose image
         elif event == 'target_input':
             if current_image_path:
@@ -1730,6 +1733,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             refresh_blocks_ids()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # configurations button
+        elif event == 'configurations_button':
+            window['editor_main_frame'].update(visible=False)
+            window['configurations_frame'].update(visible=True)
         else:
             print(f'event {event} not implemented')
         

@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from ..aux_utils.utils import place
+from ...aux_utils.utils import place
 
 
 def build_gui_main()->sg.Window:
