@@ -1,8 +1,32 @@
 import json
 import os
 import hashlib
+import shutil
 from . import consts
 
+
+def create_base_folders():
+    '''Create base folders and move const files'''
+    if not os.path.exists(consts.osdocr_path):
+        os.makedirs(consts.osdocr_path)
+    if not os.path.exists(consts.config_folder_path):
+        os.makedirs(consts.config_folder_path)
+    if not os.path.exists(consts.result_path):
+        os.makedirs(consts.result_path)
+    if not os.path.exists(consts.tmp_path):
+        os.makedirs(consts.tmp_path)
+    if not os.path.exists(consts.ocr_editor_path):
+        os.makedirs(consts.ocr_editor_path)
+    if not os.path.exists(consts.ocr_editor_tmp_path):
+        os.makedirs(consts.ocr_editor_tmp_path)
+
+    # const files
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    consts_files_folder = f'{file_path}/../consts'
+    print(consts_files_folder)
+    for f in os.listdir(consts_files_folder):
+        if not os.path.exists(f'{consts.consts_path}/{f}') and os.path.isfile(f'{consts_files_folder}/{f}'):
+            shutil.copy(f'{consts_files_folder}/{f}',f'{consts.consts_path}/{f}')
 
 
 def path_to_id(path: str):
@@ -149,7 +173,7 @@ def reset_metadata(results_path:str):
 
 def metadata_has_transformation(metadata:dict,transformation:str):
     '''Check if metadata has transformation'''
-    transformations = metadata['transformations']
+    transformations = metadata['transformations'] if 'transformations' in metadata else []
     for t in transformations:
         if type(t) in (list,tuple):
             if t[0] == transformation:

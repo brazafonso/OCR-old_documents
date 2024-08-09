@@ -141,12 +141,12 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
     metadata = get_target_metadata(o_target)
     metadata['target_path'] = processed_image_path
+    metadata['transformations'] = [] if 'transformations' not in metadata else metadata['transformations']
     
 
     # save image
     og_img = cv2.imread(o_target)
     cv2.imwrite(processed_image_path,og_img)
-
 
     # image distortion
     if 'fix_distortions' not in args.skip_method:
@@ -511,11 +511,11 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     ## Simple OCR
     else:
         # binarize
-        binarize_tmp = binarize_image(target,args)
-        cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp)
-        binarized_path = f'{results_path}/binarize.png'
+        binarize_tmp  = binarize_image(target,args)
+        cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp )
+        binarized_path  = f'{results_path}/binarize.png'
 
-        run_tesseract(binarized_path,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+        run_tesseract(binarized_path ,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)

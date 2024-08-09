@@ -1,5 +1,6 @@
 '''OCR Editor  - GUI'''
 
+import argparse
 import os
 import random
 import shutil
@@ -23,10 +24,12 @@ from OSDOCR.aux_utils.misc import *
 from OSDOCR.output_module.journal.article import Article
 from .layouts.ocr_editor_layout import *
 from ..aux_utils.utils import *
+from OSDOCR.parse_args import preprocessing_methods,process_args
 from OSDOCR.ocr_tree_module.ocr_tree import *
-from OSDOCR.ocr_engines.engine_utils import run_tesseract
+from OSDOCR.pipeline import run_target_image
 from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles, order_ocr_tree
+from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,6 +40,7 @@ matplotlib.use('TkAgg')
 window = None
 last_window_size = None
 block_filter = None
+config = {}
 ## variables for canvas
 image_plot = None
 current_image_path = None
@@ -48,7 +52,6 @@ default_edge_color = None
 bounding_boxes = {}
 current_ocr_results = None
 current_ocr_results_path = None
-text_conf = 30
 cache_ocr_results = []
 current_cache_ocr_results_index = -1
 max_cache_ocr_results_size = 10
@@ -305,10 +308,13 @@ def create_plot(path:str):
 
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
-    global image_plot,figure,figure_canvas_agg,current_image_path,ppi,default_edge_color
+    global image_plot,figure,figure_canvas_agg,current_image_path,ppi,default_edge_color,config
     if values['target_input']:
         path = values['target_input']
-        results_path = f'{consts.result_path}/{path_to_id(path)}'
+        if config['base']['use_pipeline_results']:
+            results_path = f'{consts.result_path}/{path_to_id(path)}'
+        else:
+            results_path = path
         metadata = get_target_metadata(path)
         browse_file_initial_folder = None
 
@@ -516,7 +522,7 @@ def closest_block(click_x,click_y):
 
 
 def sidebar_update_block_info():
-    global window,highlighted_blocks
+    global window,highlighted_blocks,config
 
     if highlighted_blocks:
         block = highlighted_blocks[-1]['block']
@@ -535,7 +541,8 @@ def sidebar_update_block_info():
             window['list_block_type'].update(block.type)
         ## text
         text_delimiters = {3: '\n'}
-        window['input_block_text'].update(block.to_text(conf=0,text_delimiters=text_delimiters).strip())
+        text_confidence = config['base']['text_confidence']
+        window['input_block_text'].update(block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip())
     else:
         # clear block info
         window['input_block_id'].update('')
@@ -601,6 +608,7 @@ def highlight_block(block:dict):
 
 
 def canvas_on_button_press(event):
+    '''Handle mouse click events'''
     global current_action,current_action_start,bounding_boxes,highlighted_blocks,last_activity_time,focused_block
     print(f'click {event}')
     # left click
@@ -669,6 +677,7 @@ def canvas_on_button_press(event):
 
 
 def canvas_on_button_release(event):
+    '''Mouse release event handler'''
     global current_action,current_action_start,current_ocr_results
     print(f'release {event}')
     release_x = event.xdata
@@ -692,6 +701,7 @@ def canvas_on_button_release(event):
     current_action = None
 
 def canvas_on_mouse_move(event):
+    '''Mouse move event handler'''
     global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot,last_activity_time
     if current_action and highlighted_blocks and last_mouse_position:
         if current_action == 'move':
@@ -756,6 +766,7 @@ def canvas_on_mouse_move(event):
 
 
 def canvas_on_key_press(event):
+    ''' keyboard shortcuts '''
     global last_key,ppi,highlighted_blocks,current_action_start,\
             last_mouse_position,last_activity_time,\
             focused_block,current_ocr_results
@@ -798,6 +809,9 @@ def canvas_on_key_release(event):
 
 
 def destroy_canvas():
+    """
+    Destroys the canvas by removing the image plot and forgetting the figure canvas aggregate.
+    """
     global image_plot,figure_canvas_agg
     if image_plot is not None:
         image_plot.remove()
@@ -884,7 +898,7 @@ def save_ocr_block_changes(values:dict):
     '''Save changes to current highlighted block. 
     The coordinates will be divided equally within the block.
     Confidence of words will be set to 100.'''
-    global current_ocr_results,highlighted_blocks
+    global current_ocr_results,highlighted_blocks,config
     if current_ocr_results and highlighted_blocks:
         target_block = highlighted_blocks[-1]
         block = target_block['block']
@@ -950,6 +964,7 @@ def save_ocr_block_changes(values:dict):
 
         # change block children if text changed
         updated_block = OCR_Tree({'level':2,'box':block.box,'children':new_children})
+        text_confidence = config['base']['text_confidence'] 
         if updated_block.to_text().strip() != block.to_text().strip():
             block.children = new_children
 
@@ -984,7 +999,7 @@ def delete_ocr_block():
 
 def apply_ocr_block():
     '''Apply OCR on highlighted ocr block'''
-    global highlighted_blocks,current_image_path
+    global highlighted_blocks,current_image_path,config
     if highlighted_blocks:
         block = highlighted_blocks[-1]
         ocr_block = block['block']
@@ -1002,13 +1017,32 @@ def apply_ocr_block():
         avg_color = np.average(image,axis=(0,1))
         image = cv2.copyMakeBorder(image,padding,padding,padding,padding,cv2.BORDER_CONSTANT,value=avg_color)
         # save tmp image
-        dir_path = os.path.dirname(current_image_path)
-        tmp_dir = f'{dir_path}/tmp'
+        tmp_dir = consts.ocr_editor_tmp_path
         os.makedirs(tmp_dir,exist_ok=True)
         tmp_path = f'{tmp_dir}/tmp.png'
         cv2.imwrite(tmp_path,image)
+        # create args for pipeline function
+        ## skip methods
+        skip_methods = preprocessing_methods.copy()
+        skip_methods.remove('image_preprocess')
+        if config['ocr_pipeline']['fix_rotation']  != 'none':
+            skip_methods.remove('auto_rotate')
+        if config['ocr_pipeline']['fix_illumination']:
+            skip_methods.remove('light_correction')
+        if config['ocr_pipeline']['upscaling_image'] != 'none':
+            skip_methods.remove('image_upscaling')
+        if config['ocr_pipeline']['denoise_image'] != 'none':
+            skip_methods.remove('noise_removal')
+        if config['ocr_pipeline']['binarize'] != 'none':
+            skip_methods.remove('binarize_image')
+
+        args = process_args()
+        args.tesseract_config = config['ocr_pipeline']['tesseract_config']
+        args.skip_method =  skip_methods
+        args.binarize_image = [config['ocr_pipeline']['binarize']]
+        args.logs = True
         # run ocr
-        run_tesseract(tmp_path,results_path=tmp_dir,opts={'l':'por'})
+        run_target_image(tmp_path,results_path=tmp_dir,args=args)
         # load ocr results
         ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json')
         ## move ocr results to position of ocr block
@@ -1089,7 +1123,7 @@ def split_line(x:int,y:int,block:OCR_Tree)->Union[str,Box]:
 
 def split_ocr_block(x:int,y:int):
     '''Split ocr block. x,y is position of mouse click and will be used to calculate split line.'''
-    global highlighted_blocks,current_ocr_results
+    global highlighted_blocks,current_ocr_results,config
     if highlighted_blocks and len(highlighted_blocks) == 1:
         block = highlighted_blocks[0]['block']
         block:OCR_Tree
@@ -1097,7 +1131,8 @@ def split_ocr_block(x:int,y:int):
         # split block
         if split_delimiter:
             print(f'Splitting block: {block.id}')
-            blocks = split_block(block,split_delimiter,orientation=orientation,conf=0,keep_all=True,debug=True)
+            text_confidence = config['base']['text_confidence']
+            blocks = split_block(block,split_delimiter,orientation=orientation,conf=text_confidence,keep_all=True,debug=True)
             if len(blocks) > 1:
                 new_block = blocks[1]
                 # add new block
@@ -1252,12 +1287,13 @@ def change_block_id(id:int,new_id:int):
 
 def calculate_reading_order_method():
     '''Calculate reading order method'''
-    global current_ocr_results,current_image_path,bounding_boxes
+    global current_ocr_results,current_image_path,bounding_boxes,config
     if current_ocr_results and current_image_path:
         # get block order
         ## get body area using delimiters
         delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,target_segments=['header','body'])[1]
+        target_segments = config['base']['target_segments']
+        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,target_segments=target_segments)[1]
         ## blocks returned are only part of the body of the image
         ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,area=body_area)
         ordered_block_ids = [b.id for b in ordered_blocks]
@@ -1404,26 +1440,61 @@ def highlight_article(id:int):
 
 def generate_output_md():
     '''Generate output markdown'''
-    global current_ocr_results,current_ocr_results_path,current_image_path,ocr_results_articles
+    global current_ocr_results,current_image_path,ocr_results_articles,config
     if current_ocr_results and current_image_path:
-        articles = []
-        # get articles
-        if not ocr_results_articles:
-            _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
-        else:
-            for id in ocr_results_articles:
-                articles.append(ocr_results_articles[id]['article'])
+        doc_type = config['base']['doc_type']
+        results_path = config['base']['output_path']
+        text_confidence = config['base']['text_confidence']
+        ignore_delimiters = config['base']['ignore_delimiters']
+        calculate_reading_order = config['base']['calculate_reading_order']
+        # newspaper
+        if doc_type == 'newspaper':
+            articles = []
+            # get articles
+            if not ocr_results_articles:
+                _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+            else:
+                only_selected = config['article']['gathering'] == 'selected'
 
-        # generate output
-        results_path = os.path.dirname(current_ocr_results_path)
-        min_text_conf = 30
-        with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
-            for article in articles:
-                article = Article(article,min_text_conf)
-                f.write(article.to_md(f'{results_path}'))
-                f.write('\n')
-        
-        print(f'Output generated: {results_path}/articles.md')
+                if only_selected:
+                    for id in ocr_results_articles:
+                        articles.append(ocr_results_articles[id]['article'])
+                else:
+                    # get articles using all blocks
+                    ## remove all blocks that are already in articles
+                    tree = current_ocr_results.copy()
+                    for article in ocr_results_articles.values():
+                        for block in article['article']:
+                            tree.remove_box_id(id=block.id,level=2)
+                    ## using unselected blocks
+                    _,new_articles = extract_articles(image_path=current_image_path,ocr_results=tree,
+                                                      ignore_delimiters=ignore_delimiters,
+                                                      calculate_reading_order=calculate_reading_order)
+                    ## join all articles
+                    articles = [a['article'] for a in ocr_results_articles.values()] + new_articles
+
+            # generate output
+            min_text_conf = text_confidence
+            with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
+                for article in articles:
+                    article = Article(article,min_text_conf)
+                    f.write(article.to_md(f'{results_path}'))
+                    f.write('\n')
+            
+            print(f'Output generated: {results_path}/articles.md')
+        # simple output
+        else:
+            calculate_reading_order = config['base']['calculate_reading_order']
+            if calculate_reading_order:
+                blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters)
+            else:
+                blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] if not ignore_delimiters else ['delimiter'])]
+                blocks = sorted(blocks,key=lambda x: x.id)
+
+            with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+                for block in blocks:
+                    block_txt = block.to_text(text_confidence)
+                    f.write(block_txt)
 
 
 def add_article_method():
@@ -1511,12 +1582,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
-            current_action,block_filter,last_window_size
+            current_action,block_filter,last_window_size,config
 
-    # create tmp folder for ocr editor
-    tmp_folder_path = f'{file_path}/ocr_editor_tmp'
-    if not os.path.exists(tmp_folder_path):
-        os.mkdir(tmp_folder_path)
+    create_base_folders()
+    tmp_folder_path = f'{consts.ocr_editor_path}/tmp'
     # clean tmp folder
     for f in os.listdir(tmp_folder_path):
         if os.path.isfile(os.path.join(tmp_folder_path, f)):
@@ -1524,6 +1593,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         else:
             shutil.rmtree(os.path.join(tmp_folder_path, f))
 
+    config = read_ocr_editor_configs_file()
 
     window = ocr_editor_layout()
     last_window_size = window.size
@@ -1735,8 +1805,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             add_ocr_result_cache(current_ocr_results)
         # configurations button
         elif event == 'configurations_button':
-            window['editor_main_frame'].update(visible=False)
-            window['configurations_frame'].update(visible=True)
+            config = run_config_gui()
         else:
             print(f'event {event} not implemented')
         

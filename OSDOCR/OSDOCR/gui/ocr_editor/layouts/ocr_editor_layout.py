@@ -282,8 +282,8 @@ def configurations_layout()->sg.Window:
             place(sg.Checkbox(text='Use Pipeline Results: ',key='checkbox_use_pipeline_results',enable_events=True))
         ],
         [
-            place(sg.Text('Output Path: ')),
-            place(sg.FolderBrowse(key='folder_output_path',enable_events=True))
+            place(sg.FolderBrowse('Output Path: ',target='input_output_path',enable_events=True)),
+            place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True))
         ],
     ]
 
@@ -307,8 +307,8 @@ def configurations_layout()->sg.Window:
 
     pipeline_preprocessing_options = [
         [
-            place(sg.Text('Preprocessing: ')),
-            place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',key='list_preprocessing',enable_events=True))
+            place(sg.Text('Fix Rotation: ')),
+            place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',key='list_fix_rotation',enable_events=True))
         ],
         [
             place(sg.Text('Upscaling Image: ')),
@@ -330,15 +330,15 @@ def configurations_layout()->sg.Window:
     pipeline_tesseract_options = [
         [
             place(sg.Text('DPI: ')),
-            place(sg.InputText(key='input_dpi',enable_events=True))
+            place(sg.InputText(key='tesseract_input_dpi',enable_events=True))
         ],
         [
             place(sg.Text('PSM: ')),
-            place(sg.InputText(key='input_psm',enable_events=True))
+            place(sg.InputText(key='tesseract_input_psm',enable_events=True))
         ],
         [
             place(sg.Text('Language: ')),
-            place(sg.Combo(['eng','por'],default_value='eng',key='list_l',enable_events=True))
+            place(sg.Combo(['eng','por'],default_value='eng',key='tesseract_list_lang',enable_events=True))
         ]
     ]
 
@@ -357,13 +357,42 @@ def configurations_layout()->sg.Window:
         ]
     ]
 
-    # final layout
-    layout = [
+    # article configurations
+    ## article gathering (select : selected, fill)
+
+    article_options = [
         [
-            place(sg.Frame('Simple',simple_options_frame)),
-            place(sg.Frame('OCR Pipeline',pipeline_options_frame))
+            place(sg.Text('Article Gathering: ')),
+            place(sg.Combo(['selected','fill'],default_value='selected',key='list_article_gathering',enable_events=True))
         ]
     ]
 
-    return sg.Window('OCR Editor', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True)
+    article_options_frame = [
+        [
+            place(sg.Frame('Article Configuration',article_options))
+        ]
+    ]
+
+
+    # final layout
+    layout = [
+        [
+            simple_options_frame,
+        ],
+        [
+            pipeline_options_frame,
+        ],
+        [
+            article_options_frame,
+        ],
+        [
+            place(sg.Button('Save',key='button_save')),
+            place(sg.Button('Reset',key='button_reset')),
+            place(sg.Button('Cancel',key='button_cancel')),
+        ]
+    ]
+
+    window = sg.Window('OCR Editor - Configuration', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True)
+    window.bind('<Configure>',"Event")
+    return window
     

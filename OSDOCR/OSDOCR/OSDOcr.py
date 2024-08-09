@@ -147,6 +147,7 @@ def main():
         =============================
         =============================
           ''')
+    create_base_folders()
     read_configs()
     args = process_args()
 
