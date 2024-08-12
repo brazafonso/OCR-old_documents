@@ -2,6 +2,7 @@ import json
 import os
 import hashlib
 import shutil
+import importlib.resources as pkg_resources
 from . import consts
 
 
@@ -21,12 +22,10 @@ def create_base_folders():
         os.makedirs(consts.ocr_editor_tmp_path)
 
     # const files
-    file_path = os.path.dirname(os.path.realpath(__file__))
-    consts_files_folder = f'{file_path}/../consts'
-    print(consts_files_folder)
+    consts_files_folder = pkg_resources.files('OSDOCR').joinpath('consts')
     for f in os.listdir(consts_files_folder):
-        if not os.path.exists(f'{consts.consts_path}/{f}') and os.path.isfile(f'{consts_files_folder}/{f}'):
-            shutil.copy(f'{consts_files_folder}/{f}',f'{consts.consts_path}/{f}')
+        if not os.path.exists(f'{consts.consts_path}/{f}') and os.path.isfile(f):
+            shutil.copy(f,f'{consts.consts_path}/{f}')
 
 
 def path_to_id(path: str):
@@ -146,7 +145,7 @@ def get_metadata(results_path:str):
 def save_target_metadata(target_path:str,metadata:dict):
     '''Save target metadata'''
     results_folder = f'{consts.result_path}/{path_to_id(target_path)}'
-    if os.path.exists(f'{results_folder}/metadata.json'):
+    if os.path.exists(f'{results_folder}'):
         metadata_file = open(f'{results_folder}/metadata.json','w')
         json.dump(metadata,metadata_file,indent=4)
         metadata_file.close()
@@ -196,7 +195,7 @@ def metadata_get_transformation(metadata:dict,transformation:str):
 def get_last_image_path(target_path:str):
     '''From target metadata, get last image path'''
     metadata = get_target_metadata(target_path)
-    target_image_path = metadata['target_path']
+    target_image_path = metadata['target_path'] if 'target_path' in metadata else None
     if os.path.exists(target_image_path):
         return target_image_path
     

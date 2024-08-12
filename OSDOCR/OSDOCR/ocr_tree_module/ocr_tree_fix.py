@@ -417,14 +417,15 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                         block_1 = new_blocks[0]
                         print(f'Block 1: {block_1.box}')
 
-                        block_2 = new_blocks[1]
-                        # add new blocks
-                        page = ocr_results.get_boxes_level(1)[0]
-                        page.add_child(block_2)
-                        # add blocks to list
-                        blocks.append(block_2)
-                        # id boxes again
-                        ocr_results.id_boxes(level=[2])
+                        if len(new_blocks) > 1:
+                            block_2 = new_blocks[1]
+                            # add new blocks
+                            page = ocr_results.get_boxes_level(1)[0]
+                            page.add_child(block_2)
+                            # add blocks to list
+                            blocks.append(block_2)
+                            # id boxes again
+                            ocr_results.id_boxes(level=[2])
             j += 1
 
     if logs:

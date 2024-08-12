@@ -1,21 +1,20 @@
 import shutil
 import PIL
 import cv2
+import math
 import numpy as np
-import torch
-import layoutparser as lp
 import OSDOCR.aux_utils.consts as consts
 from OSDOCR.aux_utils.misc import *
 from OSDOCR.aux_utils.box import Box
 from document_image_utils.image import calculate_dpi, identify_document_images as identify_document_images_leptonica
 from PIL import Image
-from sympy import ceiling
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
 
-def create_waifu2x_model(method:str='scale2x',model_type:str='photo',noise_level:int=1) -> torch.nn.Module:
+def create_waifu2x_model(method:str='scale2x',model_type:str='photo',noise_level:int=1):
     '''Create Waifu2x model'''
+    import torch
     if torch.cuda.is_available():
         model = torch.hub.load("nagadomi/nunif:master", "waifu2x",
         method=method, noise_level=noise_level, model_type=model_type,trust_repo=True).to("cuda")
@@ -36,6 +35,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
         noise_level (int, optional): noise level [-1 (None),0,1,2,3]. Defaults to 1.
         result_image_path (str, optional): path to save result. Defaults to None, in which case result will be saved to same directory.
     '''
+    import torch
     if logs:
         print(f'Running Waifu2x | target_image: {target_image} | method: {method} | model_type: {model_type} | noise_level: {noise_level} | result_image_path: {result_image_path}')
         print('Loading model | cuda available: ',torch.cuda.is_available())
@@ -59,7 +59,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
             print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
 
         if dpi < target_dpi:
-            scale_times = ceiling((target_dpi/dpi - 1) / 2)
+            scale_times = math.ceil((target_dpi/dpi - 1) / 2)
             scaling_type = None
             if scale_times >= 2:
                 model_main = 'scale4x'
@@ -135,6 +135,8 @@ def identify_document_images_layoutparser(image_path:str,conf:float=0.5,old_docu
     
     
     '''
+
+    import layoutparser as lp
 
     treated_image = cv2.imread(image_path)
     rgb_image = treated_image[..., ::-1]
@@ -278,12 +280,13 @@ def fix_illumination(image_path:str,model_weight:str='best_SSIM',split_image:boo
     - w_perc'''
     from .models.HVI_CIDNet.net.CIDNet import CIDNet
     from .models.HVI_CIDNet.data.data import get_SICE_eval_set
+    import torch
     from torchvision import transforms
     from torch.utils.data import DataLoader
 
 
 
-    weights_path = f'{file_path}/models/HVI_CIDNet/weights/{model_weight}.pth'    
+    weights_path = f'{consts.osdocr_path}/consts/models/weights/{model_weight}.pth'    
     # check if model exists
     if not os.path.exists(weights_path):
         print(f'Weights not found: {weights_path}. Please download it or check its path.')
@@ -308,8 +311,8 @@ def fix_illumination(image_path:str,model_weight:str='best_SSIM',split_image:boo
 
     ### if image is too big (area > 1000*1000), crop into batches
     if h*w > 1000*1000 and split_image:
-        n_columns = ceiling(w/1000)
-        n_rows = ceiling(h/1000)
+        n_columns = math.ceil(w/1000)
+        n_rows = math.ceil(h/1000)
         batches = []
         for i in range(n_rows):
             batches.append([])
