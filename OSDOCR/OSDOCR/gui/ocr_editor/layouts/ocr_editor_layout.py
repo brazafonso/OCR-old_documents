@@ -42,6 +42,9 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Button('Split Whitespaces',key='method_split_whitespaces')),
         ],
         [
+            place(sg.Button('Split Image',key='method_split_image')),
+        ],
+        [
             place(sg.Button('Fix intersections',key='method_fix_intersections')),
         ],
         [
@@ -395,4 +398,33 @@ def configurations_layout()->sg.Window:
     window = sg.Window('OCR Editor - Configuration', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True)
     window.bind('<Configure>',"Event")
     return window
+
+
+def popup_window(title:str='',message:str='',options:list=[],location:tuple=(None,None),modal:bool=True):
+    '''Popup window'''
+
+    layout = [
+        [
+            place(sg.Text(message))
+        ],
+        [
+        ]
+    ]
+    for option in options:
+        layout[1].append(place(sg.Button(option,key=option)))
+
+    window = sg.Window(title,layout,finalize=True,resizable=True,location=location,keep_on_top=True,force_toplevel=True,modal=modal)
+    window.bind('<Configure>',"Event")
+
+    option = None
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED:
+            break
+        if event in options:
+            option = event
+            break
+
+    window.close()
+    return option
     

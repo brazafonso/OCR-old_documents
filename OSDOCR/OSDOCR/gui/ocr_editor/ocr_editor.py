@@ -62,6 +62,7 @@ Possible actions:
     - move
     - expand
     - split_block
+    - split_image
 '''
 current_action = None
 current_action_start = None
@@ -73,6 +74,26 @@ last_activity_time = time.time()
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
+
+
+
+def choose_window_image_input(values:dict):
+    global figure,current_ocr_results,current_ocr_results_path,bounding_boxes,animation\
+            ,ocr_results_articles, ppi, current_image_path,window
+    if current_image_path:
+        # reset variables
+        figure = None
+        current_ocr_results = None
+        current_ocr_results_path = None
+        bounding_boxes = {}
+        ocr_results_articles = {}
+        ppi = 300
+        animation.pause()
+        clean_ocr_result_cache()
+    
+    update_canvas_image(window,values)
+    print('Chose target image')
+
 
 def get_bounding_boxes()->dict:
     '''Get bounding boxes'''
@@ -127,6 +148,7 @@ def clean_ocr_result_cache(position:int=0):
     global cache_ocr_results,current_cache_ocr_results_index
     if len(cache_ocr_results) > 0 and position < len(cache_ocr_results):
         cache_ocr_results = cache_ocr_results[:position]
+        current_cache_ocr_results_index = position - 1
 
 
 def undo_operation():
@@ -222,13 +244,29 @@ def update_canvas(window:sg.Window,figure):
 
 def split_action_assets():
     '''Create assets for split action'''
-    global current_action,last_mouse_position,highlighted_blocks,default_edge_color,image_plot
+    global current_action,last_mouse_position,highlighted_blocks,default_edge_color,image_plot,current_image_path
     assets = []
     if current_action == 'split_block':
         x,y = last_mouse_position
         if x is not None and y is not None:
             block = highlighted_blocks[-1]['block']
             orientation,line = split_line(x,y,block)
+            if orientation and line:
+                x_data = [line.left, line.right]
+                y_data = [line.top, line.bottom]
+                line_asset = Line2D(x_data,y_data,linewidth=2, color=default_edge_color,
+                                    marker='o', markersize=5, markerfacecolor=default_edge_color, 
+                                    markeredgewidth=2, markeredgecolor='black',linestyle='--')
+
+                assets.append(line_asset)
+                image_plot.add_line(line_asset)
+    elif current_action == 'split_image' and current_image_path:
+        x,y = last_mouse_position
+        if x is not None and y is not None:
+            img = cv2.imread(current_image_path)
+            widht,height = img.shape[1],img.shape[0]
+            img_box = Box(0, widht, 0, height)
+            orientation,line = split_line(x,y,img_box)
             if orientation and line:
                 x_data = [line.left, line.right]
                 y_data = [line.top, line.bottom]
@@ -276,6 +314,11 @@ def update(frame):
 
         # case of split block action
         if current_action == 'split_block':
+            split_assets = split_action_assets()
+            assets.extend(split_assets)
+
+        # case of split image action
+        if current_action == 'split_image' and current_image_path:
             split_assets = split_action_assets()
             assets.extend(split_assets)
 
@@ -609,14 +652,14 @@ def highlight_block(block:dict):
 
 def canvas_on_button_press(event):
     '''Handle mouse click events'''
-    global current_action,current_action_start,bounding_boxes,highlighted_blocks,last_activity_time,focused_block
+    global current_action,current_action_start,bounding_boxes,highlighted_blocks,last_activity_time,focused_block,window
     print(f'click {event}')
     # left click
     if event.button == 1:
         # calculate closest block
         click_x = event.xdata
         click_y = event.ydata
-        if not current_action or current_action != 'split_block':
+        if not current_action or current_action not in ['split_block','split_image']:
             current_action_start = (click_x,click_y)
             block_id = closest_block(click_x,click_y)
             if block_id is not None:
@@ -663,6 +706,13 @@ def canvas_on_button_press(event):
             split_ocr_block(int(click_x),int(click_y))
             current_action = None
             add_ocr_result_cache(current_ocr_results)
+
+        elif current_action == 'split_image':
+            # create event for main window
+            ## bug - if creating popup windows from handler, blocks the main window
+            window.write_event_value('method_split_image',(click_x,click_y))
+            
+
     # middle click
     elif event.button == 2:
         ## create new block
@@ -1089,7 +1139,7 @@ def join_ocr_blocks():
 
 
 
-def split_line(x:int,y:int,block:OCR_Tree)->Union[str,Box]:
+def split_line(x:int,y:int,block:Union[OCR_Tree,Box])->Union[str,Box]:
     '''Gets split line for ocr block. Returns orientation and split line box.
     
     Returns:
@@ -1099,22 +1149,23 @@ def split_line(x:int,y:int,block:OCR_Tree)->Union[str,Box]:
     # get split line
     split_delimiter = None
     orientation = None
+    box = block.box if isinstance(block,OCR_Tree) else block
     ## get closest edge to mouse click
-    closest_edge = block.box.closest_edge_point(x,y)
+    closest_edge = box.closest_edge_point(x,y)
     ### horizontal split
     if closest_edge in ['left','right']:
         orientation = 'horizontal'
-        left = block.box.left
-        right = block.box.right
-        top = y if y <= block.box.bottom and y >= block.box.top else block.box.top if y < block.box.top else block.box.bottom
+        left = box.left
+        right = box.right
+        top = y if y <= box.bottom and y >= box.top else box.top if y < box.top else box.bottom
         bottom = top + 1
         split_delimiter = Box({'left': left,'right': right,'top': top,'bottom': bottom})
     ### vertical split
     elif closest_edge in ['top','bottom']:
         orientation = 'vertical'
-        top = block.box.top
-        bottom = block.box.bottom
-        left = x if x <= block.box.right and x >= block.box.left else block.box.left if x < block.box.left else block.box.right
+        top = box.top
+        bottom = box.bottom
+        left = x if x <= box.right and x >= box.left else box.left if x < box.left else box.right
         right = left + 1
         split_delimiter = Box({'left': left,'right': right,'top': top,'bottom': bottom})
 
@@ -1147,6 +1198,87 @@ def split_ocr_block(x:int,y:int):
 
             # update sidebar block info
             sidebar_update_block_info()
+
+
+def split_image_method(x:int,y:int):
+    '''Method to split image and respective ocr results (if any). Creates new image and ocr result files and resets ocr editor canvas and cache.'''
+    global current_ocr_results,current_ocr_results_path,current_image_path,window,default_edge_color
+    ocr_results_path = None
+    image_path = None
+    if current_image_path:
+        # split image
+        ## get image size
+        img = cv2.imread(current_image_path)
+        height,width,_ = img.shape
+        image_box = Box({'left':0,'right':width,'top':0,'bottom':height})
+        orientation,split_delimiter = split_line(x,y,image_box)
+        if split_delimiter:
+            popup_location = window.mouse_location()
+            image_area = None
+            # cut image
+            if orientation == 'horizontal':
+                option = popup_window(title='Area to keep',message='Choose area to keep',options=('top','bottom'),location=popup_location,modal=True)
+                if option == 'top':
+                    img = img[0:split_delimiter.top,0:width]
+                    image_area = Box({'left':0,'right':width,'top':0,'bottom':split_delimiter.top})
+                elif option == 'bottom':
+                    img = img[split_delimiter.bottom:height,0:width]
+                    image_area = Box({'left':0,'right':width,'top':split_delimiter.bottom,'bottom':height})
+            elif orientation == 'vertical':
+                option = popup_window(title='Area to keep',message='Choose area to keep',options=('left','right'),location=popup_location,modal=True) 
+                if option == 'left':
+                    img = img[0:height,0:split_delimiter.left]
+                    image_area = Box({'left':0,'right':split_delimiter.left,'top':0,'bottom':height})
+                elif option == 'right':
+                    img = img[0:height,split_delimiter.right:width]
+                    image_area = Box({'left':split_delimiter.right,'right':width,'top':0,'bottom':height})
+            
+            # save image
+            image_name = os.path.splitext(os.path.basename(current_image_path))[0]
+            image_path = os.path.join(os.path.dirname(current_image_path),f'{image_name}_split.png')
+            id = 0
+            while os.path.exists(image_path):
+                id += 1
+                image_path = os.path.join(os.path.dirname(current_image_path),f'{image_name}_split_{id}.png')
+            cv2.imwrite(image_path,img)
+
+            # split ocr results
+            if current_ocr_results and image_area:
+                tree = current_ocr_results.get_boxes_level(0)[0].copy()
+                page = tree.get_boxes_level(1)[0]
+                # split ocr results
+                blocks = page.get_boxes_in_area(image_area,level=2)
+                page.children = []
+                page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
+                for block in blocks:
+                    page.add_child(block.copy())
+                # save ocr results
+                ocr_results_path = f'{image_path}_ocr_results.json'
+                tree.save_json(ocr_results_path)
+
+            # reset ocr editor
+            if image_area:
+                _,values = window.read(timeout=0)
+                # reset image
+                values['target_input'] = image_path
+                choose_window_image_input(values)
+
+                # reset variables
+                refresh_ocr_results()
+
+                # reset ocr results
+                if ocr_results_path:
+                    values['ocr_results_input'] = ocr_results_path
+                    update_canvas_ocr_results(window,values)
+                    add_ocr_result_cache(OCR_Tree(ocr_results_path))
+                    toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
+
+                # reset sidebar
+                sidebar_update_block_info()
+                update_sidebar_articles()
+
+
+
 
 
 def split_ocr_blocks_by_whitespaces_method():
@@ -1576,13 +1708,17 @@ def move_article_method(article_id:int, up:bool=True):
             ocr_results_articles = {k: ocr_results_articles[k] for k in keys}
         refresh_articles()
 
+
+
+
+
     
 
 def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
-            current_action,block_filter,last_window_size,config
+            current_action,block_filter,last_window_size,config,ocr_results_articles
 
     create_base_folders()
     tmp_folder_path = f'{consts.ocr_editor_path}/tmp'
@@ -1621,18 +1757,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         #---------------------------------
         # choose image
         elif event == 'target_input':
-            if current_image_path:
-                # reset variables
-                figure = None
-                current_ocr_results = None
-                current_ocr_results_path = None
-                bounding_boxes = None
-                ppi = 300
-                animation.pause()
-                clean_ocr_result_cache()
-            
-            update_canvas_image(window,values)
-            print('Chose target image')
+            choose_window_image_input(values)
         # choose ocr results
         elif event == 'ocr_results_input':
             update_canvas_ocr_results(window,values)
@@ -1803,6 +1928,16 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             refresh_blocks_ids()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # split image
+        elif event == 'method_split_image':
+            if current_action != 'split_image':
+                current_action = 'split_image'
+            else:
+                click_x, click_y = values[event]
+                split_image_method(int(click_x),int(click_y))
+                current_action = None
+                ## TODO : reset canvas, ocr results, cache and sidebar
+                print('split image')
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui()
@@ -1816,3 +1951,5 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
 
         last_window_size = window.size
     window.close()
+
+    print('done')
