@@ -288,6 +288,10 @@ def configurations_layout()->sg.Window:
             place(sg.FolderBrowse('Output Path: ',target='input_output_path',enable_events=True)),
             place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True))
         ],
+        [
+            place(sg.Text('Cache Size: ')),
+            place(sg.Input(10,key='input_cache_size', enable_events=True))
+        ]
     ]
 
     simple_options_frame = [

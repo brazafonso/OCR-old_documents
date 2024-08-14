@@ -54,7 +54,6 @@ current_ocr_results = None
 current_ocr_results_path = None
 cache_ocr_results = []
 current_cache_ocr_results_index = -1
-max_cache_ocr_results_size = 10
 ocr_results_articles = {}
 ## actions
 '''
@@ -123,9 +122,9 @@ def refresh_layout():
 
 def add_ocr_result_cache(ocr_result:OCR_Tree):
     '''Add ocr result to cache'''
-    global cache_ocr_results,current_cache_ocr_results_index
+    global cache_ocr_results,current_cache_ocr_results_index,config
     print('Add ocr result to cache')
-    if len(cache_ocr_results) >= max_cache_ocr_results_size:
+    if len(cache_ocr_results) >= config['base']['cache_size'] and len(cache_ocr_results) > 0:
         cache_ocr_results.pop(0)
 
     if current_cache_ocr_results_index+1 > len(cache_ocr_results)-1:
@@ -602,7 +601,9 @@ def sidebar_update_block_info():
 
 def create_new_ocr_block(x:int=None,y:int=None):
     '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
-    global current_ocr_results,figure,default_edge_color,image_plot
+    global current_ocr_results,current_image_path,figure,default_edge_color,image_plot,animation
+    if not current_image_path:
+        return
 
     if x is None and y is None:
         # create new block at middle of canvas
@@ -617,6 +618,31 @@ def create_new_ocr_block(x:int=None,y:int=None):
     last_id = 0
     if current_ocr_results is not None:
         last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id
+    else:
+        # create new ocr results
+        ## also needs to resume animation
+        animation.resume()
+        last_id = -1
+        img = cv2.imread(current_image_path)
+        current_ocr_results = OCR_Tree({
+            'level':0,
+            'box':Box({
+                'left':0,
+                'top':0,
+                'right':img.shape[1],
+                'bottom':img.shape[0]
+            }),
+        })
+        current_ocr_results.add_child(OCR_Tree({
+            'level':1,
+            'box':Box({
+                'left':0,
+                'top':0,
+                'right':img.shape[1],
+                'bottom':img.shape[0]
+            }),
+        }))
+
     new_id = last_id + 1
     new_block = OCR_Tree({
         'level':2,
@@ -652,7 +678,6 @@ def highlight_block(block:dict):
 
     highlighted_blocks.append(block)
         
-
 
 
 def canvas_on_button_press(event):
@@ -724,6 +749,7 @@ def canvas_on_button_press(event):
         click_x = event.xdata
         click_y = event.ydata
         create_new_ocr_block(x=click_x,y=click_y)
+        add_ocr_result_cache(current_ocr_results)
 
     last_activity_time = time.time()
 
@@ -877,10 +903,12 @@ def destroy_canvas():
 
 def zoom_canvas(factor:int=1):
     '''Zoom canvas, altering ppi value by factor'''
-    global ppi
+    global ppi,current_ocr_results
     ppi += factor
     # refresh canvas
-    refresh_canvas(refresh_image=False,refresh_ocr_results=True)
+    refresh_image = True if not current_ocr_results else False
+    refresh_ocr_results = True if current_ocr_results else False 
+    refresh_canvas(refresh_image=refresh_image,refresh_ocr_results=refresh_ocr_results)
 
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
@@ -1056,6 +1084,8 @@ def apply_ocr_block():
     '''Apply OCR on highlighted ocr block'''
     global highlighted_blocks,current_image_path,config
     if highlighted_blocks:
+        print('Apply OCR on highlighted ocr block')
+
         block = highlighted_blocks[-1]
         ocr_block = block['block']
         ocr_block:OCR_Tree
@@ -1100,8 +1130,15 @@ def apply_ocr_block():
         run_target_image(tmp_path,results_path=tmp_dir,args=args)
         # load ocr results
         ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json')
+        new_box = ocr_results.get_boxes_level(0)[0].box
+        ## scale dimensions, OCR results may not align with ocr block size
+        scale_height = box.height/new_box.height
+        scale_width = box.width/new_box.width
+        ocr_results.scale_dimensions(scale_width,scale_height)
         ## move ocr results to position of ocr block
-        ocr_results.update_position(top=box.top,left=box.left)
+        move_top = box.top - new_box.top
+        move_left = box.left - new_box.left
+        ocr_results.update_position(move_top,move_left)
         new_children = ocr_results.get_boxes_level(3)
         ocr_block.children = new_children
         # # remove tmp dir

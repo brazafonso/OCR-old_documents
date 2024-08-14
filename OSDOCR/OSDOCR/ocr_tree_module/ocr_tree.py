@@ -991,7 +991,6 @@ class OCR_Tree:
             top (int, optional): Top position. Defaults to None.
             left (int, optional): Left position. Defaults to None.
             absolute (bool, optional): If True, positions are absolute, else values are added to current position. Defaults to False.'''
-        
         if not any([top,left]):
             return
         if top is not None:
@@ -1099,6 +1098,48 @@ class OCR_Tree:
 
         for child in self.children:
             child.update_box(left=left,right=right,top=top,bottom=bottom,children=True)
+
+
+
+    def scale_dimensions(self,scale_width:float=None,scale_height:float=None):
+        '''Scale dimensions of box and children.'''
+        if not any([scale_width,scale_height]):
+            return
+        if scale_width:
+            self.box.update(left=int(self.box.left * scale_width),right=int(self.box.right * scale_width))
+        if scale_height:
+            self.box.update(top=int(self.box.top * scale_height),bottom=int(self.box.bottom * scale_height))
+
+        for child in self.children:
+            child.scale_dimensions(scale_width=scale_width,scale_height=scale_height)
+
+
+    def max_bottom(self,max_bottom:int=None):
+        '''Get max bottom of tree'''
+
+        if not max_bottom:
+            max_bottom = self.box.bottom
+        elif self.box.bottom > max_bottom:
+            max_bottom = self.box.bottom
+
+        for child in self.children:
+            max_bottom = child.max_bottom(max_bottom)
+
+        return max_bottom
+    
+    def min_left(self,min_left:int=None):
+        '''Get min left of tree'''
+
+        if not min_left:
+            min_left = self.box.left
+        elif self.box.left < min_left:
+            min_left = self.box.left
+
+        for child in self.children:
+            min_left = child.min_left(min_left)
+
+        return min_left
+
         
         
 

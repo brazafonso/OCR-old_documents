@@ -1,3 +1,4 @@
+import collections
 from .layouts.ocr_editor_layout import configurations_layout
 from copy import deepcopy
 import PySimpleGUI as sg
@@ -19,6 +20,7 @@ default_config = {
         'use_pipeline_results' : True,
         'output_type' : ['newspaper'],
         'output_path' : os.getcwd(),
+        'cache_size' : 10
     },
     'ocr_pipeline' : {
         'fix_rotation' : 'none',
@@ -76,6 +78,10 @@ def read_config_window(values:dict)->dict:
     config['base']['output_type'] = values['list_output_type']
     config['base']['use_pipeline_results'] = values['checkbox_use_pipeline_results']
     config['base']['output_path'] = values['input_output_path']
+    try:
+        config['base']['cache_size'] = int(values['input_cache_size'])
+    except:
+        pass
 
     # ocr pipeline values
     config['ocr_pipeline']['fix_rotation'] = values['list_fix_rotation']
@@ -83,8 +89,14 @@ def read_config_window(values:dict)->dict:
     config['ocr_pipeline']['denoise_image'] = values['list_denoise_image']
     config['ocr_pipeline']['fix_illumination'] = values['checkbox_fix_illumination']
     config['ocr_pipeline']['binarize'] = values['list_binarize']
-    config['ocr_pipeline']['tesseract_config']['dpi'] = values['tesseract_input_dpi']
-    config['ocr_pipeline']['tesseract_config']['psm'] = values['tesseract_input_psm']
+    try:
+        config['ocr_pipeline']['tesseract_config']['dpi'] = int(values['tesseract_input_dpi'])
+    except:
+        pass
+    try:
+        config['ocr_pipeline']['tesseract_config']['psm'] = values['tesseract_input_psm']
+    except:
+        pass
     config['ocr_pipeline']['tesseract_config']['l'] = values['tesseract_list_lang']
 
     # article values
@@ -92,15 +104,20 @@ def read_config_window(values:dict)->dict:
 
     return config
 
+
+def update_dict(d: dict, new_values: dict):
+    for k, v in new_values.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update_dict(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 def refresh_config_window(window:sg.Window, config:dict):
     '''Refresh config window values'''
     global default_config
     refresh_conf = deepcopy(default_config)
-    # update refresh_conf
-    for key, value in config.items():
-        if key in refresh_conf:
-            refresh_conf[key].update(value)
-    
+    refresh_conf = update_dict(refresh_conf, config)
+
     # base values
     window['slider_text_confidence'].update(refresh_conf['base']['text_confidence'])
     window['list_type_of_document'].update(refresh_conf['base']['doc_type'])
@@ -112,6 +129,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['list_output_type'].update(refresh_conf['base']['output_type'])
     window['checkbox_use_pipeline_results'].update(refresh_conf['base']['use_pipeline_results'])
     window['input_output_path'].update(refresh_conf['base']['output_path'])
+    window['input_cache_size'].update(refresh_conf['base']['cache_size'])
 
     # ocr pipeline values
     window['list_fix_rotation'].update(refresh_conf['ocr_pipeline']['fix_rotation'])
