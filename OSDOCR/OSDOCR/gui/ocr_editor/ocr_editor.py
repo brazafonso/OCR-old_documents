@@ -182,20 +182,20 @@ def clear_canvas():
     except Exception as e:
         print(e)
 
-def refresh_canvas():
+def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
     '''Redraws canvas with current ocr results'''
     global window,current_image_path,current_ocr_results,image_plot
     if current_image_path or current_ocr_results:
-        if current_image_path:
-            # draw image
+        # draw image
+        if current_image_path and refresh_image:
             clear_canvas()
             # create new plot
             image_plot = create_plot(current_image_path)
             # update canvas
             update_canvas(window,figure)
 
-        if current_ocr_results:
-            # draw ocr results
+        # draw ocr results
+        if current_ocr_results and refresh_ocr_results:
             draw_ocr_results(current_ocr_results,window)
 
         # warn column of content change
@@ -219,10 +219,15 @@ def refresh_ocr_results():
 
 
 def update_canvas_column(window:sg.Window):
-    '''Update canvas column'''
+    '''Update canvas column. Uses TKinter canvas for performance'''
+    global figure_canvas_agg
     print('Update canvas column')
-    window.refresh()
-    window['body_canvas'].contents_changed()
+    canvas = window['body_canvas'].Widget.canvas
+    w,h = figure_canvas_agg.get_width_height()
+    # add some padding
+    w += 50
+    h += 50
+    canvas.config(scrollregion=(0,0,w,h)) 
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
@@ -345,6 +350,7 @@ def create_plot(path:str):
     figure.canvas.mpl_connect('motion_notify_event', canvas_on_mouse_move)
 
     ax.imshow(image)
+    figure.canvas.draw_idle()
 
     return ax
 
@@ -467,7 +473,6 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
     global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes,default_edge_color
-
     # get new plot to draw ocr results
     image_plot = create_plot(current_image_path)
 
@@ -482,7 +487,7 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
         
     # clear canvas
     clear_canvas()
-    # update canvas
+    # # update canvas
     update_canvas(window,figure)
 
 
@@ -875,7 +880,7 @@ def zoom_canvas(factor:int=1):
     global ppi
     ppi += factor
     # refresh canvas
-    refresh_canvas()
+    refresh_canvas(refresh_image=False,refresh_ocr_results=True)
 
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
