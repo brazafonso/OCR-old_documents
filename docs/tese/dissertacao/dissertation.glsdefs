@@ -1,14 +1,14 @@
-\glsdefs@newdocentry{gcd}%
+\glsdefs@newdocentry{ocr}%
 {%
-name={\acronymfont {\glsentryshort {gcd}}},%
-sort={MDC},%
+name={\acronymfont {\glsentryshort {ocr}}},%
+sort={OCR},%
 type={acronym},%
-first={MDC},%
-firstplural={MDCs},%
-text={MDC},%
-plural={MDCs},%
-description={Máximo Divisor Comum},%
-descriptionplural={Máximo Divisor Comum},%
+first={OCR},%
+firstplural={OCRs},%
+text={OCR},%
+plural={OCRs},%
+description={reconhecimento óptico de caracteres},%
+descriptionplural={reconhecimento óptico de caracteres},%
 symbol={\relax },%
 symbolplural={\relax },%
 user1={},%
@@ -17,26 +17,26 @@ user3={},%
 user4={},%
 user5={},%
 user6={},%
-long={Máximo Divisor Comum},%
-longplural={Máximo Divisor Comums},%
-short={MDC},%
-shortplural={MDCs},%
+long={reconhecimento óptico de caracteres},%
+longplural={reconhecimento óptico de caracteress},%
+short={OCR},%
+shortplural={OCRs},%
 counter={page},%
 parent={},%
 %
 }%
 
-\glsdefs@newdocentry{lcm}%
+\glsdefs@newdocentry{gui}%
 {%
-name={\acronymfont {\glsentryshort {lcm}}},%
-sort={MMC},%
+name={\acronymfont {\glsentryshort {gui}}},%
+sort={GUI},%
 type={acronym},%
-first={MMC},%
-firstplural={MMCs},%
-text={MMC},%
-plural={MMCs},%
-description={Mínimo múltiplo comum},%
-descriptionplural={Mínimo múltiplo comum},%
+first={GUI},%
+firstplural={GUIs},%
+text={GUI},%
+plural={GUIs},%
+description={graphic user interface},%
+descriptionplural={graphic user interface},%
 symbol={\relax },%
 symbolplural={\relax },%
 user1={},%
@@ -45,26 +45,26 @@ user3={},%
 user4={},%
 user5={},%
 user6={},%
-long={Mínimo múltiplo comum},%
-longplural={Mínimo múltiplo comums},%
-short={MMC},%
-shortplural={MMCs},%
+long={graphic user interface},%
+longplural={graphic user interfaces},%
+short={GUI},%
+shortplural={GUIs},%
 counter={page},%
 parent={},%
 %
 }%
 
-\glsdefs@newdocentry{maths}%
+\glsdefs@newdocentry{ground truth}%
 {%
-name={matemática},%
-sort={matemática},%
+name={ground truth},%
+sort={ground truth},%
 type={main},%
-first={matemática},%
-firstplural={matemáticas},%
-text={matemática},%
-plural={matemáticas},%
-description={Matemática é o que os matemáticos fazem},%
-descriptionplural={Matemática é o que os matemáticos fazem},%
+first={ground truth},%
+firstplural={ground truths},%
+text={ground truth},%
+plural={ground truths},%
+description={Em OCR, este é o nome dado ao conteúdo do documento original. Usualmente apenas o conteúdo textual é considerado.},%
+descriptionplural={Em OCR, este é o nome dado ao conteúdo do documento original. Usualmente apenas o conteúdo textual é considerado.},%
 symbol={\relax },%
 symbolplural={\relax },%
 user1={},%
@@ -82,17 +82,17 @@ parent={},%
 %
 }%
 
-\glsdefs@newdocentry{latex}%
+\glsdefs@newdocentry{codec}%
 {%
-name={latex},%
-sort={latex},%
+name={codec},%
+sort={codec},%
 type={main},%
-first={latex},%
-firstplural={latexs},%
-text={latex},%
-plural={latexs},%
-description={É uma linguagem especialmente adequada para documentos científicos},%
-descriptionplural={É uma linguagem especialmente adequada para documentos científicos},%
+first={codec},%
+firstplural={codecs},%
+text={codec},%
+plural={codecs},%
+description={Algoritmo de compressão com o propósito de diminuir a dimensão de uma entidade.},%
+descriptionplural={Algoritmo de compressão com o propósito de diminuir a dimensão de uma entidade.},%
 symbol={\relax },%
 symbolplural={\relax },%
 user1={},%
@@ -110,17 +110,241 @@ parent={},%
 %
 }%
 
-\glsdefs@newdocentry{formula}%
+\glsdefs@newdocentry{ml}%
 {%
-name={fórmula},%
-sort={fórmula},%
+name={\acronymfont {\glsentryshort {ml}}},%
+sort={ML},%
+type={acronym},%
+first={ML},%
+firstplural={MLs},%
+text={ML},%
+plural={MLs},%
+description={Machine Learning},%
+descriptionplural={Machine Learning},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Machine Learning},%
+longplural={Machine Learnings},%
+short={ML},%
+shortplural={MLs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{dpi}%
+{%
+name={\acronymfont {\glsentryshort {dpi}}},%
+sort={DPI},%
+type={acronym},%
+first={DPI},%
+firstplural={DPIs},%
+text={DPI},%
+plural={DPIs},%
+description={dots per inch},%
+descriptionplural={dots per inch},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={dots per inch},%
+longplural={dots per inchs},%
+short={DPI},%
+shortplural={DPIs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{cnn}%
+{%
+name={\acronymfont {\glsentryshort {cnn}}},%
+sort={CNN},%
+type={acronym},%
+first={CNN},%
+firstplural={CNNs},%
+text={CNN},%
+plural={CNNs},%
+description={Convolutional Neural Network},%
+descriptionplural={Convolutional Neural Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Convolutional Neural Network},%
+longplural={Convolutional Neural Networks},%
+short={CNN},%
+shortplural={CNNs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{gan}%
+{%
+name={\acronymfont {\glsentryshort {gan}}},%
+sort={GAN},%
+type={acronym},%
+first={GAN},%
+firstplural={GANs},%
+text={GAN},%
+plural={GANs},%
+description={Generative Adversarial Network},%
+descriptionplural={Generative Adversarial Network},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Generative Adversarial Network},%
+longplural={Generative Adversarial Networks},%
+short={GAN},%
+shortplural={GANs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{psnr}%
+{%
+name={\acronymfont {\glsentryshort {psnr}}},%
+sort={PSNR},%
+type={acronym},%
+first={PSNR},%
+firstplural={PSNRs},%
+text={PSNR},%
+plural={PSNRs},%
+description={Peak signal-to-noise ratio},%
+descriptionplural={Peak signal-to-noise ratio},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Peak signal-to-noise ratio},%
+longplural={Peak signal-to-noise ratios},%
+short={PSNR},%
+shortplural={PSNRs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{ssim}%
+{%
+name={\acronymfont {\glsentryshort {ssim}}},%
+sort={SSIM},%
+type={acronym},%
+first={SSIM},%
+firstplural={SSIMs},%
+text={SSIM},%
+plural={SSIMs},%
+description={Structural similarity index measure},%
+descriptionplural={Structural similarity index measure},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Structural similarity index measure},%
+longplural={Structural similarity index measures},%
+short={SSIM},%
+shortplural={SSIMs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{nlp}%
+{%
+name={\acronymfont {\glsentryshort {nlp}}},%
+sort={NLP},%
+type={acronym},%
+first={NLP},%
+firstplural={NLPs},%
+text={NLP},%
+plural={NLPs},%
+description={Natural Language Processing},%
+descriptionplural={Natural Language Processing},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Natural Language Processing},%
+longplural={Natural Language Processings},%
+short={NLP},%
+shortplural={NLPs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{lstm}%
+{%
+name={\acronymfont {\glsentryshort {lstm}}},%
+sort={LSTM},%
+type={acronym},%
+first={LSTM},%
+firstplural={LSTMs},%
+text={LSTM},%
+plural={LSTMs},%
+description={Long Short Term Memory},%
+descriptionplural={Long Short Term Memory},%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Long Short Term Memory},%
+longplural={Long Short Term Memorys},%
+short={LSTM},%
+shortplural={LSTMs},%
+counter={page},%
+parent={},%
+%
+}%
+
+\glsdefs@newdocentry{word embeddings}%
+{%
+name={word embeddings},%
+sort={word embeddings},%
 type={main},%
-first={fórmula},%
-firstplural={fórmulas},%
-text={fórmula},%
-plural={fórmulas},%
-description={Expressão matemática},%
-descriptionplural={Expressão matemática},%
+first={word embeddings},%
+firstplural={word embeddingss},%
+text={word embeddings},%
+plural={word embeddingss},%
+description={Forma de vetorização de uma palavra. O vetor de uma palavra representa os seus valores num conjunto de características.},%
+descriptionplural={Forma de vetorização de uma palavra. O vetor de uma palavra representa os seus valores num conjunto de características.},%
 symbol={\relax },%
 symbolplural={\relax },%
 user1={},%

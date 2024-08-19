@@ -1,15 +1,36 @@
 \chapter*{Resumo}
 
-Escrever aqui o resumo (pt)
+\newacronym{ocr}{OCR}{reconhecimento óptico de caracteres}
+\newacronym{gui}{GUI}{graphic user interface}
 
-\paragraph{Palavras-chave} palavras, chave, aqui, separadas, por, vírgulas
+A digitalização de documentos permitiu uma nova forma de salvaguardar informação para a posteridade, evitando a sua perda pelo deterioramento físico destes. De forma a posteriormente transcrever estes documentos, permitindo uma consulta, processamento e manipulação mais simples, o uso de software de \acrshort{ocr} é essencial. Esta tecnologia é, no entanto, dependente em diferentes níveis das características do seu alvo, nomeadamente: qualidade da imagem, complexidade da estrutura do documento, linguagem do texto. 
+
+Documentos mais antigos, em especial jornais por apresentarem estruturas mais complexas, apresentam por este motivo resultados que diferem bastante do seu conteúdo original; tanto a nível do texto reconhecido, como da sua organização para os diferentes outputs disponíveis (ex.: txt simples). A tarefa de extrair informação destes documentos, como por exemplo o isolamento e extração de artigos, torna-se assim complexa e propensa a erros. 
+
+Este trabalho propõe então a criação de uma ferramenta ou um conjunto de ferramentas que permitam auxiliar o processo de extração de conteúdo de documentos, primeiramente mas não exclusivamente, mais antigos e estruturados, com especial foco em jornais. A pipeline do projeto pretende então ser capaz de detetar e lidar com os diferentes pontos de risco nestes documentos: qualidade da imagem, erros nos resultados de \acrshort{ocr}, segmentação e organização do documento, criação do output organizado. 
+
+Diferentes alternativas para \acrshort{ocr} assim como métodos de tratamento destes problemas serão estudados, comparados, e implementados, de forma a encontrar a melhor solução para a resolução deste problema. O produto final implementado será composto por uma ferramenta utilizável num formato \acrshort{gui} ou comando de consola. 
+
+Para documentos antigos a linguagem, como mencionado, pode afetar os resultados de \acrshort{ocr}. Deste modo, como objetivo secundário, propõe-se a criação de uma ferramenta que facilite a criação de um dicionário para diferentes iterações de uma linguagem para: fornecer ao motor \acrshort{ocr} um léxico mais apropriado; modernizar o conteúdo extraído.
+
+\paragraph{Palavras-chave} OCR, Digitalização, Documentos estruturados, Documentos antigos, Segmentação de documentos, Tratamento de imagem, Modernização de texto
 
 \cleardoublepage
 
 \chapter*{Abstract}
 
-Write abstract here (en)
+The digitization of documents has opened a new way of preserving information for posterity, avoiding its loss through their physical decay. To allow the transcription of these documents, enabling an easier search, indexation and manipulation of them, the use of \acrshort{ocr} software is essential. This technology is, however, dependent in many ways of the characteristics of its target, namely: the quality of the image, the complexity of the document's structure, the text's language. 
 
-\paragraph{Keywords} keywords, here, comma, separated
+Older documents, especially newspapers for having complex structures, result in poor transcriptions that differ from their original content, both in the recognized text, and in the organization of the available final outputs (ex.: simple txt).
+Extracting information from these documents, for example, the isolation and extraction of articles, becomes thus a complex and error prone task. 
+
+Therefore, this work aims to create a tool, or a toolkit, that can assist in the process of content extraction from documents, primarily though not exclusively, that are older and structured, specializing in newspapers. The proposed pipeline should then be able to detect and fix potential problems in these documents: image quality, \acrshort{ocr} results errors, segmentation and document organization, restructured output generation.
+
+Different \acrshort{ocr} alternatives, as well as different methods of dealing with these problems, will be studied, compared, and implemented, to find the best solution for the task at hand. The final product will be composed of a tool usable in both a \acrshort{gui} and bash command format.
+
+For old documents, its language, as mentioned, may affect the \acrshort{ocr}'s performance. Therefore, as a secondary objective, it’s proposed the development of a tool that allows for the creation of dictionaries for different versions of a given language that can be used to: supply the \acrshort{ocr} engine with a more appropriate lexicon; modernize the extracted content.
+
+
+\paragraph{Keywords} OCR, Digitalization, Structured documents, Old documents, Document segmentation, Image treatment, Text modernization
 
 \cleardoublepage

@@ -1,19 +1,225 @@
-\begin{thebibliography}{2}
+\begin{thebibliography}{29}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Goossens et~al.(1997)Goossens, Rahtz, and Mittelbach]{GRM97}
-Michel Goossens, Sebastian Rahtz, and Frank Mittelbach.
-\newblock \emph{The LaTeX Graphics Companion}.
-\newblock Addison-Wesley, 1997.
-\newblock ISBN 0-201-85469-4.
+\bibitem[Almutairi and Almashan(2019)]{8999273}
+Abdullah Almutairi and Meshal Almashan.
+\newblock Instance segmentation of newspaper elements using mask r-cnn.
+\newblock In \emph{2019 18th IEEE International Conference On Machine Learning
+  And Applications (ICMLA)}, pages 1371--1375, 2019.
+\newblock \doi{10.1109/ICMLA.2019.00223}.
 
-\bibitem[Kernighan and Ritchie(1988)]{KeR88}
-B.W. Kernighan and D.M. Ritchie.
-\newblock \emph{The C Programming Language (ANSI C)}.
-\newblock Prentice Hall Software series, 2nd edition, 1988.
+\bibitem[ALTO()]{alto_doc}
+ALTO.
+\newblock Alto documentação.
+\newblock URL
+  \url{https://www.loc.gov/standards/alto/techcenter/elementSet/index.html}.
+
+\bibitem[Bansal et~al.(2014)Bansal, Chaudhury, Roy, and Srivastava]{6831009}
+Anukriti Bansal, Santanu Chaudhury, Sumantra~Dutta Roy, and J.B. Srivastava.
+\newblock Newspaper article extraction using hierarchical fixed point model.
+\newblock In \emph{2014 11th IAPR International Workshop on Document Analysis
+  Systems}, pages 257--261, 2014.
+\newblock \doi{10.1109/DAS.2014.42}.
+
+\bibitem[Barman et~al.(2021)Barman, Ehrmann, Clematide, Oliveira, and
+  Kaplan]{Barman_2021}
+Raphaël Barman, Maud Ehrmann, Simon Clematide, Sofia~Ares Oliveira, and
+  Frédéric Kaplan.
+\newblock Combining visual and textual features for semantic segmentation of
+  historical newspapers.
+\newblock \emph{Journal of Data Mining \&amp; Digital Humanities},
+  HistoInformatics\penalty0 (HistoInformatics), January 2021.
+\newblock ISSN 2416-5999.
+\newblock \doi{10.46298/jdmdh.6107}.
+\newblock URL \url{http://dx.doi.org/10.46298/jdmdh.6107}.
+
+\bibitem[Berchmans and Kumar(2014)]{6993174}
+Deepa Berchmans and S~S Kumar.
+\newblock Optical character recognition: An overview and an insight.
+\newblock In \emph{2014 International Conference on Control, Instrumentation,
+  Communication and Computational Technologies (ICCICCT)}, pages 1361--1365,
+  2014.
+\newblock \doi{10.1109/ICCICCT.2014.6993174}.
+
+\bibitem[Bieniecki et~al.(2007)Bieniecki, Grabowski, and Rozenberg]{4283429}
+Wojciech Bieniecki, Szymon Grabowski, and Wojciech Rozenberg.
+\newblock Image preprocessing for improving ocr accuracy.
+\newblock In \emph{2007 International Conference on Perspective Technologies
+  and Methods in MEMS Design}, pages 75--80, 2007.
+\newblock \doi{10.1109/MEMSTECH.2007.4283429}.
+
+\bibitem[Breuel(2003)]{article_ro1}
+Thomas Breuel.
+\newblock High performance document layout analysis.
+\newblock 05 2003.
+
+\bibitem[Bui et~al.(2017)Bui, Mollard, and Tabbone]{8269967}
+Quang~Anh Bui, David Mollard, and Salvatore Tabbone.
+\newblock Selecting automatically pre-processing methods to improve ocr
+  performances.
+\newblock In \emph{2017 14th IAPR International Conference on Document Analysis
+  and Recognition (ICDAR)}, volume~01, pages 169--174, 2017.
+\newblock \doi{10.1109/ICDAR.2017.36}.
+
+\bibitem[Chathuranga and Ranathunga(2017)]{8300390}
+R.M.~Samitha Chathuranga and Lochandaka Ranathunga.
+\newblock Procedural approach for content segmentation of old newspaper pages.
+\newblock In \emph{2017 IEEE International Conference on Industrial and
+  Information Systems (ICIIS)}, pages 1--6, 2017.
+\newblock \doi{10.1109/ICIINFS.2017.8300390}.
+
+\bibitem[Chaudhury et~al.(2009)Chaudhury, Jain, Thirthala, Sahasranaman,
+  Saxena, and Mahalingam]{5277572}
+Krishnendu Chaudhury, Ankur Jain, Sriram Thirthala, Vivek Sahasranaman, Shobhit
+  Saxena, and Selvam Mahalingam.
+\newblock Google newspaper search – image processing and analysis pipeline.
+\newblock In \emph{2009 10th International Conference on Document Analysis and
+  Recognition}, pages 621--625, 2009.
+\newblock \doi{10.1109/ICDAR.2009.272}.
+
+\bibitem[Darwiche et~al.(2015)Darwiche, Pham, and Delalandre]{7367194}
+Mostafa Darwiche, The-Anh Pham, and Mathieu Delalandre.
+\newblock Comparison of jpeg's competitors for document images.
+\newblock In \emph{2015 International Conference on Image Processing Theory,
+  Tools and Applications (IPTA)}, pages 487--493, 2015.
+\newblock \doi{10.1109/IPTA.2015.7367194}.
+
+\bibitem[Dey et~al.(2022)Dey, Balabantaray, Mohanty, Singh, Karuppiah, and
+  Samanta]{9791698}
+Raghunath Dey, Rakesh~Chandra Balabantaray, Surajit Mohanty, Debabrata Singh,
+  Marimuthu Karuppiah, and Debabrata Samanta.
+\newblock Approach for preprocessing in offline optical character recognition
+  (ocr).
+\newblock In \emph{2022 Interdisciplinary Research in Technology and Management
+  (IRTM)}, pages 1--6, 2022.
+\newblock \doi{10.1109/IRTM54583.2022.9791698}.
+
+\bibitem[Eskenazi et~al.(2017)Eskenazi, Gomez-Krämer, and
+  Ogier]{ESKENAZI20171}
+Sébastien Eskenazi, Petra Gomez-Krämer, and Jean-Marc Ogier.
+\newblock A comprehensive survey of mostly textual document segmentation
+  algorithms since 2008.
+\newblock \emph{Pattern Recognition}, 64:\penalty0 1--14, 2017.
+\newblock ISSN 0031-3203.
+\newblock \doi{https://doi.org/10.1016/j.patcog.2016.10.023}.
+\newblock URL
+  \url{https://www.sciencedirect.com/science/article/pii/S0031320316303399}.
+
+\bibitem[Europeana()]{europeana_pro}
+Europeana.
+\newblock Projeto europeana.
+\newblock URL \url{https://pro.europeana.eu/project/europeana-newspapers}.
+
+\bibitem[He et~al.(2017)He, Cohen, Price, Kifer, and Giles]{8269981}
+Dafang He, Scott Cohen, Brian Price, Daniel Kifer, and C.~Lee Giles.
+\newblock Multi-scale multi-task fcn for semantic page segmentation and table
+  detection.
+\newblock In \emph{2017 14th IAPR International Conference on Document Analysis
+  and Recognition (ICDAR)}, volume~01, pages 254--261, 2017.
+\newblock \doi{10.1109/ICDAR.2017.50}.
+
+\bibitem[HOCR()]{hocr_doc}
+HOCR.
+\newblock Hocr documentação.
+\newblock URL \url{https://kba.github.io/hocr-spec/1.2/}.
+
+\bibitem[KerasOCR()]{keras_doc}
+KerasOCR.
+\newblock Keras ocr documentação.
+\newblock URL
+  \url{https://keras-ocr.readthedocs.io/en/latest/examples/index.html}.
+
+\bibitem[Kovanen and Aizawa(2015)]{7351614}
+Samu Kovanen and Kiyoharu Aizawa.
+\newblock A layered method for determining manga text bubble reading order.
+\newblock In \emph{2015 IEEE International Conference on Image Processing
+  (ICIP)}, pages 4283--4287, 2015.
+\newblock \doi{10.1109/ICIP.2015.7351614}.
+
+\bibitem[Lat and Jawahar(2018)]{8545609}
+Ankit Lat and C.~V. Jawahar.
+\newblock Enhancing ocr accuracy with super resolution.
+\newblock In \emph{2018 24th International Conference on Pattern Recognition
+  (ICPR)}, pages 3162--3167, 2018.
+\newblock \doi{10.1109/ICPR.2018.8545609}.
+
+\bibitem[Likforman-Sulem et~al.(2009)Likforman-Sulem, Darbon, and
+  Smith]{5277501}
+Laurence Likforman-Sulem, Jérôme Darbon, and Elisa H.~Barney Smith.
+\newblock Pre-processing of degraded printed documents by non-local means and
+  total variation.
+\newblock In \emph{2009 10th International Conference on Document Analysis and
+  Recognition}, pages 758--762, 2009.
+\newblock \doi{10.1109/ICDAR.2009.210}.
+
+\bibitem[Meier et~al.(2017)Meier, Stadelmann, Stampfli, Arnold, and
+  Cieliebak]{8270006}
+Benjamin Meier, Thilo Stadelmann, Jan Stampfli, Marek Arnold, and Mark
+  Cieliebak.
+\newblock Fully convolutional neural networks for newspaper article
+  segmentation.
+\newblock In \emph{2017 14th IAPR International Conference on Document Analysis
+  and Recognition (ICDAR)}, volume~01, pages 414--419, 2017.
+\newblock \doi{10.1109/ICDAR.2017.75}.
+
+\bibitem[Mittal and Garg(2020)]{9183326}
+Rishabh Mittal and Anchal Garg.
+\newblock Text extraction using ocr: A systematic review.
+\newblock In \emph{2020 Second International Conference on Inventive Research
+  in Computing Applications (ICIRCA)}, pages 357--362, 2020.
+\newblock \doi{10.1109/ICIRCA48905.2020.9183326}.
+
+\bibitem[Nguyen et~al.(2021)Nguyen, Jatowt, Coustaty, and
+  Doucet]{10.1145/3453476}
+Thi Tuyet~Hai Nguyen, Adam Jatowt, Mickael Coustaty, and Antoine Doucet.
+\newblock Survey of post-ocr processing approaches.
+\newblock \emph{ACM Comput. Surv.}, 54\penalty0 (6), jul 2021.
+\newblock ISSN 0360-0300.
+\newblock \doi{10.1145/3453476}.
+\newblock URL \url{https://doi.org/10.1145/3453476}.
+
+\bibitem[PaddleOCR()]{paddle_doc}
+PaddleOCR.
+\newblock Paddleocr documentação.
+\newblock URL \url{https://github.com/PaddlePaddle/PaddleOCR}.
+
+\bibitem[Quirós and Vidal(2021)]{9413256}
+Lorenzo Quirós and Enrique Vidal.
+\newblock Learning to sort handwritten text lines in reading order through
+  estimated binary order relations.
+\newblock In \emph{2020 25th International Conference on Pattern Recognition
+  (ICPR)}, pages 7661--7668, 2021.
+\newblock \doi{10.1109/ICPR48806.2021.9413256}.
+
+\bibitem[Souibgui and Kessentini(2022)]{9187695}
+Mohamed~Ali Souibgui and Yousri Kessentini.
+\newblock De-gan: A conditional generative adversarial network for document
+  enhancement.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 44\penalty0 (3):\penalty0 1180--1191, 2022.
+\newblock \doi{10.1109/TPAMI.2020.3022406}.
+
+\bibitem[Srihari et~al.(2003)Srihari, Shekhawat, and
+  Lam]{10.5555/1074100.1074664}
+Sargur~N. Srihari, Ajay Shekhawat, and Stephen~W. Lam.
+\newblock \emph{Optical Character Recognition (OCR)}, page 1326–1333.
+\newblock John Wiley and Sons Ltd., GBR, 2003.
+\newblock ISBN 0470864125.
+
+\bibitem[Tesseract()]{tesseract_doc}
+Tesseract.
+\newblock Tesseract documentação.
+\newblock URL \url{https://tesseract-ocr.github.io}.
+
+\bibitem[Wei et~al.(2018)Wei, Sheikh, and Rahman]{8368720}
+Tan~Chiang Wei, U.~U. Sheikh, and Ab~Al-Hadi~Ab Rahman.
+\newblock Improved optical character recognition with deep neural network.
+\newblock In \emph{2018 IEEE 14th International Colloquium on Signal Processing
+  \& Its Applications (CSPA)}, pages 245--249, 2018.
+\newblock \doi{10.1109/CSPA.2018.8368720}.
 
 \end{thebibliography}

@@ -1,4 +1,7 @@
 \chapter{Planeamento}
+\label{cap_planeamento}
+
+Nesta secção, será demonstrado o plano de trabalho, em termos dos prazos e objetivos para este propostos.
 
 \section{Atividades}
 
@@ -7,19 +10,36 @@
 
 \begin{table}[H]
 \begin{center}
-\begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c |}
+\begin{tabular}{| c  |c|c  |c  |c  |c  |c  |c  |c  |c  |c  |c |}
 \hline
-\textbf{Tarefa} & \textbf{Out} & \textbf{Nov} & \textbf{Dez} & \textbf{Jan} & \textbf{Fev} & \textbf{Mar} & \textbf{Abr} & \textbf{Mai} & \textbf{Jun} & \textbf{Jul}\\
+\textbf{Tarefa} &  \textbf{Set}&\textbf{Out} & \textbf{Nov} & \textbf{Dez} & \textbf{Jan} & \textbf{Fev} & \textbf{Mar} & \textbf{Abr} & \textbf{Mai} & \textbf{Jun} & \textbf{Jul}\\
 \hline
-\textit{Background} e \acrshort{eda} & $\bullet$ & $\bullet$ & $\bullet$ & & & & & & & \\
+\textit{Background} e \acrshort{eda} &  $\bullet$ &$\bullet$ & $\bullet$ & $\bullet$ & $\bullet$& & & & & & \\
 \hline
-Preparação do \acrshort{rpd} & & $\bullet$ & $\bullet$ & $\bullet$ & & & & & & \\
+Preparação do \acrshort{rpd} &  && & $\bullet$ & $\bullet$ & & & & & & \\
 \hline
-Contribuição & & & &$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ & \\
-\hline
-Escrita & & & & & & & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
-\hline
+Contribuição &  &$\bullet$& $\bullet$& $\bullet$&$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ &$\bullet$ & \\\hline
+ Escrita &  && & & & & & $\bullet$ & $\bullet$ & $\bullet$ &$\bullet$ \\\hline
 \end{tabular}
 \end{center}
 \caption{Plano de atividades.}
 \end{table}
+
+Especificando a tarefa de contribuição, esta incluí:
+\begin{itemize}\setlength\itemsep{0.1em}
+    \item Implementação de técnicas de pré processamento para OCR
+    \item Implementação de algoritmos para pós processamento para OCR
+    \begin{itemize}
+        \item Correção de texto
+        \item Organização dos conteúdos reconhecidos (ordem de leitura)
+    \end{itemize}
+    \item Pipeline completo de extração de artigos de jornais
+    \item Implementação de métricas de avaliação de resultados OCR
+    \item Testes com diferentes motores OCR
+    \item Criação de diferentes formatos de output
+    \item Integração de diferentes formatos de input: imagens, hOCR, pdf.
+    \item União das ferramentas do toolkit numa ferramenta única. Formato GUI e formato comandos de bash.
+    \item (Secundário) Módulo de modernização de texto
+\end{itemize}
+
+Estas diferentes tarefas naturalmente complementam-se em vários casos, sendo que a ordem de listagem reflete a sua prioridade e possível dependência (as de baixo dependem das de cima).
