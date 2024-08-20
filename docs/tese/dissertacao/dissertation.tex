@@ -188,6 +188,16 @@ BoldFont=NewsGotTBold.ttf
 %%%%%%%%%%%%%%%%%%%% fim de copia
 
 
+% Define the highlight command
+\usepackage{xparse} % This package is needed for \NewDocumentCommand
+
+\NewDocumentCommand{\highlight}{m O{\large}}{%
+	\vspace{1em} % Adds vertical space before the highlighted text
+	\par\noindent % Ensures the text starts on a new line and is not indented
+	{\textbf{#2 #1}} % Makes the text bold and applies the given text size
+	\vspace{1em} % Adds vertical space after the highlighted text
+}
+
 \setcounter{tocdepth}{3}
 \usepackage{algorithmic,algorithm2e,float}
 \makeatletter
@@ -210,6 +220,9 @@ BoldFont=NewsGotTBold.ttf
 \masters{Mestrado em Engenharia Informática}
 %\area{Área de especialização}
 \supervisor{José João Antunes Guimarães Dias Almeida}
+
+
+
 
 \begin{document}
 \setlength{\parindent}{0em}

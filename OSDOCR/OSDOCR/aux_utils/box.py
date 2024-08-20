@@ -111,7 +111,8 @@ class Box:
     
     def valid(self):
         '''Check if box is valid'''
-        if self.left is None or self.right is None or self.top is None or self.bottom is None or self.left>self.right or self.top>self.bottom:
+        if self.left is None or self.right is None or self.top is None or self.bottom is None or \
+            self.left>self.right or self.top>self.bottom:
             return False
         return True
     
@@ -162,18 +163,18 @@ class Box:
         return False
 
 
-    def intersects_box(self,box,extend_vertical:bool=False,extend_horizontal:bool=False,inside:bool=False):
+    def intersects_box(self,box:'Box',extend_vertical:bool=False,extend_horizontal:bool=False,inside:bool=False):
         '''Check if box intersects another box'''
         self_box = self.copy()
         if extend_vertical:
             self_box.top = 0
-            self_box.bottom = 100000
+            self_box.bottom = box.bottom + 1
         if extend_horizontal:
             self_box.left = 0
-            self_box.right = 100000
+            self_box.right = box.right + 1
             
-        intercept_vertical = (self_box.top <= box.top and self_box.bottom >= box.top) or (box.top <= self_box.top and box.bottom >= self_box.top)
-        intercept_horizontal = (self_box.left <= box.right and self_box.right >= box.left) or (self_box.left <= box.right and self_box.right >= box.right)
+        intercept_vertical = extend_vertical or (self_box.top <= box.top and self_box.bottom >= box.top) or (box.top <= self_box.top and box.bottom >= self_box.top)
+        intercept_horizontal = extend_horizontal or (self_box.left <= box.right and self_box.right >= box.left) or (self_box.left <= box.right and self_box.right >= box.right)
         if intercept_horizontal and intercept_vertical:
             return True
         
@@ -182,7 +183,7 @@ class Box:
 
         return False
 
-    def intersect_area_box(self,box):
+    def intersect_area_box(self,box:'Box'):
         '''Get intersect area box between two boxes'''
         area_box = Box(0,0,0,0)
         
@@ -218,7 +219,7 @@ class Box:
 
         return area_box
 
-    def remove_box_area(self,area):
+    def remove_box_area(self,area:'Box'):
         '''Remove area from box (only if intersect)'''
         if area:
             inside = self.is_inside_box(area)
@@ -323,7 +324,15 @@ class Box:
         
         Uses euclidean distance between center points of boxes
         
-        If border arg is initialized, uses distance between borders instead of center points'''
+        If border arg is initialized, uses distance between borders instead of center points.
+        Border arg can be one of: 'left','right','top','bottom','closest'
+
+        If border arg is None, uses center points of boxes
+
+        If border arg is 'closest', uses the closest border to the center point of box or closest border of box.
+            * range_x and range_y can be used to specify the range when checking if boxes are within each other
+
+        '''
 
         if border and border in ['left','right','top','bottom']:
             if border == 'left':
@@ -345,13 +354,18 @@ class Box:
             vertical_distance = None
             center_point = self.center_point()
             box_center_point = box.center_point()
+            ## check if box is within range vertically
             if self.within_horizontal_boxes(box,range=range_x,range_type=range_type):
+                # calculate vertical distance
                 vertical_distance = min(abs(center_point[1] - box_center_point[1]),abs(self.bottom - box.top),abs(self.top - box.bottom))
                     
             horizontal_distance = None
+            ## check if box is within range horizontally
             if self.within_vertical_boxes(box,range=range_y,range_type=range_type):
+                # calculate horizontal distance
                 horizontal_distance = min(abs(center_point[0] - box_center_point[0]),abs(self.right - box.left),abs(self.left - box.right))
 
+            ## return closest distance
             distance = min(vertical_distance,horizontal_distance) if vertical_distance and horizontal_distance else [v for v in [vertical_distance,horizontal_distance] if v][0] if any([vertical_distance,horizontal_distance]) else None
             if distance:
                 return distance
@@ -407,6 +421,8 @@ class Box:
         Returns edge name (left, right, top, bottom)'''
         closest_edge = None
         closest_edge_dist = None
+        # list of edges
+        ## for each edge, list of vertex points and edge name
         left_edge = [(self.left,self.top),(self.left,self.bottom),'left']
         right_edge = [(self.right,self.top),(self.right,self.bottom),'right']
         top_edge = [(self.left,self.top),(self.right,self.top),'top']

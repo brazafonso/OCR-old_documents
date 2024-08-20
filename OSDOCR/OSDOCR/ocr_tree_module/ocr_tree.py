@@ -439,7 +439,8 @@ class OCR_Tree:
             * level (list[int], optional): Levels to id. Defaults to [2].
             * ids (dict, optional): Dict that saves the current id for each level. Defaults to None.
             * delimiters (bool, optional): If False, only id non delimiters. Defaults to True.
-            * area (Box, optional): Area to id boxes. Defaults to None.'''
+            * area (Box, optional): Area to id boxes. Defaults to None.
+            * override (bool, optional): If True or has no id, override id. Defaults to True.'''
         if not ids:
             ids = {l:0 for l in level}
         if self.level in level:
@@ -521,7 +522,9 @@ class OCR_Tree:
     
     def text_is_title(self,normal_text_size:int,conf:int=0,range:float=0.1,level:int=5):
         '''Check if text is title'''
-        if not self.is_vertical_text(conf) and not self.is_text_size(normal_text_size,range=range,level=level) and self.calculate_mean_height(level=level) >= normal_text_size:
+        if not self.is_vertical_text(conf) and \
+            not self.is_text_size(normal_text_size,range=range,level=level) and \
+                self.calculate_mean_height(level=level) >= normal_text_size:
             return True
         return False
     
@@ -540,7 +543,9 @@ class OCR_Tree:
         '''Check if box is image'''
         if only_type:
             return self.type in ['image']
-        if self.type in ['image'] or (self.level == 2 and self.is_empty(conf=conf) and not self.is_delimiter(conf=conf)):
+        if self.type in ['image'] or \
+            (self.level == 2 and self.is_empty(conf=conf) and \
+             not self.is_delimiter(conf=conf)):
             if self.box.height > text_size*3:
                 return True
         return False
@@ -726,7 +731,7 @@ class OCR_Tree:
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
-        block_extended.bottom = 1000000
+        block_extended.bottom = max([b.box.bottom for b in blocks])
 
         # get blocks below block
         below_blocks = [b for b in blocks if b.box.top > self.box.top and b.box.intersects_box(block_extended)]
@@ -739,7 +744,7 @@ class OCR_Tree:
         # extend block horizontally
         block_extended = self.box.copy()
         block_extended.left = 0
-        block_extended.right = 1000000
+        block_extended.right = max([b.box.right for b in blocks])
 
         # get blocks right block
         right_blocks = [b for b in blocks if b.box.left > self.box.left and b.box.intersects_box(block_extended)]
@@ -752,7 +757,7 @@ class OCR_Tree:
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
-        block_extended.bottom = 1000000
+        block_extended.bottom = max([b.box.bottom for b in blocks])
 
         # get blocks above block
         above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and b.box.intersects_box(block_extended)]
@@ -765,7 +770,7 @@ class OCR_Tree:
         # extend block horizontally
         block_extended = self.box.copy()
         block_extended.left = 0
-        block_extended.right = 1000000
+        block_extended.right = max([b.box.right for b in blocks])
 
         # get blocks left block
         left_blocks = [b for b in blocks if b.box.right < self.box.right and b.box.intersects_box(block_extended)]
@@ -780,7 +785,7 @@ class OCR_Tree:
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
-        block_extended.bottom = 1000000
+        block_extended.bottom = max([b.box.bottom for b in blocks])
 
         # get blocks below block
         below_blocks = [b for b in blocks if b.box.top > self.box.top and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
@@ -838,7 +843,7 @@ class OCR_Tree:
         # extend block vertically
         block_extended = self.box.copy()
         block_extended.top = 0
-        block_extended.bottom = 1000000
+        block_extended.bottom = max([b.box.bottom for b in blocks])
 
         # get blocks above block
         above_blocks = [b for b in blocks if b.box.bottom < self.box.bottom and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
@@ -914,7 +919,7 @@ class OCR_Tree:
                                     # insert in the middle
                                     self.children = self_children[:i] + [child] + self_children[i:]
                                     joined = True
-                                    # if intercept, will have to use recursive join
+                                # if intercept, will have to use recursive join
                                 elif self_children[i].box.intersects_box(child.box,extend_horizontal=True):
                                     intersect_height = min(self_children[i].box.bottom,child.box.bottom) - max(self_children[i].box.top,child.box.top)
                                     # if intersecting with more than 70% of child, join the two
@@ -956,18 +961,17 @@ class OCR_Tree:
             child.update_children_metadata(reference_block,reference_par)
 
 
-    def remove_blocks_inside(self,id:int,debug:bool=False):
+    def remove_blocks_inside(self,id:int,block_level:int=2,debug:bool=False):
         '''Remove blocks inside of block id'''
-        block = self.get_box_id(id)
+        block = self.get_box_id(id,level=block_level)
         if block:
-            block_level = block.level
             blocks = self.get_boxes_level(block_level)
 
             for b in blocks:
                 if b.id != id and b.box.is_inside_box(block.box):
                     if debug:
                         print(f'Removing Box : {b.id} is inside {block.id}')
-                    self.remove_box_id(b.id)
+                    self.remove_box_id(b.id,block_level)
 
 
     def conf_sum(self,level:int=2)->tuple[int,int]:
