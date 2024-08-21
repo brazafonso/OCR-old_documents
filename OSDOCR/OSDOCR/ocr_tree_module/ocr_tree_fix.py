@@ -785,7 +785,7 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
         # for each line, check if it contains a valid sequence of whitespaces
         ## saves the coordinates of the first and last whitespace in the sequence
         for line in lines:
-            line_words = line.get_boxes_level(5)
+            line_words = line.get_boxes_level(5,conf=conf)
             line_seq_position = [None,None]
             line_word_dists = []
             line_word_pairs = []

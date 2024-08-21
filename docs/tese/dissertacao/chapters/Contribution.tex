@@ -903,6 +903,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\item conf : confiança de texto utilizada para verificação de blocos vazios
 \end{itemize}
 
+\textbf{Algoritmo:}
 \begin{algorithm}[H]
 	\caption{União de blocos}
 	\begin{algorithmic}[1]
@@ -941,7 +942,77 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 
 
+\highlight{split\_whitespaces}[\normalsize]
 
+\textbf{Descrição:} Separa blocos com espaçamento entre palavras suficientemente grande. Apenas realiza divisão perpendicular ao eixo x. Tem em conta uma análise do texto para calcular o espaçamento médio de palavras e um valor de ratio de espaço vazio para realizar divisão, analisa a presença de espaços brancos em blocos com texto e divide-os quando as condições se verificam. No caso de blocos com múltiplas linhas, tem de verificar se existe um espaço vazio comum válido.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a limpar
+	\item conf : confiança de texto utilizada para verificação de blocos vazios e análise de texto
+	\item dif\_ratio : ratio de espaço entre palavras para realizar divisão
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+\begin{algorithm}[H]
+	\caption{Divisão por espaços vazios}
+	\scriptsize
+	\begin{algorithmic}[1]
+		
+		\STATE text\_analysis $\leftarrow$ analise do texto
+		\STATE avg\_word\_dist = text\_analysis['average\_word\_distance']
+		\STATE blocks $\leftarrow$ obtém blocos com texto
+		
+		\STATE \textit{// Percorre blocos com texto para ajustar as suas BBs}
+		\FOR{block in blocks}
+			\STATE lines $\leftarrow$ obtém linhas do bloco
+			\STATE line\_seq\_positions = [] 
+			\STATE valid\_split = True
+			
+			\STATE \textit{// Para cada linha procura espaços vazios válidos para divisão e guarda as coordenadas destes}
+			\FOR{line in lines}
+				\STATE line\_words $\leftarrow$ obtém palavras da linha
+				\STATE line\_seq\_position = [None,None]
+				\STATE line\_word\_dists $\leftarrow$ guarda as distancias entre palavras na linha
+				\STATE line\_word\_pairs $\leftarrow$ guarda pares de palavras
+				
+				\IF{line\_word\_dists}
+					\STATE average $\leftarrow$ media entre a media do tamanho das palavras e o avg\_word\_dist
+					\STATE line\_seq\_position $\leftarrow$ procura primeiro espaço que valide a regra $ dist \geq dif\_ratio * average$
+					\IF{not line\_seq\_positio}
+						\STATE \textit{// todas as linhas têm de ter um espaço válido}
+						\STATE valid\_split = False
+					\ELSE
+						\STATE line\_seq\_positions.append(line\_seq\_position)
+					\ENDIF
+				\ENDIF
+				
+			\ENDFOR
+			
+			\IF{valid\_split and line\_seq\_positions}
+				\STATE \textit{// verifica se todos os intervalos guardados intersetam}
+				\STATE \textit{// em caso positivo, verifica o máximo tamanho da divisão a fazer}
+				\STATE widest\_interval $\leftarrow$ espaço entre palavras mais longo
+				\STATE interception $\leftarrow$ verifica se todas as linhas têm um espaço que está dentro de widest\_interval
+				\IF{interception}
+					\STATE left $\leftarrow$ ponto mais à esquerda entre todos os espaços
+					\STATE right $\leftarrow$ ponto mais à direita entre todos os espaços
+					\STATE division\_line $\leftarrow$ Box vertical representante da linha de divisão
+					\STATE \textit{// realizar divisão}
+					\STATE blocks =  split\_block(block,delimiter,orientation='vertical',keep\_all=True,conf=conf)
+					\STATE ocr\_results $\leftarrow$ atualiza OCR Tree, adicionando novo bloco resultante da divisão
+				\ENDIF
+			\ENDIF
+		\ENDFOR
+		
+		
+	\end{algorithmic}
+\end{algorithm}
+
+
+
+%% TODO exemplo de uso do metodo para separar usando whitespaces
 
 \highlight{Categorização de blocos}
 \label{contribution_categorize_blocks}
