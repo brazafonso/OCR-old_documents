@@ -94,7 +94,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                     print(f'Removing Box : {current_box.id} is inside {compare_box.id}')
                 ocr_results.remove_box_id(current_box.id)
                 current_box = None
-            # boxes intersect (with same level, so as to be able to merge seemlessly)
+            # boxes intersect (with same level, so as to be able to merge seamlessly)
             elif current_box.box.intersects_box(compare_box.box):
                 # update boxes so that they don't intersect
                 # smaller box is reduced
@@ -145,6 +145,10 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
 def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=False)->OCR_Tree:
     '''Fix bound boxes of blocks with text by reducing their sides when confidence of side text is too low.'''
 
+    if debug:
+        print('Fixing text bound box')
+        print(f'Text confidence: {text_confidence}')
+
     blocks = ocr_results.get_boxes_level(2)
     text_blocks = [b for b in blocks if b.to_text(conf=text_confidence).strip()]
 
@@ -155,23 +159,21 @@ def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=Fa
         block_max_bottom = None
 
         # get adjusted box coordinates
-        lines = b.get_boxes_level(4)
-        for i,l in enumerate(lines):
-            words = [w for w  in l.get_boxes_level(5,conf=text_confidence) if w.text.strip()]
-            if words:
-                # get left and right
-                first_word = words[0]
-                last_word = words[-1]
-                block_min_left = min(block_min_left,first_word.box.left) if block_min_left else first_word.box.left
-                block_max_right = max(block_max_right,last_word.box.right) if block_max_right else last_word.box.right
+        words = [w for w  in b.get_boxes_level(5,conf=text_confidence) if w.text.strip()]
+        if words:
+            words = sorted(words,key=lambda w: w.box.left)
+            # get left and right
+            first_word = words[0]
+            last_word = words[-1]
+            block_min_left = min(block_min_left,first_word.box.left) if block_min_left else first_word.box.left
+            block_max_right = max(block_max_right,last_word.box.right) if block_max_right else last_word.box.right
 
-                # get top and bottom (first and last line)
-                if i == 0:
-                    top_most_word = sorted(words,key=lambda w: w.box.top)[0]
-                    block_min_top = top_most_word.box.top
-                if i == len(lines)-1:
-                    bottom_most_word = sorted(words,key=lambda w: w.box.bottom)[-1]
-                    block_max_bottom = bottom_most_word.box.bottom
+            # get top and bottom
+            words = sorted(words,key=lambda w: w.box.top)
+            first_word = words[0]
+            last_word = words[-1]
+            block_min_top = min(block_min_top,first_word.box.top) if block_min_top else first_word.box.top
+            block_max_bottom = max(block_max_bottom,last_word.box.bottom) if block_max_bottom else last_word.box.bottom
 
 
         # update box

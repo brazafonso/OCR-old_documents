@@ -10,10 +10,10 @@ Nesta secção, será relatado o trabalho realizado no intuito da componente pr�
 
 A discussão sobre o trabalho realizado será estruturada em 3 componentes principais.
 \begin{itemize}
-	\item Ferramentas do \textit{toolkit} desenvolvidas
-	\item Pipeline de aplicação do toolkit
+	\item Ferramentas do \textit{toolkit} desenvolvidas \ref{contribution_toolkit}
+	\item Pipeline de aplicação do toolkit \ref{contribution_toolkit_pipeline}
 % 	\item GUI de aplicação geral do \textit{toolkit}
-	\item GUI editor OCR
+	\item GUI editor OCR \ref{contribution_ocr_editor}
 \end{itemize}
 
 Para cada uma das secções delimitadas, será dada uma explicação do seu propósito e produto sumariado, procedido por uma discussão mais detalhada dos elementos que a constituem.
@@ -21,6 +21,7 @@ Para cada uma das secções delimitadas, será dada uma explicação do seu prop
 De forma geral, o código desenvolvido foi maioritariamente escrito em Python, com algumas instâncias de C.
 
 \section{Ferramentas do \textit{toolkit} desenvolvidas}
+\label{contribution_toolkit}
 
 \subsection{Introdução}
 
@@ -365,6 +366,7 @@ $ box.width >= box.height*4 || box.height >= box.widht*4 $.
 	\item orientation : orientação da junção, vertical ou horizontal.
 \end{itemize}
 
+\textbf{Algoritmo:}
 
 \begin{algorithm}[H]
 	\caption{Junção horizontal}
@@ -725,12 +727,221 @@ Outros métodos, mais circunstanciais, criados são para o desenho do template d
 \highlight{Análise de texto}
 \label{contribution_text_analyses}
 
-%% TODO
+A análise de texto dos resultados OCR permite inferir características sobre o documento que não estão à partida disponíveis na OCR Tree. Foi desenvolvido um conjunto de métodos que cada um infere uma das seguintes métricas a partir da OCR Tree principal:
+
+\begin{itemize}
+	\item Tamanho de texto normal : método \textbf{get\_text\_sizes}
+	\item Espaçamento médio de palavras : método \textbf{analyze\_text}
+	\item Colunas do documento : método \textbf{get\_columns}
+\end{itemize}
+
+Todas estas métricas podem ser obtidas na chamada do método \textbf{analyze\_text}.
+
+Naturalmente, a qualidade do cálculo destas métricas irá depender da qualidade dos resultados OCR, ou no caso de análise de texto, do nível de confiança de texto usado.
+
+Os métodos \textbf{get\_text\_sizes} e \textbf{get\_columns} são ambos baseados em análise de frequências e procura de picos na curva destas.
+
+
+\highlight{get\_text\_sizes}[\normalsize]
+
+\textbf{Descrição:} Analisa as frequências dos tamanhos de linha, pesados pelo número de palavras que as respetivas linhas têm, de modo a obter os tamanhos de letra mais proeminentes por análise dos picos da curva de frequências.
+
+A curva é obtida a partir de um smoothing da lista de frequências e os picos são calculados baseado em proeminência.
+
+Devolve pelo menos um tamanho de letra : normal\_text\_size.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a analisar
+	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
+	\item conf : confiança de texto mínima. Restringe as palavras utilizadas para o cálculo do tamanho das linhas
+\end{itemize}
+
+\textbf{Algoritmo:}
+\begin{algorithm}[H]
+	\caption{Cálculo de tamanhos de texto}
+	\begin{algorithmic}[1]
+		
+		\STATE text\_sizes = \{
+			'normal\_text\_size : 0
+		\}
+		
+		\STATE lines $\leftarrow$ obtem linhas da OCR Tree
+		\STATE line\_sizes = []
+		\STATE \textit{// Cálculo das frequências de tamanhos das linhas}
+		\FOR{line in lines}
+			\IF{line não é vazia e não é texto vertical}
+				\STATE lmh $\leftarrow$ altura média da linha (arredondado a inteiro)
+				\STATE linhe\_sizes[lmh] $\leftarrow$ soma 1 + peso (nº palavras de confiança na linha)
+			\ENDIF
+		\ENDFOR
+		
+		\STATE \textit{// smoothing das linhas}
+		\STATE \textit{// WhittakerSmoother : lambda = 1e1; order = 3; data\_length= len(line\_sizes)}
+		\STATE \textit{// savgol\_filter : window\_length = round(len(line\_sizes*0.1)); polyorder = 2}
+		\STATE line\_sizes\_smooth $\leftarrow$ smooth de line\_sizes usando o método escolhido
+		
+		\STATE \textit{// cálculo de picos utilizando a função find\_peaks do módulo spicy com proeminência a 10\% da frequência máxima}
+		\STATE peaks\_smooth $\leftarrow$ cálculo dos picos
+		
+		\STATE text\_sizes['normal\_text\_size'] $\leftarrow$ máximo das frequências, i.e. altura mais comum
+		
+		\STATE \textit{// se houver mais picos, aqueles abaixo do maior serão tamanhos de letra pequena e da mesma forma para picos acima do maior}
+		
+	\end{algorithmic}
+\end{algorithm}
+
+
+\highlight{get\_columns}[\normalsize]
+
+\textbf{Descrição:} Analisa as frequências das margens das bounding boxes dos blocos de nível 2, pesados pelo número de palavras que os respetivos blocos têm, de modo a obter os pontos esquerdos e direito mais proeminentes por análise dos picos das curvas de frequências.
+
+A curva é obtida a partir de um smoothing da lista de frequências e os picos são calculados baseado em proeminência.
+
+Devolve uma lista do tipo Box com o espaço das colunas encontradas.
+
+Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo que em geral é recomendado usar o método com o mesmo objetivo mas abordagem de análise de imagem, discutido na secção de processamento de imagem.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a analisar
+	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
+	\item conf : confiança de texto mínima. Restringe as palavras utilizadas para o peso das frequências das margens
+\end{itemize}
+
+\textbf{Algoritmo:} Algoritmo semelhante ao método get\_text\_sizes mas com análise das margens esquerda e direita das bounding boxes de nodos de nível 2. São calculados os picos de margens esquerdas e direitas separadamente que são depois pareados de forma a formar o espaço das diferentes colunas.
+
+
 
 \highlight{Limpeza de OCR Tree}
 \label{contribution_clean_ocr}
 
-%% TODO
+Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar blocos demasiado afastados; ajustar dimensões das bounding boxes, etc..
+
+
+%% TODO ilustracao : exemplos dos problemas listados
+
+Descrevem-se então alguns dos métodos propostos para resolver alguns destes problemas.
+
+
+\highlight{block\_bound\_box\_fix}[\normalsize]
+
+\textbf{Descrição:} Ajuste de bounding boxes para eliminar interseções.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a limpar
+	\item text\_confidence : confiança de texto mínima. Utilizado para verificar se blocos são vazios
+	\item find\_delimiters : flag que indica se verificação por delimitadores é realizada apenas por verificação do atributo "type" ou utilizando o método "is\_delimiter" de OCR\_Tree
+	\item find\_images : flag que indica se verificação por imagens é realizada apenas por verificação do atributo "type" ou utilizando o método "is\_image" de OCR\_Tree
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+%% TODO : escrever algoritmo, depois de dar refactoring na funcao
+
+%% TODO exemplo de uso do metodo para limpar blocos
+
+
+\highlight{text\_bound\_box\_fix}[\normalsize]
+
+\textbf{Descrição:} Ajuste de bounding boxes para apenas englobar o texto confiáveis dentro delas.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a ajustar
+	\item text\_confidence : confiança de texto mínima. Utilizado para filtrar blocos de texto confiáveis
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+\begin{algorithm}[H]
+	\caption{Cálculo de tamanhos de texto}
+	\begin{algorithmic}[1]
+		
+		\STATE blocks $\leftarrow$ obtém nodos de nível 2
+		\STATE text\_blocks $\leftarrow$ filtra blocks para apenas ter blocos com texto
+		\STATE \textit{// Percorre blocos com texto para ajustar as suas BBs}
+		\FOR{b in text\_blocks}
+			\STATE words $\leftarrow$ obtém lista de palavras confiáveis, não vazias
+			\STATE block\_min\_left $\leftarrow$ valor da palavra mais à esquerda
+			\STATE block\_max\_right $\leftarrow$ valor da palavra mais à direita
+			\STATE block\_min\_top $\leftarrow$ valor da palavra mais acima
+			\STATE block\_max\_bottom $\leftarrow$ valor da palavra mais abaixo
+			
+			\IF{valores calculados ajustam caixa para ser menor}
+				\STATE b.box $\leftarrow$ atualiza tamanho da caixa e dos seus filhos
+			\ENDIF
+		\ENDFOR
+
+		
+	\end{algorithmic}
+\end{algorithm}
+
+%% TODO exemplo de uso do metodo para ajustar blocos
+
+
+
+\highlight{remove\_solo\_words}[\normalsize]
+
+\textbf{Descrição:} Remove blocos com uma única palavra que estão dentro de outros blocos. Estes são blocos que por esta característica podem ser identificados como ruído ou, em caso negativo, iriam causar conflito no output final por não estarem propriamente integrados no bloco devido.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a limpar
+	\item conf : confiança de texto utilizada para análise a nível das palavras
+\end{itemize}
+
+
+\highlight{unite\_blocks}[\normalsize]
+
+\textbf{Descrição:} Une verticalmente blocos com o mesmo valor de atributo "type". Apenas aplica união entre blocos adjacentes e horizontalmente alinhados. Nota : blocos de texto vertical, apenas podem unir com blocos de texto vertical.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a limpar
+	\item conf : confiança de texto utilizada para verificação de blocos vazios
+\end{itemize}
+
+\begin{algorithm}[H]
+	\caption{União de blocos}
+	\begin{algorithmic}[1]
+		
+		\STATE blocks $\leftarrow$ obtém nodos de nível 2
+		\STATE target\_block $\leftarrow$ escolhe bloco não visitado
+		\STATE \textit{// Percorre blocos com texto para ajustar as suas BBs}
+		\WHILE{não tiver visitado todos os blocos}
+			\STATE united = False
+			\STATE bellow\_blocks $\leftarrow$ lista de blocos adjacentes, diretamente abaixo
+			\STATE bellow\_blocks $\leftarrow$ filtra pelos blocos do mesmo tipo que target\_block e horizontalmente alinhados
+			\IF{bellow\_blocks}
+				\IF{target\_block é texto vertical}
+					\STATE bellow\_blocks $\leftarrow$ filtra para apenas manter texto vertical
+				\ENDIF
+				
+				\IF{len(bellow\_blocks) == 1}
+					\STATE target\_block $\leftarrow$ une com bloco
+					\STATE ocr\_results $\leftarrow$ remove bloco unido
+					\STATE \textit{// atualiza lista de não visitados}
+				\ENDIF
+				
+			\ENDIF
+			
+			\STATE \textit{// Se não tiver unido, escolhe novo bloco, senão repete verificação}
+			\IF{not united}
+				\STATE target\_block $\leftarrow$ escolhe próximo bloco não visitado
+			\ENDIF
+		\ENDWHILE
+		
+		
+	\end{algorithmic}
+\end{algorithm}
+
+%% TODO exemplo de uso do metodo para unir blocos
+
+
+
+
 
 \highlight{Categorização de blocos}
 \label{contribution_categorize_blocks}
@@ -765,7 +976,12 @@ Outros métodos, mais circunstanciais, criados são para o desenho do template d
 
 
 
+\section{Pipeline de aplicação do toolkit}
+\label{contribution_toolkit_pipeline}
 
+
+\section{GUI editor OCR}
+\label{contribution_ocr_editor}
 
 
 \section{GUI Simples}
@@ -874,81 +1090,9 @@ A figura \ref{fig:gui_draw_bb} apresenta os blocos categorizados através deste 
 
 Trabalho futuro neste procedimento, consistirá em, além das melhorias na categorização já realizada, possibilitar a identificação de outras entidades como imagens, anúncios ou tabelas.
 
-\section{Limpeza de blocos}
-\label{limpeza_blocos}
-
-Como se pode observar na imagem da esquerda da figura \ref{fig:gui_fix_bb}, os resultados de OCR podem vir com bastantes defeitos, tais como: caixas sobrepostas, caixas intersetadas, caixas que capturam sujidade ou ruído.
-
-Tal dificulta a análise e em especial a segmentação do documento. Deste modo, é essencial um processo de pós processamento para limpeza dos blocos e, assim, reduzir a quantidade de informação a trabalhar.
-
-Neste momento, o algoritmo desenvolvido procura remover caixas vazias, inclusive as sobrepostas e remover interseções de caixas. Um traço geral está descrito em baixo.
-
-\begin{algorithm}[H]
-    \caption{Limpeza de blocos}
-    \begin{algorithmic}[1]
-    
-    \STATE analyze\_text()
-
-    \WHILE{Não verificou todos os blocos}
-        \STATE Escolher próximo bloco a analisar 
-        \COMMENT{Não pode ser vazio, a não ser que seja delimitador}
-
-        \IF{Bloco a analisar está dentro do próximo bloco, ou vice-versa}
-            \IF{Próximo bloco é vazio, não delimitador}
-                \STATE remove\_block()
-            \ENDIF
-        \ENDIF
-
-        \IF{Bloco a analisar e próximo bloco intersetam-se}
-            \STATE remove\_box\_area(intersection\_area)
-        \ENDIF
-
-        \STATE Adicionar bloco a analisar como verificado
-    \ENDWHILE
-
-    \RETURN Blocos limpos
-    
-\end{algorithmic}
-\end{algorithm}
-
-No exemplo da figura \ref{fig:gui_fix_bb} o número de blocos foi reduzido de 49 para 30.
-
-Alguns aspetos que têm de ser melhorados são: reduzir dimensões dos blocos para assemelhar ao texto que engloba; no tratamento de interseções, tratar o texto que estiver na área modificada.
 
 
-\section{Análise de texto}
-\label{analise_texto}
 
-A análise de texto permite acrescentar características aos blocos além das suas posições geométricas. Como já referido na secção \ref{categorizacao_blocos}, o simples cálculo do tamanho normal do texto permite criar uma métrica relativamente confiável para distinguir, por exemplo, títulos de texto normal. Atualmente, o algoritmo implementado apenas calcula algumas métricas simples:
-\begin{itemize}
-    \item Tamanho de texto normal
-    \item Espaçamento médio do texto
-    \item Número de colunas provável (através da análise das margens comuns do texto)
-\end{itemize}
-
-\begin{algorithm}[H]
-    \caption{Análise de texto}
-    \begin{algorithmic}[1]
-
-    \FOR{linhas}
-        \STATE Guardar tamanho médio de linha
-        \STATE Guardar margens da linha
-    \ENDFOR
-
-    \STATE normal\_text\_size $\gets$ média do tamanho das linhas
-    \STATE desvio\_padrao $\gets$ calculo desvio padrao do tamanho das linhas
-    \WHILE{$\text{normal\_text\_size\_std} > \text{normal\_text\_size} \times 2$}
-        \STATE remover outlier
-        \STATE recalcular normal\_text\_size e desvio\_padrao
-    \ENDWHILE
-
-    \STATE calcular margens esquerdas mais comuns
-    \STATE estimar número de colunas de acordo com margens esquerdas
-    
-\end{algorithmic}
-\end{algorithm}
-
-No futuro, outras estatísticas deverão ser acrescentadas, assim como o aperfeiçoamento do cálculo das presentes.
 
 
 \section{Ordenação de blocos}

@@ -493,8 +493,8 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     target = o_target
 
     # preprocess image
-    if 'image_preprocess' not in args.skip_method:
-        target = image_preprocess(o_target,results_path,args)
+    target = image_preprocess(o_target,results_path,args)
+
             
     if args.logs:
         print(f'OCR: {target}')

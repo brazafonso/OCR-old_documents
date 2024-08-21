@@ -34,7 +34,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
 
     lines = ocr_results.get_boxes_level(4)
     line_sizes = []
-    # save text sizes and margins
+    # save line sizes
     for line in lines:
         if not line.is_empty(conf=conf) and not line.is_vertical_text(conf=conf):
             lmh = line.calculate_mean_height(level=4)
@@ -43,6 +43,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
                 line_sizes += [0] * (lmh - len(line_sizes) + 2)
             words = line.get_boxes_level(5,conf=conf)
             words = [w for w in words if w.text.strip()]
+            # frequency is weighted by number of words in the line
             line_sizes[lmh] += 1 + len(words)
 
     if line_sizes:
@@ -50,8 +51,9 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
         # add 10% to lists (because of smoothing might not catch peaks on edges)
         line_sizes += [0] * round(len(line_sizes)*0.1)
 
-        # normal
-        peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
+        if logs:
+            # normal
+            peaks,_ = find_peaks(line_sizes,prominence=0.01*sum(line_sizes))
 
         # smoothed 
         if method == 'WhittakerSmoother':
@@ -150,8 +152,9 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=Fa
 
         ## left
 
-        ### normal
-        peaks_l,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
+        if logs:
+            ### normal
+            peaks_l,_ = find_peaks(left_margins,prominence=0.01*sum(left_margins))
 
         ### smoothed 
         if method == 'WhittakerSmoother':
@@ -168,8 +171,9 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=Fa
 
         ## right
 
-        ### normal
-        peaks_r,_ = find_peaks(right_margins,prominence=0.01*sum(right_margins))
+        if logs:
+            ### normal
+            peaks_r,_ = find_peaks(right_margins,prominence=0.01*sum(right_margins))
 
         ### smoothed 
         if method == 'WhittakerSmoother':
@@ -385,6 +389,7 @@ def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
     - normal_text_size: normal text size of the document page
     - <other text sizes>* : other text sizes of the document if any (need to be found as peaks by get_text_sizes)
     - columns: list of columns as Box class\n
+    - average_word_distance: average distance between words
     '''
     analyze_results = {}
 
@@ -507,7 +512,7 @@ def estimate_journal_columns(ocr_results:OCR_Tree,image_info:Box,header:Box=None
     delimiters = ocr_results.get_delimiters(search_area=search_area,orientation='vertical')
 
     if delimiters:
-        # joint aligned delimiters
+        # join aligned delimiters
         column_delimiters = join_aligned_delimiters(delimiters,orientation='vertical')
         right_margin = Box(image_info.width,image_info.width,upper_margin,lower_margin)
         column_delimiters.append(right_margin)

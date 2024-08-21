@@ -123,6 +123,15 @@ class CustomAction_skip_method(argparse.Action):
     '''
     Custom Action for Skip Method option
     '''
+
+    preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','light_correction',
+                         'image_preprocess','remove_document_margins','remove_document_images',
+                         'image_upscaling','identify_document_delimiters','binarize_image']
+
+    posprocessing_methods = ['clean_ocr','split_whitespace','unite_blocks','calculate_reading_order','extract_articles','posprocessing']
+
+    skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
+
     def __init__(self, *args, **kwargs):
         """
         argparse custom action.
@@ -133,11 +142,11 @@ class CustomAction_skip_method(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
         # if skip method "all" is given, add all methods
         if 'all' in values:
-            choices = self.choices
-            values = []
-            for choice in choices:
-                if choice not in values:
-                    values.append(choice)
+            values = self.skipable_methods
+        elif 'image_preprocess' in values:
+            values = self.preprocessing_methods
+        elif 'posprocessing' in values:
+            values = self.posprocessing_methods
 
         setattr(namespace, self.dest, values) 
 
