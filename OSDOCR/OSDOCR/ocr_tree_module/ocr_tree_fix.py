@@ -555,7 +555,7 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
     if debug:
         print(f'Block 1 | Original children len: {len(block.children)}')
 
-    if not delimiter.intersects_box(block.box):
+    if not delimiter.intersects_box(block.box,inside=True):
         return new_blocks
 
     if debug:

@@ -1058,7 +1058,15 @@ def calculate_reading_order_naive_context(ocr_results:OCR_Tree,area:Box=None)->O
 
 
 def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:dict,conf:int=10,debug:bool=False)->str:
-    '''Categorize single block into a type. Returns block type'''
+    '''Categorize single block into a type.
+     
+       Args:
+           target_block: block to categorize
+           blocks: list of blocks
+           block_analysis: dictionary resulting from analyze_text. Needs at least normal_text_size as key.
+           conf: text confidence level
+
+       Returns block type'''
     block_type = None
 
     
@@ -1100,8 +1108,8 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
                 if debug:
                     print('Hihghlight block:',target_block.id,'| Too many words:',len(words))
 
-        # smaller than normal text size and has image above
-        elif block_text_size < block_analysis['normal_text_size'] and len([b for b in blocks_directly_above if b.is_image(conf=conf)]) > 0:
+        # smaller than normal text size and has image or caption directly above
+        elif block_text_size < block_analysis['normal_text_size'] and len([b for b in blocks_directly_above if b.is_image(conf=conf) or b.attribute_is_value('type','caption')]) > 0:
             # caption block
             block_type = 'caption'
             if debug:
@@ -1110,13 +1118,13 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
 
         # text characteristics
         block_text = target_block.to_text(conf=conf).strip()
-        # if first character is lower case, starts with lower case
-        if not block_text[0].isupper() and not re.match(r'^-\s*[A-Z"]',block_text):
+        # if first character is not uppercase or start of dialogue, not starts text
+        if not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text):
             target_block.start_text = False
         else:
             target_block.start_text = True
         # if last character is punctuation, ends text
-        if block_text[-1] in ['.','!','?']:
+        if block_text[-1] in ['.','!','?','"','\'']:
             target_block.end_text = True
         else:
             target_block.end_text = False

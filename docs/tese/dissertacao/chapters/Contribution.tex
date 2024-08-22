@@ -71,10 +71,10 @@ Além dos métodos principais criados para a resolução de problemas identifica
 			\item Limpeza de hifenização
 		\end{itemize}
 		
+	
+	
+		\item Validação de resultados \ref{contribution_results_validation}
 	\end{itemize}
-	
-	\item Validação de resultados \ref{contribution_results_validation}
-	
 \end{itemize}
 
 
@@ -840,7 +840,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 %% TODO : escrever algoritmo, depois de dar refactoring na funcao
 
-%% TODO exemplo de uso do metodo para limpar blocos
+%% TODO ilustracao : exemplo de uso do metodo para limpar blocos
 
 
 \highlight{text\_bound\_box\_fix}[\normalsize]
@@ -878,7 +878,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{algorithm}
 
-%% TODO exemplo de uso do metodo para ajustar blocos
+%% TODO ilustracao : exemplo de uso do metodo para ajustar blocos
 
 
 
@@ -938,7 +938,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{algorithm}
 
-%% TODO exemplo de uso do metodo para unir blocos
+%% TODO ilustracao :exemplo de uso do metodo para unir blocos
 
 
 
@@ -1012,17 +1012,167 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 
 
-%% TODO exemplo de uso do metodo para separar usando whitespaces
+%% TODO ilustracao : exemplo de uso do metodo para separar usando whitespaces
 
 \highlight{Categorização de blocos}
 \label{contribution_categorize_blocks}
 
-%% TODO
+De forma a poder segmentar com maior precisão documentos, informação adicional sobre os blocos reconhecidos é necessária. Por exemplo, para ser possível identificar um artigo de um jornal, seria expectável agrupar um título e pelo menos uma caixa de texto. Desta forma uma tokenização dos blocos de nível 2 seguindo heurísticas foi desenvolvida.
+
+O método que realiza esta tokenização é \textbf{categorize\_box}. O método foi desenvolvido com foco na utilização para jornais, sendo que os tipos de elementos identificados é portanto limitada.
+
+A tokenização segue as seguintes regras:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{text} 		: bloco com texto, de tamanho dentro do tamanho normal de texto (margem de 10\%), ou que não verificou nenhuma das outras regras para blocos de texto
+	\item \textbf{title} 	: bloco com texto, não vertical, com menos de 10 palavras e tamanho maior do que o tamanho normal de texto
+	\item \textbf{highlight} : bloco com texto, semelhante a "title", mas com maior número de palavras
+	\item \textbf{caption} 	: bloco com texto, de tamanho menor do que tamanho normal de texto e está diretamente abaixo de uma imagem ou de um bloco do tipo "caption"
+	\item \textbf{delimiter} : bloco sem texto e que verifica a regra: $box.width >= 4*box.height \vee box.height >= 4*box.width$
+	\item \textbf{other} 	: bloco sem texto e que não verificou nenhuma das outras regras para blocos vazios
+\end{itemize}
+
+Blocos de tipo "delimiter" ou "image" são também possíveis de identificar utilizando métodos disponibilizados para processamento de imagem.
+
+No caso de categorização de blocos de texto, são também verificadas certas características:
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{start\_text} : texto foi iniciado, i.e. começa com uma letra maiúscula ou com início de diálogo (sinais: ",',-) seguido de uma letra maiúscula.
+	\item \textbf{ends\_text} : texto foi terminado, termina com um sinal de pontuação que finaliza uma frase, ou fim de diálogo (".","?","!",""","'")
+\end{itemize}
+
+Estas características de texto guardam informação relevante utilizada em métodos de cálculos de atração entre blocos.
+
+
+
+%% TODO ilustracao : exemplo de uso do metodo para categorizar os blocos de um jornal
+
 
 \highlight{Divisão de blocos}
 \label{contribution_divide_blocks}
 
-%% TODO
+Uma funcionalidade de extrema utilidade para a manipulação dos produtos de OCR é a capacidade de dividir um bloco em dois, cada um destes novos ficando com parte dos conteúdos do bloco original. Tal operação facilita a remoção de partes ruidosas de um bloco, ou a segmentação de bloco quando este foi incorretamente unido pelo software de OCR. Exemplo: bloco de texto cuja primeira linha tem potencial de ser título, permite facilmente dividir o bloco em o título e restante texto.
+
+%% TODO ilustracao : exemplo de divisao de bloco, para separar titulo do texto
+
+Esta é no entanto uma operação de relativa complexidade, visto que é necessário ir descendo na árvore e fazer múltiplas verificações para calcular o melhor destino final (entre os novos blocos) para cada um dos filhos.
+
+A divisão implementada admite dois tipos de corte: horizontal, utilizando um corte perpendicular ao eixo y, tem uma divisão do conteúdo relativamente simples, visto apenas ser necessário verificar quais linhas se mantêm em cada novo bloco, refazendo posteriormente os parágrafos conforme necessário; vertical, utilizando um corte perpendicular ao eixo x, tem a divisão de conteúdo mais complexo, visto ser necessário verificar para cada palavra a que bloco pertence e, posteriormente, refazer as linhas e os parágrafos. 
+
+Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, ferramenta que permite uma visualização mais fácil desta transformação.
+
+
+\highlight{split\_block}[\normalsize]
+
+\textbf{Descrição:} Dado um bloco, um delimitador representante do corte a realizar e a orientação do corte pretendida, divide o bloco em 2. Reparte o conteúdo original entre os dois novos blocos de acordo com a área em que melhor se incluem. Dos blocos criados, devolve apenas aqueles que ainda tiverem conteúdo (texto).
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item block : OCR Tree a dividir
+	\item delimiter : Box representante do corte a ser feito
+	\item orientation : orientação do corte a realizar. Opções: "horizontal", "vertical".
+	\item keep\_all : flag que indica se todo o conteúdo deve ser restaurado. Em caso negativo, conteúdo que não se inclui totalmente em nenhum dos novos blocos não será incluído. Se positivo, conteúdo em posição de conflito irá para o bloco que possui a maior parte da sua área.
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+\begin{breakablealgorithm}
+	\caption{Divisão de bloco em 2}
+	\scriptsize
+	\begin{algorithmic}[1]
+		
+		\STATE new\_blocks = [block]
+		
+		\IF{delimiter não interceta com bloco}
+			\RETURN new\_blocks
+		\ENDIF
+		
+		\STATE area\_1, area\_2 $\leftarrow$ cria 2 Box para os novos blocos, criadas de acordo com a orientação do corte e a posição do delimitador
+		
+		\STATE \textit{// listas para parágrafos de cada área}
+		\STATE blocks\_1 = []
+		\STATE blocks\_2 = []
+		
+		\STATE \textit{// corte horizontal}
+		\STATE \textit{// obtém todas as linhas e verifica a que área pertencem}
+		\STATE \textit{// reconstrói parágrafos no fim}
+		\IF{orientation == "horizontal"}
+			\STATE lines $\leftarrow$ obtém nodos de nível 4
+			\STATE area\_1\_lines, area\_2\_lines = []
+			\FOR{line in lines}
+				\IF{line dentro de area\_1}
+					\STATE area\_1\_lines.append(line)
+				\ELSIF{line dentro de area\_2}
+					\STATE area\_2\_lines.append(line)
+				\ELSIF{keep\_all}
+					\IF{line está mais incluída dentro da área 1}
+						\STATE area\_1\_lines.append(line)
+					\ELSE
+						\STATE area\_2\_lines.append(line)
+					\ENDIF
+				\ENDIF
+			\ENDFOR
+			
+			\IF{area\_1\_lines}
+				\STATE blocks\_1 $\leftarrow$ reconstrói parágrafos de acordo com a metadata (par\_num) dos nodos linha
+			\ENDIF
+			
+			\IF{area\_2\_lines}
+			\STATE blocks\_2 $\leftarrow$ reconstrói parágrafos de acordo com a metadata (par\_num) dos nodos linha
+			\ENDIF
+		
+		\ELSE
+			\STATE \textit{// corte vertical}
+			\STATE \textit{// obtém todas as linhas e para cada uma verifica que palavras pertencem a qual área}
+			\STATE block $\leftarrow$ da id às palavras para as conseguir remover diretamente
+			\STATE blocks\_1 $\leftarrow$ copia paragrafos pertence ao bloco
+			\STATE blocks\_2 $\leftarrow$ copia paragrafos pertence ao bloco
+			\FOR{paragrafo in block}
+				\STATE par\_words $\leftarrow$ obtém palavras do parágrafo
+				\FOR{word in par\_words}
+					\IF{word dentro de area\_1}
+						\STATE blocks\_2 $\leftarrow$ remove palavra da area 2
+					\ELSIF{word dentro de area\_2}
+						\STATE blocks\_1 $\leftarrow$ remove palavra da area 1
+					\ELSIF{keep\_all}
+						\IF{word está mais incluída dentro da área 1}
+							\STATE blocks\_2 $\leftarrow$ remove palavra da area 2
+						\ELSE
+							\STATE blocks\_1 $\leftarrow$ remove palavra da area 1
+						\ENDIF
+					\ENDIF
+				\ENDFOR
+				\STATE \textit{// atualiza BB dos parágrafos para representar as modificações}
+			\ENDFOR
+		\ENDIF
+		
+		\IF{blocks\_1}
+			\STATE block.children = blocks\_1
+			\STATE block $\leftarrow$ atualiza BB para representar modificações do conteúdo
+			
+		\ELSE
+			\STATE \textit{// se a área 1 não tiver blocos, bloco original é atualizado com a área 2 e só é devolvido um bloco}
+			\IF{blocks\_1 vazio}
+				\STATE block.children = blocks\_2
+				\STATE block $\leftarrow$ atualiza BB para representar modificações do conteúdo
+			\ELSE
+				\STATE \textit{// cria novo bloco}
+				\STATE new\_block $\leftarrow$ nova OCR Tree
+				\STATE new\_block.children = blocks\_2
+				\STATE new\_block $\leftarrow$ atualiza BB para representar modificações do conteúdo
+				\STATE new\_blocks = [block,new\_block]
+				
+			\ENDIF
+			
+		\ENDIF
+		
+		\RETURN new\_blocks
+		
+	\end{algorithmic}
+\end{breakablealgorithm}
+
+
+
+%% TODO ilustracao : exemplo de divisao de bloco, vertical e horizontal
 
 \highlight{Cálculo de ordem de leitura}
 \label{contribution_reading_order}
@@ -1041,7 +1191,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 \label{contribution_text_processing}
 
 
-\subsection{Validação de resultados}
+\subsubsection{Validação de resultados}
 \label{contribution_results_validation}
 
 
@@ -1130,39 +1280,6 @@ Neste caso, os artigos são calculados e posteriormente escolhidas cores distint
 \end{figure}
 
 Para facilitar a deteção das diferenças entre o antes e depois da limpeza, os dois estados são postos lado a lado e os blocos são identificados, mantendo a mesma identificação após a limpeza. 
-
-
-
-
-\section{Categorização de blocos}
-\label{categorizacao_blocos}
-
-Como verificado em vários dos estudos no estado da arte, por vezes, para realizar a segmentação correta dos documentos, é necessário considerar mais do que as posições relativas entre as diferentes caixas de texto. Por isto, um categorização destas caixas através de uma análise das suas características, permite o armazenamento de algum contexto sobre estas.
-
-Atualmente, as caixas são categorizados em 1 destes tipos:
-
-\begin{itemize}
-    \item \textbf{Delimitador} : Caixa vazia (sem texto) e que cumpre a regra:
-
-        $box.width >= 4*box.height \vee box.height >= 4*box.width$
-        \item \textbf{Texto} : Tamanho médio do texto é do tamanho médio do documento, com uma margem de 30\%. Necessita uma análise de texto do documento.
-        \item  \textbf{Título} : Tamanho médio acima do tamanho médio do documento.
-        \item \textbf{Legenda} : Tamanho médio abaixo do tamanho médio do documento.
-        \item \textbf{Outro} : Para as caixas que não correspondem a nenhum dos outros casos. Método provisório para categorizar imagens e outros elementos sem texto.
-\end{itemize}
-
-    Além disso, para as caixas com texto, verificam-se algumas características deste, nomeadamente:
-    \begin{itemize}
-        \item \textbf{Texto iniciado} : Se a primeira letra for maiúscula.
-        \item \textbf{Texto não terminado} : Se não tiver terminado com uma pontuação de fim de frase.
-    \end{itemize}
-
-A figura \ref{fig:gui_draw_bb} apresenta os blocos categorizados através deste algoritmo.
-
-Trabalho futuro neste procedimento, consistirá em, além das melhorias na categorização já realizada, possibilitar a identificação de outras entidades como imagens, anúncios ou tabelas.
-
-
-
 
 
 
