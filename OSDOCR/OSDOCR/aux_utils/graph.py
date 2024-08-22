@@ -109,7 +109,7 @@ class Graph:
                         source.remove_edge(edge)
 
     def narrow_parents(self):
-        '''Remove edges from nodes that have more than one parent'''
+        '''Remove edges with small weight from nodes that have more than one parent'''
         connections = []
         for node in self.nodes:
             for edge in node.children_edges:

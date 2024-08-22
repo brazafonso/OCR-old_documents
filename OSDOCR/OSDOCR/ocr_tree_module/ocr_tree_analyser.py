@@ -1523,7 +1523,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             if target_block.type != 'title':
                 if target_block.type == 'text':
                     if target_block.start_text == True:
-                        attraction += 20
+                        attraction += 30
                         if log:
                             print('Target block is text and text is started')
                 else:
@@ -1545,10 +1545,6 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 attraction += 50
                 if log:
                     print('Target block is caption')
-            else:
-                attraction += 20
-                if log:
-                    print('Target block is not caption')
         
         # text
         ## text is dependent on its content
@@ -1578,16 +1574,16 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                             attraction += 20
                             if log:
                                 print('Leftmost block is not text')
-                else:
-                    if target_block in below_blocks:
-                        attraction += 20
-                        if log:
-                            print('Target block is below')
+                elif direction == 'below':
+                    if log:
+                        print('Target block is below')
+                    attraction += 20
                     
                     if block.end_text == False and target_block.start_text == False:
                         attraction += 50
                         if log:
                             print('Block text is not finished and target block text is started')
+
 
             ## unfineshed text is less atracted to not non-started text block
             elif block.end_text == False and (target_block.type != 'text'or target_block.start_text == True):
