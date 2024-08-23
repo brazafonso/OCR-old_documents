@@ -1729,7 +1729,7 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
         print('Order list:',order_list)
 
     # isolate articles
-    ## a new article begins when a title block is found and current article is not empty
+    ## a new article begins when a title block is found and current article is not empty, unless it's last block is a title
     ## a new article ends when another title block is found and current article is not empty
     articles = []
     current_article = []
@@ -1739,9 +1739,11 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
         node:Node
         if node.value.type == 'title':
             if current_article and has_title:
-                articles.append(current_article)
-                current_article = []
-                has_title = True
+                # if last element in article is not a title, create new article
+                if not current_article[-1].type == 'title':
+                    articles.append(current_article)
+                    current_article = []
+                    has_title = True
             else:
                 has_title = True
         current_article.append(node.value)

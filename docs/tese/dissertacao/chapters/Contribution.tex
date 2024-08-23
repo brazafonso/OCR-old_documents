@@ -53,6 +53,7 @@ Além dos métodos principais criados para a resolução de problemas identifica
 			\item Divisão de blocos \ref{contribution_divide_blocks}
 			\item Cálculo de ordem de leitura \ref{contribution_reading_order}
 			\item Segmentação de resultados \ref{contribution_result_segmentation}
+			\item Validação de resultados \ref{contribution_results_validation}
 		\end{itemize}
 		
 		\item Processamento de imagem \ref{contribution_image_processing}
@@ -71,9 +72,7 @@ Além dos métodos principais criados para a resolução de problemas identifica
 			\item Limpeza de hifenização
 		\end{itemize}
 		
-	
-	
-		\item Validação de resultados \ref{contribution_results_validation}
+		
 	\end{itemize}
 \end{itemize}
 
@@ -1272,25 +1271,82 @@ Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco a
 
 Os resultados desta ordenação é bastante dependente da qualidade do conteúdo da OCR Tree, sendo que uma OCR Tree com texto muito disperso ou ruidoso irá provavelmente gerar uma ordenação errada. 
 
-Diferentes jornais podem não ter métodos de leitura tão simples, ou que acomodem estas regras, sendo que esta metodologia não será ubíqua.
+Diferentes jornais podem não ter métodos de leitura tão simples, ou que acomodem estas regras, sendo que esta metodologia não será ubíqua. 
 
 
 
 \highlight{Segmentação de resultados}
 \label{contribution_result_segmentation}
 
-%% TODO
+No caso de jornais, como já discutido anteriormente, o elemento base da informação nestes contido são os artigos. 
+
+Artigos podem ser descritos como um título seguido por um excerto de elementos de outro tipo, por exemplo texto ou imagem, quebrado pelo final de página ou por um novo título que iniciaria outro artigo. Seguindo esta caracterização foi desenvolvida um método que, utilizando os resultados do cálculo da ordem de leitura i.e., o grafo e a ordem de nodos calculada, procura formar uma lista de artigos.
+
+\highlight{graph\_isolate\_articles}[\normalsize]
+
+\textbf{Descrição:} A partir de um grafo de nodos de blocos e uma ordem de leitura destes, procura percorrer esta lista para gerar artigos utilizando todos os blocos. Um artigo é começado por um bloco título e, se um novo bloco título for iterado na lista e a lista tiver blocos não título, inicia um novo artigo.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item graph : Graph com as ligações dos blocos da OCR Tree
+	\item order\_list : list de ordem de leitura dos blocos da OCR Tree
+\end{itemize}
+
+
+%% TODO ilustracao : segmentacao de jornal em artigos
+
+Métodos para conversão da lista de artigos para texto, markdown e visualização sob uma imagem foram também desenvolvidos.
+
+
+
+\highlight{Validação de resultados}
+\label{contribution_results_validation}
+
 
 
 \subsubsection{Processamento de imagem}
 \label{contribution_image_processing}
 
+
+\highlight{Correção de ângulo de rotação}
+\label{contribution_image_rotation_correction}
+
+% calculo de direcao de rotacao
+
+% calculo de angulo de rotacao
+%% correcoes menores utilizando leptonica
+
+\highlight{Corte de sombra nas margens}
+\label{contribution_image_cut_argin_shadow}
+
+\highlight{Binarização de imagem}
+\label{contribution_image_binarization}
+
+
+\highlight{Identificação de elementos de imagem}
+\label{contribution_image_element_identification}
+
+% delimitadores
+%% descoberta de delimitadores
+%% limpeza/redução de delimitadores
+
+% imagens
+
+\highlight{Segmentação de imagem}
+\label{contribution_image_segmentation}
+
+% divisao de colunas
+
+% divisao de template usando delimitadores
+
+
+
 \subsubsection{Processamento de texto}
 \label{contribution_text_processing}
 
+% resoluçao de hifenização
 
-\subsubsection{Validação de resultados}
-\label{contribution_results_validation}
+% conversores de resultados para text e markdown
 
 
 
@@ -1298,9 +1354,61 @@ Diferentes jornais podem não ter métodos de leitura tão simples, ou que acomo
 \section{Pipeline de aplicação do toolkit}
 \label{contribution_toolkit_pipeline}
 
+% proposito
+
+% preprocessamento de imagem
+%% modulos experimentados e utilizados
+
+% OCR de magem
+%% binarizacao
+%%% imagem simples
+%%% imagem segmentada
+
+% tratamento de resultados
+%% clean OCR
+%% categorizacao OCR
+%% Uniao OCR
+%% Find titles TODO : nao falado anteriormente
+
+% criacao de output
+%% output para jornal
+%%% calculo da ordem de leitura
+%%% output para text
+%%% output para markdown
+%% output simples
+%%% output text
 
 \section{GUI editor OCR}
 \label{contribution_ocr_editor}
+
+% proposito e ferramentas utilizadas
+
+% funcionalidades disponiveis
+%% abir diferentes resultados OCR para uma mesma imagem
+%% mover blocos singularmente ou em grupo
+%% ajustar dimensoes de blocos
+%% OCR de bloco
+%%% configuracoes de OCR
+%% configuracoes de editor
+%% dividir bloco manualmente
+%% dividir bloco por espaços vazios
+%% categorizar blocos manualmente
+%% ordenar blocos
+%% calcular ordem de blocos
+%% gerar artigos automaticamente
+%% gerir artigos
+%%% adicionar e remover
+%%% adicionar e remover blocos a artigos
+%%% alterar ordem dos artigos
+%% gerar output
+%%% simples
+%%% markdown
+%%% OCR Tree
+%% cache de operacoes
+%%% retroceder e reconstruir operacoes
+
+
+
 
 
 % \section{GUI Simples}
