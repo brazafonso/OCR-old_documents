@@ -1513,18 +1513,87 @@ Os que foram desenvolvidos foram:
 
 
 
-
 \highlight{Identificação de imagens no documento}
 \label{contribution_image_document_image_identification}
 
 % imagens
 
+A possibilidade de identificar e isolar elementos de imagem/ilustração em documentos é, por si só, uma ferramenta extremamente útil. Infelizmente nem todos os motores OCR identificam diretamente estes elementos como sendo imagens, por exemplo, no caso do Tesseract imagens são rodeadas com boa precisão porém, no ficheiro resultante de OCR, não é atribuído um identificador para isolar o elemento como uma imagem (de igual modo para os delimitadores). 
+
+Assim sendo, explorou-se abordagens para se obter esta informação de forma mais focada.
+Entre estas explorou-se abordagens apoiadas por Deep Learning, como é o caso de Detectron desenvolvido pela Meta, e o \href{https://layout-parser.readthedocs.io/en/latest/index.html}{Layout Parser} que surge a partir do Detectron. 
+Uma solução mais simples em termos de dependências/instalação e computação é o uso de um método de segmentação de página disponibilizado pela biblioteca Leptonica (\href{https://tpgit.github.io/Leptonica/livre__pageseg_8c_source.html}{método de segmentação}). 
+Este método identifica, através de múltiplas aplicações de morfologias, bounding boxes para zonas previstas de texto e imagem.
+O código original foi apenas levemente modificado para alterar o destino do output.
+
+
+%% TODO : ilustracao de imagens identificadas
+
+\highlight{identify\_document\_images}[\normalsize]
+
+\textbf{Descrição:} Método que invoca algoritmo de leptonica para segmentação de página, interpreta o output deste, e retorna uma lista de objetos do tipo Box que representa a posição das imagens identificadas no documento.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a binarizar
+	\item tmp\_dir : diretório para armazenar ficheiros temporários
+\end{itemize}
+
+
 \highlight{Segmentação de documento}
 \label{contribution_image_segmentation}
 
-% divisao de colunas
+Como discutido na secção de métodos aplicados sob os resultados de OCR, a segmentação de um documento tem diversas aplicações. No entanto, como também foi mencionado, a segmentação utilizando os resultados de OCR é muito dependente da qualidade destes, sendo preferível procurar realizar esta diretamente através da imagem.
 
-% divisao de template usando delimitadores
+Para este propósito, foram desenvolvidos métodos para identificação de colunas e para segmentação de documento (header,body,footer).
+
+\highlight{divide\_columns}[\normalsize]
+
+\textbf{Descrição:} Método que, através de análise da distribuição de pixeis pretos numa imagem de um documento, divide este em colunas. Retorna uma lista de objetos do tipo Box.
+É recomendado remover ilustrações/imagens do documento pois estes são aglomerados que são outliers na análise de frequências.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a binarizar
+	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito).
+\end{itemize}
+
+\textbf{Algoritmo:} 
+
+Similar ao utilizado para a deteção de colunas através dos blocos de resultado de OCR, porém a análise de frequências é sobre a distribuição de pixeis invés das margens dos blocos.
+
+
+%% TODO : ilustracao de divisao de documento em colunas
+
+
+\highlight{segment\_document}[\normalsize]
+
+\textbf{Descrição:} Método que, obtendo uma lista de delimitadores detetados no documento, divide procura dividir o documento em header,footer e body.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a binarizar
+	\item remove\_images : flag para aplicar método de remoção de imagens
+	\item tmp\_dir : diretoria de ficheiros temporários
+	\item target\_segments : lista segmentos de interesse. Opções possíveis: 'header', 'body','footer'
+\end{itemize}
+
+\textbf{Algoritmo:} 
+
+Utilizando uma lista de delimitadores horizontais, procura ajustar o body, inicialmente considerado como a imagem inteira, em header e footer (se procurados). 
+
+O header é assinalado por um delimitador horizontal que segue a seguinte regra:
+
+$delimiter.bottom \leq 0.3*image.shape[0] \wedge delimiter.width \geq 0.4*image.shape[1]$
+
+O footer é assinalado por um delimitador horizontal que segue a seguinte regra:
+
+$delimiter.bottom \geq 0.7*image.shape[0] \wedge delimiter.width \geq 0.4*image.shape[1]$
+
+
+%% TODO : ilustracao de divisao de documento em segmentos
 
 
 
