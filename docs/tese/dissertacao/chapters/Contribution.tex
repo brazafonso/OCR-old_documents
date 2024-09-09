@@ -68,6 +68,7 @@ Além dos métodos principais criados para a resolução de problemas identifica
 		\item Processamento de texto \ref{contribution_text_processing}
 		\begin{itemize}\setlength\itemsep{-0.3em}
 			\item Limpeza de hifenização
+			\item Geração de output
 		\end{itemize}
 		
 		
@@ -1602,7 +1603,20 @@ $delimiter.bottom \geq 0.7*image.shape[0] \wedge delimiter.width \geq 0.4*image.
 
 % resoluçao de hifenização
 
-% conversores de resultados para text e markdown
+
+\highlight{Geração de output}
+
+A criação de outputs finais de fácil visualização é uma função essencial do trabalho produzido, permitindo uma digestão dos resultados de OCR mais simples.
+
+Fundamentalmente, existem dois métodos principais de geração de output:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item A partir de uma OCR Tree, chamar o método da classe "to\_text" para transformar a árvore numa única string de texto. A ordem do texto seguirá a ordem dos filhos de cada nodo. Delimitadores personalizados para cada um dos níveis podem ser distribuídos através do fornecimento de um dicionário.
+	\item A partir da classe Article, invocar o método "to\_text" para transformar a árvore interna processada numa string simples do título seguido do corpo do artigo. 
+	
+	Invocar o método "to\_md" para gerar uma string markdown que utiliza uma sintaxe mais apropriada para markdown, adicionando também separador entre o título e o corpo. Neste caso, se o artigo tiver elementos de imagem, é possível que estes sejam incluídos no output final.
+\end{itemize}
+
 
 
 

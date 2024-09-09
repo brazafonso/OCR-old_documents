@@ -49,7 +49,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
     if line_sizes:
 
         # add 10% to lists (because of smoothing might not catch peaks on edges)
-        line_sizes += [0] * round(len(line_sizes)*0.1)
+        line_sizes = [0] * round(len(line_sizes)*0.1) + line_sizes + [0] * round(len(line_sizes)*0.1)
 
         if logs:
             # normal

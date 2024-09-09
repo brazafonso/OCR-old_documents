@@ -634,20 +634,20 @@ class OCR_Tree:
             text_delimiters {dict} -- delimiters dictionary. default: {5:' ',4:'\n',3:'\n\t'}
         '''
         text = ''
-        text_delimiter = ''
-        line_delimiter = ''
-        par_delimiter = ''
+        text_delimiter = ' '
+        line_delimiter = '\n'
+        par_delimiter = '\n\t'
         if text_delimiters:
             text_delimiter = text_delimiters.get(5,' ')
-            line_delimiter = text_delimiters.get(4,'')
-            par_delimiter = text_delimiters.get(3,'')
+            line_delimiter = text_delimiters.get(4,'\n')
+            par_delimiter = text_delimiters.get(3,'\n\t')
 
         if self.level == 5 and self.conf >= conf:
-            text += self.text + ' ' + text_delimiter
+            text += self.text + text_delimiter
         elif self.level == 4:
-            text += '\n' + line_delimiter
+            text += line_delimiter
         elif self.level == 3:
-            text += '\n\t' + par_delimiter
+            text += par_delimiter
         for child in self.children:
             text += child.to_text(conf,text_delimiters)
         return text

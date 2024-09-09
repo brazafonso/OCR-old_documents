@@ -62,13 +62,21 @@ class Article:
         abstract_boxes = []
         for ocr_tree in ocr_trees:
             if not ocr_tree.is_empty(conf=conf):
-                if ocr_tree.text_is_title(text_analysis['normal_text_size'],conf=conf):
-                    potential_title_boxes.append(ocr_tree)
-                # break when normal text is found and there are potential title boxes
-                elif ocr_tree.is_text_size(text_analysis['normal_text_size']) and potential_title_boxes:
-                    break
+                if block_type:=ocr_tree.__getattribute__('type'):
+                    if block_type == 'title':
+                        potential_title_boxes.append(ocr_tree)
+                    elif block_type == 'text' and potential_title_boxes:
+                        break
+                    else:
+                        abstract_boxes.append(ocr_tree)
                 else:
-                    abstract_boxes.append(ocr_tree)
+                    if ocr_tree.text_is_title(text_analysis['normal_text_size'],conf=conf):
+                        potential_title_boxes.append(ocr_tree)
+                    # break when normal text is found and there are potential title boxes
+                    elif ocr_tree.is_text_size(text_analysis['normal_text_size']) and potential_title_boxes:
+                        break
+                    else:
+                        abstract_boxes.append(ocr_tree)
 
 
         # print('potential title boxes',potential_title_boxes)
@@ -101,6 +109,11 @@ class Article:
         ## if box is of type image, add tuple ("image",image_path)
         ## if box is of type text, add tuple ("text",text)
         item = None
+        text_delimiters = {
+            5: ' ',
+            4: ' \n',
+            3: '\n\t',
+        }
         for box in body_boxes:
            new_item = None
            if box.type == 'image':
@@ -111,7 +124,8 @@ class Article:
                    pass
                new_item = ('image',image_path)
            else:
-               new_item = ('text',box.to_text())
+               box_text = box.to_text(conf=conf,text_delimiters=text_delimiters)
+               new_item = ('text',box_text)
            
            if item:
                if item[0] == new_item[0] and item[0] == 'text':
@@ -181,14 +195,17 @@ class Article:
 
         for item in self.body:
             if item[0] == 'text':
-                text += f'{item[1]}'
+                box_text = item[1]
+                # small replace because of markdown specific formatting
+                box_text = re.sub(r'(^|\n) *([\#\*\-])\s', r'\1\\\2 ', box_text)
+                text += f'{box_text}'
             elif item[0] == 'image':
                 # check if image path is valid
                 text += '\n\n'
                 if os.path.exists(item[1]):
-                    print(output_path,item[1])
+                    # print(output_path,item[1])
                     relative_image_path = os.path.relpath(item[1],output_path)
-                    print(relative_image_path)
+                    # print(relative_image_path)
                     text += f'![image]({relative_image_path})'
                 else:
                     text += f'![image](image)'
@@ -201,5 +218,11 @@ class Article:
 
     def to_txt(self):
         '''Returns article in txt format'''
-        text = f'{self.title}\n{self.body}\n'
+        text = f'{self.title}\n'
+
+        for item in self.body:
+            if item[0] == 'text':
+                text += f'{item[1]}'
+            
+        text += f'\n'
         return text
