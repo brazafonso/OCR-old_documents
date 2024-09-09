@@ -53,18 +53,16 @@ Além dos métodos principais criados para a resolução de problemas identifica
 			\item Divisão de blocos \ref{contribution_divide_blocks}
 			\item Cálculo de ordem de leitura \ref{contribution_reading_order}
 			\item Segmentação de resultados \ref{contribution_result_segmentation}
-			\item Validação de resultados \ref{contribution_results_validation}
 		\end{itemize}
 		
 		\item Processamento de imagem \ref{contribution_image_processing}
 		\begin{itemize}\setlength\itemsep{-0.3em}
+			\item Correção de ângulos de rotação
+			\item Corte de sombra nas margens
 			\item Binarização de imagem
-			\item Rotação de imagem
-			\item Cálculo de sentido de rotação
-			\item Segmentação de documento
-			\item Identificação de imagens
 			\item Identificação de delimitadores
-			\item Divisão de colunas 
+			\item Identificação de imagens no documento
+			\item Segmentação de documento
 		\end{itemize}
 		
 		\item Processamento de texto \ref{contribution_text_processing}
@@ -1299,40 +1297,229 @@ Métodos para conversão da lista de artigos para texto, markdown e visualizaç�
 
 
 
-\highlight{Validação de resultados}
-\label{contribution_results_validation}
-
-
-
 \subsubsection{Processamento de imagem}
 \label{contribution_image_processing}
+
+
+Um outro ponto de abordagem natural quando se trabalha com OCR, é o tratamento do input, que na maior parte dos casos se trata de uma imagem. O estado deste input inicial terá a maior influência na qualidade dos resultados ao longo de todo o processo.
+
+Os principais problemas que se procurou abordar neste trabalho em relação ao tratamento de imagens de documento foram: correção automática de rotações do documento em relação ao texto; remoção de sombras de bainha nas bordas do documento; métodos de binarização para documentos antigos e em mau estado; segmentação de documentos, focando em jornais (divisão entre header e body, divisão de colunas); identificação de imagens/ilustrações no documento; identificação de delimitadores/linhas divisórias no documento. 
+
+Além disso, trabalho já realizado para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{contribution_toolkit_pipeline}).
+
+%% TODO ilustracao : imagens de documentos antigos em mau estado, aplicação de alguns métodos para melhorar estado
+
+Esta secção irá abordar os métodos desenvolvidos neste sentido.
 
 
 \highlight{Correção de ângulo de rotação}
 \label{contribution_image_rotation_correction}
 
-% calculo de direcao de rotacao
+Para imagens de alta definição, i.e. normalmente com dpi elevado e, portanto, mais favorável para realização de OCR, notou-se que mesmo pequenas inclinações no texto podem resultar em resultados de OCR extremamente ruidosos e desorganizados.
 
-% calculo de angulo de rotacao
-%% correcoes menores utilizando leptonica
+%% TODO : ilustracao de pequenas rotacoes e resultado depois de OCR
+
+Foi então desenvolvido um algoritmo com o propósito de automaticamente detetar a existência de uma rotação do texto e, calculando o seu ângulo, corrigi-la. 
+
+Este algoritmo foi baseado maioritariamente na solução proposta por \cite{4283429} (discutida na secção de estado da arte) com adaptações adicionadas para complementar pontos não explicados da solução e para ser mais viável para documentos com algum ruído.
+
+Na sua essência o algoritmo procura, num documento com texto, analisar as posições do primeiro pixel preto (expectável ser a primeira instância de texto à esquerda) à esquerda em diferentes linhas, para tentar desenhar uma linha, na qual a inclinação será calculada. As adaptações realizadas serviram para fazer uma decisão inicial sobre a direção da rotação, e para, assumindo que se trabalha com imagens com ruído, procurar a linha mais confiável para o cálculo da inclinação.
+
+Para ajustes mais minuciosos, também é aplicado o método de ajuste de rotação da biblioteca leptonica. Este método por si só não é capaz de corrigir ângulos mais consideráveis (+- acima de 6 graus).
+
+
+%% TODO : ilustracao no estilo do paper para analise dos pixeis
+
+\highlight{calculate\_rotation\_direction}[\normalsize]
+
+\textbf{Descrição:} Calcula a direção de rotação num documento de texto. Retorna um dos valores: 'counter-clockwise'; 'clockwise'; 'none'. Cria conjuntos de pontos alinhados (que possibilitem traçar uma reta) para cada uma das direções e, de acordo com qual das direções tem o maior conjunto retorna o identificador dessa direção.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem do documento a analisar
+	\item line\_quantetization : valor de quantetização do eixo y da imagem a usar (para a análise dos pixeis) 
+\end{itemize}
+
+\highlight{rotate\_image}[\normalsize]
+
+\textbf{Descrição:} Corrige rotação numa imagem de um documento, se houver. Retorna a imagem com a rotação aplicada. Dada uma direção de rotação, calcula os conjuntos de pixeis de texto que formam linhas e com essa dada inclinação no documento. Escolhe o maior destes conjuntos para formar uma linha e calcular a sua inclinação. Aplica uma rotação na imagem para corrigir a inclinação detetada. 
+Se possível, aplica o método \textit{pixFindSkewAndDeskew} de leptonica para correções menores.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem do documento a analisar
+	\item line\_quantetization : valor de quantetização do eixo y da imagem a usar (para a análise dos pixeis) 
+	\item direction : direção da rotação. 'counter-clockwise', 'clockwise' ou 'auto'. Se auto, aplica o método acima para calcular a direção.
+	\item auto\_crop : flag para aplicação do método de cropping de possível bainha na imagem. Estas quando presentes afetam consideravelmente o algoritmo pois não costumam estar alinhadas com o texto.
+\end{itemize}
 
 \highlight{Corte de sombra nas margens}
 \label{contribution_image_cut_argin_shadow}
 
+No caso de documentos com múltiplas folhas, como livros ou jornais, é comum a presença de uma sombra nas margens das páginas. Esta pode, como mencionado anteriormente, impactar a solução para correção de rotação de documento, mas também, quando aplicado OCR, esta sombra poderá ser detetada como um elemento (um tipo de delimitador ou figura) que na realidade gera ruído extra. Pode ser então útil a remoção desta secção da imagem.
+
+%% TODO : ilustracao de documento com sombra da bainha
+
+O algoritmo de remoção segue uma lógica semelhante aos métodos de análise de tamanhos de texto ou de deteção de colunas anteriormente explicados. Na imagem binarizada, é analisada a frequência de pixeis pretos na imagem e, se nas suas extremidades esquerda ou direta (10\% de cada uma das pontas) for detetado um pico seguido de uma descida muito acentuada (igual ou menor a 10\% da frequência máxima de pontos pretos) é recortado a zona desse pico da imagem.
+
+\highlight{cut\_document\_margins}[\normalsize]
+
+\textbf{Descrição:} Procura cortar sombras de bainha de uma imagem de um documento. Se estas não existirem, recortam margem da imagem para se aproximar do texto, se este for adjacente a uma zona vazia. Retorna uma instância do tipo Box com as dimensões da imagem recortada.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem do documento a analisar
+	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
+\end{itemize}
+
+
 \highlight{Binarização de imagem}
 \label{contribution_image_binarization}
 
+Como foi discutido no estado da arte sobre o processamento de imagens, não existe um método de binarização que funcione de forma geral para qualquer tipo de documento, visto que muitas vezes estes são adaptativos e diferentes distribuições dentro da imagem vão gerar resultados diferentes.
 
-\highlight{Identificação de elementos de imagem}
-\label{contribution_image_element_identification}
+Assim sendo, o trabalho realizado neste sentido não foi com o objetivo de propor um método generalista, mas sim de decidir métodos úteis no contexto do trabalho.
 
-% delimitadores
-%% descoberta de delimitadores
-%% limpeza/redução de delimitadores
+Com o trabalho realizado, conclui-se que para documentos com pouco ruído, ou onde este se apresente distribuído pela imagem sem grandes focos particulares, um denoising de médias não locais seguido de uma binarização com algoritmo de Otsu, obtém resultados satisfatórios. Esta binarização é similar à realizada pelo Tesseract.
+No caso de o ruído estar focado num local específico da imagem, verificou-se que binarizações mais extremas no tresholding, como estilo fax, conseguem obter melhor resultado nas zonas mais afetadas.
+
+%% TODO : ilustracao 2 binarizacoes em casos de documento sem ruido focado e com ruido focado. mostrar resultado de ocr
+
+Um método para cada uma destas binarizações foi desenvolvido.
+
+\highlight{binarize}[\normalsize]
+
+\textbf{Descrição:} Binarização utilizando tresholding de Otsu. Realiza limpeza de ruído utilizando algoritmo de médias não locais.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a binarizar
+	\item denoise\_strength : valor de intensidade a utilizar para denoising
+	\item invert : flag para inverter cor de binarização
+\end{itemize}
+
+\highlight{binarize\_fax}[\normalsize]
+
+\textbf{Descrição:} Binarização utilizando algoritmo de emulação de fax. Algoritmo de emulação proposto pelo orientador Prof. José João. Utilizando métodos do image magick pode ser conseguido como : convert <image> -colorspace Gray ( +clone -blur 15,15 ) -compose Divide\_Src -composite -level 10\%,90\%,0.2.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a binarizar
+	\item g\_kernel\_size : tamanho do kernel gaussiano utilizado para o cálculo da imagem desfocada
+	\item g\_sigma : valor de sigma do kernel gaussiano utilizado para o cálculo da imagem desfocada
+	\item black\_point : valor de tresh de ponto preto, utilizado para ajustar os níveis da imagem
+	\item white\_point : valor de tresh de ponto branco, utilizado para ajustar os níveis da imagem 
+	\item gamma : valor usado para ajuste do gamma após ajustar níveis da imagem
+	\item is\_percentage : flag que indica se valores de black e white point são para serem considerados como percentagem
+	\item invert : flag para inverter cor de binarização
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+Calcula-se primeiramente uma versão desfocada da imagem. Esta será usada para se criar uma distinção entre o plano de fundo e o texto da imagem, ao se dividir a imagem original pela desfocada. Utiliza-se 2 kernels gaussianos por defeito, um aplicado a cada eixo, de dimensão 15 e sigma 15.
+
+Em seguida ajusta-se os níveis dos valores pretos e brancos da imagem de forma a estarem contidos dentro dos valores definidos, 10\% e 90\% da escala disponível respetivamente. 
+
+Por fim, ajusta-se o gamma da imagem para a escurecer.
+
+
+\highlight{Identificação de delimitadores}
+\label{contribution_image_delimiter_identification}
+
+Para documentos estruturados como jornais, certos elementos são utilizados de forma geral para realçar a dada estrutura, como é o caso de delimitadores.
+
+%% TODO : ilustracao de delimitadores de um jornal
+
+Pode então ser útil conseguir identificar estes elementos para facilitar o seu uso, por exemplo, no cálculo de ordem de leitura de um jornal e cálculo de atração entre blocos.
+
+Estes delimitadores são, por norma, linhas verticais ou horizontais, podendo ser filtradas utilizando um algoritmo similar ao desenvolvido pelo OpenCV \citep{cv_extract_lines}. Este algoritmo é utilizado para separar linhas horizontais do resto da imagem. Adaptando para o propósito de identificar as linhas horizontais, é necessário, após separar as linhas do resto da imagem, utilizar o algoritmo de Hough para identificar as posições e dimensões das linhas existentes.
+
+\highlight{get\_document\_delimiters}[\normalsize]
+
+\textbf{Descrição:} Identifica e devolve uma lista de delimitadores em uma imagem. Delimitadores são linhas horizontais ou verticais. Lista devolvida são objetos do tipo Box.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item image : imagem a analisar
+	\item tmp\_dir : diretório usado para armazenar ficheiros temporários
+	\item min\_length\_h : valor de comprimento mínimo para um delimitador horizontal válido
+	\item min\_length\_v : valor de comprimento mínimo para um delimitador vertical válido
+	\item max\_line\_gap\_h : valor de descontinuidade mais comprida aceite para um delimitador horizontal válido
+	\item max\_line\_gap\_v : valor de descontinuidade mais comprida aceite para um delimitador vertical válido
+	\item reduce\_delimiters : flag para reduzir/limpar lista de delimitadores, procurando remover ruído
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+
+\begin{breakablealgorithm}
+	\caption{Identificação de delimitadores (apenas horizontais)}
+	\footnotesize
+	\begin{algorithmic}[1]
+		
+		\State image $\leftarrow$ imagem binarizada
+		
+		\State morph $\leftarrow$ aplica dilatação geral, seguido de linhas horizontais, aplica-se filtro de estruturas para filtrar linhas horizontais e, por fim, aplica-se nova dilatação para acentuar as linhas
+		
+		\State edges $\leftarrow$ método Canny para deteção de contornos, seguido de acentuação destes por dilatação
+		
+		\State horizontal\_lines = cv2.HoughLinesP(edges,1,np.pi/100,50,None,minLineLength=min\_length\_h,maxLineGap=max\_line\_gap\_h)
+		
+		\State lines = horizontal\_lines
+		
+		\State delimiters = []
+		
+		\For{line in lines}
+			
+			\State \textit{// verifica se linhas são verticais ou horizontais}
+			\State \textit{// compara razão entre variação de x ou de y (declives da reta) com tan(60) e tan(5) respetivamente}
+			\State is\_vertical = dy != 0 and abs(dx/dy) < t5
+			\State is\_horizontal = dx != 0 and abs(dy/dx) < t60
+			
+			\If{is\_vertical or is\_horizontal}
+				\State delimiters $\leftarrow$ adiciona Box para linha
+			\EndIf
+		\EndFor
+		
+		\State delimiters $\leftarrow$ remove delimitadores na borda (provavelmente sombras)
+		
+		\If{reduce\_delimiters}
+			\State delimiters $\leftarrow$ aplica limpezas sobre lista: remove delimitadores com muitas interseções, une delimitadores próximos e com a mesma direção, remove delimitadores com muitas componentes ligadas (provavelmente texto)
+		\EndIf
+		
+		\State delimiters $\leftarrow$ remove delimitadores demasiado curtos (menos de 5\% do tamanho da imagem)
+		
+	\end{algorithmic}
+\end{breakablealgorithm}
+
+
+Na generalidade dos casos, a quantidade de linhas detetadas será muito superior aos delimitadores esperados, devido ao o ruído, texto do documento e morfologias aplicadas. 
+Diferentes valores de parâmetros para o algoritmo de Hough variam estes resultados.
+
+%% TODO : ilustracao de linhas identificadas, antes de reduzir
+
+É então recomendado uma aplicação de métodos para reduzir o número de delimitadores encontrados.
+Os que foram desenvolvidos foram:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{remover interseções} : se 2 delimitadores com diferente orientação intersetam, remove o menor
+	\item \textbf{une delimitadores} : une delimitadores de igual orientação e suficientemente próximos
+	\item \textbf{remover linhas com demasiadas componentes ligadas} : linhas com muitas componentes ligadas, são provavelmente texto, ruído ou outro tipo de elemento, sendo portanto removidas
+\end{itemize}
+
+%% TODO : ilustracao de linhas identificadas, depois de reduzir
+
+
+
+
+\highlight{Identificação de imagens no documento}
+\label{contribution_image_document_image_identification}
 
 % imagens
 
-\highlight{Segmentação de imagem}
+\highlight{Segmentação de documento}
 \label{contribution_image_segmentation}
 
 % divisao de colunas
@@ -1377,6 +1564,8 @@ Métodos para conversão da lista de artigos para texto, markdown e visualizaç�
 %%% output para markdown
 %% output simples
 %%% output text
+
+% validacao de resultados/pipeline
 
 \section{GUI editor OCR}
 \label{contribution_ocr_editor}

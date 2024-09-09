@@ -55,7 +55,9 @@ def prepare_pipeline_config(pipeline_config:str,target_image:str,default_args:st
 def compare_results(results_folder:str,option:str,
                     ground_truth_file:str=None,partial_ground_truth_file:str=None,expected_results_path:str=None,
                     option_args:Namespace=None,logs:bool=False)->dict:
-    '''Compare results with ground truth'''
+    '''Compare results with ground truth.
+    
+    Will gather results about OCR output, text output and image output and compare with available ground truth.'''
 
     comparison = {
         'ground_truth':{},
