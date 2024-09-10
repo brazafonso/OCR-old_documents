@@ -1624,21 +1624,217 @@ Fundamentalmente, existem dois métodos principais de geração de output:
 \section{Pipeline de aplicação do toolkit}
 \label{contribution_toolkit_pipeline}
 
-% proposito
+
+\subsection{Introdução}
+
+De forma a criar um caso de uso para as ferramentas criadas e outras exploradas e disponibilizadas, foi criado um comando de aplicação de uma pipeline de aplicação de OCR, que permite, a partir de uma imagem: aplicar tratamentos para melhorar a sua qualidade; aplicar OCR; tratar os resultados; e gerar um output simples, ou específico para jornais.
+
+Através dos argumentos passados à ferramenta, a pipeline consegue comportar-se deforma diferente, por exemplo: aceitar como output inicial uma instância de Hocr ou de OCR Tree em formato JSON; ignorar pré-processamento ou passos específicos deste; etc.
+
+As funcionalidades disponíveis na pipeline são uma culminação do trabalho descrito anteriormente, assim como ferramentas exploradas para resolver questões que este não aborda como, por exemplo, realização de upscaling de uma imagem.
+
+\subsection{Sumário}
+
+O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes opções de utilização:
+
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item \textbf{target} 
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : t
+			\item \textbf{descrição} : ficheiro de imagem a ser processado pela pipeline.
+		\end{itemize}
+		
+	\item \textbf{file}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : f
+			\item \textbf{descrição} : ficheiro de texto que lista um target por linha.
+		\end{itemize}
+		
+	\item \textbf{target\_ocr\_results} 
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : tocr
+			\item \textbf{descrição} : ficheiro de resultados OCR. Pode ser de tipo hocr ou json. Se fornecido, não será realizado pré processamento de imagem ou OCR.
+		\end{itemize}
+		
+	\item \textbf{output\_folder}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : of
+			\item \textbf{descrição} : caminho para guardar os resultados
+		\end{itemize}
+		
+	
+	\item \textbf{segmented\_ocr}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : sgocr
+			\item \textbf{descrição} : flag para aplicação de OCR no target será realizada em cada um dos segmentos, invés de na imagem inteira. Cada uma das partes é posteriormente unida para criar uma única OCR Tree de resultados.
+			\item \textbf{valor default} : False
+		\end{itemize}
+		
+	\item \textbf{target\_segments}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : ts
+			\item \textbf{descrição} : segmentos a calcular no target. Segmento body é sempre obtido. O body é ainda repartido nas suas colunas.
+			\item \textbf{opções} : 'header', 'body', 'footer'
+			\item \textbf{valor default} : 'header','body'
+		\end{itemize}
+		
+	\item \textbf{force\_ocr}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : focr
+			\item \textbf{descrição} : flag que ignora possíveis ficheiros em cache de resultados OCR, consequentes de iterações anteriores do target. Força aplicação de na imagem.
+			\item \textbf{valor default} : False
+		\end{itemize}
+		
+	\item \textbf{tesseract\_config}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : flags para serem passadas ao Tesseract no momento de aplicação de OCR. Estas estão disponíveis na documentação do Tesseract. Cada argumento tem de ter como prefixo '\_\_' para permitir o seu processamento.
+			\item \textbf{valor default} : \_\_l por
+		\end{itemize}
+	
+	\item \textbf{text\_confidence}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : tc
+			\item \textbf{descrição} : valor de confiança de texto que pipeline irá usar.
+			\item \textbf{valor default} : 10
+		\end{itemize}
+	
+	
+	\item \textbf{split\_whitespace}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : sw
+			\item \textbf{descrição} : valor utilizado como razão entre um espaço branco num bloco de texto e a média pesada dos espaçamentos entre palavras, para este ser considerado válido como ponto de divisão de um bloco.
+			\item \textbf{valor default} : 3
+		\end{itemize}
+	
+	\item \textbf{fix\_rotation}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : fr
+			\item \textbf{descrição} : opções usadas para a correção de rotação de documento.
+			\item \textbf{opções} : 'auto','clockwise','counter-clockwise'
+			\item \textbf{valor default} : 'auto'
+		\end{itemize}
+	
+	\item \textbf{upscaling\_image}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : upi
+			\item \textbf{descrição} : opções usadas para o upscaling de imagem. Se opção 'autoscale' do modelo 'waifu2x' for escolhido, aplica upscaling da imagem até esta chegar ao dpi alvo (opção target\_dpi).
+			\item \textbf{opções} : 'waifu2x' -> 'scale2x', 'scale4x', 'autoscale'
+			\item \textbf{valor default} : 'waifu2x'
+		\end{itemize}
+	
+	\item \textbf{target\_dpi}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : tdpi
+			\item \textbf{descrição} : valor do dpi alvo
+			\item \textbf{valor default} : 300
+		\end{itemize}
+	
+	\item \textbf{target\_dimensions}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : tdim
+			\item \textbf{descrição} : valor das dimensões físicas a usar para cálculo do dpi da imagem. Opções estão disponíveis no ficheiro 'dimensions.json' no projeto, podendo ser atualizado.
+			\item \textbf{opções} : 'A5', 'A4', 'A3', 'A2', 'A1', 'A0', '2A0'
+			\item \textbf{valor default} : A3
+		\end{itemize}
+	
+	\item \textbf{denoise\_image}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : di
+			\item \textbf{descrição} : opções usadas para o denoising de imagem.
+			\item \textbf{opções} : 'waifu2x' -> '-1' - '3'
+			\item \textbf{valor default} : 'waifu2x'
+		\end{itemize}
+	
+	\item \textbf{light\_correction}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : lc
+			\item \textbf{descrição} : opções usadas para a correção de iluminação de uma imagem.
+			\item \textbf{opções} : 'best\_SSIM', 'best\_PSNR', 'LOL-Blur', 'SICE', 'SID', 'w\_perc'
+			\item \textbf{valor default} : 'best\_SSIM'
+		\end{itemize}
+	
+	\item \textbf{binarize\_image}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : bi
+			\item \textbf{descrição} : opções usadas para a binarização de imagem para aplicação de OCR.
+			\item \textbf{opções} : 'fax', 'otsu'
+			\item \textbf{valor default} : 'fax'
+		\end{itemize}
+	
+	\item \textbf{remove\_document\_images}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : bi
+			\item \textbf{descrição} : método utilizado para remoção de imagens.
+			\item \textbf{opções} : 'leptonica', 'layoutparser'
+			\item \textbf{valor default} : 'leptonica'
+		\end{itemize}
+	
+	\item \textbf{target\_old\_document}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : tod
+			\item \textbf{descrição} : flag para indicar que target é um documento antigo. Utilizado quando método 'layoutparser' é escolhido, de forma a escolher o modelo mais apropriado
+			\item \textbf{valor default} : True
+		\end{itemize}
+	
+	\item \textbf{ignore\_delimiters}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{alternativo} : igd
+			\item \textbf{descrição} : flag para ignorar delimitadores. Se ativada, estes não serão tidos em conta como indicadores do layout do documento no cálculo da ordem de leitura.
+			\item \textbf{valor default} : False
+		\end{itemize}
+	
+	\item \textbf{skip\_method}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : métodos/passos da pipeline a ignorar.
+			\item \textbf{opções} : 'leptonica', 'layoutparser'
+			\item \textbf{valor default} : 'all', 'auto\_rotate', 'noise\_removal', 'blur\_removal', 'light\_correction', 'image\_preprocess', 'remove\_document\_margins', 'remove\_document\_images', 'image\_upscaling', 'identify\_document\_delimiters', 'binarize\_image', 'clean\_ocr', 'split\_whitespace', 'unite\_blocks', 'calculate\_reading\_order', 'extract\_articles', 'posprocessing'
+		\end{itemize}
+	
+	\item \textbf{calibrate}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : aplicar modo de calibração de pipeline. Usado para encontrar melhor configuração de pipeline para um dado target. Pode ser dado um diretório onde estarão disponíveis os ficheiros necessários para calibração, e onde ficarão os resultados de calibração; e um diretório com configurações de pipeline a testar. Por defeito, o diretório procurado dá-se por 'calibration' no local onde o comando foi corrido, e são usadas configurações de pipeline disponíveis no projeto. 
+		\end{itemize}
+	
+	\item \textbf{calibrate\_no\_reuse}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : flag para não utilizar cache existente.
+			\item \textbf{valor default} : False
+		\end{itemize}
+	
+	\item \textbf{pipeline\_config}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : ficheiro do tipo JSON com configuração de pipeline a usar. Pode ser usado como alternativa a aplicar argumentos no terminal de comandos.
+		\end{itemize}
+		
+	\item \textbf{gui}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\item \textbf{descrição} : aplicar modo de interface gráfica. Interface gráfica simples que pode ser utilizada para experimentar algumas das funcionalidades disponíveis. Maioritariamente usada para debugging.
+		\end{itemize}
+\end{itemize}
+
+
+\subsection{Pré-processamento de imagem}
 
 % preprocessamento de imagem
 %% modulos experimentados e utilizados
 
-% OCR de magem
+
+\subsection{Aplicação de OCR}
+
+% OCR de imagem
 %% binarizacao
 %%% imagem simples
 %%% imagem segmentada
+
+\subsection{Pós-processamento de OCR}
 
 % tratamento de resultados
 %% clean OCR
 %% categorizacao OCR
 %% Uniao OCR
 %% Find titles TODO : nao falado anteriormente
+
+\subsection{Geração de output}
 
 % criacao de output
 %% output para jornal
@@ -1647,6 +1843,8 @@ Fundamentalmente, existem dois métodos principais de geração de output:
 %%% output para markdown
 %% output simples
 %%% output text
+
+\subsection{Validação de resultados}
 
 % validacao de resultados/pipeline
 
