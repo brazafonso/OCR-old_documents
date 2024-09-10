@@ -295,9 +295,11 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
         if args.light_correction:
             model_weight = args.light_correction[0]
+            split_image = args.light_correction_split_image
             light_corrected = False
 
-            light_corrected_img = fix_illumination(processed_image_path,model_weight=model_weight,logs=args.debug)
+            light_corrected_img = fix_illumination(processed_image_path,model_weight=model_weight,
+                                                   split_image=split_image,logs=args.debug)
             if light_corrected_img is not None:
                 cv2.imwrite(processed_image_path,light_corrected_img)
                 light_corrected = True

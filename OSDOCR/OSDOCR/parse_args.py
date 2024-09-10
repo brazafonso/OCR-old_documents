@@ -88,6 +88,7 @@ Available models:
     - SICE
     - SID
     - w_perc''')
+    parser.add_argument('-lcs','--light_correction_split_image',action='store_false',default=True                       ,help='Split image for light correction for faster processing (default: True)')
     parser.add_argument('-bi','--binarize_image'        ,type=str,nargs='*' ,default=['fax']                            ,help='Binarize image automatically (default: fax). Otsu also has the option for denoising strength (default 10).',choices=['fax','otsu'])
     parser.add_argument('-rdi','--remove_document_images',type=str,nargs='*' ,default=['leptonica']                     ,help='Identify document images automatically (default: leptonica).',choices=['leptonica','layoutparser'])
     t = parser.add_argument('--tesseract_config'     ,type=str,nargs='*'    ,default=['__l','por']                      ,help='Tesseract config. Check tesseract --help-extra for more info. Seperate flags with "__"',action=CustomAction_tesseract_config)

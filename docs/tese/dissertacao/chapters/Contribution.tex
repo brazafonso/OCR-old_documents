@@ -1752,6 +1752,13 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 			\item \textbf{opções} : 'best\_SSIM', 'best\_PSNR', 'LOL-Blur', 'SICE', 'SID', 'w\_perc'
 			\item \textbf{valor default} : 'best\_SSIM'
 		\end{itemize}
+		
+	\item \textbf{light\_correction\_split\_image}
+	\begin{itemize}\setlength\itemsep{-0.5em}
+		\item \textbf{alternativo} : lcs
+		\item \textbf{descrição} : flag para aplicação de correção de iluminação da imagem em patches, invés de na totalidade, de modo a melhorar tempo de processamento. Para certos modelos, resulta em contrastes consideráveis entre os patches.
+		\item \textbf{valor default} : True
+	\end{itemize}
 	
 	\item \textbf{binarize\_image}
 		\begin{itemize}\setlength\itemsep{-0.5em}
@@ -1815,8 +1822,73 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 
 \subsection{Pré-processamento de imagem}
 
-% preprocessamento de imagem
-%% modulos experimentados e utilizados
+Como primeiro procedimento da pipeline, no caso de uso de inputs de imagem, tem-se o tratamento desta, para procurar obter, a partir da aplicação OCR, uma melhor transcrição do conteúdo textual, assim como melhor identificação de outros elementos, como figuras.
+
+Para isso, procurou-se abordar os seguintes problemas: imagens rodadas; remoção de margens/sombras na margem de documentos; imagens de baixa resolução; remoção de figuras de documentos; imagens com ruído; imagens com distribuição de iluminação inconsistente;.
+
+As solução destes problemas envolveram o uso de métodos desenvolvidos no toolkit, assim como soluções já existentes.
+
+A ordem de aplicação destas soluções mostrou ser relevante pois estas podem interferir umas com as outras, por exemplo: aplicação de denoising antes de remover as figuras do documento pode afetar a identificação destas. Assim sendo, a ordem ótima de execução segue a listagem que se segue.
+
+\highlight{Correção de rotação}
+
+A correção de possíveis rotações de imagens de documentos é resolvida utilizando os métodos de correção de rotação descritos na secção de métodos de processamento de imagem.
+
+\highlight{Remoção de sombras das margens do documento}
+
+De igual modo, a remoção de possíveis sombras na margem de um documento aproveita os métodos desenvolvidos e descritos para este efeito na mesma secção. 
+
+A aplicação desta funcionalidade deve vir após a correção de possíveis rotações pois, como esta solução envolve a análise da distribuição dos valores de pixeis, se estas sombras se apresentarem inclinadas a possibilidade que elas não sejam resolvidas aumenta.
+
+
+\highlight{Upscaling de imagem}
+
+Para a resolução de problemas resultantes de imagens com baixos valores de dpi, modelos de Deep Learning obtém resultados mais interessantes em relação a algoritmos passados, como interpolação. Dentro destes modelos, o \href{https://github.com/nagadomi/waifu2x}{waifu2x} é bastante respeitado no que toca a aumento de resolução de imagem e limpeza de imperfeições. 
+
+Embora não especificamente focado para o processamento de imagens de documentos, o seu fácil uso e instalação, assim como a verificação de bons resultados mesmo nesta área relativamente externa ao treino, levaram a que este modelo seja uma boa adição às ferramentas de pré-processamento de imagem disponíveis na pipeline.
+
+Esta funcionalidade, quando escolhida para realizar upscaling automático, é dependente das configurações utilizadas para cálculo de dpi de imagem (dimensões reais proporcionadas).
+
+A aplicação de OCR é recomendada para dpi no valor de 300 ou superior, sendo que para imagens antigas, esta funcionalidade é essencial.
+
+%% TODO : ilustracao de upscaling. zoom numa parte de imagem com e sem upscaling
+
+
+\highlight{Remoção de ilustrações de documento}
+
+De forma a diminuir a presença de elementos não identificados nos resultados OCR, assim como permitir identifica-los corretamente, esta funcionalidade procura remover as ilustrações de um documento, recortando-as para uma pasta temporário, permitindo a sua reposição na imagem final.
+
+Entre as soluções exploradas para esta questão, a que se enquadrava mais na questão de identificação de ilustrações de documentos, e até com atenção a jornais, foi o modelo \href{https://layout-parser.readthedocs.io/en/latest/index.html}{Layout Parser}, mais especificamente, aproveitando o modelo Detectron desenvolvido pela Meta.
+Este, no entanto, apresenta uma instalação complexa devido a dependências de bibliotecas da própria Meta que demonstram incompatibilidades e que necessitam ser modificadas manualmente.
+
+Deste modo, aproveitou-se uma alternativa com resultados também satisfatórios e de menor custo computacional, com métodos de segmentação de documento propostos pela Leptonica. Estes foram descritos também na secção anterior.
+
+Comparando os dois, a opção de usar Leptonica é satisfatória na generalidade dos casos, até identificando com maior precisão as ilustrações (delimitando menos fundo do documento) em vários casos de estudo. Os métodos de Leptonica tendem no entanto a errar para ilustrações que não apresentem uma borda notável e tenham um fundo similar ao fundo do documento. Nestes casos, o Layout Parser é mais propício a acertar.
+
+%% TODO : ilustracao de ilustrações removidas de um documento
+
+É também importante realçar que a pipeline, no processo de recortar as ilustrações, preenche o espaço vazio com uma média das cores de fundo da imagem. Este passo é importante pois caso contrário a binarização posterior da imagem, dependendo da distribuição das cores desta, pode resultar numa imagem inutilizável.
+
+%% TODO : ilustracao de binarizacao nos dois casos de remocao de ilustracoes
+
+\highlight{Denoising de imagem}
+
+Para a realização de denoising, foi também aplicado o modelo de \textbf{waifu2x}, visto este proporcionar opções para este efeito. Este denoising é realizado em imagens a cor, sendo portanto subtil.
+
+O denoising mais relevante é realizado na binarização realizada antes da aplicação de OCR.
+
+%% TODO : ilustracao de denoising.
+
+
+\highlight{Correção de iluminação}
+
+Para a correção de iluminação de documentos, também se conclui que modelos de Deep Learning são a melhor opção. A família de modelos que mostraram resultados mais interessantes foi \href{https://github.com/Fediory/HVI-CIDNet}{HVI-CIDNet}, Os pesos para estes estão disponibilizados nesse mesmo repositório.
+
+Para imagens de maior resolução, o tempo de processamento destes modelos é considerável, sendo que como solução a pipeline apresenta uma opção para dividir a imagem em patches e correr o modelo em cada um destes, unindo-os no final. Para alguns modelos, esta divisão pode resultar em contrastes notáveis na imagem
+
+%% TODO : ilustracao de correcao de iluminacao utilizando diferentes modelos
+
+%% TODO : ilustracao de correcao de iluminacao com e sem patches
 
 
 \subsection{Aplicação de OCR}
