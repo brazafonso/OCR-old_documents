@@ -1,0 +1,57 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: dissertation.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: plainnat.bst
+Reallocating 'name_of_file' (item size: 1) to 13 items.
+Database file #1: dissertation.bib
+Warning--empty year in alto_doc
+Warning--empty journal in article_ro1
+Warning--empty year in europeana_pro
+Warning--empty year in hocr_doc
+Warning--empty year in keras_doc
+Warning--empty year in cv_extract_lines
+Warning--empty year in paddle_doc
+Warning--empty year in tesseract_doc
+You've used 30 entries,
+            2773 wiz_defined-function locations,
+            778 strings with 10983 characters,
+and the built_in function-call counts, 15665 in all, are:
+= -- 1468
+> -- 724
+< -- 30
++ -- 249
+- -- 219
+* -- 1154
+:= -- 2116
+add.period$ -- 118
+call.type$ -- 30
+change.case$ -- 169
+chr.to.int$ -- 30
+cite$ -- 68
+duplicate$ -- 804
+empty$ -- 1378
+format.name$ -- 258
+if$ -- 3574
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 24
+newline$ -- 186
+num.names$ -- 92
+pop$ -- 382
+preamble$ -- 1
+purify$ -- 140
+quote$ -- 0
+skip$ -- 723
+stack$ -- 0
+substring$ -- 597
+swap$ -- 228
+text.length$ -- 21
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 325
+warning$ -- 8
+while$ -- 106
+width$ -- 0
+write$ -- 441
+(There were 8 warnings)
