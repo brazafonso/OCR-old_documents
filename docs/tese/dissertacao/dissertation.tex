@@ -33,6 +33,7 @@
 \renewcommand*{\glstextformat}{\textbf}
 \usepackage{float}
 \usepackage{wrapfig}
+\usepackage{enumitem}
 
 %-- Space between lines
 \renewcommand{\baselinestretch}{1.5} 
@@ -288,14 +289,12 @@ BoldFont=NewsGotTBold.ttf
 \pagenumbering{arabic}
 
 %-- Dissertation 
-\part{Material Introdutório}
 
 \input{chapters/Introduction}
-\input{chapters/StateOfTheArt}
 \input{chapters/ProblemAndChallenges}
+\input{chapters/StateOfTheArt}
 
-\part{\textit{Core} da Dissertação}
-
+\input{chapters/OSDOCRFilosofia}
 \input{chapters/Contribution}
 \input{chapters/Applications}
 \input{chapters/ConclusionsAndFutureWork}
