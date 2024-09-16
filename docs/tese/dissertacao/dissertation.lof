@@ -6,6 +6,13 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {2}{\ignorespaces Aplicação de OCR com passos para melhoria de resultados}}{29}{figure.caption.16}%
 \contentsline {figure}{\numberline {3}{\ignorespaces Exemplo de pipeline de aplicação de OCR}}{29}{figure.caption.17}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Exemplo de pipeline de aplicação de OCR com blocos opcionais}}{30}{figure.caption.18}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Representação visual dos resultados de OCR armazenados em formato HOCR}}{33}{figure.caption.19}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Arquitetura geral da solução}}{34}{figure.caption.20}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Arquitetura OSDOCR Toolkit}}{35}{figure.caption.21}%
+\contentsline {figure}{\numberline {8}{\ignorespaces Arquitetura OSDOCR Pipeline - high level}}{36}{figure.caption.22}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Arquitetura OSDOCR Pipeline - reduzida}}{36}{figure.caption.23}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Arquitetura MVC}}{37}{figure.caption.24}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

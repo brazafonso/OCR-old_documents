@@ -1,0 +1,49 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.8 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.8">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="629" dy="566" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="CjBiABX5pl99KD-1JA7a-6" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="120" y="60" width="480" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-0" value="OSDOCR TOOLKIT" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1;glass=0;shadow=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="325" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-1" value="OSDOCR PIPELINE" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="225" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-2" value="OSDOCR EDITOR" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="425" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-4" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fillColor=#f0a30a;strokeColor=#BD7000;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="439" y="190" as="sourcePoint" />
+            <mxPoint x="478" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-5" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fillColor=#f0a30a;strokeColor=#BD7000;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="345" y="190" as="sourcePoint" />
+            <mxPoint x="306" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-7" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#f0a30a;strokeColor=#BD7000;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="280.17" as="sourcePoint" />
+            <mxPoint x="420" y="279.83000000000004" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-9" value="Ferramentas existentes" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1;fontSize=9;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="175" y="160" width="70" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CjBiABX5pl99KD-1JA7a-11" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;labelBackgroundColor=#000000;fillColor=#f0a30a;strokeColor=#BD7000;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="225" y="210" as="sourcePoint" />
+            <mxPoint x="255" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
