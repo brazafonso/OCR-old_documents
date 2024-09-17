@@ -206,6 +206,13 @@ As solução destes problemas envolveram o uso de métodos desenvolvidos no tool
 
 A ordem de aplicação destas soluções mostrou ser relevante pois estas podem interferir umas com as outras, por exemplo: aplicação de denoising antes de remover as figuras do documento pode afetar a identificação destas. Assim sendo, a ordem ótima de execução segue a listagem que se segue.
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/diagramas/arquitetura_pipeline_preprocess.png}
+	\caption{Pipeline - secção pré-processamento}
+	\label{fig:arquitetura_pipeline_preprocess}
+\end{figure}
+
 \highlight{Correção de rotação}
 
 A correção de possíveis rotações de imagens de documentos é resolvida utilizando os métodos de correção de rotação descritos na secção de métodos de processamento de imagem.
@@ -269,10 +276,67 @@ Para imagens de maior resolução, o tempo de processamento destes modelos é co
 
 \section{OCR}
 
+
+Seguindo na pipeline, temos a a aplicação de OCR para extração do conteúdo textual de uma imagem. No caso de input do tipo OCR Tree - ou seu convertível -, este passo é ignorado, caso contrário é obrigatório.
+
 % OCR de imagem
+
+Ao longo da implementação e estudo dos resultados desta, foi utilizado \textbf{Tesseract} para a realização de OCR, devido a ser uma ferramenta open-source no topo do estado da arte.
+
+O processo de OCR da pipeline pode ser dividido em blocos menores, sendo estes:
+
+%% TODO ilustracao : diagrama de blocos da seccao de OCR
+
+
+\highlight{Binarização}
+
 %% binarizacao
+
+A binarização de imagem é um processo que permite a realização de redução de ruído através da aplicação de tresholds, assim como a acentuação do texto de documentos. Este passo é também recomendado na documentação do Tesseract..
+
+Este passo pode ser ignorado na pipeline, até pois o Tesseract internamente irá aplicar uma binarização própria.
+
+A pipeline apresenta a opção de realizar binarização utilizando \textbf{Otsu} ou estilo \textbf{Fax}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/diagramas/arquitetura_pipeline_ocr.png}
+	\caption{Pipeline - secção OCR}
+	\label{fig:arquitetura_pipeline_ocr}
+\end{figure}
+
+
+
+\highlight{OCR em imagem}
+
 %%% imagem simples
+
+A aplicação de OCR é realizada utilizando \textbf{Tesseract} podendo, através dos argumentos da pipeline, modificar a configuração deste, por exemplo: linguagem do texto a detetar; dpi da imagem; modo de segmentação.
+
+Os resultados de OCR serão transformados numa OCR Tree.
+
+\highlight{OCR em imagem segmentada}
+
 %%% imagem segmentada
+
+Em muitos casos, os documentos antigos apresentam variações do seu estado ao longo do documento. Por este motivo, a pipeline permite a habilidade de realizar um reconhecimento de texto aos diferentes segmentos da imagem, invés de numa única passagem. 
+
+Para isto, podem ser passados os segmentos esperados na consola: 'header' , 'body' e 'footer'. Utilizando métodos de processamento de imagem do Toolkit, o documento será dividido nestes segmentos, particularmente o body será possivelmente ainda dividido em colunas, que serão separadamente binarizados (se intendido) e analisados com OCR.
+
+Em seguida as diferentes OCR Tree resultantes serão unidas numa única.
+
+
+\highlight{Reconstrução de delimitadores e imagens nos resultados}
+
+%% incluir imagens e delimitadores identificados
+
+Com a OCR Tree obtida, o último passo desta secção passa pela reconstrução de elementos não textuais do documento na OCR Tree. 
+
+Estes são: ilustrações reconhecidas durante o pré-processamento; delimitadores identificados utilizando o Toolkit (se intendido).
+
+Os elementos serão adicionados na OCR Tree, removendo blocos vazios que se situem dentro ou a intersetar com estes novos elementos.
+
+
 
 \section{Pós-processamento de OCR}
 
