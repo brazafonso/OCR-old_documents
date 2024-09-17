@@ -1,0 +1,570 @@
+\chapter{OSDOCR Estruturas de Dados - Implementação}
+\label{cap_osdocr_estrutura_dados_implementacao}
+
+Neste capítulo, será descrito em detalhe a implementação dos modelos principais de dados usados na base do projeto. Estes são a estrutura OCR Tree, utilizada para representação de resultados OCR; e a estrutura Box, utilizada maioritariamente para a representação de Bounding Boxes, mas com a particularidade de possuir uma coleção de métodos que permitem a sua manipulação.
+
+
+\section{OCR Tree}
+\label{ocr_tree}
+
+Como o produto final do projeto intende aceitar diferentes tipos de resultados OCR, i.e. resultantes de diferentes motores OCR ou de ficheiros como hOCR que já possuem os resultados, existe uma necessidade de converter estes diferentes formatos num único tipo que mantenha a informação base pretendida.
+
+Estruturas de dados standard como \citep{hocr_doc} ou \citep{alto_doc} apresentam um resultado final semelhante e com capacidade base de armazenamento de meta-dados superior porém, sendo baseados em XML, tornam a sua manipulação mais complexa e, em múltiplos casos a informação proporcionada é além do necessário ou gera conclusões erradas quando gerado de output automático (ex.: atribuição de classes caption a blocos que são títulos). Assim sendo, embora tenha sido desenvolvido um conversor de, e para HOCR, para o atual projeto, optou-se pela criação de uma estrutura de dados própria.
+
+Deste modo, tomando como inspiração os atributos dos resultados do Tesseract no modo de dicionário \citep{tesseract_doc}, foi implementada uma estrutura de dados no formato de árvore de dados.
+
+A escolha de uma estrutura de árvore permite a hierarquização de blocos de acordo com o seu nível, quer exista uma divisão de nível à partida, como é o caso do Tesseract que segue: página $\longrightarrow$ bloco $\longrightarrow$ parágrafo $\longrightarrow$ linha $\longrightarrow$ palavra; ou apenas um único nível, semelhante ao Keras-OCR.
+
+Todos os algoritmos desenvolvidos, inclusive os métodos para visualização (métodos de debugging e GUI desenvolvido), assumem e trabalham com os dados de OCR no formato desta estrutura de dados.
+
+As características mais relevantes desta estrutura são:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{Level} : Nível/altura do nodo.
+	\begin{itemize}\setlength\itemsep{-0.3em}
+		\item documento : 0
+		\item página 	: 1
+		\item bloco		: 2
+		\item parágrafo : 3
+		\item linha 	: 4
+		\item palavra	: 5
+	\end{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{(page|block|par|line|word)\_num}: Identificação da ordem (dentro de outras caixas(ex.: linha), se aplicável)
+	\item \textbf{text} : Texto do bloco, normalmente apenas preenchido ao nível da palavra
+	\item \textbf{conf} : Confiança no texto
+	\item \textbf{id}
+	\item \textbf{type} : Tipo do bloco, ex.: delimitador, título
+	\item \textbf{children}
+	\item \textbf{box}: Bounding box do nodo, representado pela estrutura de dados Box, que também possui métodos para transformações e verificações geométricas ou de características.
+	\item Características de texto: ex.: texto iniciado (start\_text); texto não terminado (end\_text).
+\end{itemize}
+
+%% TODO : Ilustracao de uso de arvore OCR para demonstrar diferentes niveis de um documento
+
+Construtores da classe são capazes de admitir outros atributos não base de modo a expandir a utilidade da estrutura. Construtores disponíveis: iniciação por argumentos, dicionário, ficheiro JSON e ficheiro HOCR.
+
+Da mesma forma, conversores para estes ficheiros compreendidos para iniciação também foram desenvolvidos.
+
+A classe possuí por métodos de transformação e análise sobre a árvore OCR que facilitam a manipulação dos resultados OCR. 
+
+Segue-se uma lista dos métodos mais relevantes disponíveis da classe.
+
+\highlight{id\_boxes}
+ 
+ 
+\textbf{Descrição:} Adiciona identificador aos blocos.
+	
+\textbf{Argumentos:}
+	\begin{itemize}\setlength\itemsep{-0.3em}
+		\item level : lista de níveis onde adicionar identificador
+		\item ids (opt): dicionário de ids a utilizar caso não se queira iniciar no 0.
+		\item delimiters (opt): flag para identificar delimitadores
+		\item area (opt): argumento do tipo Box, que restringe os nodos a identificar a uma dada área
+		\item override (opt): flag para reescrever id se já existe.
+	\end{itemize}
+				
+\highlight{calculate\_mean\_height}
+
+\textbf{Descrição:} Calcula a altura média das caixas de um dado nível.
+	
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item level : nível a calcular
+	\item conf (opt): valor de confiança de texto no caso de apenas serem relevantes caixas com certa confiança (aplicável apenas para nível de texto)
+\end{itemize}
+
+	
+\highlight{is\_text\_size}
+
+\textbf{Descrição:} Verifica se um nodo se encontra dentro do tamanho de texto.
+	
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item text\_size : tamanho de texto a comparar
+	\item mean\_height (opt): altura do bloco, caso já tenha sido calculado
+	\item range : margem de erro aceitável (relativo)
+	\item level : nível das caixas usado caso seja necessário calcular a altura média
+	\item conf : confiança do texto a utilizar para calcular a altura média
+\end{itemize}
+
+\highlight{is\_empty}
+
+\textbf{Descrição:} Verifica se um nodo é vazio.
+	
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item conf : confiança de texto a utilizar para considerar palavras válidas
+	\item only\_text : flag que dita se o tipo do bloco influencia o resultado, i.e. blocos de tipo "image" não são vazios
+\end{itemize}
+
+	
+\highlight{text\_is\_title}
+
+\textbf{Descrição:} Verifica se um nodo é potencial título.
+	
+\textbf{Algoritmo:} Caixa não é texto vertical e é maior do que o tamanho normal de texto.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item normal\_text\_size : tamanho de texto considerado como normal
+	\item conf : confiança de texto a utilizar para considerar palavras válidas
+	\item range : margem de acerto aceitável (relativo)
+	\item level : nível usado para calcular o tamanho médio do bloco
+\end{itemize}
+
+	
+\highlight{is\_delimiter}
+
+\textbf{Descrição:} Verifica se um nodo é potencial delimitador.
+	
+\textbf{Algoritmo:} Caixa já é do tipo delimitador, ou é vazia e segue a regra:
+
+$ box.width >= box.height*4 || box.height >= box.widht*4 $.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item conf : confiança de texto a utilizar para considerar palavras válidas
+	\item only\_type : flag que dita se usa apenas o tipo do nodo para a verificação
+\end{itemize}
+
+	
+\highlight{is\_image}
+
+\textbf{Descrição:} Verifica se um nodo é potencial imagem.
+	
+\textbf{Algoritmo:} Caixa já é do tipo imagem ou, é vazia, não é um delimitador e é 3 vezes mais alta do que o tamanho de texto.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item conf : confiança de texto a utilizar para considerar palavras válidas
+	\item text\_size : tamanho de texto a utilizar para comparação com altura da caixa
+	\item only\_type : flag que dita se usa apenas o tipo do nodo para a verificação
+\end{itemize}
+
+
+\highlight{get\_boxes\_in\_area}
+
+\textbf{Descrição:} Obtém todas as caixas numa dada área.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item area : área de interesse
+	\item level : nível dos nodos a ir buscas. Se nível == -1, obtém todos os nodos
+	\item conf : confiança de texto a utilizar para considerar nodos válidos
+	\item ignore\_type : tipos de nodo a ignorar
+\end{itemize}
+	
+	
+\highlight{is\_vertical\_text}
+
+\textbf{Descrição:} Verifica se um nodo é texto vertical.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item conf : confiança de texto a utilizar para considerar palavras válidas
+\end{itemize}
+	
+\textbf{Algoritmo:}
+
+\begin{breakablealgorithm}
+	\caption{Verificação de texto vertical}
+	\footnotesize
+	\begin{algorithmic}[1]
+		\If{nodo não é vazio}
+			\State lines
+			\If{len(lines) == 0}
+				\Return False
+			\EndIf
+			\State \textit{// Linha única}
+			\If{len(lines) == 1}
+				\State words
+			 \State \textit{// Palavra única}
+				\If{len(words) == 1}
+					\If{altura da palavra >= 2 * largura da palavra}
+						\Return True
+					\EndIf
+				\State \textit{// Múltiplas palavras} 
+				
+				\Else
+					\State \textit{// Verifica se a maioria das palavras coincidem horizontalmente}
+					\State widest\_word <- calcula palavra mais larga
+					\State overlapped\_words = 0
+					\For{word in words}
+						\If{word == widest\_word}
+							\State continue
+						\EndIf
+						\If{word.box.within\_horizontal\_boxes(widest\_word.box,range=0.1)}
+							\State overlapped\_words += 1
+						\EndIf
+					\EndFor
+					\If{overlapped\_words/len(words) >= 0.5}
+						\Return True
+					\EndIf
+					
+				\EndIf
+				
+			\State \textit{// Múltiplas linhas} 
+			
+			\Else
+				\State \textit{// Verifica se a maioria das linhas coincidem verticalmente}
+				\State tallest\_line <- calcula linha mais alta
+				\State overlapped\_lines = 0
+				
+				\For{line in lines}
+					\If{line == tallest\_line}
+						\State continue
+					\EndIf
+					\If{line.box.withinvertical\_boxes(tallest\_line.box,range=0.1)}
+						\State overlapped\_lines += 1
+					\EndIf
+				\EndFor
+				\If{overlapped\_lines/len(lines) >= 0.5}
+					\Return True
+				\EndIf
+			
+			\EndIf
+			
+		\EndIf
+		
+		\Return	False
+		
+	\end{algorithmic}
+\end{breakablealgorithm}
+
+
+
+\highlight{prune\_children\_area}
+
+\textbf{Descrição:} Atualiza dimensões dos filhos de um nodo para se encaixarem dentro de uma área.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item area : área de interesse
+\end{itemize}
+
+
+\highlight{boxes\_below}
+(método semelhante para as outras direções)
+
+\textbf{Descrição:} Dada uma lista de OCR Tree, devolve aqueles que se encontram por baixo do bloco atual. Os blocos filtrados podem intersetar ou estar dentro do bloco comparado.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item blocks : lista de blocos a filtrar
+\end{itemize}
+
+
+
+\highlight{boxes\_directly\_below}
+(método semelhante para as outras direções)
+
+\textbf{Descrição:} Dada uma lista de OCR Tree, devolve aqueles que se encontram diretamente por baixo do bloco atual. Blocos filtrados não estão dentro do bloco comparado e não podem estar diretamente por baixo dos outros blocos.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item blocks : lista de blocos a filtrar
+\end{itemize}
+	
+	
+	
+\highlight{join\_trees}
+
+\textbf{Descrição:} Junta duas OCR Tree com do mesmo nível numa única árvore. Tem dois métodos principais de junção das árvores: vertical, operação mais simples em que basicamente apenas se juntam as duas listas de ramos dos nodos raíz (assume-se que uma das árvores é mais alta do que a outra e não se intersetam); e horizontal, onde se procura juntar árvores que têm interseção no eixo y, sendo necessário verificar as posições que os filhos devem tomar e se certos filhos devem ser unidos num único (podendo resultar numa junção de linhas).
+
+%% TODO : ilustração poderá ajudar
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item tree : árvore a juntar
+	\item orientation : orientação da junção, vertical ou horizontal.
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+\begin{breakablealgorithm}
+	\caption{Junção horizontal}
+	\footnotesize
+	\begin{algorithmic}[1]
+		\State tree\_children
+		\State self\_children
+		\State \textit{// no último nível, filhos são ordenados da esquerda para a direita}
+		\If{último nível da tree}
+			\State tree\_children $\leftarrow$ ordenar lista da esquerda para a direita
+		\EndIf
+		
+		\For{child in tree\_children}
+			\If{não é o último nível}
+				\State self\_children $\leftarrow$ ordena de cima para baixo
+				\If{child pode ser inserida no topo ou fundo da lista}
+					\State self\_children $\leftarrow$ insere child no início ou fim
+				\Else
+					\State \textit{// procura slot para inserir, ou nodo com quem unir}
+					\State joined = False
+					\For{i in range(len(self\_children))}
+						\If{child não interseta com nodo i ou nodo i+1}
+							\State self.children $\leftarrow$ adiciona child entre os dois nodos
+							\State joined = True
+						\\ElsIf{interseta com nodo i}
+							\If{interseção em pelo menos 70\% da altura da caixa}
+								\If{nodo i tem filhos}
+									\State \textit{// join recursivo}
+									\State self\_children[i].join\_trees(child,orientation=orientation)
+								\Else
+									\State self\_children $\leftarrow$ insere child depois do nodo i
+								\EndIf
+								\State joined = True
+							\Else
+								\State \textit{// procura local mais baixo para inserir (por poder intersetar com varios blocos)}
+								\For{j in range(i,len(self\_children))}
+									\If{nodo j mais alto do que child}
+										\State self\_children $\leftarrow$ insere child depois do nodo j
+										\State joined = True
+									\EndIf
+								\EndFor
+								\If{not joined}
+									\State self\_children $\leftarrow$ insere child no fim
+									\State joined = True
+								\EndIf
+							\EndIf
+						\EndIf
+						
+						\If{joined}
+							\State break
+						\EndIf
+					\EndFor
+				\EndIf
+			\Else
+				\State self.children $\leftarrow$ adiciona child no fim da lista
+			\EndIf
+			
+			\State self\_children $\leftarrow$ atualiza lista de filhos
+		\EndFor
+		
+		
+	\end{algorithmic}
+\end{breakablealgorithm}
+
+
+\highlight{remove\_blocks\_inside}
+
+\textbf{Descrição:} Remove os blocos dentro do bloco com dado id. Blocos removidos são do mesmo nível que o bloco com dado id.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item id : id do bloco a limpar
+	\item block\_level : nível do bloco a limpar
+\end{itemize}
+
+\highlight{update\_position}
+
+\textbf{Descrição:} Atualiza a posição da bounding box de um nodo e dos seus filhos. Especialmente útil para o editor OCR.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item top : valor a atualizar verticalmente
+	\item left : valor a atualizar horizontalmente
+	\item absolute : flag que indica se operação é de do tipo absoluta, i.e. bounding box vai ser diretamente atualizada com estes valores, ou relativa, aos valores da bounding box serão somados os argumentos
+\end{itemize}
+
+\highlight{update\_size}
+
+\textbf{Descrição:} Atualiza o tamanho da bounding box de um nodo e dos seus filhos nas arestas (filhos interiores não serão alterados). Especialmente útil para o editor OCR.
+
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item top : valor a atualizar ao topo
+	\item left : valor a atualizar à esquerda
+	\item bottom : valor a atualizar ao fundo
+	\item right : valor a atualizar à direita
+	\item absolute : flag que indica se operação é de do tipo absoluta, i.e. bounding box vai ser diretamente atualizada com estes valores, ou relativa, aos valores da bounding box serão somados os argumentos
+\end{itemize}
+
+\highlight{update\_box}
+
+\textbf{Descrição:} Atualiza diretamente valor da bounding box do nodo e dos filhos. Especialmente útil para o editor OCR.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item top : valor a atualizar ao topo
+	\item left : valor a atualizar à esquerda
+	\item bottom : valor a atualizar ao fundo
+	\item right : valor a atualizar à direita
+	\item children : flag que indica se é para se aplicar ajuste direto no nodo, ou apenas ajustar de forma a não sair da bounding box do pai.
+\end{itemize}
+
+\highlight{scale\_dimensions}
+
+\textbf{Descrição:} Escala dimensões da bounding box do nodo e dos seus filhos. Especialmente útil para o editor OCR.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item scale\_width : escalar de valores do eixo horizontal
+	\item scale\_height : escalar de valores do eixo vertical
+\end{itemize}
+
+
+\section{Box}
+\label{box_data_structure}
+
+A estrutura de dados Box é utilizada maioritariamente para encapsular os dados das bounding boxes dos resultados de OCR. Embora em geral este tipo de dados seja geralmente fornecido por métodos de módulos de manipulação de imagens na forma de tuplo, a utilização de uma classe dedicada permite o desenvolvimento e utilização de métodos para sua manipulação de forma mais simples e organizada.
+
+Tal como a estrutura de dados OCR Tree, esta classe apresenta construtores e conversores de ficheiros diferentes tipos: argumentos simples, dicionário, ficheiro JSON.
+
+Os principais atributos da estrutura são:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item \textbf{left} 	: Valor mais à esquerda da caixa.
+	\item \textbf{right}	: Valor mais à direita da caixa.
+	\item \textbf{top} 		: Valor mais em cima da caixa (menor do que bottom por ser baseado em manipulação de imagem). 
+	\item \textbf{bottom} 	: Valor mais em baixo da caixa.
+	\item \textbf{width} 	: Comprimento da caixa.
+	\item \textbf{height} 	: Altura da caixa.
+\end{itemize}
+
+Realça-se que os atributos desta classe são esperados no formato de inteiros, devido a ter como foco o seu uso no contexto do espaço de imagens.
+
+Segue-se uma lista dos métodos mais relevantes disponíveis da classe.
+
+\highlight{update}
+
+\textbf{Descrição:} Atualiza os valores dos atributos de posição da caixa. Atributos de posição são mantidos válidos, i.e. left <= right e top <= bottom . Altura e comprimento são atualizados automaticamente.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item top : valor a atualizar ao topo
+	\item left : valor a atualizar à esquerda
+	\item bottom : valor a atualizar ao fundo
+	\item right : valor a atualizar à direita
+\end{itemize}
+
+
+\highlight{move}
+
+\textbf{Descrição:} Soma valores aos atributos de posição da caixa.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item x : valor a somar nos atributos de posição horizontais
+	\item y : valor a somar nos atributos de posição verticais
+\end{itemize}
+
+\highlight{within\_vertical\_boxes}
+(método semelhante para direção horizontal)
+
+\textbf{Descrição:} Verifica se caixa e caixa a ser comparada estão alinhadas verticalmente, podendo considerar uma margem de acerto. Verificação é realizada nos dois sentidos, i.e. caixa 1 alinhada com caixa 2 ou vice-versa.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a comparar
+	\item range : valor relativo da altura da caixa, a servir como margem para considerar na verificação
+\end{itemize}
+
+\highlight{is\_inside\_box}
+
+\textbf{Descrição:} Verifica se caixa a ser comparada está dentro da caixa. Caixa a ser compara tem de estar completamente dentro para resultado afirmativo.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a comparar
+\end{itemize}
+
+
+\highlight{intersects\_box}
+
+\textbf{Descrição:} Verifica se caixa a ser comparada interseta com a caixa.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a comparar
+	\item extend\_vertical : flag para indicar se verificação deve ser feita apenas longo do eixo x (ex.: utilizado para verificar se caixa comparada está diretamente por acima da caixa)
+	\item extend\_horizontal : flag para indicar se verificação deve ser feita apenas longo do eixo y (ex.: utilizado para verificar se caixa comparada está diretamente à direita caixa)
+	\item inside : flag para indicar se verificação de caixa dentro conta como interseção
+\end{itemize}
+
+
+\highlight{intersect\_area\_box}
+
+\textbf{Descrição:} Calcula a caixa de interseção entre a caixa e uma caixa a comparar.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a comparar
+\end{itemize}
+
+
+\highlight{remove\_box\_area}
+
+\textbf{Descrição:} Remove área da caixa. Procura remover área aplicando as menores modificações possíveis. Apenas realiza modificações, se área fornecida está dentro da caixa.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item area : area da caixa a remover
+\end{itemize}
+
+
+\highlight{get\_box\_orientation}
+
+\textbf{Descrição:} Método naive para obter orientação da caixa (horizontal, vertical ou square) de acordo com a diferença entre a sua altura e comprimento.
+
+
+\highlight{join}
+
+\textbf{Descrição:} Une duas caixas.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a unir
+\end{itemize}
+
+\highlight{distance\_to}
+
+\textbf{Descrição:} Calcula distância entre duas caixas. Procura dois pontos mais próximos de acordo com argumentos dados e utiliza distância euclidiana para calcular a distância.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item box : caixa a comparar
+	\item border (opt): borda da caixa a ter em conta. Valores disponíveis: "left", "right", "top", "bottom", "closest". Se "closest" for fornecido, procura a menor distância entre bordas. Se nenhum valor for fornecido, utilizado os pontos centrais das caixas.
+\end{itemize}
+
+
+\highlight{distance\_to\_point}
+
+\textbf{Descrição:} Calcula distância entre a caixa e um ponto. Procura calcular a menor distância da caixa ao ponto (tendo em conta a diferença entre o ponto e as bordas).
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item x : valor x do ponto
+	\item y : valor y do ponto
+\end{itemize}
+
+\highlight{vertices}
+
+\textbf{Descrição:} Retorna uma lista dos vértices da caixa na forma de tuplos (x,y) seguindo de cima para baixo, esquerda para a direita.
+
+
+\highlight{closest\_edge\_point}
+
+\textbf{Descrição:} Calcula a borda mais próxima entre a caixa e um ponto. Utilizado no editor de resultados OCR para operações de divisão de blocos.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item x : valor x do ponto
+	\item y : valor y do ponto
+\end{itemize}
+
+
+
+
+
+

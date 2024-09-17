@@ -46,35 +46,28 @@
 \contentsline {subsection}{\numberline {4.3.1}OSDOCR Toolkit}{35}{subsection.4.3.1}%
 \contentsline {subsection}{\numberline {4.3.2}OSDOCR Pipeline}{35}{subsection.4.3.2}%
 \contentsline {subsection}{\numberline {4.3.3}OSDOCR Editor}{37}{subsection.4.3.3}%
-\contentsline {chapter}{\numberline {5}Contribuição}{38}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Introdução}{38}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Ferramentas do \textit {toolkit} desenvolvidas}{38}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}Introdução}{38}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}Sumário}{39}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}Estruturas de dados}{40}{subsection.5.2.3}%
-\contentsline {subsubsection}{OCR Tree}{40}{section*.25}%
-\contentsline {subsubsection}{Box}{49}{algorithm.2}%
-\contentsline {subsection}{\numberline {5.2.4}Métodos}{52}{subsection.5.2.4}%
-\contentsline {subsubsection}{Processamento de resultados OCR}{52}{section*.26}%
-\contentsline {subsubsection}{Processamento de imagem}{67}{algorithm.7}%
-\contentsline {subsubsection}{Processamento de texto}{75}{algorithm.8}%
-\contentsline {section}{\numberline {5.3}Pipeline de aplicação do toolkit}{75}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Introdução}{75}{subsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.3.2}Sumário}{76}{subsection.5.3.2}%
-\contentsline {subsection}{\numberline {5.3.3}Pré-processamento de imagem}{80}{subsection.5.3.3}%
-\contentsline {subsection}{\numberline {5.3.4}Aplicação de OCR}{82}{subsection.5.3.4}%
-\contentsline {subsection}{\numberline {5.3.5}Pós-processamento de OCR}{82}{subsection.5.3.5}%
-\contentsline {subsection}{\numberline {5.3.6}Geração de output}{82}{subsection.5.3.6}%
-\contentsline {subsection}{\numberline {5.3.7}Validação de resultados}{82}{subsection.5.3.7}%
-\contentsline {section}{\numberline {5.4}GUI editor OCR}{82}{section.5.4}%
-\contentsline {chapter}{\numberline {6}Aplicações}{83}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Introdução}{83}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Sumário}{83}{section.6.2}%
-\contentsline {chapter}{\numberline {7}Conclusões e trabalho futuro}{84}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Conclusões}{84}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Perspetiva de trabalho futuro}{84}{section.7.2}%
-\contentsline {chapter}{\numberline {8}Planeamento}{86}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Atividades}{86}{section.8.1}%
+\contentsline {chapter}{\numberline {5}OSDOCR Estruturas de Dados - Implementação}{38}{chapter.5}%
+\contentsline {section}{\numberline {5.1}OCR Tree}{38}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Box}{47}{section.5.2}%
+\contentsline {chapter}{\numberline {6}OSDOCR Toolkit - Implementação}{51}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Sumário}{51}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Processamento de resultados OCR}{52}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Processamento de imagem}{67}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Processamento de texto}{74}{section.6.4}%
+\contentsline {chapter}{\numberline {7}OSDOCR Pipeline - Implementação}{76}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Sumário}{76}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Pré-processamento de imagem}{80}{section.7.2}%
+\contentsline {section}{\numberline {7.3}OCR}{83}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Pós-processamento de OCR}{83}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Geração de output}{83}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Validação de resultados}{83}{section.7.6}%
+\contentsline {chapter}{\numberline {8}OSDOCR Editor - Implementação}{84}{chapter.8}%
+\contentsline {chapter}{\numberline {9}Aplicações}{85}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Introdução}{85}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Sumário}{85}{section.9.2}%
+\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{86}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Conclusões}{86}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{86}{section.10.2}%
 \contentsline {part}{I\hspace {1em}Apêndices}{92}{part.1}%
 \contentsline {chapter}{\numberline {A}Trabalho de apoio}{93}{appendix.A}%
 \contentsline {chapter}{\numberline {B}Detalhes dos resultados}{94}{appendix.B}%
