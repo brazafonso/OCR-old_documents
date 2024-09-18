@@ -208,6 +208,8 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 
 
 
+
+
 \highlight{Limpeza de OCR Tree}
 \label{contribution_clean_ocr}
 
@@ -568,6 +570,24 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 
 %% TODO ilustracao : exemplo de divisao de bloco, vertical e horizontal
+
+
+
+\highlight{find\_text\_titles}[\normalsize]
+
+\textbf{Descrição:} Procura analisar blocos da OCR Tree por potenciais blocos de tipo título que podem ser separados de blocos de texto. Quando potenciais títulos são encontrados, divide o bloco original de modo a separar em bloco(s) texto e bloco título.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a analisar
+	\item conf : confiança de texto mínima.
+\end{itemize}
+
+\textbf{Algoritmo:} Para os blocos de tipo 'text', analisa os seus filhos de nível linha, verificando se poderiam ser categorizados como 'title'. Em caso positivo, utiliza a função de divisão de bloco para separar o bloco 'title' do 'text'. A operação de divisão poderá resultar em 2 blocos, caso o 'title' se encontre no início ou fim do bloco; ou 3, no caso de estar inserido no meio do bloco.
+
+%% TODO ilustracao : exemplo de encontrar títulos no texto
+
+
 
 \highlight{Cálculo de ordem de leitura}
 \label{contribution_reading_order}

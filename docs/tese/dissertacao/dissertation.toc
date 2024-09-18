@@ -53,23 +53,23 @@
 \contentsline {section}{\numberline {6.1}Sumário}{51}{section.6.1}%
 \contentsline {section}{\numberline {6.2}Processamento de resultados OCR}{52}{section.6.2}%
 \contentsline {section}{\numberline {6.3}Processamento de imagem}{67}{section.6.3}%
-\contentsline {section}{\numberline {6.4}Processamento de texto}{74}{section.6.4}%
+\contentsline {section}{\numberline {6.4}Processamento de texto}{75}{section.6.4}%
 \contentsline {chapter}{\numberline {7}OSDOCR Pipeline - Implementação}{76}{chapter.7}%
 \contentsline {section}{\numberline {7.1}Sumário}{76}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Pré-processamento de imagem}{80}{section.7.2}%
+\contentsline {section}{\numberline {7.2}Pré-processamento de imagem}{81}{section.7.2}%
 \contentsline {section}{\numberline {7.3}OCR}{83}{section.7.3}%
-\contentsline {section}{\numberline {7.4}Pós-processamento de OCR}{84}{section.7.4}%
-\contentsline {section}{\numberline {7.5}Geração de output}{84}{section.7.5}%
-\contentsline {section}{\numberline {7.6}Validação de resultados}{84}{section.7.6}%
-\contentsline {chapter}{\numberline {8}OSDOCR Editor - Implementação}{85}{chapter.8}%
-\contentsline {chapter}{\numberline {9}Aplicações}{86}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Introdução}{86}{section.9.1}%
-\contentsline {section}{\numberline {9.2}Sumário}{86}{section.9.2}%
-\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{87}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Conclusões}{87}{section.10.1}%
-\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{87}{section.10.2}%
-\contentsline {part}{I\hspace {1em}Apêndices}{93}{part.1}%
-\contentsline {chapter}{\numberline {A}Trabalho de apoio}{94}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{95}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Listings}{96}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Ferramentas}{97}{appendix.D}%
+\contentsline {section}{\numberline {7.4}Pós-processamento de OCR}{85}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Geração de output}{87}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Validação de resultados}{88}{section.7.6}%
+\contentsline {chapter}{\numberline {8}OSDOCR Editor - Implementação}{90}{chapter.8}%
+\contentsline {chapter}{\numberline {9}Aplicações}{91}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Introdução}{91}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Sumário}{91}{section.9.2}%
+\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{92}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Conclusões}{92}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{92}{section.10.2}%
+\contentsline {part}{I\hspace {1em}Apêndices}{98}{part.1}%
+\contentsline {chapter}{\numberline {A}Trabalho de apoio}{99}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{100}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Listings}{101}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Ferramentas}{102}{appendix.D}%
