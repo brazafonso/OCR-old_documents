@@ -4,6 +4,95 @@
 
 % proposito e ferramentas utilizadas
 
+Neste capítulo será analisada a implementação do último módulo da solução OSDOCR, um editor de OCR Tree gráfico. Este vem com o propósito de servir como uma outra aplicação do Toolkit criado, maioritariamente no que toca às ferramentas que rondam a estrutura OCR Tree, assim como um complemento para a OSDOCR Pipeline que, em casos mais complexos, ou para outros tipos de documentos que não foram o foco da solução, requeira uma manipulação dos resultados mais manual. O editor gráfico facilita esta manipulação.
+
+Embora todos os níveis da OCR Tree possam ser transformados com o editor, o objetivo principal é a de trabalhar com os de nível 2, sendo este nível o que será desenhado na tela de edição.
+
+Esta interface gráfica foi criada utilizando para a parte visual e controlo das Views as bibliotecas \textbf{PySimpleGui} e \textbf{MatplotLib}; e para módulo de dados e controlador destes o Toolkit, com a opção de utilizar a Pipeline para a realização de OCR localmente no input.
+
+
+\section{Sumário}
+
+Segue-se uma listagem das funcionalidades que serão realçadas:
+
+\begin{itemize}\setlength\itemsep{-0.8em}
+	
+	\item Inputs
+	\item Manipulação manual de OCR Tree 
+	\item Aplicação local de OCR
+	\item Ferramentas disponíveis
+		\begin{itemize}\setlength\itemsep{-0.8em}
+			\item Divisão de blocos
+			\item Categorização de blocos
+			\item Ordenação de blocos
+			\item Segmentação de blocos em artigos
+		\end{itemize}
+	\item Outputs
+	\item Operações adicionais
+\end{itemize}
+
+\section{Funcionalidades}
+
+\subsection{Inputs}
+
+Naturalmente, a primeira funcionalidade a ser discutida são os tipos de ficheiros de entrada necessários e admitidos pelo editor.
+
+Sendo este um editor de OCR Tree, poderia se esperar que o único input necessário seria um ficheiro compatível com OCR Tree, no entanto, a utilidade da ferramenta seria consideravelmente limitada se o utilizador não tivesse a imagem par da OCR Tree para servir como fundo. Tomou-se então a decisão que são necessários 2 inputs para iniciar a tela de edição do GUI, uma imagem de input e um ficheiro convertível para OCR Tree - seja este um Json ou HOCR.
+
+Realça-se que a imagem e a OCR Tree podem não corresponder, sendo responsabilidade do utilizador escolher os inputs corretamente pareados. 
+
+A tela resultará na OCR Tree sobreposta na imagem de input. Se estes estiverem propriamente pareados, os blocos desenhados estarão corretamente alinhados com o texto respetivo na imagem.
+
+
+%% TODO : ilustracao de editor com inputs escolhidos. talvez apontar para botoes de escolha dos inputs
+
+
+Numa nota extra sobre os inputs: o editor possui uma opção nas configurações que permite que ao ser escolhida uma imagem de input, seja procurada automaticamente por outputs desta resultantes do uso da pipeline, acelerando o processo de seleção da OCR Tree.
+
+
+\subsection{Manipulação manual de OCR Tree}
+
+Segue-se o propósito principal da criação do editor gráfico, a facilitação da manipulação manual de OCR Tree.
+
+Utilizando o OSDOCR Editor é possível:
+
+\highlight{Selecionar blocos}[\normalsize] clicando nestes usando o rato. Múltiplos blocos podem ser selecionados e consequentemente manipulados em simultâneo. Para desselecionar um bloco, basta clicar neste novamente.
+
+%% TODO : ilustracao de selecionar blocos: selecionar 1, multiplos, desselecionar
+
+
+\highlight{Mover blocos}[\normalsize] selecionando um ou múltiplos blocos e, com o botão do rato pressionado, mover o cursor para o local desejado.
+
+%% TODO : ilustracao de mover blocos selecionados
+
+
+\highlight{Redimensionar blocos}[\normalsize] selecionando um ou múltiplos blocos e, clicando no vértice para pivô de redimensionamento, mover conforme desejado.
+
+%% TODO : ilustracao de redimensionar blocos
+
+\highlight{Atualizar texto do bloco}[\normalsize] manualmente, ao selecionar um bloco e, na aba da direita com a informação do bloco, atualizar o texto de acordo e clicar em salvar. No caso de múltiplos blocos serem selecionados, apenas o último selecionado é modificável.
+
+%% TODO : ilustracao de atualizar texto do bloco
+
+\highlight{Adicionar um novo bloco}[\normalsize] clicando no botão do meio do rato no local desejado, ou utilizando o botão com o mesmo efeito.
+
+%% TODO : ilustracao de criar novo bloco
+
+
+\highlight{Remover um bloco}[\normalsize] selecionando o bloco a remover e clicando no botão para o efeito. No caso de múltiplos blocos selecionados, apenas o último será removido.
+
+%% TODO : ilustracao de remover um bloco
+
+
+
+\subsection{Aplicação local de OCR}
+
+\subsection{Ferramentas disponíveis}
+
+\subsection{Outputs}
+
+\subsection{Operações adicionais}
+
 % funcionalidades disponiveis
 %% abir diferentes resultados OCR para uma mesma imagem
 %% mover blocos singularmente ou em grupo
@@ -28,85 +117,6 @@
 %% cache de operacoes
 %%% retroceder e reconstruir operacoes
 
-
-
-
-
-% \section{GUI Simples}
-% \label{gui_simples}
-% 
-% De forma a facilitar a visualização dos resultados dos motores OCR, assim como das transformações realizadas nestes pelas diferentes técnicas aplicadas, foi implementado um GUI simples em Python utilizando a biblioteca PySimpleGUI. Isto tornou o processo de análise dos dados mais intuitiva e interativa, principalmente no processo de manipulação de blocos.
-% 
-% O formato da interface gráfica é relativamente simples, servindo principalmente o uso de debugging. Esta permite:
-% 
-% \begin{itemize}\setlength\itemsep{0.05cm}
-%     \item Escolha de ficheiro de input - ficheiros imagem
-%     \item Aplicação de reconhecimento na imagem - utilizando Tesseract
-%     \item Visualizar blocos dos resultados
-%     \item Visualizar texto de bloco
-%     \item Aplicar funcionalidades e visualizar resultados
-%     \begin{itemize}
-%         \item Limpeza de blocos
-%         \item Ordenação de caixas
-%         \item Extração de artigos
-%         \item Cálculo de template de jornal utilizando delimitadores
-%     \end{itemize}
-% \end{itemize}
-% 
-% Seguem-se alguns exemplos da interface:
-% 
-% \subsubsection{Interface gráfica}
-% 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=1\textwidth]{images/implementacao/gui/gui_base.png}
-%     \caption{Interface gráfica simples}
-%     \label{fig:gui_base}
-% \end{figure}
-% 
-% \subsubsection{Visualização de bounding boxes}
-% 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=1\textwidth]{images/implementacao/gui/gui_draw_bb.png}
-%     \caption{Visualização dos blocos resultantes de OCR}
-%     \label{fig:gui_draw_bb}
-% \end{figure}
-% 
-% A visualização de blocos dispõe também de coloração diferente para os blocos de acordo com a sua categorização. Blocos título estão a azul escuro, texto a azul claro, delimitadores a vermelho, legendas a branco e o resto - imagens, outros - a verde.
-% 
-% \subsubsection{Cálculo de template de jornal}
-% 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=1\textwidth]{images/implementacao/gui/gui_draw_template.png}
-%     \caption{Visualização do cálculo do template de jornal}
-%     \label{fig:gui_draw_template}
-% \end{figure}
-% 
-% O cálculo de template é feito através da deteção e análise dos delimitadores dos resultados OCR. Áreas são depois calculadas de acordo com estes delimitadores e, como se pode ver no caso do Header (caixa a verde) da imagem \ref{fig:gui_draw_template}, a área é ajustada de acordo com as caixas com texto da respetiva área.
-% 
-% \subsubsection{Extração de artigos}
-% 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=1\textwidth]{images/implementacao/gui/gui_draw_articles.png}
-%     \caption{Visualização dos artigos extraídos}
-%     \label{fig:gui_draw_article}
-% \end{figure}
-% 
-% Neste caso, os artigos são calculados e posteriormente escolhidas cores distintas para realçar cada um destes. Os artigos são representados pelo conjunto de blocos que foram agrupados como sendo um dado artigo.
-% 
-% \subsubsection{Limpeza de bounding boxes}
-% 
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=1\textwidth]{images/implementacao/gui/gui_fix_blocks.png}
-%     \caption{Visualização da limpeza de blocos}
-%     \label{fig:gui_fix_bb}
-% \end{figure}
-% 
-% Para facilitar a deteção das diferenças entre o antes e depois da limpeza, os dois estados são postos lado a lado e os blocos são identificados, mantendo a mesma identificação após a limpeza. 
 
 
 
