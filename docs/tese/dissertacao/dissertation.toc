@@ -68,16 +68,16 @@
 \contentsline {subsection}{\numberline {8.2.2}Manipulação manual de OCR Tree}{91}{subsection.8.2.2}%
 \contentsline {subsection}{\numberline {8.2.3}Aplicação local de OCR}{92}{subsection.8.2.3}%
 \contentsline {subsection}{\numberline {8.2.4}Ferramentas disponíveis}{92}{subsection.8.2.4}%
-\contentsline {subsection}{\numberline {8.2.5}Outputs}{92}{subsection.8.2.5}%
-\contentsline {subsection}{\numberline {8.2.6}Operações adicionais}{92}{subsection.8.2.6}%
-\contentsline {chapter}{\numberline {9}Aplicações}{93}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Introdução}{93}{section.9.1}%
-\contentsline {section}{\numberline {9.2}Sumário}{93}{section.9.2}%
-\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{94}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Conclusões}{94}{section.10.1}%
-\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{94}{section.10.2}%
-\contentsline {part}{I\hspace {1em}Apêndices}{100}{part.1}%
-\contentsline {chapter}{\numberline {A}Trabalho de apoio}{101}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{102}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Listings}{103}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Ferramentas}{104}{appendix.D}%
+\contentsline {subsection}{\numberline {8.2.5}Outputs}{93}{subsection.8.2.5}%
+\contentsline {subsection}{\numberline {8.2.6}Operações adicionais}{93}{subsection.8.2.6}%
+\contentsline {chapter}{\numberline {9}Aplicações}{95}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Introdução}{95}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Sumário}{95}{section.9.2}%
+\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{96}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Conclusões}{96}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{96}{section.10.2}%
+\contentsline {part}{I\hspace {1em}Apêndices}{102}{part.1}%
+\contentsline {chapter}{\numberline {A}Trabalho de apoio}{103}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{104}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Listings}{105}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Ferramentas}{106}{appendix.D}%

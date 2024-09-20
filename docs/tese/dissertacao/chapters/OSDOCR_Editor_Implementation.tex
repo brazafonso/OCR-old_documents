@@ -26,6 +26,7 @@ Segue-se uma listagem das funcionalidades que serão realçadas:
 			\item Categorização de blocos
 			\item Ordenação de blocos
 			\item Segmentação de blocos em artigos
+			\item Divisão de imagem
 		\end{itemize}
 	\item Outputs
 	\item Operações adicionais
@@ -56,30 +57,32 @@ Segue-se o propósito principal da criação do editor gráfico, a facilitação
 
 Utilizando o OSDOCR Editor é possível:
 
-\highlight{Selecionar blocos}[\normalsize] clicando nestes usando o rato. Múltiplos blocos podem ser selecionados e consequentemente manipulados em simultâneo. Para desselecionar um bloco, basta clicar neste novamente.
+\textbf{Selecionar blocos} clicando nestes usando o rato. Múltiplos blocos podem ser selecionados e consequentemente manipulados em simultâneo. Para desselecionar um bloco, basta clicar neste novamente.
 
 %% TODO : ilustracao de selecionar blocos: selecionar 1, multiplos, desselecionar
 
 
-\highlight{Mover blocos}[\normalsize] selecionando um ou múltiplos blocos e, com o botão do rato pressionado, mover o cursor para o local desejado.
+\textbf{Mover blocos} selecionando um ou múltiplos blocos e, com o botão do rato pressionado, mover o cursor para o local desejado.
 
 %% TODO : ilustracao de mover blocos selecionados
 
 
-\highlight{Redimensionar blocos}[\normalsize] selecionando um ou múltiplos blocos e, clicando no vértice para pivô de redimensionamento, mover conforme desejado.
+\textbf{Redimensionar blocos} selecionando um ou múltiplos blocos e, clicando no vértice para pivô de redimensionamento, mover conforme desejado.
 
 %% TODO : ilustracao de redimensionar blocos
 
-\highlight{Atualizar texto do bloco}[\normalsize] manualmente, ao selecionar um bloco e, na aba da direita com a informação do bloco, atualizar o texto de acordo e clicar em salvar. No caso de múltiplos blocos serem selecionados, apenas o último selecionado é modificável.
+\textbf{Atualizar texto do bloco} manualmente, ao selecionar um bloco e, na aba da direita com a informação do bloco, atualizar o texto de acordo e clicar em salvar. No caso de múltiplos blocos serem selecionados, apenas o último selecionado é modificável.
+
+Realça-se que a edição manual do texto leva a perda de alguma informação, nomeadamente as dimensões dos níveis mais profundos dentro do bloco, visto que requerer ao utilizador que delimite as coordenadas e nível de confiança de texto das linhas, palavras ou parágrafos editados iria contra o propósito da edição de OCR Tree facilitada. Estes níveis terão aos suas dimensões repartidas de forma uniforme de forma a encaixarem dentro do bloco pai e a confiança de texto será considerada como total (100).
 
 %% TODO : ilustracao de atualizar texto do bloco
 
-\highlight{Adicionar um novo bloco}[\normalsize] clicando no botão do meio do rato no local desejado, ou utilizando o botão com o mesmo efeito.
+\textbf{Adicionar um novo bloco} clicando no botão do meio do rato no local desejado, ou utilizando o botão com o mesmo efeito.
 
 %% TODO : ilustracao de criar novo bloco
 
 
-\highlight{Remover um bloco}[\normalsize] selecionando o bloco a remover e clicando no botão para o efeito. No caso de múltiplos blocos selecionados, apenas o último será removido.
+\textbf{Remover um bloco} selecionando o bloco a remover e clicando no botão para o efeito. No caso de múltiplos blocos selecionados, apenas o último será removido.
 
 %% TODO : ilustracao de remover um bloco
 
@@ -87,11 +90,67 @@ Utilizando o OSDOCR Editor é possível:
 
 \subsection{Aplicação local de OCR}
 
+Em instâncias em que apenas porções da OCR Tree apresentem resultados não satisfatórios, ou se pretenda criar novos blocos de texto, a habilidade de aplicar OCR no local afetado pode ser mais eficiente do que transcrever o texto manualmente por completo.
+
+Isto consegue-se aplicando as primeiras duas secções da pipeline : pré-processamento e OCR. Nas configurações do editor é possível costumizar o pré-processamento realizado (se qualquer) e a binarização aplicada para OCR e as opções para o motor OCR.
+
+A utilização da implementação da pipeline implica que é necessário transformar os outputs desta, transformando a OCR Tree resultante numa de nível 2 e, atualizar as suas coordenadas para fazerem sentido à posição do bloco no input do editor.
+
+Para utilizar esta funcionalidade própria do editor, basta selecionar o bloco alvo e clicar no botão de OCR na aba lateral direita.
+
+
+%% TODO : ilustracao de utilizacao de aplicacao de OCR num bloco
+
+
 \subsection{Ferramentas disponíveis}
+
+Nesta secção serão descritas as funcionalidades conseguidas através do uso do OSDOCR Toolkit. Várias destas já estão presentes no OSDOCR pipeline porém, o editor permite uma utilização mais controlada destas.
+
+\highlight{Divisão de blocos}
+
+\highlight{Categorização de blocos}
+
+\highlight{Ordenação de blocos}
+
+\highlight{Segmentação de blocos em artigos}
+
+\highlight{Divisão de imagem}
 
 \subsection{Outputs}
 
 \subsection{Operações adicionais}
+
+Serve esta última secção para descrever outras funcionalidades do editor, que se agrupam mais dentro de \textit{quality of life} ao invés de pura manipulação dos dados.
+
+\highlight{Cache de operações}
+
+Como na generalidade dos editores, este não é exceção na habilidade de retroceder e reconstruir operações. Tal permite desfazer ou refazer ações rapidamente, tornando o editor uma ferramenta ainda mais útil para a manipulação destes tipos de dados que podem ser consideravelmente densos.
+
+Esta funcionalidade é possível através do uso de uma cache que vai sendo atualizada após a realização de cada operação.
+
+O tamanho desta cache está por defeito definido para 10, mas pode ser alterado nas configurações do editor.
+
+%% TODO : ilustracao de atualizacao do tamanho da cache
+
+
+
+\highlight{Filtro de blocos}
+
+A habilidade de filtragem é sempre bem vinda em qualquer contexto e, neste caso ela é disponibilizada através do tipo dos blocos.
+
+Sendo que existem certos tipos essenciais para a criação de outputs especiais, como é o caso do "title" para a geração de artigos, a possibilidade para facilmente distinguir quais os blocos deste tipo existentes é essencial. 
+
+
+%% TODO : ilustracao de filtragem por tipo de bloco
+
+
+\highlight{Redimensionamento do input}
+
+O editor permite ainda a realização de redimensionamento da imagem de input para facilitar a visualização e edição local da respetiva parte da OCR Tree nesta. A OCR Tree é automaticamente deslocada sempre que um redimensionamento ocorre.
+
+%% TODO : ilustracao de redimensionamento do input
+
+
 
 % funcionalidades disponiveis
 %% abir diferentes resultados OCR para uma mesma imagem
@@ -114,6 +173,7 @@ Utilizando o OSDOCR Editor é possível:
 %%% simples
 %%% markdown
 %%% OCR Tree
+
 %% cache de operacoes
 %%% retroceder e reconstruir operacoes
 
