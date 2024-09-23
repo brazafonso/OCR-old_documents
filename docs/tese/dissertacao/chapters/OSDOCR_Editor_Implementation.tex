@@ -108,15 +108,128 @@ Nesta secção serão descritas as funcionalidades conseguidas através do uso d
 
 \highlight{Divisão de blocos}
 
+A divisão de blocos tem como principal propósito corrigir a segmentação de blocos realizada pelo motor OCR.
+
+Nesta categoria temos 2 tipos de divisão:
+
+\highlight{Corte de bloco}[\normalsize]
+
+Esta funcionalidade não está diretamente disponível na pipeline - embora o toolkit a ofereça e outras funcionalidades na pipeline façam uso deste método - devido a necessitar de um input humano.
+
+Tendo selecionado um bloco para realizar um corte e, em seguida, clicado na funcionalidade de corte, o editor irá entrar no estado especial de recorte. Este é caracterizado por uma linha de corte aparecer sob o bloco selecionado, servindo como auxílio para a divisão do bloco em 2.
+
+%% TODO : ilustracao de estado especial de corte
+
+Clicando no botão esquerdo do rato neste estado realizará o corte de acordo com a linha visível. O texto será também divido entre os dois blocos de acordo com a linha de corte escolhida. Naturalmente, a divisão do texto segue na realidade as coordenadas da linha de corte e da OCR Tree respetiva ao bloco, sendo que se a bounding box não estiver propriamente alinhada com o texto respetivo, esta divisão poderá não fazer sentido visualmente.
+
+%% TODO : ilustracao de texto divido entre os dois blocos
+
+
+\highlight{Divisão por espaços vazios}[\normalsize]
+
+Esta funcionalidade é semelhante à disponibilizada na pipeline com o mesmo nome.
+
+A distinção principal neste cenário é que pode ser utilizada num ambiente mais controlado, apenas afetando, caso desejado, os blocos selecionados.
+
+Caso nenhum bloco esteja selecionado, todos os blocos serão afetados.
+
+Devido à característica de análise estatística do algoritmo para verificação das razões dos espaços vazios, mesmo no caso de haverem blocos selecionados, será introduzido no método a OCR Tree geral.
+
+%% TODO : ilustracao de divisão por espaços vazios em blocos selecionados
+
+
+
 \highlight{Categorização de blocos}
+
+A tokenização dos blocos é especialmente importante para os algoritmos de cálculo de atração entre blocos e consequentemente cálculo de ordem de leitura; e de divisão dos blocos de texto em artigos.
+
+Desta forma, a possibilidade de realizar uma categorização manual, para maior confiança ou correções em relação ao algoritmo automático, é evidentemente benéfico.
+
+Tal pode ser conseguido selecionando um bloco e, na aba de edição do bloco, escolher o tipo deste. Por fim, é necessário clicar para guardar as modificações no bloco.
+
+%% TODO : ilustracao de tipar um bloco
+
+Por defeito, o editor não ilustra os tipos dos blocos, sendo necessário escolher a opção para os diferentes tipos de blocos serem coloridos.
+
+%% TODO : ilustracao de cores de diferentes tipos de blocos
 
 \highlight{Ordenação de blocos}
 
+O algoritmo que mais beneficia da possibilidade de correções manuais é o de ordenação de blocos. Tal deve-se à notável mutabilidade dos templates de jornais.
+
+Deste modo, o editor permite correções, ou ordenações completas dos blocos, de forma simples. Existem 2 formas de realizar a reordenação de um bloco selecionado: simplesmente escrevendo o lugar do bloco na ordem, embora tal tenha restrições de tempo entre cada número do id premido; na aba de edição do bloco, alterar o id para o desejado e guardar as alterações.
+
+%% TODO : ilustracao de alterar o id do bloco
+
+O lugar na ordem dos blocos, serve também como id do bloco, sendo que, para ambos os métodos, no caso de haver conflito entre o id dos blocos, estes serão imediatamente ajustados.
+
+%% TODO : ilustracao de alterar o id do bloco e ajuste imediato dos ids dos blocos
+
+Ao mesmo tempo, também é possível usar o método do Toolkit - também usado na pipeline -, para cálculo automático da ordem de leitura.
+
+%% TODO : ilustracao de funcao de calculo da ordem de leitura
+
+
 \highlight{Segmentação de blocos em artigos}
+
+
+Na pipeline, a segmentação da OCR Tree em artigos é uma das últimas operações realizadas, sendo o seu output extremamente dependente do sucesso das operações antecedentes. Novamente, a manipulação manual destes aparenta-se útil.
+
+Uma aba específica para edição destes está presente no editor.
+
+Várias operações estão relacionados com a manipulação de artigos:
+
+\textbf{Segmentação da OCR Tree em artigos} utilizando o método semelhante ao discutido para a pipeline.
+
+%% TODO : ilustracao de método de divisão em artigos
+
+\textbf{Adicionar ou remover blocos de um artigo}, selecionando o artigo, o que irá atualizar a lista de blocos selecionados com os pertencentes ao artigo. Selecionar blocos não pertencentes ao artigo, no caso de se querer adicionar blocos; ou clicar em blocos dentro dos selecionados, para remover blocos do artigo. Por fim, atualiza-se o artigo para guardar as alterações.
+
+%% TODO : ilustracao de adicionar um bloco ao artigo
+
+%% TODO : ilustracao de remover um bloco ao artigo
+
+\textbf{Adicionar um artigo}, ao selecionar bloco(s) e carregar para adicionar um artigo.
+
+%% TODO : ilustracao de adicionar um artigo
+
+\textbf{Remover um artigo}, selecionando o artigo e clicando para o remover.
+
+%% TODO : ilustracao de remover um artigo
+
+\textbf{Alterar ordem dos artigos}, ao selecionar um artigo e no botão para subir ou descer o seu lugar na ordem de artigos. Esta ordem tem influência na ordem em que os artigos aparecerão no output.
+
+%% TODO : ilustracao de alterar ordem de um artigo
+
 
 \highlight{Divisão de imagem}
 
+De forma a facilitar a criação de resultados OCR em locais específicos de uma imagem, foi implementada uma funcionalidade única para o OSDOCR Editor que possibilita o corte de uma imagem.
+
+Esta funciona de forma semelhante ao corte de um bloco, onde será realizado um corte que será visualmente representado por uma linha.
+
+%% TODO : ilustracao de estado de corte de imagem
+
+Realizado o corte, uma nova imagem (recortada da original) será criada, e os nodos da OCR Tree inseridos na área recortada serão adicionados na OCR Tree correspondente a esta imagem. Realça-se que apenas os nodos que apresentem uma bounding box completamente dentro da área serão incluídos, sendo que será recorrente pedaços significativos de texto percam o seu respetivo bloco, no caso de este texto ter continuação numa área fora do recorte.
+
+%% TODO : ilustracao do resultado do recorte
+
+
 \subsection{Outputs}
+
+O editor permite ainda a geração de outputs textuais semelhantes aos da pipeline. 
+
+É possível a geração de ficheiros do tipo \textit{txt} ou \textit{markdown}, para documentos do tipo jornal - criando artigos caso não existam - ou simples. O tipo de documento pode ser modificado através das configurações do editor.
+
+%% TODO : ilustracao de geração de output
+
+Este output textual é opcional, ao contrário da pipeline.
+
+A OCR Tree utilizada como input será modificada - caso operações sob ela sejam aplicadas -, sendo portanto um output resultante da utilização do editor. 
+
+Utilizando o método de divisão de imagem, o recorte da imagem também será também guardado como uma nova imagem, pareado com o respetivo ficheiro OCR Tree.
+
+
 
 \subsection{Operações adicionais}
 
@@ -125,6 +238,8 @@ Serve esta última secção para descrever outras funcionalidades do editor, que
 \highlight{Cache de operações}
 
 Como na generalidade dos editores, este não é exceção na habilidade de retroceder e reconstruir operações. Tal permite desfazer ou refazer ações rapidamente, tornando o editor uma ferramenta ainda mais útil para a manipulação destes tipos de dados que podem ser consideravelmente densos.
+
+%% TODO : ilustracao de retroceder uma operacao
 
 Esta funcionalidade é possível através do uso de uma cache que vai sendo atualizada após a realização de cada operação.
 
