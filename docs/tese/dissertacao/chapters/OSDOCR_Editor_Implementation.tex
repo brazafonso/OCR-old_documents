@@ -23,6 +23,7 @@ Segue-se uma listagem das funcionalidades que serão realçadas:
 	\item Ferramentas disponíveis
 		\begin{itemize}\setlength\itemsep{-0.8em}
 			\item Divisão de blocos
+			\item Junção de blocos
 			\item Categorização de blocos
 			\item Ordenação de blocos
 			\item Segmentação de blocos em artigos
@@ -138,6 +139,16 @@ Devido à característica de análise estatística do algoritmo para verificaç�
 %% TODO : ilustracao de divisão por espaços vazios em blocos selecionados
 
 
+\highlight{Junção de blocos}
+
+Utilizando métodos de junção de múltiplas OCR Tree, tal como na pipeline no bloco de união de blocos, esta é uma utilização manual de junção de blocos.
+
+Existem, como discutido no Toolkit, duas formas principais de junção de blocos, horizontal ou vertical.
+
+No caso do Editor, basta selecionar dois ou mais blocos para junção e clicar na ferramenta. O algoritmo de junção irá tentar automaticamente unir os dois textos de modo tendo em conta as suas coordenadas, podendo ficar com linhas intercaladas.
+
+%% TODO : ilustracao de juncao de blocos, com e sem resultado de linhas intercaladas
+
 
 \highlight{Categorização de blocos}
 
@@ -209,6 +220,8 @@ De forma a facilitar a criação de resultados OCR em locais específicos de uma
 Esta funciona de forma semelhante ao corte de um bloco, onde será realizado um corte que será visualmente representado por uma linha.
 
 %% TODO : ilustracao de estado de corte de imagem
+
+Antes de o corte ser realizado, será questionado qual das partes da imagem se pretende manter.
 
 Realizado o corte, uma nova imagem (recortada da original) será criada, e os nodos da OCR Tree inseridos na área recortada serão adicionados na OCR Tree correspondente a esta imagem. Realça-se que apenas os nodos que apresentem uma bounding box completamente dentro da área serão incluídos, sendo que será recorrente pedaços significativos de texto percam o seu respetivo bloco, no caso de este texto ter continuação numa área fora do recorte.
 

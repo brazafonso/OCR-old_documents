@@ -71,8 +71,10 @@
 \contentsline {subsection}{\numberline {8.2.5}Outputs}{95}{subsection.8.2.5}%
 \contentsline {subsection}{\numberline {8.2.6}Operações adicionais}{95}{subsection.8.2.6}%
 \contentsline {chapter}{\numberline {9}Resultados}{97}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Introdução}{97}{section.9.1}%
-\contentsline {section}{\numberline {9.2}Sumário}{97}{section.9.2}%
+\contentsline {section}{\numberline {9.1}Casos de estudo}{97}{section.9.1}%
+\contentsline {section}{\numberline {9.2}OSDOCR Toolkit}{97}{section.9.2}%
+\contentsline {section}{\numberline {9.3}OSDOCR Pipeline}{97}{section.9.3}%
+\contentsline {section}{\numberline {9.4}OSDOCR Editor}{97}{section.9.4}%
 \contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{98}{chapter.10}%
 \contentsline {section}{\numberline {10.1}Conclusões}{98}{section.10.1}%
 \contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{98}{section.10.2}%
