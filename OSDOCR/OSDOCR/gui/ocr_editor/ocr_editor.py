@@ -75,10 +75,15 @@ ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
 
 
+def update_config_dependent_variables():
+    '''Update config dependent variables'''
+    global config,ppi
+    ppi = config['base']['ppi']
+
 
 def choose_window_image_input(values:dict):
     global figure,current_ocr_results,current_ocr_results_path,bounding_boxes,animation\
-            ,ocr_results_articles, ppi, current_image_path,window
+            ,ocr_results_articles, ppi, current_image_path,window,config
     if current_image_path:
         # reset variables
         figure = None
@@ -86,7 +91,7 @@ def choose_window_image_input(values:dict):
         current_ocr_results_path = None
         bounding_boxes = {}
         ocr_results_articles = {}
-        ppi = 300
+        ppi = config['base']['ppi']
         animation.pause()
         clean_ocr_result_cache()
     
@@ -112,10 +117,13 @@ def refresh_layout():
     window_size = window.size
     print('Window size:',window_size)
     # update body columns
-    ## ratios of | 1/5 | 3/5 | 1/5 |
-    window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]/5,'height':None})
-    window['body_canvas'].Widget.canvas.configure({'width':window_size[0]/5*3,'height':None})
-    window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]/5,'height':None})
+    ## ratios of | 1/8 | 4/8 | 3/8 |
+    ratio_1 = 1/10
+    ratio_2 = 6/10
+    ratio_3 = 3/10
+    window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_1,'height':None})
+    window['body_canvas'].Widget.canvas.configure({'width':window_size[0]*ratio_2,'height':None})
+    window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_3,'height':None})
 
     window.refresh()
 
@@ -1575,7 +1583,7 @@ def find_titles_method():
     global current_ocr_results,bounding_boxes
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
-        find_text_titles(current_ocr_results,conf=30,id_blocks=False)
+        find_text_titles(current_ocr_results,conf=30,id_blocks=True,categorize_blocks=False,debug=True)
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()
@@ -1771,7 +1779,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         else:
             shutil.rmtree(os.path.join(tmp_folder_path, f))
 
+    # read config and update dependent variables
     config = read_ocr_editor_configs_file()
+    update_config_dependent_variables()
 
     window = ocr_editor_layout()
     last_window_size = window.size
@@ -1982,7 +1992,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 print('split image')
         # configurations button
         elif event == 'configurations_button':
-            config = run_config_gui()
+            config = run_config_gui(position=window.CurrentLocation())
         else:
             print(f'event {event} not implemented')
         

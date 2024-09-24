@@ -20,7 +20,8 @@ default_config = {
         'use_pipeline_results' : True,
         'output_type' : ['newspaper'],
         'output_path' : os.getcwd(),
-        'cache_size' : 10
+        'cache_size' : 10,
+        'ppi' : 300
     },
     'ocr_pipeline' : {
         'fix_rotation' : 'none',
@@ -79,7 +80,11 @@ def read_config_window(values:dict)->dict:
     config['base']['use_pipeline_results'] = values['checkbox_use_pipeline_results']
     config['base']['output_path'] = values['input_output_path']
     try:
-        config['base']['cache_size'] = int(values['input_cache_size'])
+        config['base']['cache_size'] = int(values['input_operations_cache_size'])
+    except:
+        pass
+    try:
+        config['base']['ppi'] = int(values['input_default_ppi'])
     except:
         pass
 
@@ -129,7 +134,8 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['list_output_type'].update(refresh_conf['base']['output_type'])
     window['checkbox_use_pipeline_results'].update(refresh_conf['base']['use_pipeline_results'])
     window['input_output_path'].update(refresh_conf['base']['output_path'])
-    window['input_cache_size'].update(refresh_conf['base']['cache_size'])
+    window['input_operations_cache_size'].update(refresh_conf['base']['cache_size'])
+    window['input_default_ppi'].update(refresh_conf['base']['ppi'])
 
     # ocr pipeline values
     window['list_fix_rotation'].update(refresh_conf['ocr_pipeline']['fix_rotation'])
@@ -154,11 +160,10 @@ def save_config_file(config:dict):
 
 
 
-def run_config_gui():
+def run_config_gui(position:tuple=None):
     '''Run ocr editor'''
     global default_config
-    
-    config_window = configurations_layout()
+    config_window = configurations_layout(position=position)
     config = read_ocr_editor_configs_file()
     refresh_config_window(config_window, config)
 

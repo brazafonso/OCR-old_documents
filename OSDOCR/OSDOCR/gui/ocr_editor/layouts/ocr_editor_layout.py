@@ -3,6 +3,7 @@ import PySimpleGUI as sg
 from ...aux_utils.utils import place
 from OSDOCR.aux_utils import consts
 
+file_path = os.path.dirname(os.path.realpath(__file__))
 
 # consts
 browse_img_input_value = '/home/braz/projetos/OCR-old_documents/study_cases/simple template/2-1.jpg'
@@ -30,40 +31,63 @@ def ocr_editor_layout()->sg.Window:
     # side bar for methods (palceholder)
     left_side_bar = [
         [
-            place(sg.Button('New Block',key='method_new_block')),
+            place(sg.Image(source=f'{file_path}/../assets/new_block.png',
+                           key='method_new_block',enable_events=True,
+                           tooltip='Create new block')),
         ],
         [
-            place(sg.Button('Join Blocks',key='method_join')),
+            place(sg.Image(source=f'{file_path}/../assets/join_blocks.png',
+                           key='method_join',enable_events=True,
+                           tooltip='Join Blocks')),
         ],
         [
-            place(sg.Button('Split Blocks',key='method_split')),
+            place(sg.Image(source=f'{file_path}/../assets/split_blocks.png',
+                           key='method_split',enable_events=True,
+                           tooltip='Split Blocks')),
         ],
         [
-            place(sg.Button('Split Whitespaces',key='method_split_whitespaces')),
+            place(sg.Image(source=f'{file_path}/../assets/split_whitespaces.png',
+                           key='method_split_whitespaces',enable_events=True,
+                           tooltip='Split Whitespaces')),
         ],
         [
-            place(sg.Button('Split Image',key='method_split_image')),
+            place(sg.Image(source=f'{file_path}/../assets/split_image.png',
+                           key='method_split_image',enable_events=True,
+                           tooltip='Split Image')),
         ],
         [
-            place(sg.Button('Fix intersections',key='method_fix_intersections')),
+            place(sg.Image(source=f'{file_path}/../assets/fix_intersections.png',
+                           key='method_fix_intersections',enable_events=True,
+                           tooltip='Fix intersections')),
         ],
         [
-            place(sg.Button('Adjust bounding boxes',key='method_adjust_bounding_boxes')),
+            place(sg.Image(source=f'{file_path}/../assets/adjust_bb.png',
+                           key='method_adjust_bounding_boxes',enable_events=True,
+                           tooltip='Adjust bounding boxes')),
         ],
         [
-            place(sg.Button('Calculate reading order',key='method_calculate_reading_order')),
+            place(sg.Image(source=f'{file_path}/../assets/calculate_reading_order.png',
+                           key='method_calculate_reading_order',enable_events=True,
+                           tooltip='Calculate reading order')),
         ],
         [
-            place(sg.Button('Categorize blocks',key='method_categorize_blocks')),
+            place(sg.Image(source=f'{file_path}/../assets/categorize_blocks.png',
+                           key='method_categorize_blocks',enable_events=True,
+                           tooltip='Categorize blocks')),
         ],
         [
-            place(sg.Button('Find Titles',key='method_find_titles')),
+            place(sg.Image(source=f'{file_path}/../assets/find_titles.png',
+                           key='method_find_titles',enable_events=True,
+                           tooltip='Find Titles')),
         ],
         [
-            place(sg.Button('Find Articles',key='method_find_articles')),
+            place(sg.Image(source=f'{file_path}/../assets/find_articles.png',
+                           key='method_find_articles',enable_events=True,
+                           tooltip='Find Articles')),
         ],
         [
-            place(sg.Button('Refresh block id',key='method_refresh_block_id')),
+            place(sg.Image(source=f'{file_path}/../assets/refresh_block_id.png',
+                           key='method_refresh_block_id',enable_events=True,tooltip='Refresh block id')),
         ]
     ]
 
@@ -220,12 +244,20 @@ def ocr_editor_layout()->sg.Window:
         ]
     ]
 
+    ratio_1 = 1/10
+    ratio_2 = 6/10
+    ratio_3 = 3/10
+
+    column_1_size = (window_size[0]*ratio_1,None)
+    column_2_size = (window_size[0]*ratio_2,None)
+    column_3_size = (window_size[0]*ratio_3,None)
+
     # body, composed of side bar and canvas
     body = [
         [
-            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=(window_size[0]/5,None),key='body_left_side_bar'),
-            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,right_click_menu=context_menu,size=(window_size[0]/5*3,None),key='body_canvas'),
-            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=(window_size[0]/5,None),key='body_right_side_bar'),
+            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=column_1_size,key='body_left_side_bar'),
+            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,right_click_menu=context_menu,size=column_2_size,key='body_canvas'),
+            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=column_3_size,key='body_right_side_bar'),
         ]
     ]
 
@@ -243,7 +275,7 @@ def ocr_editor_layout()->sg.Window:
 
 
 
-def configurations_layout()->sg.Window:
+def configurations_layout(position:tuple=(None,None))->sg.Window:
     '''Window for configurations'''
 
     # normal configurations
@@ -255,6 +287,8 @@ def configurations_layout()->sg.Window:
     ## output type (select : newspaper, simple)
     ## use pipeline results (checkbox)
     ## output path (folder)
+    ## cache size (input)
+    ## default ppi (input)
     
     simple_options = [
         [
@@ -289,8 +323,12 @@ def configurations_layout()->sg.Window:
             place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True))
         ],
         [
-            place(sg.Text('Cache Size: ')),
-            place(sg.Input(10,key='input_cache_size', enable_events=True))
+            place(sg.Text('Operations Cache Size: ')),
+            place(sg.Input(10,key='input_operations_cache_size', enable_events=True))
+        ],
+        [
+            place(sg.Text('Default PPI: ')),
+            place(sg.Input(300,key='input_default_ppi', enable_events=True))
         ]
     ]
 
@@ -399,7 +437,8 @@ def configurations_layout()->sg.Window:
         ]
     ]
 
-    window = sg.Window('OCR Editor - Configuration', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True)
+    location = position if position is not None else (0,0)
+    window = sg.Window('OCR Editor - Configuration', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True,location=location)
     window.bind('<Configure>',"Event")
     return window
 

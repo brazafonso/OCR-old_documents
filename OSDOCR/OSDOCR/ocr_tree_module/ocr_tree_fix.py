@@ -469,7 +469,7 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
     Potential titles should be lines that are taller than normal text size, and come after closed text, or are in the beggining of the block.'''
 
     if id_blocks:
-        ocr_results.id_boxes(level=[2])
+        ocr_results.id_boxes(level=[2],override=False)
 
     if categorize_blocks:
         ocr_results = categorize_boxes(ocr_results,conf=conf,debug=debug)
@@ -478,6 +478,10 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
 
     page = ocr_results.get_boxes_level(1)[0]
     blocks = [b for b in ocr_results.get_boxes_level(2) if b.type == 'text']
+
+    if blocks == []:
+        return ocr_results
+
     last_id = sorted([b.id for b in blocks])[-1] + 1
     i = 0
     # find titles in text blocks

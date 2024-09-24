@@ -3,6 +3,7 @@
 *.csv
 *.jpg
 *.png
+!**/ocr_editor/assets/*.png
 *.json
 docs/jornais/*
 results
