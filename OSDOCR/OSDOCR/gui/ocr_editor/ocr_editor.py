@@ -73,6 +73,8 @@ last_activity_time = time.time()
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
+SYMBOL_UP =    '▲'
+SYMBOL_DOWN =  '▼'
 
 
 ################################################
@@ -115,8 +117,10 @@ def refresh_layout():
     # update body columns
     ## ratios of | 1/8 | 4/8 | 3/8 |
     ratio_1 = 1/10
-    ratio_2 = 6/10
+    # left side bar is collapsible, so ratio is dynamic
+    ratio_2 = 6/10 if window['collapse_body_left_side_bar'].visible else 7/10
     ratio_3 = 3/10
+    print('Ratio:',ratio_1,ratio_2,ratio_3)
     window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_1,'height':None})
     window['body_canvas'].Widget.canvas.configure({'width':window_size[0]*ratio_2,'height':None})
     window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_3,'height':None})
@@ -217,6 +221,7 @@ def sidebar_update_block_info():
         right = int(block.box.right)
         bottom = int(block.box.bottom)
         window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
+        window['text_block_level'].update(highlighted_blocks[-1]['z'])
         ## type
         if block.type:
             window['list_block_type'].update(block.type)
@@ -228,6 +233,7 @@ def sidebar_update_block_info():
         # clear block info
         window['input_block_id'].update('')
         window['text_block_coords'].update('')
+        window['text_block_level'].update('')
         window['list_block_type'].update('')
         window['input_block_text'].update('')
 
@@ -1819,12 +1825,20 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     if input_ocr_results_path:
         values['ocr_results_input'] = input_ocr_results_path
 
+    # start values - for development
     if values:
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)
         if current_ocr_results:
             add_ocr_result_cache(current_ocr_results)
             update_canvas_column(window)
+
+    # get collapsible sections, and status
+    ## elements with key '-collapsible_*-'
+    collapsible_sections = [k for k in window.AllKeysDict if f'{k}'.startswith('collapse_')]
+    collapsible_sections_status = {}
+    for k in collapsible_sections:
+        collapsible_sections_status[k] = window[k].visible
 
     while True:
         event,values = window.read()
@@ -1863,6 +1877,16 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # generate md
         elif event == 'generate_md':
             generate_output_md()
+        # send block back
+        elif event == 'send_block_back':
+            if len(highlighted_blocks) > 0:
+                send_blocks_to_back(highlighted_blocks)
+                sidebar_update_block_info()
+        # send block forward
+        elif event == 'send_block_front':
+            if len(highlighted_blocks) > 0:
+                send_blocks_to_front(highlighted_blocks)
+                sidebar_update_block_info()
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
@@ -1954,10 +1978,12 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif 'context_menu_send_to_back' in event:
             if len(highlighted_blocks) > 0:
                 send_blocks_to_back(highlighted_blocks)
+                sidebar_update_block_info()
         # context menu send to front
         elif 'context_menu_send_to_front' in event:
             if len(highlighted_blocks) > 0:
                 send_blocks_to_front(highlighted_blocks)
+                sidebar_update_block_info()
         # undo last operation
         elif event == 'undo_ocr_results':
             undo_operation()
@@ -2020,6 +2046,20 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui(position=window.CurrentLocation())
+        # collapsible section
+        elif event.startswith('-OPEN collapse_'):
+            # get section key
+            section_key = event.split('-OPEN ')[1].split('-')[0]
+            # update section status
+            section_status = not collapsible_sections_status[section_key]
+            collapsible_sections_status[section_key] = section_status
+            print(f'section {section_key} status changed to {section_status}')
+            # update section visibility
+            window[section_key].update(visible= section_status)
+            # update section arrow
+            window[f'-OPEN {section_key}-'].update(SYMBOL_DOWN if section_status else SYMBOL_UP)
+            refresh_layout()
+            
         else:
             print(f'event {event} not implemented')
         

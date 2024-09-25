@@ -1,16 +1,22 @@
 import os
 import PySimpleGUI as sg
-from ...aux_utils.utils import place
+from ...aux_utils.utils import place,collapse
 from OSDOCR.aux_utils import consts
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
+
+
 # consts
+gui_theme = 'SandyBeach'
+SYMBOL_UP =    '▲'
+SYMBOL_DOWN =  '▼'
 browse_img_input_value = '/home/braz/projetos/OCR-old_documents/study_cases/simple template/2-1.jpg'
 browse_file_input_value = '/home/braz/projetos/OCR-old_documents/results/2-1______88a3d1a9c2e7707cb70e8f9afa569005/processed/clean_ocr.json'
 
 def ocr_editor_layout()->sg.Window:
     '''Build window for ocr results editor'''
+    sg.theme(gui_theme)
 
     window_size = (1200,800)
     window_location = (500,100)
@@ -18,15 +24,27 @@ def ocr_editor_layout()->sg.Window:
     # target image and ocr results selector
     upper_row = [
         [
-                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",key='browse_image',target='target_input',initial_folder=os.getcwd())),
-                place(sg.Input(default_text=browse_img_input_value,key='target_input',enable_events=True)),
+                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",
+                                    key='browse_image',target='target_input',initial_folder=os.getcwd(),
+                                    font=("Calibri", 15))),
+                place(sg.Input(default_text=browse_img_input_value,key='target_input',
+                               enable_events=True,font=("Calibri", 15),size=(25,1))),
 
-                place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),button_text="OCR Results",key='browse_file',target='ocr_results_input',initial_folder=os.getcwd())),
-                place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',enable_events=True)),
+                place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),
+                                    button_text="OCR Results",key='browse_file',target='ocr_results_input',
+                                    initial_folder=os.getcwd(),font=("Calibri", 15))),
+                place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',
+                               enable_events=True,font=("Calibri", 15),size=(25,1))),
 
+                sg.Push(),
                 place(sg.Image(source=f'{file_path}/../assets/settings.png',
                                key='configurations_button',enable_events=True,
-                               tooltip='Settings')),
+                               tooltip='Settings',
+                               )
+                    )
+        ],
+        [
+            sg.HorizontalSeparator()
         ]
     ]
 
@@ -95,22 +113,61 @@ def ocr_editor_layout()->sg.Window:
 
 
     # canvas (editor)
-    canvas = [
-        [
-            place(sg.Button('Save as copy',key='save_ocr_results_copy')),
-            place(sg.Button('Save',key='save_ocr_results')),
-            place(sg.Button('Reset',key='reset_ocr_results')),
-            place(sg.Button('<-',key='undo_ocr_results')),
-            place(sg.Button('->',key='redo_ocr_results')),
-            place(sg.Button('Zoom In',key='zoom_in')),
-            place(sg.Button('Zoom Out',key='zoom_out')),
-            place(sg.Button('Generate MD',key='generate_md')),
-        ],
-        [
-            place(sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True))
-        ]
-    ]
+    canvas_top = [
+            place(sg.Button('Save as copy',key='save_ocr_results_copy',font=("Calibri", 15))),
+            place(sg.Image(source=f'{file_path}/../assets/save.png'
+                           ,key='save_ocr_results',enable_events=True,
+                           tooltip='Save')),
 
+            place(sg.Image(source=f'{file_path}/../assets/reset.png',
+                           key='reset_ocr_results',enable_events=True,
+                           tooltip='Reset')),
+
+            place(sg.Image(source=f'{file_path}/../assets/undo.png',
+                           key='undo_ocr_results',enable_events=True,
+                           tooltip='Undo')),
+
+            place(sg.Image(source=f'{file_path}/../assets/redo.png',
+                           key='redo_ocr_results',enable_events=True,
+                           tooltip='Redo')),
+
+            place(sg.Image(source=f'{file_path}/../assets/zoom_in.png',
+                           key='zoom_in',enable_events=True,
+                           tooltip='Zoom In')),
+
+            place(sg.Image(source=f'{file_path}/../assets/zoom_out.png',
+                           key='zoom_out',enable_events=True,
+                           tooltip='Zoom Out')),
+
+            place(sg.Button('Generate MD',key='generate_md',font=("Calibri", 15))),
+
+            place(sg.Image(source=f'{file_path}/../assets/send_block_back.png',
+                           key='send_block_back',enable_events=True,
+                           tooltip='Send block back')),
+
+            place(sg.Image(source=f'{file_path}/../assets/send_block_front.png',
+                           key='send_block_front',enable_events=True,
+                           tooltip='Send block front')),
+        ]
+    
+    canvas_body = [
+            [
+                place(
+                sg.Frame('',layout=[
+                        [
+                            sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True)
+                        ]
+                    ],
+                    # relief=sg.RELIEF_SUNKEN,
+                    # border_width=0.1,
+                    # background_color='#046380',
+                    )
+                )
+            ]
+        ]
+    
+
+    
     block_type_legend = [
         [
             place(sg.Text('Toogle Block Type: ')),
@@ -171,6 +228,8 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Input('',key='input_block_id',size=(3,1))),
             place(sg.Text('Coordinates: ')),
             place(sg.Text('',key='text_block_coords')),
+            place(sg.Text('Z: ')),
+            place(sg.Text('',key='text_block_level')),
         ],
         [
             place(sg.Text('Type: ')),
@@ -227,15 +286,38 @@ def ocr_editor_layout()->sg.Window:
     # side bar for info about ocr results
     right_side_bar = [
         [
-            sg.Frame('',block_type_legend)
+                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_type_legend-'), 
+                sg.T('Block Type Legend', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT')
         ],
         [
-            sg.Frame('',block_info,key='frame_block_info')
+            collapse([[sg.Frame('',block_type_legend)]],key='collapse_block_type_legend')
         ],
         [
-            sg.Frame('',article_info,key='frame_article_info')
+            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_info-'), 
+            sg.T('Block Info', enable_events=True, k='-OPEN collapse_block_info-TEXT')
+        ],
+        [
+            collapse([[sg.Frame('',block_info,key='frame_block_info')]],key='collapse_block_info')
+        ],
+        [
+            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_article_info-'), 
+            sg.T('Article Info', enable_events=True, k='-OPEN collapse_article_info-TEXT')
+        ],
+        [
+            collapse([[sg.Frame('',article_info,key='frame_article_info')]],key='collapse_article_info')
         ]
     ]
+
+
+    
+
+    ratio_1 = 1/10
+    ratio_2 = 6/10
+    ratio_3 = 3/10
+
+    column_1_size = (window_size[0]*ratio_1,None)
+    column_2_size = (window_size[0]*ratio_2,None)
+    column_3_size = (window_size[0]*ratio_3,None)
 
 
     context_menu = [
@@ -246,20 +328,38 @@ def ocr_editor_layout()->sg.Window:
         ]
     ]
 
-    ratio_1 = 1/10
-    ratio_2 = 6/10
-    ratio_3 = 3/10
+    canvas = [
+        canvas_top,
+        [
+            sg.Column(canvas_body,scrollable=True,
+                      expand_x=True,expand_y=True,right_click_menu=context_menu,
+                      size=column_2_size,key='body_canvas')
+        ],
+    ]
 
-    column_1_size = (window_size[0]*ratio_1,None)
-    column_2_size = (window_size[0]*ratio_2,None)
-    column_3_size = (window_size[0]*ratio_3,None)
 
     # body, composed of side bar and canvas
     body = [
         [
-            sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=column_1_size,key='body_left_side_bar'),
-            sg.Column(canvas,vertical_alignment='top',scrollable=True,expand_x=True,expand_y=True,right_click_menu=context_menu,size=column_2_size,key='body_canvas'),
-            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,vertical_scroll_only=True,expand_x=True,expand_y=True,size=column_3_size,key='body_right_side_bar'),
+            [
+                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_body_left_side_bar-',font=("Calibri", 24)), 
+                sg.T('Tools', enable_events=True, k='-OPEN collapse_body_left_side_bar-TEXT',font=("Calibri", 24))
+            ],
+            collapse([[
+                sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,
+                        vertical_scroll_only=True,expand_x=True,expand_y=True,
+                        size=column_1_size,key='body_left_side_bar')]]
+                ,key='collapse_body_left_side_bar'),
+
+            sg.VerticalSeparator(),
+
+            sg.Column(canvas,vertical_alignment='top',expand_x=True,expand_y=True),
+
+            sg.VerticalSeparator(),
+
+            sg.Column(right_side_bar,vertical_alignment='top',scrollable=True,
+                      vertical_scroll_only=True,expand_x=True,expand_y=True,
+                      size=column_3_size,key='body_right_side_bar'),
         ]
     ]
 
@@ -271,7 +371,10 @@ def ocr_editor_layout()->sg.Window:
         ]
     ]
 
-    window = sg.Window('OCR Editor',editor_main,finalize=True,resizable=True,size=window_size,relative_location=window_location)
+    window = sg.Window('OCR Editor',editor_main,finalize=True,
+                       resizable=True,size=window_size,
+                       relative_location=window_location,
+                       )
     window.bind('<Configure>',"Event")
     return window
 
@@ -279,6 +382,8 @@ def ocr_editor_layout()->sg.Window:
 
 def configurations_layout(position:tuple=(None,None))->sg.Window:
     '''Window for configurations'''
+
+    sg.theme(gui_theme)
 
     # normal configurations
     ## text confidence (input)
@@ -433,21 +538,29 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             article_options_frame,
         ],
         [
-            place(sg.Button('Save',key='button_save')),
-            place(sg.Button('Reset',key='button_reset')),
+            place(sg.Image(source=f'{file_path}/../assets/save.png'
+                           ,key='button_save',enable_events=True,
+                           tooltip='Save')),
+            place(sg.Image(source=f'{file_path}/../assets/reset.png',
+                           key='button_reset',enable_events=True,
+                           tooltip='Reset')),
             place(sg.Button('Cancel',key='button_cancel')),
         ]
     ]
 
     location = position if position is not None else (0,0)
-    window = sg.Window('OCR Editor - Configuration', layout,finalize=True,resizable=True,keep_on_top=True,force_toplevel=True,location=location)
+    window = sg.Window('OCR Editor - Configuration', layout,
+                       finalize=True,resizable=True,keep_on_top=True,
+                       force_toplevel=True,location=location,
+                    #    ttk_theme=gui_theme
+                       )
     window.bind('<Configure>',"Event")
     return window
 
 
 def popup_window(title:str='',message:str='',options:list=[],location:tuple=(None,None),modal:bool=True):
     '''Popup window'''
-
+    sg.theme(gui_theme)
     layout = [
         [
             place(sg.Text(message))
