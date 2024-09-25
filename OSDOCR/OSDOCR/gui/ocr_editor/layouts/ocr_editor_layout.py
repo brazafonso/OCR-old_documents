@@ -18,13 +18,15 @@ def ocr_editor_layout()->sg.Window:
     # target image and ocr results selector
     upper_row = [
         [
-                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Choose Image",key='browse_image',target='target_input',initial_folder=os.getcwd())),
+                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",key='browse_image',target='target_input',initial_folder=os.getcwd())),
                 place(sg.Input(default_text=browse_img_input_value,key='target_input',enable_events=True)),
 
-                place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),button_text="Choose OCR Results",key='browse_file',target='ocr_results_input',initial_folder=os.getcwd())),
+                place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),button_text="OCR Results",key='browse_file',target='ocr_results_input',initial_folder=os.getcwd())),
                 place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',enable_events=True)),
 
-                place(sg.Button('Config',key='configurations_button')),
+                place(sg.Image(source=f'{file_path}/../assets/settings.png',
+                               key='configurations_button',enable_events=True,
+                               tooltip='Settings')),
         ]
     ]
 

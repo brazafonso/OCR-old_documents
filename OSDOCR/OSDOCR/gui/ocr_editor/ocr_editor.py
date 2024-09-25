@@ -75,6 +75,13 @@ ppi = 300   # default pixels per inch
 max_block_dist = 20 # max distance from a block to a click
 
 
+################################################
+###########                   ##################
+###########   GUI FUNCTIONS   ##################
+###########                   ##################
+################################################
+
+
 def update_config_dependent_variables():
     '''Update config dependent variables'''
     global config,ppi
@@ -98,17 +105,6 @@ def choose_window_image_input(values:dict):
     update_canvas_image(window,values)
     print('Chose target image')
 
-
-def get_bounding_boxes()->dict:
-    '''Get bounding boxes'''
-    global bounding_boxes,block_filter
-    return_boxes = {}
-    if bounding_boxes:
-        for k,block in bounding_boxes.items():
-            if block_filter is None or block_filter(block['block']):
-                return_boxes[k] = block
-
-    return return_boxes
 
 def refresh_layout():
     '''Refresh layout so sizes are updated'''
@@ -144,6 +140,7 @@ def add_ocr_result_cache(ocr_result:OCR_Tree):
     # clean old cache
     clean_ocr_result_cache(current_cache_ocr_results_index+1)
 
+
 def pop_ocr_result_cache():
     '''Pop ocr result from cache'''
     global cache_ocr_results
@@ -177,6 +174,71 @@ def redo_operation():
         refresh_ocr_results()
 
 
+def update_canvas_column(window:sg.Window):
+    '''Update canvas column. Uses TKinter canvas for performance'''
+    global figure_canvas_agg
+    print('Update canvas column')
+    canvas = window['body_canvas'].Widget.canvas
+    w,h = figure_canvas_agg.get_width_height()
+    # add some padding
+    w += 50
+    h += 50
+    canvas.config(scrollregion=(0,0,w,h)) 
+
+def update_canvas(window:sg.Window,figure):
+    '''Update canvas'''
+    global figure_canvas_agg,animation
+    if figure:
+        bounding_boxes = get_bounding_boxes()
+        if bounding_boxes:
+            animation = FuncAnimation(figure, update, frames=60, blit=True,interval=1000/60,repeat=True)
+        # update canvas
+        canvas = window['canvas']
+        ## use TKinter canvas
+        tkcanvas = canvas.TKCanvas
+        figure_canvas_agg = FigureCanvasTkAgg(figure, tkcanvas)
+        figure_canvas_agg.draw()
+        figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+
+
+
+def sidebar_update_block_info():
+    global window,highlighted_blocks,config
+
+    if highlighted_blocks:
+        block = highlighted_blocks[-1]['block']
+        block:OCR_Tree
+        # update block info
+        ## id
+        window['input_block_id'].update(block.id)
+        ## coordinates
+        left = int(block.box.left)
+        top = int(block.box.top)
+        right = int(block.box.right)
+        bottom = int(block.box.bottom)
+        window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
+        ## type
+        if block.type:
+            window['list_block_type'].update(block.type)
+        ## text
+        text_delimiters = {3: '\n'}
+        text_confidence = config['base']['text_confidence']
+        window['input_block_text'].update(block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip())
+    else:
+        # clear block info
+        window['input_block_id'].update('')
+        window['text_block_coords'].update('')
+        window['list_block_type'].update('')
+        window['input_block_text'].update('')
+
+
+################################################
+###########                   ##################
+###########  CANVAS FUNCTIONS ##################
+###########                   ##################
+################################################
+
+
 def clear_canvas():
     '''Clear canvas'''
     global image_plot,figure_canvas_agg,animation
@@ -207,51 +269,6 @@ def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
 
         # warn column of content change
         update_canvas_column(window)
-
-def refresh_ocr_results():
-    '''Refresh ocr results and bounding boxes'''
-    global current_ocr_results,bounding_boxes,window,default_edge_color,ocr_results_articles
-    if current_ocr_results:
-        # reset bounding boxes
-        bounding_boxes = {}
-        # reset articles
-        ocr_results_articles = {}
-        # reset highlighted blocks
-        reset_highlighted_blocks()
-        blocks = current_ocr_results.get_boxes_level(level=2)
-        for block in blocks:
-            create_ocr_block_assets(block,override=False)
-
-        toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
-
-
-def update_canvas_column(window:sg.Window):
-    '''Update canvas column. Uses TKinter canvas for performance'''
-    global figure_canvas_agg
-    print('Update canvas column')
-    canvas = window['body_canvas'].Widget.canvas
-    w,h = figure_canvas_agg.get_width_height()
-    # add some padding
-    w += 50
-    h += 50
-    canvas.config(scrollregion=(0,0,w,h)) 
-
-def update_canvas(window:sg.Window,figure):
-    '''Update canvas'''
-    global figure_canvas_agg,animation
-    if figure:
-        bounding_boxes = get_bounding_boxes()
-        if bounding_boxes:
-            animation = FuncAnimation(figure, update, frames=60, blit=True,interval=1000/60,repeat=True)
-        # update canvas
-        canvas = window['canvas']
-        ## use TKinter canvas
-        tkcanvas = canvas.TKCanvas
-        figure_canvas_agg = FigureCanvasTkAgg(figure, tkcanvas)
-        figure_canvas_agg.draw()
-        figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
-    
-
 
 
 def split_action_assets():
@@ -419,20 +436,6 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         window['ocr_results_input'].InitialFolder = os.path.dirname(current_ocr_results_path)
 
 
-def update_sidebar_articles():
-    '''Update sidebar articles information'''
-    global window,ocr_results_articles
-
-    data = []
-
-    # create buttons for each article
-    for k in ocr_results_articles:
-        data += [f'{k}']
-
-    window['table_articles'].update(values=data)
-
-    
-
 def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     '''Create ocr block assets and add them to canvas figure'''
     global image_plot,bounding_boxes,default_edge_color
@@ -547,127 +550,6 @@ def refresh_articles():
         if new_len != og_len:
             update_sidebar_articles()
 
-def closest_block(click_x,click_y):
-    '''Get closest block to click. Returns block id'''
-    global max_block_dist
-    block_id = None
-    bounding_boxes = get_bounding_boxes()
-
-    if bounding_boxes:
-        # calculate distances
-        calculate_distances = np.vectorize(lambda x: {
-            'distance':x['box'].distance_to_point(click_x,click_y),
-            'id':x['id'],
-            'z' : x['z']
-            })
-        distances = calculate_distances(list(bounding_boxes.values()))
-        # get closest
-        closest_block = sorted(distances,key=lambda x: x['distance'])
-        ## choose the one with greatest z value
-        min_dist = closest_block[0]['distance']
-        same_dist_blocks = [x for x in closest_block if x['distance'] == min_dist]
-        closest_block = sorted(same_dist_blocks,key=lambda x: x['z'])[-1]
-        closest_block_id = closest_block['id']
-        closest_block_dist = closest_block['distance']
-        # print(f'closest block {closest_block_id} distance {closest_block_dist}')
-        # check if distance is less than max_block_dist
-        if closest_block_dist <= max_block_dist:
-            block_id = closest_block_id
-    return block_id
-
-
-def sidebar_update_block_info():
-    global window,highlighted_blocks,config
-
-    if highlighted_blocks:
-        block = highlighted_blocks[-1]['block']
-        block:OCR_Tree
-        # update block info
-        ## id
-        window['input_block_id'].update(block.id)
-        ## coordinates
-        left = int(block.box.left)
-        top = int(block.box.top)
-        right = int(block.box.right)
-        bottom = int(block.box.bottom)
-        window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
-        ## type
-        if block.type:
-            window['list_block_type'].update(block.type)
-        ## text
-        text_delimiters = {3: '\n'}
-        text_confidence = config['base']['text_confidence']
-        window['input_block_text'].update(block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip())
-    else:
-        # clear block info
-        window['input_block_id'].update('')
-        window['text_block_coords'].update('')
-        window['list_block_type'].update('')
-        window['input_block_text'].update('')
-
-
-
-def create_new_ocr_block(x:int=None,y:int=None):
-    '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
-    global current_ocr_results,current_image_path,figure,default_edge_color,image_plot,animation
-    if not current_image_path:
-        return
-
-    if x is None and y is None:
-        # create new block at middle of canvas
-        points = image_plot.get_window_extent().get_points()
-        w = points[1][0] - points[0][0]
-        h = points[1][1] - points[0][1]
-        x = int(w/2)
-        y = int(h/2)
-    
-    # create new ocr block
-    ## get last id
-    last_id = 0
-    if current_ocr_results is not None:
-        last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id
-    else:
-        # create new ocr results
-        ## also needs to resume animation
-        animation.resume()
-        last_id = -1
-        img = cv2.imread(current_image_path)
-        current_ocr_results = OCR_Tree({
-            'level':0,
-            'box':Box({
-                'left':0,
-                'top':0,
-                'right':img.shape[1],
-                'bottom':img.shape[0]
-            }),
-        })
-        current_ocr_results.add_child(OCR_Tree({
-            'level':1,
-            'box':Box({
-                'left':0,
-                'top':0,
-                'right':img.shape[1],
-                'bottom':img.shape[0]
-            }),
-        }))
-
-    new_id = last_id + 1
-    new_block = OCR_Tree({
-        'level':2,
-        'id':new_id,
-        'box':Box({
-            'left':x,
-            'top':y,
-            'right':x+50,
-            'bottom':y+50}),
-    })
-
-    # add new block
-    ## ocr results
-    page = current_ocr_results.get_boxes_level(level=1)[-1]
-    page.add_child(new_block)
-    ## bounding boxes
-    create_ocr_block_assets(new_block,override=False)
 
 def highlight_block(block:dict):
     '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
@@ -919,28 +801,6 @@ def zoom_canvas(factor:int=1):
     refresh_canvas(refresh_image=refresh_image,refresh_ocr_results=refresh_ocr_results)
 
 
-def save_ocr_results(path:str=None,save_as_copy:bool=False):
-    '''Save ocr results'''
-    global current_ocr_results,current_ocr_results_path
-    if current_ocr_results:
-        save_path = path if path else current_ocr_results_path
-        # copy ocr results
-        if save_as_copy:
-            valid_name = False
-            id = 0
-            base_path = save_path
-            while not valid_name:
-                if id == 0:
-                    save_path = f'{base_path}_copy.json'
-                else:
-                    save_path = f'{base_path}_copy_{id}.json'
-                if not os.path.exists(save_path):
-                    valid_name = True
-                    
-                id += 1
-
-        current_ocr_results.save_json(save_path)
-
 def reset_highlighted_blocks():
     '''Reset highlighted blocks'''
     global highlighted_blocks,focused_block
@@ -983,6 +843,210 @@ def toggle_ocr_results_block_type(bounding_boxes:dict,default_color:str='#283b5b
         rectangle.set_edgecolor(block_color)
 
     window['checkbox_toggle_block_type'].update(toogle)
+
+
+
+def send_blocks_to_back(boxes:list):
+    '''Send highlighted blocks to back. Decreases z value'''
+    for b in boxes:
+        b['z'] -= 1
+        # decrease gamma of rectangle edges
+        rectangle = b['rectangle']
+        color = rectangle.get_edgecolor()
+        z = b['z']
+        gamma = max(1-0.1*abs(1-z),0.1)
+        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
+
+
+def send_blocks_to_front(boxes:list):
+    '''Send highlighted blocks to front. Increases z value'''
+    for b in boxes:
+        b['z'] += 1
+        # decrease gamma of rectangle edges
+        rectangle = b['rectangle']
+        color = rectangle.get_edgecolor()
+        z = b['z'] if b['z'] <= 1 else 1
+        gamma = max(1-0.1*abs(1-z),0.1)
+        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
+
+
+def highlight_article(id:int):
+    '''Highlight blocks of an article'''
+    global ocr_results_articles,bounding_boxes
+    print(f'Highlight article {id}')
+    if id in ocr_results_articles:
+        # reset highlighted blocks
+        reset_highlighted_blocks()
+
+        for block in ocr_results_articles[id]['article']:
+            if block.id in bounding_boxes:
+                # update highlighted block
+                b = bounding_boxes[block.id]
+                highlight_block(b)
+
+
+################################################
+###########                   ##################
+###########   DATA FUNCTIONS  ##################
+###########                   ##################
+################################################
+
+
+def get_bounding_boxes()->dict:
+    '''Get bounding boxes'''
+    global bounding_boxes,block_filter
+    return_boxes = {}
+    if bounding_boxes:
+        for k,block in bounding_boxes.items():
+            if block_filter is None or block_filter(block['block']):
+                return_boxes[k] = block
+
+    return return_boxes
+
+
+def refresh_ocr_results():
+    '''Refresh ocr results and bounding boxes'''
+    global current_ocr_results,bounding_boxes,window,default_edge_color,ocr_results_articles
+    if current_ocr_results:
+        # reset bounding boxes
+        bounding_boxes = {}
+        # reset articles
+        ocr_results_articles = {}
+        # reset highlighted blocks
+        reset_highlighted_blocks()
+        blocks = current_ocr_results.get_boxes_level(level=2)
+        for block in blocks:
+            create_ocr_block_assets(block,override=False)
+
+        toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
+
+
+def update_sidebar_articles():
+    '''Update sidebar articles information'''
+    global window,ocr_results_articles
+
+    data = []
+
+    # create buttons for each article
+    for k in ocr_results_articles:
+        data += [f'{k}']
+
+    window['table_articles'].update(values=data)
+
+
+def closest_block(click_x,click_y):
+    '''Get closest block to click. Returns block id'''
+    global max_block_dist
+    block_id = None
+    bounding_boxes = get_bounding_boxes()
+
+    if bounding_boxes:
+        # calculate distances
+        calculate_distances = np.vectorize(lambda x: {
+            'distance':x['box'].distance_to_point(click_x,click_y),
+            'id':x['id'],
+            'z' : x['z']
+            })
+        distances = calculate_distances(list(bounding_boxes.values()))
+        # get closest
+        closest_block = sorted(distances,key=lambda x: x['distance'])
+        ## choose the one with greatest z value
+        min_dist = closest_block[0]['distance']
+        same_dist_blocks = [x for x in closest_block if x['distance'] == min_dist]
+        closest_block = sorted(same_dist_blocks,key=lambda x: x['z'])[-1]
+        closest_block_id = closest_block['id']
+        closest_block_dist = closest_block['distance']
+        # print(f'closest block {closest_block_id} distance {closest_block_dist}')
+        # check if distance is less than max_block_dist
+        if closest_block_dist <= max_block_dist:
+            block_id = closest_block_id
+    return block_id
+
+
+def create_new_ocr_block(x:int=None,y:int=None):
+    '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
+    global current_ocr_results,current_image_path,figure,default_edge_color,image_plot,animation
+    if not current_image_path:
+        return
+
+    if x is None and y is None:
+        # create new block at middle of canvas
+        points = image_plot.get_window_extent().get_points()
+        w = points[1][0] - points[0][0]
+        h = points[1][1] - points[0][1]
+        x = int(w/2)
+        y = int(h/2)
+    
+    # create new ocr block
+    ## get last id
+    last_id = 0
+    if current_ocr_results is not None:
+        last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id
+    else:
+        # create new ocr results
+        ## also needs to resume animation
+        animation.resume()
+        last_id = -1
+        img = cv2.imread(current_image_path)
+        current_ocr_results = OCR_Tree({
+            'level':0,
+            'box':Box({
+                'left':0,
+                'top':0,
+                'right':img.shape[1],
+                'bottom':img.shape[0]
+            }),
+        })
+        current_ocr_results.add_child(OCR_Tree({
+            'level':1,
+            'box':Box({
+                'left':0,
+                'top':0,
+                'right':img.shape[1],
+                'bottom':img.shape[0]
+            }),
+        }))
+
+    new_id = last_id + 1
+    new_block = OCR_Tree({
+        'level':2,
+        'id':new_id,
+        'box':Box({
+            'left':x,
+            'top':y,
+            'right':x+50,
+            'bottom':y+50}),
+    })
+
+    # add new block
+    ## ocr results
+    page = current_ocr_results.get_boxes_level(level=1)[-1]
+    page.add_child(new_block)
+    ## bounding boxes
+    create_ocr_block_assets(new_block,override=False)
+
+
+def save_ocr_results(path:str=None,save_as_copy:bool=False):
+    '''Save ocr results'''
+    global current_ocr_results,current_ocr_results_path
+    if current_ocr_results:
+        save_path = path if path else current_ocr_results_path
+        # copy ocr results
+        if save_as_copy:
+            valid_name = False
+            id = 0
+            base_path = save_path
+            while not valid_name:
+                if id == 0:
+                    save_path = f'{base_path}_copy.json'
+                else:
+                    save_path = f'{base_path}_copy_{id}.json'
+                if not os.path.exists(save_path):
+                    valid_name = True
+                    
+                id += 1
+
+        current_ocr_results.save_json(save_path)
 
 
 def save_ocr_block_changes(values:dict):
@@ -1405,30 +1469,6 @@ def refresh_highlighted_blocks():
             i += 1
 
 
-def send_blocks_to_back(boxes:list):
-    '''Send highlighted blocks to back. Decreases z value'''
-    for b in boxes:
-        b['z'] -= 1
-        # decrease gamma of rectangle edges
-        rectangle = b['rectangle']
-        color = rectangle.get_edgecolor()
-        z = b['z']
-        gamma = max(1-0.1*abs(1-z),0.1)
-        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
-
-
-def send_blocks_to_front(boxes:list):
-    '''Send highlighted blocks to front. Increases z value'''
-    for b in boxes:
-        b['z'] += 1
-        # decrease gamma of rectangle edges
-        rectangle = b['rectangle']
-        color = rectangle.get_edgecolor()
-        z = b['z'] if b['z'] <= 1 else 1
-        gamma = max(1-0.1*abs(1-z),0.1)
-        rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
-        
-
 def refresh_blocks_ids():
     '''Refresh block ids'''
     global bounding_boxes
@@ -1606,19 +1646,6 @@ def find_articles_method():
         draw_articles()
         update_sidebar_articles()
 
-def highlight_article(id:int):
-    '''Highlight blocks of an article'''
-    global ocr_results_articles,bounding_boxes
-    print(f'Highlight article {id}')
-    if id in ocr_results_articles:
-        # reset highlighted blocks
-        reset_highlighted_blocks()
-
-        for block in ocr_results_articles[id]['article']:
-            if block.id in bounding_boxes:
-                # update highlighted block
-                b = bounding_boxes[block.id]
-                highlight_block(b)
 
 def generate_output_md():
     '''Generate output markdown'''
@@ -1758,11 +1785,12 @@ def move_article_method(article_id:int, up:bool=True):
             ocr_results_articles = {k: ocr_results_articles[k] for k in keys}
         refresh_articles()
 
+################################################
+###########                   ##################
+###########     MAIN LOOP     ##################
+###########                   ##################
+################################################
 
-
-
-
-    
 
 def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     '''Run GUI'''
@@ -1988,7 +2016,6 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 click_x, click_y = values[event]
                 split_image_method(int(click_x),int(click_y))
                 current_action = None
-                ## TODO : reset canvas, ocr results, cache and sidebar
                 print('split image')
         # configurations button
         elif event == 'configurations_button':
