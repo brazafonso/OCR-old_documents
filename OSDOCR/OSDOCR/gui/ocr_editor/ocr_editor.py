@@ -587,7 +587,7 @@ def canvas_on_button_press(event):
         click_y = event.ydata
         if not current_action or current_action not in ['split_block','split_image']:
             current_action_start = (click_x,click_y)
-            block_id = closest_block(click_x,click_y)
+            block_id,_ = closest_block(click_x,click_y)
             if block_id is not None:
                 # print(f'closest block {block_id}')
                 block = bounding_boxes[block_id]
@@ -661,7 +661,7 @@ def canvas_on_button_release(event):
     release_y = event.ydata
     # if click on a block and highlighted_blocks and click without moving, disselect block
     if highlighted_blocks and (current_action_start[0] == release_x and current_action_start[1] == release_y):
-        block_id = closest_block(release_x,release_y)
+        block_id,_ = closest_block(release_x,release_y)
         if block_id is not None:
             block = bounding_boxes[block_id]
             block_box = block['block'].box
@@ -679,7 +679,20 @@ def canvas_on_button_release(event):
 
 def canvas_on_mouse_move(event):
     '''Mouse move event handler'''
-    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot,last_activity_time
+    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot,last_activity_time,window
+
+    # check if mouse is within interaction range of any block
+    ## used to update mouse cursor
+    block_id,_ = closest_block(event.xdata,event.ydata)
+    if block_id is not None:
+        # interaction range cursor
+        window.set_cursor('fleur')
+    else:
+        # default cursor
+        window.set_cursor('left_ptr')
+
+
+
     if current_action and highlighted_blocks and last_mouse_position:
         if current_action == 'move':
             # calculate new position
@@ -950,10 +963,11 @@ def update_sidebar_articles():
     window['table_articles'].update(values=data)
 
 
-def closest_block(click_x,click_y):
+def closest_block(click_x,click_y)->Union[int,float]:
     '''Get closest block to click. Returns block id'''
     global max_block_dist
     block_id = None
+    block_dist = None
     bounding_boxes = get_bounding_boxes()
 
     if bounding_boxes:
@@ -965,18 +979,19 @@ def closest_block(click_x,click_y):
             })
         distances = calculate_distances(list(bounding_boxes.values()))
         # get closest
-        closest_block = sorted(distances,key=lambda x: x['distance'])
+        c_block = sorted(distances,key=lambda x: x['distance'])
         ## choose the one with greatest z value
-        min_dist = closest_block[0]['distance']
-        same_dist_blocks = [x for x in closest_block if x['distance'] == min_dist]
-        closest_block = sorted(same_dist_blocks,key=lambda x: x['z'])[-1]
-        closest_block_id = closest_block['id']
-        closest_block_dist = closest_block['distance']
-        # print(f'closest block {closest_block_id} distance {closest_block_dist}')
+        min_dist = c_block[0]['distance']
+        same_dist_blocks = [x for x in c_block if x['distance'] == min_dist]
+        c_block = sorted(same_dist_blocks,key=lambda x: x['z'])[-1]
+        c_block_id = c_block['id']
+        c_block_dist = c_block['distance']
+        # print(f'closest block {c_block_id} distance {c_block_dist}')
         # check if distance is less than max_block_dist
-        if closest_block_dist <= max_block_dist:
-            block_id = closest_block_id
-    return block_id
+        if c_block_dist <= max_block_dist:
+            block_id = c_block_id
+            block_dist = c_block_dist
+    return block_id,block_dist
 
 
 def create_new_ocr_block(x:int=None,y:int=None):

@@ -82,15 +82,17 @@ def place(elem):
     return sg.Column([[elem]], pad=(0,0))
 
 
-def collapse(layout, key:str,visible:bool=True):
+def collapse(layout, key:str,visible:bool=True,vertical_alignment:str='top'):
     """
     Helper function that creates a Column that can be later made hidden, thus appearing "collapsed"
     :param layout: The layout for the section
     :param key: Key used to make this seciton visible / invisible
+    :param visible: Whether the section should be visible by default
+    :param vertical_alignment: The vertical alignment of the section
     :return: A pinned column that can be placed directly into your layout
     :rtype: sg.pin
     """
-    return sg.pin(sg.Column(layout, key=key,visible=visible))
+    return sg.pin(sg.Column(layout, key=key,visible=visible,expand_y=True),vertical_alignment=vertical_alignment,expand_y=True)
 
 
 
