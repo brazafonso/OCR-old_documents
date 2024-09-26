@@ -659,7 +659,7 @@ def canvas_on_button_release(event):
     print(f'release {event}')
     release_x = event.xdata
     release_y = event.ydata
-    # if click on a block and highlighted_blocks and click without moving, diselect block
+    # if click on a block and highlighted_blocks and click without moving, disselect block
     if highlighted_blocks and (current_action_start[0] == release_x and current_action_start[1] == release_y):
         block_id = closest_block(release_x,release_y)
         if block_id is not None:
@@ -815,7 +815,7 @@ def reset_highlighted_blocks():
         rectangle.set_facecolor((1,1,1,0))
         # reset click count
         b['click_count'] = 0
-        b['z'] = 1
+        # b['z'] = 1
     highlighted_blocks = []
     focused_block = None
 
@@ -874,6 +874,16 @@ def send_blocks_to_front(boxes:list):
         z = b['z'] if b['z'] <= 1 else 1
         gamma = max(1-0.1*abs(1-z),0.1)
         rectangle.set_edgecolor((color[0],color[1],color[2],gamma))
+
+
+def reset_blocks_z(boxes:list):
+    '''Reset z value of blocks'''
+    for b in boxes:
+        b['z'] = 1
+        # reset gamma of rectangle edges
+        rectangle = b['rectangle']
+        color = rectangle.get_edgecolor()
+        rectangle.set_edgecolor((color[0],color[1],color[2],1))
 
 
 def highlight_article(id:int):
@@ -1887,6 +1897,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             if len(highlighted_blocks) > 0:
                 send_blocks_to_front(highlighted_blocks)
                 sidebar_update_block_info()
+        # reset blocks z
+        elif event == 'reset_blocks_height':
+            reset_blocks_z(bounding_boxes.values())
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])

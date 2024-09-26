@@ -19,7 +19,7 @@ def ocr_editor_layout()->sg.Window:
     sg.theme(gui_theme)
 
     window_size = (1200,800)
-    window_location = (500,100)
+    window_location = (500,0)
     
     # target image and ocr results selector
     upper_row = [
@@ -148,6 +148,10 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Image(source=f'{file_path}/../assets/send_block_front.png',
                            key='send_block_front',enable_events=True,
                            tooltip='Send block front')),
+
+            place(sg.Image(source=f'{file_path}/../assets/reset_block_height.png',
+                           key='reset_blocks_height',enable_events=True,
+                           tooltip='Reset blocks height')),
         ]
     
     canvas_body = [
