@@ -72,7 +72,10 @@ focused_block = None
 last_activity_time = time.time()
 ## constants
 ppi = 300   # default pixels per inch
-max_block_dist = 20 # max distance from a block to a click
+max_block_dist = 10 # max distance from a block to a click
+vertex_radius = 5
+edge_thickness = 2
+id_text_size = 10
 SYMBOL_UP =    '▲'
 SYMBOL_DOWN =  '▼'
 
@@ -86,8 +89,35 @@ SYMBOL_DOWN =  '▼'
 
 def update_config_dependent_variables():
     '''Update config dependent variables'''
-    global config,ppi
-    ppi = config['base']['ppi']
+    global config,ppi,vertex_radius,edge_thickness,id_text_size
+    changed = False
+    try:
+        if config['base']['ppi'] != ppi:
+            changed = True
+            ppi = config['base']['ppi']
+    except:
+        pass
+    try:
+        if config['base']['vertex_radius'] != vertex_radius:
+            changed = True
+            vertex_radius = config['base']['vertex_radius']
+    except:
+        pass
+    try:
+        if config['base']['edge_thickness'] != edge_thickness:
+            changed = True
+            edge_thickness = config['base']['edge_thickness']
+    except:
+        pass
+    try:
+        if config['base']['id_text_size'] != id_text_size:
+            changed = True
+            id_text_size = config['base']['id_text_size']
+    except:
+        pass
+
+    return changed
+
 
 
 def choose_window_image_input(values:dict):
@@ -444,7 +474,8 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
 
 def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     '''Create ocr block assets and add them to canvas figure'''
-    global image_plot,bounding_boxes,default_edge_color
+    global image_plot,bounding_boxes,default_edge_color,vertex_radius,\
+        edge_thickness,id_text_size
     # check if block id exists
     block_id = block.id
     if block_id in bounding_boxes and not override:
@@ -457,18 +488,20 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     right = box.right
     bottom = box.bottom
     # draw bounding box (rectangle)
-    bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=1,edgecolor=default_edge_color,facecolor='none')
+    bounding_box = Rectangle((left,top),right-left,bottom-top,linewidth=edge_thickness,
+                             edgecolor=default_edge_color,facecolor='none')
     image_plot.add_patch(bounding_box)
     vertices = box.vertices()
     vertices_circles = []
     # draw vertices
     for vertex in vertices:
         x,y = vertex
-        vertex_circle = Circle((x,y),radius=4,edgecolor='b',facecolor='b')
+        vertex_circle = Circle((x,y),radius=vertex_radius,edgecolor='b',facecolor='b')
         image_plot.add_patch(vertex_circle)
         vertices_circles.append(vertex_circle)
     # draw id text in top left corner of bounding box
-    id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',fontproperties=matplotlib.font_manager.FontProperties(size=10))
+    id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',
+                fontproperties=matplotlib.font_manager.FontProperties(size=id_text_size))
     image_plot.add_artist(id_text)
 
     # save bounding box in dictionary
@@ -1545,7 +1578,7 @@ def calculate_reading_order_method():
         # get block order
         ## get body area using delimiters
         delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-        target_segments = config['base']['target_segments']
+        target_segments = config['methods']['target_segments']
         body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,target_segments=target_segments)[1]
         ## blocks returned are only part of the body of the image
         ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,area=body_area)
@@ -1682,11 +1715,11 @@ def generate_output_md():
     '''Generate output markdown'''
     global current_ocr_results,current_image_path,ocr_results_articles,config
     if current_ocr_results and current_image_path:
-        doc_type = config['base']['doc_type']
+        doc_type = config['methods']['doc_type']
         results_path = config['base']['output_path']
-        text_confidence = config['base']['text_confidence']
-        ignore_delimiters = config['base']['ignore_delimiters']
-        calculate_reading_order = config['base']['calculate_reading_order']
+        text_confidence = config['methods']['text_confidence']
+        ignore_delimiters = config['methods']['ignore_delimiters']
+        calculate_reading_order = config['methods']['calculate_reading_order']
         # newspaper
         if doc_type == 'newspaper':
             articles = []
@@ -1694,7 +1727,7 @@ def generate_output_md():
             if not ocr_results_articles:
                 _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
             else:
-                only_selected = config['article']['gathering'] == 'selected'
+                only_selected = config['methods']['article_gathering'] == 'selected'
 
                 if only_selected:
                     for id in ocr_results_articles:
@@ -1724,7 +1757,7 @@ def generate_output_md():
             print(f'Output generated: {results_path}/articles.md')
         # simple output
         else:
-            calculate_reading_order = config['base']['calculate_reading_order']
+            calculate_reading_order = config['methods']['calculate_reading_order']
             if calculate_reading_order:
                 blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters)
             else:
@@ -2074,6 +2107,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui(position=window.CurrentLocation())
+            changed = update_config_dependent_variables()
+            # redraw canvas if config changed
+            if changed:
+                refresh_canvas()
         # collapsible section
         elif event.startswith('-OPEN collapse_'):
             # get section key
@@ -2098,5 +2135,3 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
 
         last_window_size = window.size
     window.close()
-
-    print('done')

@@ -320,8 +320,10 @@ def ocr_editor_layout()->sg.Window:
     # side bar for info about ocr results
     right_side_bar = [
         [
-                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_type_legend-',font=("Calibri", 20)), 
-                sg.T('Block Type Legend', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT',font=("Calibri", 20)),
+                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_type_legend-',
+                     font=("Calibri", 20,"bold"),text_color='#046380'), 
+                sg.T('Block Type Legend', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT',
+                     font=("Calibri", 20,"bold"),text_color='#046380'),
         ],
         [
             sg.HorizontalSeparator(),
@@ -330,8 +332,10 @@ def ocr_editor_layout()->sg.Window:
             collapse([[sg.Frame('',block_type_legend)]],key='collapse_block_type_legend')
         ],
         [
-            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_info-',font=("Calibri", 20)), 
-            sg.T('Block Info', enable_events=True, k='-OPEN collapse_block_info-TEXT',font=("Calibri", 20))
+            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_info-',
+                 font=("Calibri", 20,"bold"),text_color='#046380'), 
+            sg.T('Block Info', enable_events=True, k='-OPEN collapse_block_info-TEXT',
+                 font=("Calibri", 20,"bold"),text_color='#046380')
         ],
         [
             sg.HorizontalSeparator(),
@@ -340,8 +344,10 @@ def ocr_editor_layout()->sg.Window:
             collapse([[sg.Frame('',block_info,key='frame_block_info')]],key='collapse_block_info')
         ],
         [
-            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_article_info-',font=("Calibri", 20)), 
-            sg.T('Article Info', enable_events=True, k='-OPEN collapse_article_info-TEXT',font=("Calibri", 20))
+            sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_article_info-',
+                 font=("Calibri", 20,"bold"),text_color='#046380'), 
+            sg.T('Article Info', enable_events=True, k='-OPEN collapse_article_info-TEXT',
+                 font=("Calibri", 20,"bold"),text_color='#046380')
         ],
         [
             sg.HorizontalSeparator(),
@@ -385,8 +391,10 @@ def ocr_editor_layout()->sg.Window:
     body = [
         [
             [
-                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_body_left_side_bar-',font=("Calibri", 24)), 
-                sg.T('Tools', enable_events=True, k='-OPEN collapse_body_left_side_bar-TEXT',font=("Calibri", 24))
+                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_body_left_side_bar-',
+                     font=("Calibri", 24,"bold"),text_color='#046380'), 
+                sg.T('Tools', enable_events=True, k='-OPEN collapse_body_left_side_bar-TEXT',
+                     font=("Calibri", 24,"bold"),text_color='#046380')
             ],
             collapse([[
                 sg.Column(left_side_bar,vertical_alignment='top',scrollable=True,
@@ -437,10 +445,6 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
     # normal configurations
     ## text confidence (input)
-    ## type of document (select : newspaper, other)
-    ## ignore delimiters (checkbox)
-    ## calculate reading order (checkbox)
-    ## target segments (header, body, footer - checkbox)
     ## output type (select : newspaper, simple)
     ## use pipeline results (checkbox)
     ## output path (folder)
@@ -449,50 +453,44 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
     
     simple_options = [
         [
-            place(sg.Text('Text Confidence: ')),
-            place(sg.Slider(range=(0,100),default_value=70,key='slider_text_confidence',orientation='h',enable_events=True))
+            place(sg.Text('Text Confidence: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Slider(range=(0,100),default_value=70,key='slider_text_confidence'
+                            ,orientation='h',enable_events=True,size=(15,13)))
         ],
         [
-            place(sg.Text('Type of Document: ')),
-            place(sg.Combo(['newspaper','other'],default_value='newspaper',key='list_type_of_document',enable_events=True))
-        ],
-        [
-            place(sg.Checkbox(text='Ignore Delimiters: ',key='checkbox_ignore_delimiters',enable_events=True))
-        ],
-        [
-            place(sg.Checkbox(text='Calculate Reading Order: ',key='checkbox_calculate_reading_order',enable_events=True))
-        ],
-        [
-            place(sg.Text(text='Target Segments: ')),
-            place(sg.Checkbox(text='Header',key='checkbox_target_header',enable_events=True)),
-            place(sg.Checkbox(text='Body',key='checkbox_target_body',enable_events=True)),
-            place(sg.Checkbox(text='Footer',key='checkbox_target_footer',enable_events=True))
-        ],
-        [
-            place(sg.Text('Output Type: ')),
+            place(sg.Text('Output Type: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',enable_events=True))
         ],
         [
-            place(sg.Checkbox(text='Use Pipeline Results: ',key='checkbox_use_pipeline_results',enable_events=True))
+            place(sg.Text('Use Pipeline Results: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox('',key='checkbox_use_pipeline_results',enable_events=True))
         ],
         [
-            place(sg.FolderBrowse('Output Path: ',target='input_output_path',enable_events=True)),
+            place(sg.FolderBrowse('Output Path: ',target='input_output_path',enable_events=True,
+                                  font=("Calibri", 12,"bold"))),
             place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True))
         ],
         [
-            place(sg.Text('Operations Cache Size: ')),
-            place(sg.Input(10,key='input_operations_cache_size', enable_events=True))
+            place(sg.Text('Operations Cache Size: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Input(10,key='input_operations_cache_size',size=(5,1), enable_events=True))
         ],
         [
-            place(sg.Text('Default PPI: ')),
-            place(sg.Input(300,key='input_default_ppi', enable_events=True))
-        ]
-    ]
-
-    simple_options_frame = [
+            place(sg.Text('Default PPI: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Input(300,key='input_default_ppi',size=(5,1), enable_events=True))
+        ],
         [
-            place(sg.Frame('Basic Options',simple_options))
-        ]
+            place(sg.Text('Vertex radius: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Input(5,key='input_vertex_radius',size=(5,1), enable_events=True))
+        ],
+        [
+            place(sg.Text('Edge thickness: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Input(2,key='input_edge_thickness',size=(5,1), enable_events=True))
+        ],
+        [
+            place(sg.Text('Id Text size: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Input(10,key='input_id_text_size',size=(5,1), enable_events=True))
+        ],
+
     ]
 
     # OCR pipeline configurations
@@ -509,83 +507,123 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
     pipeline_preprocessing_options = [
         [
-            place(sg.Text('Fix Rotation: ')),
-            place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',key='list_fix_rotation',enable_events=True))
+            place(sg.Text('Fix Rotation: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',
+                           key='list_fix_rotation',enable_events=True,size=(10,13)))
         ],
         [
-            place(sg.Text('Upscaling Image: ')),
-            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_upscaling_image',enable_events=True))
+            place(sg.Text('Upscaling Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_upscaling_image',
+                           enable_events=True))
         ],
         [
-            place(sg.Text('Denoise Image: ')),
-            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_denoise_image',enable_events=True))
+            place(sg.Text('Denoise Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['none','waifu2x'],default_value='none',key='list_denoise_image',
+                           enable_events=True))
         ],
         [
-            place(sg.Checkbox(text='Fix Illumination: ',key='checkbox_fix_illumination',enable_events=True))
+            place(sg.Text('Fix Illumination: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox(text='',key='checkbox_fix_illumination',
+                              enable_events=True))
         ],
         [
-            place(sg.Text('Binarize: ')),
-            place(sg.Combo(['none','fax','otsu'],default_value='none',key='list_binarize',enable_events=True))
+            place(sg.Text('Binarize: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['none','fax','otsu'],default_value='none',key='list_binarize',
+                           enable_events=True))
         ]
     ]
 
     pipeline_tesseract_options = [
         [
-            place(sg.Text('DPI: ')),
-            place(sg.InputText(key='tesseract_input_dpi',enable_events=True))
+            place(sg.Text('DPI: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.InputText(key='tesseract_input_dpi',enable_events=True,size=(5,1)))
         ],
         [
-            place(sg.Text('PSM: ')),
-            place(sg.InputText(key='tesseract_input_psm',enable_events=True))
+            place(sg.Text('PSM: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.InputText(key='tesseract_input_psm',enable_events=True,size=(5,1)))
         ],
         [
-            place(sg.Text('Language: ')),
-            place(sg.Combo(['eng','por'],default_value='eng',key='tesseract_list_lang',enable_events=True))
+            place(sg.Text('Language: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['eng','por'],default_value='eng',key='tesseract_list_lang',
+                           enable_events=True,size=(5,1)))
         ]
     ]
 
     pipeline_options = [
         [
-            place(sg.Frame('Preprocessing',pipeline_preprocessing_options))
+            sg.Text('Preprocessing Options',font=("Calibri", 14,"bold"),text_color='#046380')
         ],
         [
-            place(sg.Frame('Tesseract',pipeline_tesseract_options))
-        ]
-    ]
-
-    pipeline_options_frame = [
+            sg.HorizontalSeparator()
+        ],
         [
-            place(sg.Frame('OCR Pipeline',pipeline_options))
-        ]
+            sg.Column(pipeline_preprocessing_options)
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Text('Tesseract Options',font=("Calibri", 14,"bold"),text_color='#046380')
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Column(pipeline_tesseract_options)
+        ],
     ]
 
-    # article configurations
+
+    # methods configurations
+    ## type of document (select : newspaper, other)
+    ## ignore delimiters (checkbox)
+    ## calculate reading order (checkbox)
+    ## target segments (header, body, footer - checkbox)
+    ## image split, keep intersecting boxes (checkbox)
     ## article gathering (select : selected, fill)
 
-    article_options = [
+    methods_options = [
         [
-            place(sg.Text('Article Gathering: ')),
-            place(sg.Combo(['selected','fill'],default_value='selected',key='list_article_gathering',enable_events=True))
+            place(sg.Text('Type of Document: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['newspaper','other'],default_value='newspaper',
+                           key='list_type_of_document',enable_events=True))
+        ],
+        [
+            place(sg.Text('Ignore Delimiters: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox(text='',key='checkbox_ignore_delimiters',enable_events=True))
+        ],
+        [
+            place(sg.Text('Calculate Reading Order: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox(text='',key='checkbox_calculate_reading_order',enable_events=True))
+        ],
+        [
+            place(sg.Text(text='Target Segments: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox(text='Header',key='checkbox_target_header',enable_events=True)),
+            place(sg.Checkbox(text='Body',key='checkbox_target_body',enable_events=True)),
+            place(sg.Checkbox(text='Footer',key='checkbox_target_footer',enable_events=True))
+        ],
+        [
+            place(sg.Text('Image Split [Keep Intersecting Boxes]: ',font=("Calibri", 12,"bold"),
+                          text_color='#046380')),
+            place(sg.Checkbox(text='',key='checkbox_image_split_keep_intersecting_boxes',enable_events=True))
+        ],
+        [
+            place(sg.Text('Article Gathering: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Combo(['selected','fill'],default_value='selected',key='list_article_gathering',
+                           enable_events=True))
         ]
     ]
 
-    article_options_frame = [
-        [
-            place(sg.Frame('Article Configuration',article_options))
-        ]
-    ]
 
+    simple_optios_tab = sg.Tab('Editor',simple_options)
+    methods_options_tab = sg.Tab('Methods',methods_options)
+    pipeline_options_tab = sg.Tab('Pipeline',pipeline_options)
 
     # final layout
     layout = [
         [
-            simple_options_frame,
-        ],
-        [
-            pipeline_options_frame,
-        ],
-        [
-            article_options_frame,
+            place(sg.TabGroup([[simple_optios_tab,methods_options_tab,pipeline_options_tab]],
+                              font=("Calibri", 15,'bold'),title_color='#046380'))
         ],
         [
             place(sg.Image(source=f'{file_path}/../assets/save.png'
@@ -601,8 +639,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
     location = position if position is not None else (0,0)
     window = sg.Window('OCR Editor - Configuration', layout,
                        finalize=True,resizable=True,keep_on_top=True,
-                       force_toplevel=True,location=location,
-                    #    ttk_theme=gui_theme
+                       force_toplevel=True,location=location
                        )
     window.bind('<Configure>',"Event")
     return window
@@ -626,7 +663,7 @@ def popup_window(title:str='',message:str='',options:list=[],location:tuple=(Non
 
     option = None
     while True:
-        event, values = window.read()
+        event, _ = window.read()
         if event == sg.WIN_CLOSED:
             break
         if event in options:

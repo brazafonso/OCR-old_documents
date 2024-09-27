@@ -13,15 +13,14 @@ config_file_path = f'{config_folder_path}/conf.json'
 default_config = {
     'base': {
         'text_confidence' : 0,
-        'doc_type' : 'newspaper',
-        'ignore_delimiters' : False,
-        'calculate_reading_order' : False,
-        'target_segments' : ['header', 'body'],
-        'use_pipeline_results' : True,
         'output_type' : ['newspaper'],
         'output_path' : os.getcwd(),
         'cache_size' : 10,
-        'ppi' : 300
+        'ppi' : 300,
+        'interaction_range' : 10,
+        'vertex_radius' : 5,
+        'edge_thickness' : 2,
+        'id_text_size' : 10,
     },
     'ocr_pipeline' : {
         'fix_rotation' : 'none',
@@ -35,8 +34,13 @@ default_config = {
             'psm' : 3
         },
     },
-    'article' : {
-        'gathering' : 'selected',
+    'methods' : {
+        'article_gathering' : 'selected',
+        'doc_type' : 'newspaper',
+        'ignore_delimiters' : False,
+        'calculate_reading_order' : False,
+        'target_segments' : ['header', 'body'],
+        'use_pipeline_results' : True,
     }
 }
 
@@ -66,16 +70,6 @@ def read_config_window(values:dict)->dict:
 
     # base values
     config['base']['text_confidence'] = values['slider_text_confidence']
-    config['base']['doc_type'] = values['list_type_of_document']
-    config['base']['ignore_delimiters'] = values['checkbox_ignore_delimiters']
-    config['base']['calculate_reading_order'] = values['checkbox_calculate_reading_order']
-    config['base']['target_segments'] = []
-    if values['checkbox_target_header']:
-        config['base']['target_segments'].append('header')
-    if values['checkbox_target_body']:
-        config['base']['target_segments'].append('body')
-    if values['checkbox_target_footer']:
-        config['base']['target_segments'].append('footer')
     config['base']['output_type'] = values['list_output_type']
     config['base']['use_pipeline_results'] = values['checkbox_use_pipeline_results']
     config['base']['output_path'] = values['input_output_path']
@@ -85,6 +79,18 @@ def read_config_window(values:dict)->dict:
         pass
     try:
         config['base']['ppi'] = int(values['input_default_ppi'])
+    except:
+        pass
+    try:
+        config['base']['vertex_radius'] = int(values['input_vertex_radius'])
+    except:
+        pass
+    try:
+        config['base']['edge_thickness'] = int(values['input_edge_thickness'])
+    except:
+        pass
+    try:
+        config['base']['id_text_size'] = int(values['input_id_text_size'])
     except:
         pass
 
@@ -104,8 +110,18 @@ def read_config_window(values:dict)->dict:
         pass
     config['ocr_pipeline']['tesseract_config']['l'] = values['tesseract_list_lang']
 
-    # article values
-    config['article']['gathering'] = values['list_article_gathering']
+    # methods values
+    config['methods']['article_gathering'] = values['list_article_gathering']
+    config['methods']['doc_type'] = values['list_type_of_document']
+    config['methods']['ignore_delimiters'] = values['checkbox_ignore_delimiters']
+    config['methods']['calculate_reading_order'] = values['checkbox_calculate_reading_order']
+    config['methods']['target_segments'] = []
+    if values['checkbox_target_header']:
+        config['methods']['target_segments'].append('header')
+    if values['checkbox_target_body']:
+        config['methods']['target_segments'].append('body')
+    if values['checkbox_target_footer']:
+        config['methods']['target_segments'].append('footer')
 
     return config
 
@@ -117,6 +133,8 @@ def update_dict(d: dict, new_values: dict):
         else:
             d[k] = v
     return d
+
+
 def refresh_config_window(window:sg.Window, config:dict):
     '''Refresh config window values'''
     global default_config
@@ -125,17 +143,14 @@ def refresh_config_window(window:sg.Window, config:dict):
 
     # base values
     window['slider_text_confidence'].update(refresh_conf['base']['text_confidence'])
-    window['list_type_of_document'].update(refresh_conf['base']['doc_type'])
-    window['checkbox_ignore_delimiters'].update(refresh_conf['base']['ignore_delimiters'])
-    window['checkbox_calculate_reading_order'].update(refresh_conf['base']['calculate_reading_order'])
-    window['checkbox_target_header'].update('header' in refresh_conf['base']['target_segments'])
-    window['checkbox_target_body'].update('body' in refresh_conf['base']['target_segments'])
-    window['checkbox_target_footer'].update('footer' in refresh_conf['base']['target_segments'])
     window['list_output_type'].update(refresh_conf['base']['output_type'])
     window['checkbox_use_pipeline_results'].update(refresh_conf['base']['use_pipeline_results'])
     window['input_output_path'].update(refresh_conf['base']['output_path'])
     window['input_operations_cache_size'].update(refresh_conf['base']['cache_size'])
     window['input_default_ppi'].update(refresh_conf['base']['ppi'])
+    window['input_vertex_radius'].update(refresh_conf['base']['vertex_radius'])
+    window['input_edge_thickness'].update(refresh_conf['base']['edge_thickness'])
+    window['input_id_text_size'].update(refresh_conf['base']['id_text_size'])
 
     # ocr pipeline values
     window['list_fix_rotation'].update(refresh_conf['ocr_pipeline']['fix_rotation'])
@@ -147,8 +162,14 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['tesseract_input_psm'].update(refresh_conf['ocr_pipeline']['tesseract_config']['psm'])
     window['tesseract_list_lang'].update(refresh_conf['ocr_pipeline']['tesseract_config']['l'])
 
-    # article values
-    window['list_article_gathering'].update(refresh_conf['article']['gathering'])
+    # method values
+    window['list_type_of_document'].update(refresh_conf['methods']['doc_type'])
+    window['checkbox_ignore_delimiters'].update(refresh_conf['methods']['ignore_delimiters'])
+    window['checkbox_calculate_reading_order'].update(refresh_conf['methods']['calculate_reading_order'])
+    window['checkbox_target_header'].update('header' in refresh_conf['methods']['target_segments'])
+    window['checkbox_target_body'].update('body' in refresh_conf['methods']['target_segments'])
+    window['checkbox_target_footer'].update('footer' in refresh_conf['methods']['target_segments'])
+    window['list_article_gathering'].update(refresh_conf['methods']['article_gathering'])
 
 
 
