@@ -683,13 +683,13 @@ class OCR_Tree:
         # is child, prune
         else:
             if self.box.left < area.left:
-                self.box.left = area.left
+                self.box.update(left=area.left,invert=False)
             if self.box.right > area.right:
-                self.box.right = area.right
+                self.box.update(right=area.right,invert=False)
             if self.box.top < area.top:
-                self.box.top = area.top
+                self.box.update(top=area.top,invert=False)
             if self.box.bottom > area.bottom:
-                self.box.bottom = area.bottom
+                self.box.update(bottom=area.bottom,invert=False)
         for child in self.children:
             child.prune_children_area(area)
     
@@ -1012,53 +1012,38 @@ class OCR_Tree:
             child.update_position(top=top,left=left,absolute=absolute)
 
 
-    def update_size(self,top:int=None,left:int=None,bottom:int=None,right:int=None,absolute:bool=False):
+    def update_size(self,top:int=None,left:int=None,bottom:int=None,right:int=None,absolute:bool=False,invert:bool=True):
         '''Update size of box and children.'''
 
         if not any([top,left,bottom,right]):
             return
 
-        old_top = self.box.top
-        old_left = self.box.left
-        old_bottom = self.box.bottom
-        old_right = self.box.right
-
         if top is not None:
             if absolute:
-                self.box.update(top=top)
+                self.box.update(top=top,invert=invert)
             else:
-                self.box.update(top=self.box.top + top)
+                self.box.update(top=self.box.top + top,invert=invert)
 
         if left is not None:
             if absolute:
-                self.box.update(left=left)
+                self.box.update(left=left,invert=invert)
             else:
-                self.box.update(left=self.box.left + left)
+                self.box.update(left=self.box.left + left,invert=invert)
 
         if bottom is not None:
             if absolute:
-                self.box.update(bottom=bottom)
+                self.box.update(bottom=bottom,invert=invert)
             else:
-                self.box.update(bottom=self.box.bottom + bottom)
+                self.box.update(bottom=self.box.bottom + bottom,invert=invert)
 
         if right is not None:
             if absolute:
-                self.box.update(right=right)
+                self.box.update(right=right,invert=invert)
             else:
-                self.box.update(right=self.box.right + right)
+                self.box.update(right=self.box.right + right,invert=invert)
 
-        # update children on edges
-        for child in self.children:
-            update_top = top is not None and child.box.top == old_top
-            update_left = left is not None and child.box.left == old_left
-            update_bottom = bottom is not None and child.box.bottom == old_bottom
-            update_right = right is not None and child.box.right == old_right
-            if update_top or update_left or update_bottom or update_right:
-                new_top = top if update_top else None
-                new_left = left if update_left else None
-                new_bottom = bottom if update_bottom else None
-                new_right = right if update_right else None
-                child.update_size(top=new_top,left=new_left,bottom=new_bottom,right=new_right,absolute=absolute)
+        # update children so that they fit in the new box
+        self.prune_children_area(self.box)
 
 
 

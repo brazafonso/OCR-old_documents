@@ -162,7 +162,7 @@ def refresh_layout():
 def add_ocr_result_cache(ocr_result:OCR_Tree):
     '''Add ocr result to cache'''
     global cache_ocr_results,current_cache_ocr_results_index,config
-    print('Add ocr result to cache')
+    print('Add ocr result to cache',current_cache_ocr_results_index,'len:',len(cache_ocr_results))
     if len(cache_ocr_results) >= config['base']['cache_size'] and len(cache_ocr_results) > 0:
         cache_ocr_results.pop(0)
 
@@ -192,7 +192,7 @@ def clean_ocr_result_cache(position:int=0):
 def undo_operation():
     '''Undo last opeartion'''
     global current_cache_ocr_results_index,current_ocr_results,window
-    print('Undo operation')
+    print('Undo operation | index:',current_cache_ocr_results_index,'len:',len(cache_ocr_results))
     if len(cache_ocr_results) > 0 and current_cache_ocr_results_index > 0 and \
         current_cache_ocr_results_index < len(cache_ocr_results):
         
@@ -718,6 +718,7 @@ def canvas_on_button_release(event):
 
         if current_action in ['move','expand']:
             add_ocr_result_cache(current_ocr_results)
+            print(highlighted_blocks[-1]['block'].min_left())
 
     current_action = None
 
@@ -768,6 +769,7 @@ def canvas_on_mouse_move(event):
             new_y = event.ydata
             ## check which vertex is being moved (closest vertex)
             block = highlighted_blocks[-1]['block']
+            block:OCR_Tree
             box = block.box
             vertices = box.vertices()
             distances = [(v_i,math.sqrt((x-last_x)**2+(y-last_y)**2)) for v_i,(x,y) in enumerate(vertices)]
@@ -791,7 +793,7 @@ def canvas_on_mouse_move(event):
                     block.update_size(bottom=dy)
 
                 # update box
-                bounding_boxes[highlighted_blocks[-1]['id']]['box'] = box
+                bounding_boxes[highlighted_blocks[-1]['id']]['box'] = block.box
                 # print(f'moved {move_x},{move_y} ! {box}')
 
         sidebar_update_block_info()

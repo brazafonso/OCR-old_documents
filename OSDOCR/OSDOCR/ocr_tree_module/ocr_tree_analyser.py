@@ -44,7 +44,6 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
             words = line.get_boxes_level(5,conf=conf)
             words = [w for w in words if w.text.strip()]
             # frequency is weighted by number of words in the line
-            # print(lmh,len(line_sizes),line.box)
             line_sizes[lmh] += 1 + len(words)
 
     if line_sizes:

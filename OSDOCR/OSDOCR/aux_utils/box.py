@@ -80,7 +80,7 @@ class Box:
         }
     
 
-    def update(self, left:int=None, right:int=None, top:int=None, bottom:int=None):
+    def update(self, left:int=None, right:int=None, top:int=None, bottom:int=None,invert:bool=True):
         if left is not None:
             self.left = int(left)
         if right is not None:
@@ -91,10 +91,17 @@ class Box:
             self.bottom = int(bottom)
 
         # fix inverted box
-        if self.left > self.right:
-            self.left, self.right = self.right, self.left
-        if self.top > self.bottom:
-            self.top, self.bottom = self.bottom, self.top
+        if invert:
+            if self.left > self.right:
+                self.left, self.right = self.right, self.left
+            if self.top > self.bottom:
+                self.top, self.bottom = self.bottom, self.top
+        # fix width and height so that they are valid
+        else:
+            if self.left > self.right:
+                self.left = self.right
+            if self.top > self.bottom:
+                self.top = self.bottom
 
         self.width = self.right - self.left
         self.height = self.bottom - self.top
