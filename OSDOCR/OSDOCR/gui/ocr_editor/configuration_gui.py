@@ -41,6 +41,7 @@ default_config = {
         'calculate_reading_order' : False,
         'target_segments' : ['header', 'body'],
         'use_pipeline_results' : True,
+        'image_split_keep_all' : False
     }
 }
 
@@ -122,6 +123,7 @@ def read_config_window(values:dict)->dict:
         config['methods']['target_segments'].append('body')
     if values['checkbox_target_footer']:
         config['methods']['target_segments'].append('footer')
+    config['methods']['image_split_keep_all'] = values['checkbox_image_split_keep_intersecting_boxes']
 
     return config
 
@@ -170,6 +172,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['checkbox_target_body'].update('body' in refresh_conf['methods']['target_segments'])
     window['checkbox_target_footer'].update('footer' in refresh_conf['methods']['target_segments'])
     window['list_article_gathering'].update(refresh_conf['methods']['article_gathering'])
+    window['checkbox_image_split_keep_intersecting_boxes'].update(refresh_conf['methods']['image_split_keep_all'])
 
 
 

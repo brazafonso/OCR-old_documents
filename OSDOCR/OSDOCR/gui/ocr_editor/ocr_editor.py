@@ -1380,7 +1380,7 @@ def split_ocr_block(x:int,y:int):
 
 def split_image_method(x:int,y:int):
     '''Method to split image and respective ocr results (if any). Creates new image and ocr result files and resets ocr editor canvas and cache.'''
-    global current_ocr_results,current_ocr_results_path,current_image_path,window,default_edge_color
+    global current_ocr_results,current_ocr_results_path,current_image_path,window,default_edge_color,config
     ocr_results_path = None
     image_path = None
     if current_image_path:
@@ -1422,14 +1422,65 @@ def split_image_method(x:int,y:int):
 
             # split ocr results
             if current_ocr_results and image_area:
+                image_area:Box
                 tree = current_ocr_results.get_boxes_level(0)[0].copy()
                 page = tree.get_boxes_level(1)[0]
                 # split ocr results
-                blocks = page.get_boxes_in_area(image_area,level=2)
-                page.children = []
-                page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
-                for block in blocks:
-                    page.add_child(block.copy())
+                ## keep only boxes in image area
+                if not config['methods']['image_split_keep_all']:
+                    blocks = page.get_boxes_in_area(image_area,level=2)
+                    # clear page
+                    page.children = []
+                    page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
+                    # add blocks in image area to page
+                    for block in blocks:
+                        page.add_child(block.copy())
+                ## keep all boxes, cutting those that intersect image area
+                else:
+                    blocks = [b for b in page.get_boxes_level(2) if b.box.intersects_box(image_area,inside=True)]
+                    # clear page
+                    page.children = []
+                    page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
+                    # cut boxes that intersect image area
+                    for block in blocks:
+                        if not block.box.is_inside_box(image_area):
+                            intersect_edge = image_area.closest_edge_point(*block.box.center_point())
+                            cut_orientation = None
+                            if intersect_edge == 'left':
+                                cut_line = Box({'left':image_area.left-1,'right':image_area.left,
+                                                'top':image_area.top,'bottom':image_area.bottom})
+                                cut_orientation = 'vertical'
+                            elif intersect_edge == 'right':
+                                cut_line = Box({'left':image_area.right,'right':image_area.right+1,
+                                                'top':image_area.top,'bottom':image_area.bottom})
+                                cut_orientation = 'vertical'
+                            elif intersect_edge == 'top':
+                                cut_line = Box({'left':image_area.left,'right':image_area.right,
+                                                'top':image_area.top+1,'bottom':image_area.top})
+                                cut_orientation = 'horizontal'
+                            elif intersect_edge == 'bottom':
+                                cut_line = Box({'left':image_area.left,'right':image_area.right,
+                                                'top':image_area.bottom,'bottom':image_area.bottom-1})
+                                cut_orientation = 'horizontal'
+
+                            cut_blocks= split_block(block,cut_line,cut_orientation,conf=-1,keep_all=True)
+                            if cut_blocks:
+                                # final block depends on edge and cut orientation
+                                if cut_orientation == 'vertical':
+                                    if intersect_edge == 'left':
+                                        block = cut_blocks[1] if len(cut_blocks) > 1 else None
+                                    elif intersect_edge == 'right':
+                                        block = cut_blocks[0]
+                                elif cut_orientation == 'horizontal':
+                                    if intersect_edge == 'top':
+                                        block = cut_blocks[1] if len(cut_blocks) > 1 else None
+                                    elif intersect_edge == 'bottom':
+                                        block = cut_blocks[0]
+
+                        if block:
+                            # add block
+                            page.add_child(block.copy())
+                    
                 # save ocr results
                 ocr_results_path = f'{image_path}_ocr_results.json'
                 tree.save_json(ocr_results_path)
