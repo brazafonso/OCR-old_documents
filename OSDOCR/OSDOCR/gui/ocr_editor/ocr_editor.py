@@ -27,7 +27,8 @@ from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.pipeline import run_target_image
 from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
                                                 split_whitespaces,block_bound_box_fix,\
-                                                text_bound_box_fix,remove_empty_boxes
+                                                text_bound_box_fix,remove_empty_boxes,\
+                                                unite_blocks
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
                                                      order_ocr_tree
 from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
@@ -1260,7 +1261,7 @@ def remove_empty_blocks_method():
                 del bounding_boxes[block.id]
 
         refresh_highlighted_blocks()
-        
+
 
 def apply_ocr_block():
     '''Apply OCR on highlighted ocr block'''
@@ -1821,6 +1822,17 @@ def find_titles_method():
         if og_block_num != new_block_num:
             refresh_ocr_results()
 
+
+def unite_blocks_method():
+    '''Unite blocks method.'''
+    global current_ocr_results,bounding_boxes
+    if current_ocr_results:
+        og_block_num = len(current_ocr_results.get_boxes_level(2))
+        unite_blocks(current_ocr_results,logs=True)
+        new_block_num = len(current_ocr_results.get_boxes_level(2))
+        if og_block_num != new_block_num:
+            refresh_ocr_results()
+
 def find_articles_method():
     '''Find articles method.'''
     global current_ocr_results,current_image_path,ocr_results_articles
@@ -2224,6 +2236,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # categorize blocks
         elif event == 'method_categorize_blocks':
             categorize_blocks_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # unite blocks
+        elif event == 'method_unite_blocks':
+            unite_blocks_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # find titles

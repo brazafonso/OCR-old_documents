@@ -135,7 +135,7 @@ class Box:
         return False
             
 
-    def within_horizontal_boxes(self, box: 'Box', range:float=0):
+    def within_horizontal_boxes(self, box: 'Box', range:float=0,only_self:bool=False):
         '''Check if boxes are within each other horizontally, considering a range (0-1)'''
         
         # check if box is within self with range
@@ -143,7 +143,7 @@ class Box:
             return True
         
         # check if self is within box with range
-        if (box.left - box.width*range <= self.left and box.right + box.width*range >= self.right):
+        if not only_self and (box.left - box.width*range <= self.left and box.right + box.width*range >= self.right):
             return True
 
         return False

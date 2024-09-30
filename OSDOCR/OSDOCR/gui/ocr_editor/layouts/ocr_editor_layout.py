@@ -102,6 +102,11 @@ def ocr_editor_layout()->sg.Window:
                            tooltip='Categorize blocks')),
         ],
         [
+            place(sg.Image(source=f'{file_path}/../assets/unite_blocks.png',
+                           key='method_unite_blocks',enable_events=True,
+                           tooltip='Unite Blocks method')),
+        ],
+        [
             place(sg.Image(source=f'{file_path}/../assets/find_titles.png',
                            key='method_find_titles',enable_events=True,
                            tooltip='Find Titles')),

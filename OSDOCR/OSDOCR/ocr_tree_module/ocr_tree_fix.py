@@ -222,7 +222,7 @@ def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box=None,text_confid
 
 
 
-def unite_blocks(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
+def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs:bool=False)->OCR_Tree:
     '''Unite same type of blocks if they are horizontally aligned and adjacent to each other'''
 
     
@@ -234,52 +234,85 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
     target_block_id = non_visited.pop(0)
     # iterate over all blocks
     while non_visited:
-        united = False
+        united = False # flag if block was united
 
         target_block = ocr_results.get_box_id(target_block_id,level=2)
+        target_block:OCR_Tree
         if logs:
             print(f'Visiting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
         # get adjacent bellow blocks
-        bellow_blocks = target_block.boxes_directly_below(available_blocks)
+        below_blocks = target_block.boxes_directly_below(available_blocks)
         
 
-        # if bellow blocks exist
-        if bellow_blocks:
+        # if below blocks exist
+        if below_blocks:
             # filter blocks of same type and horizontally aligned
-            bellow_blocks = [b for b in bellow_blocks if b.type == target_block.type and b.box.within_horizontal_boxes(target_block.box,range=0.1)]
+            same_type_below_blocks = [b for b in below_blocks if b.type == target_block.type]
+
 
             # treating text blocks
             if not target_block.is_empty(conf=conf,only_text=True):
                 # if block is vertical text, can only unite with vertical text blocks
                 if target_block.is_vertical_text(conf=conf):
-                    bellow_blocks = [b for b in bellow_blocks if b.is_vertical_text(conf=conf)]
+                    same_type_below_blocks = [b for b in same_type_below_blocks if b.is_vertical_text(conf=conf)]
 
             # non text blocks
             else:
                 target_orientation = target_block.box.get_box_orientation()
                 # orientation should be the same
-                bellow_blocks = [b for b in bellow_blocks if b.box.get_box_orientation() == target_orientation]
+                same_type_below_blocks = [b for b in same_type_below_blocks if b.box.get_box_orientation() == target_orientation]
 
+            aligned_below_blocks = [b for b in same_type_below_blocks if target_block.box.within_horizontal_boxes(b.box,range=0.1,only_self=True)]
+            
             # if single block passed, unite with target block
-            if len(bellow_blocks) == 1:
+            if len(aligned_below_blocks) == 1:
                 if logs:
-                    print('Unite with block',bellow_blocks[0].id)
+                    print('Unite with block',aligned_below_blocks[0].id)
                 # get bellow block
-                bellow_block = bellow_blocks[0]
+                below_block = aligned_below_blocks[0]
                 # remove bellow block
-                available_blocks = [b for b in available_blocks if b.id != bellow_block.id]
-                non_visited = [id for id in non_visited if id != bellow_block.id]
+                available_blocks = [b for b in available_blocks if b.id != below_block.id]
+                non_visited = [id for id in non_visited if id != below_block.id]
 
                 # unite
-                target_block.join_trees(bellow_block)
+                target_block.join_trees(below_block)
 
                 # remove bellow block from main tree
-                ocr_results.remove_box_id(bellow_block.id,level=2)
+                ocr_results.remove_box_id(below_block.id,level=2)
 
                 united = True
-            
+
+            # no aligned blocks, but all below blocks are of same type
+            ## join them horizontally, and then unite with target block
+            elif len(aligned_below_blocks) == len(same_type_below_blocks) and len(same_type_below_blocks) == len(below_blocks):
+                if horizontal_join:
+                    if logs:
+                        print('Horizontal join')
+
+                    # join below blocks horizontally
+                    leftmost_block = min(same_type_below_blocks,key=lambda b:b.box.left)
+                    leftmost_block:OCR_Tree
+                    # remove from main tree and lists
+                    same_type_below_blocks.remove(leftmost_block)
+                    available_blocks.remove(leftmost_block)
+                    non_visited.remove(leftmost_block.id)
+                    ocr_results.remove_box_id(leftmost_block.id,level=2)
+                    while same_type_below_blocks:
+                        next_block = min(same_type_below_blocks,key=lambda b:b.box.left)
+                        # remove from main tree and lists
+                        same_type_below_blocks.remove(next_block)
+                        available_blocks.remove(next_block)
+                        non_visited.remove(next_block.id)
+                        ocr_results.remove_box_id(next_block.id,level=2)
+                        leftmost_block.join_trees(next_block,orientation='horizontal')
+
+                    # unite
+                    target_block.join_trees(leftmost_block)
+                    united = True
+
+        # if block was not united, go to next block
+        ## else repeat same block
         if not united:
-            # next block
             target_block_id = non_visited.pop(0)
 
 
