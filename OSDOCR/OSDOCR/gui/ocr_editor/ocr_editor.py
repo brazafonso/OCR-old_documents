@@ -1,11 +1,9 @@
 '''OCR Editor  - GUI'''
 
-import argparse
 import os
 import random
 import shutil
 import time
-import traceback
 import cv2
 import matplotlib
 import matplotlib.patches
@@ -27,8 +25,11 @@ from ..aux_utils.utils import *
 from OSDOCR.parse_args import preprocessing_methods,process_args
 from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.pipeline import run_target_image
-from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,split_whitespaces,block_bound_box_fix,text_bound_box_fix
-from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles, order_ocr_tree
+from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
+                                                split_whitespaces,block_bound_box_fix,\
+                                                text_bound_box_fix,remove_empty_boxes
+from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
+                                                     order_ocr_tree
 from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -150,7 +151,6 @@ def refresh_layout():
     # left side bar is collapsible, so ratio is dynamic
     ratio_2 = 6/10 if window['collapse_body_left_side_bar'].visible else 7/10
     ratio_3 = 3/10
-    print('Ratio:',ratio_1,ratio_2,ratio_3)
     window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_1,'height':None})
     window['body_canvas'].Widget.canvas.configure({'width':window_size[0]*ratio_2,'height':None})
     window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_3,'height':None})
@@ -170,7 +170,6 @@ def add_ocr_result_cache(ocr_result:OCR_Tree):
     else:
         cache_ocr_results[current_cache_ocr_results_index + 1] = ocr_result.copy()
     current_cache_ocr_results_index += 1
-    # ocr_result.save_json(f'{file_path}/ocr_editor_tmp/ocr_result_{current_cache_ocr_results_index}.json')
     # clean old cache
     clean_ocr_result_cache(current_cache_ocr_results_index+1)
 
@@ -193,7 +192,9 @@ def undo_operation():
     '''Undo last opeartion'''
     global current_cache_ocr_results_index,current_ocr_results,window
     print('Undo operation')
-    if len(cache_ocr_results) > 0 and current_cache_ocr_results_index > 0 and current_cache_ocr_results_index < len(cache_ocr_results):
+    if len(cache_ocr_results) > 0 and current_cache_ocr_results_index > 0 and \
+        current_cache_ocr_results_index < len(cache_ocr_results):
+        
         current_cache_ocr_results_index -= 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
         refresh_ocr_results()
@@ -258,7 +259,8 @@ def sidebar_update_block_info():
         ## text
         text_delimiters = {3: '\n'}
         text_confidence = config['base']['text_confidence']
-        window['input_block_text'].update(block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip())
+        block_text = block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip()
+        window['input_block_text'].update(block_text)
     else:
         # clear block info
         window['input_block_id'].update('')
@@ -309,7 +311,8 @@ def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
 
 def split_action_assets():
     '''Create assets for split action'''
-    global current_action,last_mouse_position,highlighted_blocks,default_edge_color,image_plot,current_image_path
+    global current_action,last_mouse_position,highlighted_blocks,\
+        default_edge_color,image_plot,current_image_path
     assets = []
     if current_action == 'split_block':
         x,y = last_mouse_position
@@ -417,7 +420,8 @@ def create_plot(path:str):
 
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
-    global image_plot,figure,figure_canvas_agg,current_image_path,ppi,default_edge_color,config
+    global image_plot,figure,figure_canvas_agg,current_image_path,ppi,\
+        default_edge_color,config
     if values['target_input']:
         path = values['target_input']
         if config['base']['use_pipeline_results']:
@@ -440,7 +444,8 @@ def update_canvas_image(window:sg.Window,values:dict):
         default_edge_color = get_average_inverse_color(target_img_path)
         color = default_edge_color * 255
         color = (int(color[0]),int(color[1]),int(color[2]))
-        window['text_default_color'].update(text_color = rgb_to_hex(color),background_color = rgb_to_hex(color))
+        window['text_default_color'].update(text_color = rgb_to_hex(color),
+                                            background_color = rgb_to_hex(color))
 
         clear_canvas()
         # create new plot
@@ -521,7 +526,8 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
 
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
-    global image_plot,figure,figure_canvas_agg,ppi,current_image_path,bounding_boxes,default_edge_color
+    global image_plot,figure,figure_canvas_agg,ppi,current_image_path,\
+        bounding_boxes,default_edge_color
     # get new plot to draw ocr results
     image_plot = create_plot(current_image_path)
 
@@ -565,7 +571,8 @@ def draw_articles():
     '''Draw articles in ocr editor'''
     global ocr_results_articles,bounding_boxes,default_edge_color,window
     # reset color of all blocks
-    toggle_ocr_results_block_type(bounding_boxes,default_edge_color,window['checkbox_toggle_block_type'])
+    toggle_ocr_results_block_type(bounding_boxes,default_edge_color,
+                                  window['checkbox_toggle_block_type'])
     # update color of blocks in articles
     for i,article in ocr_results_articles.items():
         article_color = article['color']
@@ -611,7 +618,8 @@ def highlight_block(block:dict):
 
 def canvas_on_button_press(event):
     '''Handle mouse click events'''
-    global current_action,current_action_start,bounding_boxes,highlighted_blocks,last_activity_time,focused_block,window
+    global current_action,current_action_start,bounding_boxes,\
+        highlighted_blocks,last_activity_time,focused_block,window
     print(f'click {event}')
     # left click
     if event.button == 1:
@@ -643,8 +651,6 @@ def canvas_on_button_press(event):
                     v_distance = min(v_distances,key=lambda x: x[1])
                     if v_distance[1] > 5:
                         current_action = 'move'
-                        # print(f'move action ! {block_box}')
-                        # move
                     else:
                         current_action = 'expand'
                 
@@ -693,7 +699,9 @@ def canvas_on_button_release(event):
     release_x = event.xdata
     release_y = event.ydata
     # if click on a block and highlighted_blocks and click without moving, disselect block
-    if highlighted_blocks and (current_action_start[0] == release_x and current_action_start[1] == release_y):
+    if highlighted_blocks and \
+        (current_action_start[0] == release_x and current_action_start[1] == release_y):
+
         block_id,_ = closest_block(release_x,release_y)
         if block_id is not None:
             block = bounding_boxes[block_id]
@@ -704,7 +712,9 @@ def canvas_on_button_release(event):
                 block['rectangle'].set_facecolor((1,1,1,0))
                 # update block info in sidebar
                 sidebar_update_block_info()
-    elif highlighted_blocks and (current_action_start[0] != release_x or current_action_start[1] != release_y):
+    elif highlighted_blocks and \
+        (current_action_start[0] != release_x or current_action_start[1] != release_y):
+
         if current_action in ['move','expand']:
             add_ocr_result_cache(current_ocr_results)
 
@@ -712,7 +722,8 @@ def canvas_on_button_release(event):
 
 def canvas_on_mouse_move(event):
     '''Mouse move event handler'''
-    global current_action,current_ocr_results,last_mouse_position,bounding_boxes,highlighted_blocks,image_plot,last_activity_time,window
+    global current_action,current_ocr_results,last_mouse_position,\
+        bounding_boxes,highlighted_blocks,image_plot,last_activity_time,window
 
     # check if mouse is within interaction range of any block
     ## used to update mouse cursor
@@ -968,7 +979,8 @@ def get_bounding_boxes()->dict:
 
 def refresh_ocr_results():
     '''Refresh ocr results and bounding boxes'''
-    global current_ocr_results,bounding_boxes,window,default_edge_color,ocr_results_articles
+    global current_ocr_results,bounding_boxes,window,\
+        default_edge_color,ocr_results_articles
     if current_ocr_results:
         # reset bounding boxes
         bounding_boxes = {}
@@ -980,7 +992,9 @@ def refresh_ocr_results():
         for block in blocks:
             create_ocr_block_assets(block,override=False)
 
-        toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
+        toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                      default_color=default_edge_color,
+                                      toogle=window['checkbox_toggle_block_type'])
 
 
 def update_sidebar_articles():
@@ -1028,8 +1042,12 @@ def closest_block(click_x,click_y)->Union[int,float]:
 
 
 def create_new_ocr_block(x:int=None,y:int=None):
-    '''Create new ocr block. If x and y are not None, create new block at that point. Else create new block at middle of canvas'''
-    global current_ocr_results,current_image_path,figure,default_edge_color,image_plot,animation
+    '''Create new ocr block. 
+    If x and y are not None, create new block at that point. 
+    Else, create new block at middle of canvas'''
+    global current_ocr_results,current_image_path,figure,\
+        default_edge_color,image_plot,animation
+    
     if not current_image_path:
         return
 
@@ -1162,7 +1180,10 @@ def save_ocr_block_changes(values:dict):
                 line_left = par_left
                 line_right = par_right
                 line_bottom = line_top + line_height
-                line_tree = OCR_Tree({'level':4,'box':{'left':line_left,'top':line_top,'right':line_right,'bottom':line_bottom},'par_num':i,'line_num':j})
+                line_tree = OCR_Tree({'level':4,
+                                      'box':{'left':line_left,'top':line_top,
+                                             'right':line_right,'bottom':line_bottom},
+                                      'par_num':i,'line_num':j})
                 line_words = [w for w in line.split(' ') if w.strip()]
 
                 ##### word level
@@ -1172,18 +1193,25 @@ def save_ocr_block_changes(values:dict):
                     word_left = line_left + word_width * m
                     word_right = word_left + word_width
                     word_bottom = line_bottom
-                    word_tree = OCR_Tree({'level':5,'box':{'left':word_left,'top':word_top,'right':word_right,'bottom':word_bottom},'text':word,'conf':100,'par_num':i,'line_num':j,'word_num':m})
+                    word_tree = OCR_Tree({'level':5,
+                                          'box':{'left':word_left,'top':word_top,
+                                                 'right':word_right,'bottom':word_bottom},
+                                          'text':word,'conf':100,'par_num':i,
+                                          'line_num':j,'word_num':m})
                     line_tree.add_child(word_tree)
 
                 par_children.append(line_tree)
 
             if par_children:
-                par_tree = OCR_Tree({'level':3,'box':{'left':par_left,'top':par_top,'right':par_right,'bottom':par_bottom},'children':par_children})
+                par_tree = OCR_Tree({'level':3,
+                                     'box':{'left':par_left,'top':par_top,
+                                            'right':par_right,'bottom':par_bottom},
+                                            'children':par_children})
                 new_children.append(par_tree)
 
         # change block children if text changed
         updated_block = OCR_Tree({'level':2,'box':block.box,'children':new_children})
-        text_confidence = config['base']['text_confidence'] 
+        # text_confidence = config['base']['text_confidence'] 
         if updated_block.to_text().strip() != block.to_text().strip():
             block.children = new_children
 
@@ -1215,6 +1243,24 @@ def delete_ocr_block():
         ## remove block from highlighted_blocks
         highlighted_blocks.remove(block)
 
+                
+def remove_empty_blocks_method():
+    '''Remove empty blocks from ocr_results'''
+    global current_ocr_results
+    if current_ocr_results:
+        tree = current_ocr_results.copy()
+        tree = remove_empty_boxes(tree,text_confidence=config['base']['text_confidence'],
+                                  find_delimiters=False,find_images=False)
+        # check changes
+        blocks = current_ocr_results.get_boxes_level(level=2)
+        # remove blocks that are not in remaining_blocks
+        for block in blocks:
+            if tree.get_box_id(block.id) is None:
+                current_ocr_results.remove_box_id(block.id)
+                del bounding_boxes[block.id]
+
+        refresh_highlighted_blocks()
+        
 
 def apply_ocr_block():
     '''Apply OCR on highlighted ocr block'''
@@ -1236,7 +1282,8 @@ def apply_ocr_block():
         # add some padding
         padding = 20
         avg_color = np.average(image,axis=(0,1))
-        image = cv2.copyMakeBorder(image,padding,padding,padding,padding,cv2.BORDER_CONSTANT,value=avg_color)
+        image = cv2.copyMakeBorder(image,padding,padding,padding,padding,
+                                   cv2.BORDER_CONSTANT,value=avg_color)
         # save tmp image
         tmp_dir = consts.ocr_editor_tmp_path
         os.makedirs(tmp_dir,exist_ok=True)
@@ -1298,7 +1345,9 @@ def join_ocr_blocks():
         first_block = blocks[0]
         second = blocks[1]['block']
         second_block = blocks[1]
-        orientation = 'horizontal' if second in first.boxes_directly_right(blocks_tree) or first in second.boxes_directly_right(blocks_tree) else 'vertical'
+        # horizontal or vertical depend on which block is on the right
+        orientation = 'horizontal' if second in first.boxes_directly_right(blocks_tree) \
+                        or first in second.boxes_directly_right(blocks_tree) else 'vertical'
         # if horizontal, sort by left
         if orientation == 'horizontal':
             if first.box.left > second.box.left:
@@ -1361,7 +1410,8 @@ def split_ocr_block(x:int,y:int):
         if split_delimiter:
             print(f'Splitting block: {block.id}')
             text_confidence = config['base']['text_confidence']
-            blocks = split_block(block,split_delimiter,orientation=orientation,conf=text_confidence,keep_all=True,debug=True)
+            blocks = split_block(block,split_delimiter,orientation=orientation,
+                                 conf=text_confidence,keep_all=True,debug=True)
             if len(blocks) > 1:
                 new_block = blocks[1]
                 # add new block
@@ -1379,8 +1429,10 @@ def split_ocr_block(x:int,y:int):
 
 
 def split_image_method(x:int,y:int):
-    '''Method to split image and respective ocr results (if any). Creates new image and ocr result files and resets ocr editor canvas and cache.'''
-    global current_ocr_results,current_ocr_results_path,current_image_path,window,default_edge_color,config
+    '''Method to split image and respective ocr results (if any). 
+    Creates new image and ocr result files and resets ocr editor canvas and cache.'''
+    global current_ocr_results,current_ocr_results_path,current_image_path,\
+        window,default_edge_color,config
     ocr_results_path = None
     image_path = None
     if current_image_path:
@@ -1395,21 +1447,28 @@ def split_image_method(x:int,y:int):
             image_area = None
             # cut image
             if orientation == 'horizontal':
-                option = popup_window(title='Area to keep',message='Choose area to keep',options=('top','bottom'),location=popup_location,modal=True)
+                option = popup_window(title='Area to keep',message='Choose area to keep',
+                                      options=('top','bottom'),location=popup_location,modal=True)
                 if option == 'top':
                     img = img[0:split_delimiter.top,0:width]
-                    image_area = Box({'left':0,'right':width,'top':0,'bottom':split_delimiter.top})
+                    image_area = Box({'left':0,'right':width,
+                                      'top':0,'bottom':split_delimiter.top})
                 elif option == 'bottom':
                     img = img[split_delimiter.bottom:height,0:width]
-                    image_area = Box({'left':0,'right':width,'top':split_delimiter.bottom,'bottom':height})
+                    image_area = Box({'left':0,'right':width,
+                                      'top':split_delimiter.bottom,'bottom':height})
+                    
             elif orientation == 'vertical':
-                option = popup_window(title='Area to keep',message='Choose area to keep',options=('left','right'),location=popup_location,modal=True) 
+                option = popup_window(title='Area to keep',message='Choose area to keep',
+                                      options=('left','right'),location=popup_location,modal=True) 
                 if option == 'left':
                     img = img[0:height,0:split_delimiter.left]
-                    image_area = Box({'left':0,'right':split_delimiter.left,'top':0,'bottom':height})
+                    image_area = Box({'left':0,'right':split_delimiter.left,
+                                      'top':0,'bottom':height})
                 elif option == 'right':
                     img = img[0:height,split_delimiter.right:width]
-                    image_area = Box({'left':split_delimiter.right,'right':width,'top':0,'bottom':height})
+                    image_area = Box({'left':split_delimiter.right,'right':width,
+                                      'top':0,'bottom':height})
             
             # save image
             image_name = os.path.splitext(os.path.basename(current_image_path))[0]
@@ -1417,7 +1476,8 @@ def split_image_method(x:int,y:int):
             id = 0
             while os.path.exists(image_path):
                 id += 1
-                image_path = os.path.join(os.path.dirname(current_image_path),f'{image_name}_split_{id}.png')
+                image_path = os.path.join(os.path.dirname(current_image_path),
+                                          f'{image_name}_split_{id}.png')
             cv2.imwrite(image_path,img)
 
             # split ocr results
@@ -1431,7 +1491,8 @@ def split_image_method(x:int,y:int):
                     blocks = page.get_boxes_in_area(image_area,level=2)
                     # clear page
                     page.children = []
-                    page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
+                    page.update_box(left=image_area.left,top=image_area.top,
+                                    right=image_area.right,bottom=image_area.bottom)
                     # add blocks in image area to page
                     for block in blocks:
                         page.add_child(block.copy())
@@ -1440,7 +1501,8 @@ def split_image_method(x:int,y:int):
                     blocks = [b for b in page.get_boxes_level(2) if b.box.intersects_box(image_area,inside=True)]
                     # clear page
                     page.children = []
-                    page.update_box(left=image_area.left,top=image_area.top,right=image_area.right,bottom=image_area.bottom)
+                    page.update_box(left=image_area.left,top=image_area.top,
+                                    right=image_area.right,bottom=image_area.bottom)
                     # cut boxes that intersect image area
                     for block in blocks:
                         if not block.box.is_inside_box(image_area):
@@ -1463,7 +1525,8 @@ def split_image_method(x:int,y:int):
                                                 'top':image_area.bottom,'bottom':image_area.bottom-1})
                                 cut_orientation = 'horizontal'
 
-                            cut_blocks= split_block(block,cut_line,cut_orientation,conf=-1,keep_all=True)
+                            cut_blocks= split_block(block,cut_line,cut_orientation,
+                                                    conf=-1,keep_all=True)
                             if cut_blocks:
                                 # final block depends on edge and cut orientation
                                 if cut_orientation == 'vertical':
@@ -1500,7 +1563,9 @@ def split_image_method(x:int,y:int):
                     values['ocr_results_input'] = ocr_results_path
                     update_canvas_ocr_results(window,values)
                     add_ocr_result_cache(OCR_Tree(ocr_results_path))
-                    toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
+                    toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),
+                                                  default_color=default_edge_color,
+                                                  toogle=values['checkbox_toggle_block_type'])
 
                 # reset sidebar
                 sidebar_update_block_info()
@@ -1565,13 +1630,18 @@ def refresh_highlighted_blocks():
     i = 0
     while i < len(highlighted_blocks):
         b = highlighted_blocks[i]
+        if b['id'] not in bounding_boxes:
+            highlighted_blocks.remove(b)
+            continue
+
         highlighted_blocks[i] = bounding_boxes[b['id']]
         b = highlighted_blocks[i]
         valid = True
         block = b['block']
         rectangle = b['rectangle']
+
         # if block filter, check if block is still valid
-        if block_filter is not None:
+        if valid and block_filter is not None:
             if not block_filter(block):
                 valid = False
 
@@ -1630,9 +1700,11 @@ def calculate_reading_order_method():
         ## get body area using delimiters
         delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
         target_segments = config['methods']['target_segments']
-        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,target_segments=target_segments)[1]
+        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
+                                                target_segments=target_segments)[1]
         ## blocks returned are only part of the body of the image
-        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,area=body_area)
+        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
+                                        area=body_area)
         ordered_block_ids = [b.id for b in ordered_blocks]
         # update ids values
         last_id = len(ordered_blocks) - 1
@@ -1657,7 +1729,8 @@ def calculate_reading_order_method():
 
 
 def fix_ocr_block_intersections_method():
-    '''Fix ocr block intersections method. If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
+    '''Fix ocr block intersections method. If no highlighted blocks, apply on all blocks. 
+    Else, apply on highlighted blocks.'''
     global highlighted_blocks,current_ocr_results,bounding_boxes
     if highlighted_blocks:
         # apply fix
@@ -1680,7 +1753,8 @@ def fix_ocr_block_intersections_method():
 
 
 def adjust_bounding_boxes_method():
-    '''Adjust bounding boxes method. Adjusts bounding boxes according with inside text and text confidence.
+    '''Adjust bounding boxes method. 
+    Adjusts bounding boxes according with inside text and text confidence.
     If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
     global current_ocr_results,bounding_boxes,highlighted_blocks
     if highlighted_blocks:
@@ -1706,8 +1780,10 @@ def adjust_bounding_boxes_method():
 
 
 def categorize_blocks_method():
-    '''Categorize blocks method. If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
-    global current_ocr_results,bounding_boxes,highlighted_blocks,bounding_boxes,default_edge_color,window
+    '''Categorize blocks method. If no highlighted blocks, apply on all blocks. 
+    Else, apply on highlighted blocks.'''
+    global current_ocr_results,bounding_boxes,highlighted_blocks,\
+        bounding_boxes,default_edge_color,window
     if highlighted_blocks:
         # apply categorize
         tree = current_ocr_results.copy()
@@ -1730,7 +1806,8 @@ def categorize_blocks_method():
         for b in bounding_boxes.values():
             create_ocr_block_assets(b['block'])
 
-    toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
+    toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,
+                                  toogle=window['checkbox_toggle_block_type'])
 
 
 def find_titles_method():
@@ -1738,7 +1815,8 @@ def find_titles_method():
     global current_ocr_results,bounding_boxes
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
-        find_text_titles(current_ocr_results,conf=30,id_blocks=True,categorize_blocks=False,debug=True)
+        find_text_titles(current_ocr_results,conf=30,id_blocks=True,
+                         categorize_blocks=False,debug=True)
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()
@@ -1749,7 +1827,8 @@ def find_articles_method():
     if current_ocr_results and current_image_path:
         # reset articles
         ocr_results_articles = {}
-        _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+        _,articles = extract_articles(image_path=current_image_path,
+                                      ocr_results=current_ocr_results)
         # choose color for each article
         colors = []
         for _ in articles:
@@ -1776,7 +1855,8 @@ def generate_output_md():
             articles = []
             # get articles
             if not ocr_results_articles:
-                _,articles = extract_articles(image_path=current_image_path,ocr_results=current_ocr_results)
+                _,articles = extract_articles(image_path=current_image_path,
+                                              ocr_results=current_ocr_results)
             else:
                 only_selected = config['methods']['article_gathering'] == 'selected'
 
@@ -1965,7 +2045,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'ocr_results_input':
             update_canvas_ocr_results(window,values)
             add_ocr_result_cache(current_ocr_results)
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=values['checkbox_toggle_block_type'])
         # save ocr results
         elif event == 'save_ocr_results':
             save_ocr_results()
@@ -2001,7 +2083,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             reset_blocks_z(bounding_boxes.values())
         # toggle block type
         elif event == 'checkbox_toggle_block_type':
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values[event])
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=values[event])
         # save block changes
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
@@ -2022,7 +2106,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             if toogle:
                 draw_articles()
             else:
-                toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=window['checkbox_toggle_block_type'])
+                toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                              default_color=default_edge_color,
+                                              toogle=window['checkbox_toggle_block_type'])
         # article button
         elif 'table_articles' in event[0]:
             row,_ = event[2]
@@ -2100,12 +2186,16 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'undo_ocr_results':
             undo_operation()
             sidebar_update_block_info()
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=values['checkbox_toggle_block_type'])
         # redo last operation
         elif event == 'redo_ocr_results':
             redo_operation()
             sidebar_update_block_info()
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,default_color=default_edge_color,toogle=values['checkbox_toggle_block_type'])
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=values['checkbox_toggle_block_type'])
         # calculate reading order method
         elif event == 'method_calculate_reading_order':
             calculate_reading_order_method()
@@ -2114,6 +2204,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # split whitespaces method
         elif event == 'method_split_whitespaces':
             split_ocr_blocks_by_whitespaces_method()
+            sidebar_update_block_info()
+            add_ocr_result_cache(current_ocr_results)
+        # remove empty blocks
+        elif event == 'method_remove_empty_blocks':
+            remove_empty_blocks_method()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
         # fix intersections

@@ -8,27 +8,15 @@ from PIL import Image
 import pytesseract
 import jellyfish
 
-def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimiters:bool=True,find_images:bool=True,debug:bool=False)->OCR_Tree:
-    '''Fix block bound boxes.   
-    
-    Removes empty blocks that are not potential delimiters or images; tries to remove intersections and empty overlapping blocks.
-    
-    Args:
-        ocr_results (OCR_Tree): ocr results
-        text_confidence (int, optional): confidence of text, used for finding empty blocks. Defaults to 10.
-        find_delimiters (bool, optional): if True, try to find delimiters using rules, else checks for block type. Defaults to True.
-        find_images (bool, optional): if True, try to find images using rules, else checks for block type. Defaults to True.
-        
-    Returns:
-        OCR_Tree: ocr results cleaned
-    '''
+
+
+
+def remove_empty_boxes(ocr_results:OCR_Tree,text_confidence:int=10,find_delimiters:bool=True,find_images:bool=True,debug:bool=False)->OCR_Tree:
+    '''Removes empty boxes from ocr results.'''
     i = 0
-    current_box = None
-    text_analysis = analyze_text(ocr_results,conf=text_confidence)
+
     blocks = ocr_results.get_boxes_level(2)
 
-    
-    og_len = len(blocks)
     # remove blocks that have no text and take more than 80% of image
     ## if no flags for finding delimiters or images are set, remove all empty blocks
     image_box = ocr_results.get_boxes_level(0)[0].box
@@ -48,7 +36,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                         print(f'Removing Box : {block.id} is empty and not a delimiter')
                     ocr_results.remove_box_id(block.id)
                     blocks.pop(i)
-                    continue
+                continue
             
             if not find_images:
                 if not block.is_image(conf=text_confidence,only_type=True):
@@ -56,9 +44,31 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                         print(f'Removing Box : {block.id} is empty and not an image')
                     ocr_results.remove_box_id(block.id)
                     blocks.pop(i)
-                    continue
+                continue
 
 
+    return ocr_results
+
+
+
+def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimiters:bool=True,find_images:bool=True,debug:bool=False)->OCR_Tree:
+    '''Fixes block bounding boxes. Deals with intersections of boxes and overlapping boxes.  
+    Args:
+        ocr_results (OCR_Tree): ocr results
+        text_confidence (int, optional): confidence of text, used for finding empty blocks. Defaults to 10.
+        find_delimiters (bool, optional): if True, try to find delimiters using rules, else checks for block type. Defaults to True.
+        find_images (bool, optional): if True, try to find images using rules, else checks for block type. Defaults to True.
+        
+    Returns:
+        OCR_Tree: ocr results cleaned
+    '''
+    i = 0
+    current_box = None
+    text_analysis = analyze_text(ocr_results,conf=text_confidence)
+    blocks = ocr_results.get_boxes_level(2)
+
+    og_len = len(blocks)
+    
     boxes_to_check = {}
     checked_boxes = []
     i= 0
@@ -68,7 +78,9 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     while i< len(blocks):
         # get current box to analyse
         if not current_box and blocks[i].id not in checked_boxes:
-            if (not blocks[i].is_empty(conf=text_confidence)) or blocks[i].is_delimiter(conf=text_confidence,only_type=find_delimiters == False):
+            if (not blocks[i].is_empty(conf=text_confidence)) or\
+                  blocks[i].is_delimiter(conf=text_confidence,only_type=find_delimiters == False):
+                
                 current_box = blocks[i]
                 i+=1
             else:
@@ -127,9 +139,12 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                 checked_boxes.append(current_box.id)
                 # check if box is empty
                 # remove if true
-                if current_box.is_empty(conf=text_confidence) and not current_box.is_delimiter(conf=text_confidence,only_type=find_delimiters == False):
+                if current_box.is_empty(conf=text_confidence) and \
+                    not current_box.is_delimiter(conf=text_confidence,only_type=find_delimiters == False):
+
                     # if potential image (big box) dont remove
-                    if current_box.is_image(conf=text_confidence,text_size=text_analysis['normal_text_size'],only_type= find_images == False):
+                    if current_box.is_image(conf=text_confidence,text_size=text_analysis['normal_text_size'],
+                                            only_type= find_images == False):
                         ocr_results.remove_box_id(current_box.id)
                         current_box = None
                 i = 0
@@ -298,26 +313,6 @@ def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
         progress_text = f'Progress: {i} / {len(ocr_results["text"])}'
         window[progress_key].update(progress_text)
         window.refresh()
-    return ocr_results
-
-
-def remvove_empty_boxes(ocr_results:OCR_Tree,conf:int=10,logs:bool=False)->OCR_Tree:
-    'Remove empty boxes (with no text when considering given confidence threshold)'
-
-    if logs:
-        print('Removing empty boxes')
-        print('Original boxes:',len(ocr_results.get_boxes_level(2)))
-
-    # id boxes
-    ocr_results.id_boxes(level=[2])
-
-    blocks = ocr_results.get_boxes_level(2)
-    for block in blocks:
-        if block.is_empty(conf=conf):
-            ocr_results.remove_box_id(block.id,level=2)
-
-    if logs:
-        print('Remaining boxes:',len(ocr_results.get_boxes_level(2)))
 
     return ocr_results
 

@@ -24,6 +24,7 @@ def ocr_editor_layout()->sg.Window:
     # target image and ocr results selector
     upper_row = [
         [
+                sg.Push(),
                 place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",
                                     key='browse_image',target='target_input',initial_folder=os.getcwd(),
                                     font=("Calibri", 15))),
@@ -79,6 +80,11 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Image(source=f'{file_path}/../assets/fix_intersections.png',
                            key='method_fix_intersections',enable_events=True,
                            tooltip='Fix intersections')),
+        ],
+        [
+            place(sg.Image(source=f'{file_path}/../assets/remove_empty_blocks.png',
+                           key='method_remove_empty_blocks',enable_events=True,
+                           tooltip='Remove empty blocks')),
         ],
         [
             place(sg.Image(source=f'{file_path}/../assets/adjust_bb.png',

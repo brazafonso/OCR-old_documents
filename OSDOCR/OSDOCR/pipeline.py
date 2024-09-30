@@ -11,7 +11,8 @@ from OSDOCR.output_module.journal.article import Article
 from OSDOCR.preprocessing.image import *
 
 
-def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,output_types:list[str],min_text_conf:int):
+def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,
+                  output_types:list[str],min_text_conf:int):
     '''Save articles. Type of output is defined in args : markdown, html, txt'''
     metadata = get_target_metadata(o_taget)
 
@@ -112,7 +113,8 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
     
 
 
-def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,
+                          args:argparse.Namespace):
     '''Output target results'''
     if args.logs:
         print('OUTPUT TARGET RESULTS')
@@ -180,7 +182,8 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         cut_margins = cut_document_margins(processed_image_path)
         
         image = cv2.imread(processed_image_path)
-        treated_image = image[cut_margins.top:cut_margins.bottom,cut_margins.left:cut_margins.right]
+        treated_image = image[cut_margins.top:cut_margins.bottom,
+                              cut_margins.left:cut_margins.right]
         cv2.imwrite(processed_image_path,treated_image)
 
         # create step img
@@ -215,9 +218,15 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
                 page_dimensions = (page_dimensions['width'],page_dimensions['height'])
 
                 if method_config:
-                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,method=method_config,target_dpi=target_dpi,dimensions=page_dimensions,logs=args.debug) 
+                    run_waifu2x(processed_image_path,
+                                result_image_path=tmp_upsacled_image_path,
+                                method=method_config,target_dpi=target_dpi,
+                                dimensions=page_dimensions,logs=args.debug) 
                 else:
-                    run_waifu2x(processed_image_path,result_image_path=tmp_upsacled_image_path,target_dpi=target_dpi,dimensions=page_dimensions,logs=args.debug)
+                    run_waifu2x(processed_image_path,
+                                result_image_path=tmp_upsacled_image_path,
+                                target_dpi=target_dpi,dimensions=page_dimensions,
+                                logs=args.debug)
 
                 upscaled_img = cv2.imread(tmp_upsacled_image_path)
                 cv2.imwrite(processed_image_path,upscaled_img)
@@ -246,7 +255,9 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
         # remove document images
             # also save them so they can be restored later
         images_folder = f'{results_path}/document_images'
-        treated_image = remove_document_images(processed_image_path,method=method,logs=args.debug,old_document=old_document,save_blocks=True,save_blocks_path=images_folder)
+        treated_image = remove_document_images(processed_image_path,method=method,
+                                               logs=args.debug,old_document=old_document,
+                                               save_blocks=True,save_blocks_path=images_folder)
         cv2.imwrite(processed_image_path,treated_image)
 
         # create step img
@@ -272,9 +283,12 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
                     method_config = int(args.denoise_image[1])
 
                 if method_config:
-                    run_waifu2x(processed_image_path,method='noise',noise_level=method_config,result_image_path=tmp_denoised_image_path,logs=args.debug) 
+                    run_waifu2x(processed_image_path,method='noise',
+                                noise_level=method_config,
+                                result_image_path=tmp_denoised_image_path,logs=args.debug) 
                 else:
-                    run_waifu2x(processed_image_path,method='noise',result_image_path=tmp_denoised_image_path,logs=args.debug)
+                    run_waifu2x(processed_image_path,method='noise',
+                                result_image_path=tmp_denoised_image_path,logs=args.debug)
 
                 denoised_img = cv2.imread(tmp_denoised_image_path)
                 cv2.imwrite(processed_image_path,denoised_img)
@@ -345,7 +359,8 @@ def run_target_hocr(target:str,args:argparse.Namespace):
 
 
 def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR_Tree:
-    '''Segment target into Header, Body, Footer and run OCR on each part. Body is further split into columns.
+    '''Segment target into Header, Body, Footer and run OCR on each part. 
+    Body is further split into columns.
     
     Final OCR results are then merged into single ocr_tree.'''
 
@@ -395,19 +410,28 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
     if header:
         # add padding (for better OCR, in case text is too close to edge)
         avg_color = np.average(image_header,axis=(0,1))
-        image_header = cv2.copyMakeBorder(image_header,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        image_header = cv2.copyMakeBorder(image_header,padding_vertical,
+                                          padding_vertical,padding_horizontal,
+                                          padding_horizontal,cv2.BORDER_CONSTANT,
+                                          value=avg_color)
         b_image_header = binarize_image(image_header,args)
         cv2.imwrite(f'{tmp_folder}/header.png',b_image_header)
     if footer:
         # add padding
         avg_color = np.average(image_footer,axis=(0,1))
-        image_footer = cv2.copyMakeBorder(image_footer,padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        image_footer = cv2.copyMakeBorder(image_footer,padding_vertical,
+                                          padding_vertical,padding_horizontal,
+                                          padding_horizontal,cv2.BORDER_CONSTANT,
+                                          value=avg_color)
         b_image_footer = binarize_image(image_footer,args)
         cv2.imwrite(f'{tmp_folder}/footer.png',b_image_footer)
     for i in range(len(columns_images)):
         # add padding
         avg_color = np.average(columns_images[i],axis=(0,1))
-        columns_images[i] = cv2.copyMakeBorder(columns_images[i],padding_vertical,padding_vertical,padding_horizontal,padding_horizontal,cv2.BORDER_CONSTANT,value=avg_color)
+        columns_images[i] = cv2.copyMakeBorder(columns_images[i],padding_vertical,
+                                               padding_vertical,padding_horizontal,
+                                               padding_horizontal,cv2.BORDER_CONSTANT,
+                                               value=avg_color)
         b_columns_image = binarize_image(columns_images[i],args)
         cv2.imwrite(f'{tmp_folder}/column_{i}.png',b_columns_image)
 
@@ -417,17 +441,20 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
     columns_ocr = []
     ## header
     if header:
-        run_tesseract(f'{tmp_folder}/header.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+        run_tesseract(f'{tmp_folder}/header.png',results_path=results_path,
+                      opts=args.tesseract_config,logs=args.debug)
         header_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
 
     ## footer
     if footer:
-        run_tesseract(f'{tmp_folder}/footer.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+        run_tesseract(f'{tmp_folder}/footer.png',results_path=results_path,
+                      opts=args.tesseract_config,logs=args.debug)
         footer_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
 
     ## columns
     for i in range(len(columns_images)):
-        run_tesseract(f'{tmp_folder}/column_{i}.png',results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+        run_tesseract(f'{tmp_folder}/column_{i}.png',results_path=results_path,
+                      opts=args.tesseract_config,logs=args.debug)
         column_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
         columns_ocr.append(column_ocr)
 
@@ -436,7 +463,8 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
     ## update position of header to match real position in target
     if header:
         # remove padding
-        header_ocr.update_position(top=-padding_vertical,left=-padding_horizontal,absolute=False)
+        header_ocr.update_position(top=-padding_vertical,left=-padding_horizontal,
+                                   absolute=False)
 
     ## update position of columns to match real position in target
     add_top = header.bottom if header else 0 # value to add to all top positions
@@ -457,7 +485,8 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
 
     ## update position of footer to match real position in target
     if footer:
-        footer_ocr.update_position(top=body.bottom - padding_vertical,left=-padding_horizontal,absolute=False)
+        footer_ocr.update_position(top=body.bottom - padding_vertical,
+                                   left=-padding_horizontal,absolute=False)
 
     ## merge all ocr_trees
     results_ocr = OCR_Tree()
@@ -517,7 +546,8 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
         cv2.imwrite(f'{results_path}/binarize.png',binarize_tmp )
         binarized_path  = f'{results_path}/binarize.png'
 
-        run_tesseract(binarized_path ,results_path=results_path,opts=args.tesseract_config,logs=args.debug)
+        run_tesseract(binarized_path ,results_path=results_path,
+                      opts=args.tesseract_config,logs=args.debug)
 
     # update metadata
     metadata = get_target_metadata(o_target)
@@ -552,11 +582,13 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     if 'identify_document_delimiters' not in args.skip_method:
         delimiters = get_document_delimiters(target,debug=False)
 
-        # add delimiters to ocr results
         ocr_results = OCR_Tree(f'{results_path}/ocr_results.json')
         # clean ocr results
-        ocr_results = remvove_empty_boxes(ocr_results,conf=args.text_confidence,logs=args.logs)
+        ocr_results = remove_empty_boxes(ocr_results,conf=args.text_confidence,
+                                         find_images=False,find_delimiters=False,
+                                         logs=args.logs)
 
+        # add delimiters to ocr results
         page = ocr_results.get_boxes_level(1)[0]
         for delimiter in delimiters:
             ocr_block = OCR_Tree({'level':2,'box':delimiter,'type':'delimiter'})
@@ -584,15 +616,23 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     metadata = get_target_metadata(o_target)
     target_img = metadata['target_path']
 
+    # remove empty boxes
+    ocr_results = remove_empty_boxes(ocr_results,text_confidence=args.text_confidence,
+                                      find_images=find_images_flag,find_delimiters=find_delimiters_flag,
+                                      debug=args.debug)
+
     # clean bounding boxes according to text confidence
-    ocr_results = bound_box_fix(ocr_results,5,None,text_confidence=args.text_confidence ,debug=args.debug)
+    ocr_results = bound_box_fix(ocr_results,5,None,
+                                text_confidence=args.text_confidence ,debug=args.debug)
 
     if split_whitespaces_flag:
-        ocr_results = split_whitespaces(ocr_results,conf=args.text_confidence,dif_ratio=args.split_whitespace,debug=args.debug)
+        ocr_results = split_whitespaces(ocr_results,conf=args.text_confidence,
+                                        dif_ratio=args.split_whitespace,debug=args.debug)
 
     # clean delimiters
     if find_delimiters_flag:
-        ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,logs=args.logs,debug=args.debug)
+        ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,
+                                     logs=args.logs,debug=args.debug)
 
         if args.debug:
             delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
@@ -600,8 +640,10 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
             img = draw_bounding_boxes(delimiters,target_img)
             cv2.imwrite(f'{results_path}/delimiters_2.png',img)
 
-    # clean blocks and bounding boxes
-    ocr_results = bound_box_fix(ocr_results,2,None,text_confidence=args.text_confidence,find_images=find_images_flag,find_delimiters=find_delimiters_flag ,debug=args.debug)
+    # clean bounding boxes of blocks
+    ocr_results = bound_box_fix(ocr_results,2,None,text_confidence=args.text_confidence,
+                                find_images=find_images_flag,find_delimiters=find_delimiters_flag ,
+                                debug=args.debug)
 
 
     # save ocr results
@@ -632,7 +674,8 @@ def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:arg
 
     # small extra cleaning
     ocr_results = remove_solo_words(ocr_results,conf=args.text_confidence,debug=args.debug)
-    ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,logs=args.logs,debug=args.debug)
+    ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,
+                                 logs=args.logs,debug=args.debug)
 
 
 
@@ -695,7 +738,8 @@ def restore_document_images(o_target:str,results_path:str,logs:bool=False):
     save_target_metadata(o_target,metadata)
 
 
-def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:str,
+                                args:argparse.Namespace):
     '''Identify images in ocr_results'''
     if args.logs:
         print('IDENTIFY DOCUMENT IMAGES')
@@ -704,7 +748,8 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
 
     target_path = metadata['target_path']
     
-    images = identify_document_images_layoutparser(target_path,old_document=args.target_old_document,logs=args.debug)
+    images = identify_document_images_layoutparser(target_path,old_document=args.target_old_document,
+                                                   logs=args.debug)
     
     #id ocr results
     ocr_results.id_boxes(level=[2])
@@ -741,7 +786,8 @@ def identify_images_ocr_results(ocr_results:OCR_Tree,o_target:str,results_path:s
 def find_title_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
     '''From ocr_results, searches within text blocks for titles and separatest them from the rest'''
 
-    ocr_results = find_text_titles(ocr_results,conf=args.text_confidence,id_blocks=False,categorize_blocks=False,debug=args.debug)
+    ocr_results = find_text_titles(ocr_results,conf=args.text_confidence,
+                                   id_blocks=False,categorize_blocks=False,debug=args.debug)
 
     result_dict_file = open(f'{results_path}/find_titles.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
