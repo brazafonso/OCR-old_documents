@@ -90,7 +90,7 @@ Uma das características fundamentais de OCR é a sua capacidade para visualiza�
 \end{itemize}
 
 
-%% TODO ilustracao de resultado de drawing blocks
+%% TODO : ilustracao de resultado de drawing blocks
 
 Outros métodos, mais circunstanciais, criados são para o desenho do template de um jornal e de artigos respetivamente.
 
@@ -104,7 +104,7 @@ Outros métodos, mais circunstanciais, criados são para o desenho do template d
 	\item img : imagem a ser modificada
 \end{itemize}
 
-%% TODO ilustracao de resultado de drawing journal template
+%% TODO : ilustracao de resultado de drawing journal template
 
 \highlight{draw\_articles}[\normalsize]
 
@@ -116,7 +116,7 @@ Outros métodos, mais circunstanciais, criados são para o desenho do template d
 	\item img : imagem a ser modificada
 \end{itemize}
 
-%% TODO ilustracao de resultado de drawing articles
+%% TODO : ilustracao de resultado de drawing articles
 
 
 \highlight{Análise de texto}
@@ -216,7 +216,7 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar blocos demasiado afastados; ajustar dimensões das bounding boxes, etc..
 
 
-%% TODO ilustracao : exemplos dos problemas listados
+%% TODO : ilustracao : exemplos dos problemas listados
 
 Descrevem-se então alguns dos métodos propostos para resolver alguns destes problemas.
 
@@ -237,7 +237,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 %% TODO : escrever algoritmo, depois de dar refactoring na funcao
 
-%% TODO ilustracao : exemplo de uso do metodo para limpar blocos
+%% TODO : ilustracao : exemplo de uso do metodo para limpar blocos
 
 
 \highlight{text\_bound\_box\_fix}[\normalsize]
@@ -275,7 +275,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{breakablealgorithm}
 
-%% TODO ilustracao : exemplo de uso do metodo para ajustar blocos
+%% TODO : ilustracao : exemplo de uso do metodo para ajustar blocos
 
 
 
@@ -335,7 +335,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{breakablealgorithm}
 
-%% TODO ilustracao :exemplo de uso do metodo para unir blocos
+%% TODO : ilustracao :exemplo de uso do metodo para unir blocos
 
 
 
@@ -409,7 +409,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 
 
-%% TODO ilustracao : exemplo de uso do metodo para separar usando whitespaces
+%% TODO : ilustracao : exemplo de uso do metodo para separar usando whitespaces
 
 \highlight{Categorização de blocos}
 \label{contribution_categorize_blocks}
@@ -441,7 +441,7 @@ Estas características de texto guardam informação relevante utilizada em mét
 
 
 
-%% TODO ilustracao : exemplo de uso do metodo para categorizar os blocos de um jornal
+%% TODO : ilustracao : exemplo de uso do metodo para categorizar os blocos de um jornal
 
 
 \highlight{Divisão de blocos}
@@ -449,7 +449,7 @@ Estas características de texto guardam informação relevante utilizada em mét
 
 Uma funcionalidade de extrema utilidade para a manipulação dos produtos de OCR é a capacidade de dividir um bloco em dois, cada um destes novos ficando com parte dos conteúdos do bloco original. Tal operação facilita a remoção de partes ruidosas de um bloco, ou a segmentação de bloco quando este foi incorretamente unido pelo software de OCR. Exemplo: bloco de texto cuja primeira linha tem potencial de ser título, permite facilmente dividir o bloco em o título e restante texto.
 
-%% TODO ilustracao : exemplo de divisao de bloco, para separar titulo do texto
+%% TODO : ilustracao : exemplo de divisao de bloco, para separar titulo do texto
 
 Esta é no entanto uma operação de relativa complexidade, visto que é necessário ir descendo na árvore e fazer múltiplas verificações para calcular o melhor destino final (entre os novos blocos) para cada um dos filhos.
 
@@ -569,7 +569,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 
 
-%% TODO ilustracao : exemplo de divisao de bloco, vertical e horizontal
+%% TODO : ilustracao : exemplo de divisao de bloco, vertical e horizontal
 
 
 
@@ -585,7 +585,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 \textbf{Algoritmo:} Para os blocos de tipo 'text', analisa os seus filhos de nível linha, verificando se poderiam ser categorizados como 'title'. Em caso positivo, utiliza a função de divisão de bloco para separar o bloco 'title' do 'text'. A operação de divisão poderá resultar em 2 blocos, caso o 'title' se encontre no início ou fim do bloco; ou 3, no caso de estar inserido no meio do bloco.
 
-%% TODO ilustracao : exemplo de encontrar títulos no texto
+%% TODO : ilustracao : exemplo de encontrar títulos no texto
 
 
 
@@ -594,7 +594,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 No caso de documentos de leitura não linear, como é o caso de jornais, a ordem de leitura proposta pelos motores OCR pode muitas vezes ser incorreto.
 
-%% TODO ilustracao : ordem inicial errada de um jornal
+%% TODO : ilustracao : ordem inicial errada de um jornal
 
 Foi então desenvolvido um algoritmo geral, baseado em grafos pesados, para calcular a ordem de leitura do corpo de um jornal. Este algoritmo procura, através de um conjunto de regras sobre as características dos blocos dos resultados OCR, como por exemplo: texto inacabado, texto seguido de título; calcular a atração entre blocos de acordo com as suas características e posição relativa (similar a ordenação topológica); e posteriormente ordenar os blocos, procurando agrupar artigos. Um artigo considera-se como um grupo de blocos, em que o primeiro é um título e não pode ter mais títulos dentro do grupo, a não ser que seja diretamente a seguir ao primeiro título (complementares).
 
@@ -685,7 +685,7 @@ Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco a
 
 
 
-%% TODO ilustracao : calculo da ordem de leitura de alguns jornais
+%% TODO : ilustracao : calculo da ordem de leitura de alguns jornais
 
 Os resultados desta ordenação é bastante dependente da qualidade do conteúdo da OCR Tree, sendo que uma OCR Tree com texto muito disperso ou ruidoso irá provavelmente gerar uma ordenação errada. 
 
@@ -711,7 +711,7 @@ Artigos podem ser descritos como um título seguido por um excerto de elementos 
 \end{itemize}
 
 
-%% TODO ilustracao : segmentacao de jornal em artigos
+%% TODO : ilustracao : segmentacao de jornal em artigos
 
 Métodos para conversão da lista de artigos para texto, markdown e visualização sob uma imagem foram também desenvolvidos.
 
@@ -727,7 +727,7 @@ Os principais problemas que se procurou abordar neste trabalho em relação ao t
 
 Além disso, trabalho já realizado para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{cap_osdocr_toolkit_implementacao}).
 
-%% TODO ilustracao : imagens de documentos antigos em mau estado, aplicação de alguns métodos para melhorar estado
+%% TODO : ilustracao : imagens de documentos antigos em mau estado, aplicação de alguns métodos para melhorar estado
 
 Esta secção irá abordar os métodos desenvolvidos neste sentido.
 
@@ -822,7 +822,6 @@ Assim sendo, o trabalho realizado neste sentido não foi com o objetivo de propo
 Com o trabalho realizado, conclui-se que para documentos com pouco ruído, ou onde este se apresente distribuído pela imagem sem grandes focos particulares, um denoising de médias não locais seguido de uma binarização com algoritmo de Otsu, obtém resultados satisfatórios. Esta binarização é similar à realizada pelo Tesseract.
 No caso de o ruído estar focado num local específico da imagem, verificou-se que binarizações mais extremas no tresholding, como estilo fax, conseguem obter melhor resultado nas zonas mais afetadas.
 
-%% TODO : ilustracao 2 binarizacoes em casos de documento sem ruido focado e com ruido focado. mostrar resultado de ocr
 
 \begin{figure}[H]
 	\centering
@@ -884,7 +883,13 @@ Por fim, ajusta-se o gamma da imagem para a escurecer.
 
 Para documentos estruturados como jornais, certos elementos são utilizados de forma geral para realçar a dada estrutura, como é o caso de delimitadores.
 
-%% TODO : ilustracao de delimitadores de um jornal
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=7cm]{images/ilustracoes/document_delimiters.png}
+	\caption{Página de jornal com delimitadores identificados (a vermelho).}
+	\label{fig:document_delimiters_example}
+\end{figure}
 
 Pode então ser útil conseguir identificar estes elementos para facilitar o seu uso, por exemplo, no cálculo de ordem de leitura de um jornal e cálculo de atração entre blocos.
 
@@ -953,7 +958,14 @@ Estes delimitadores são, por norma, linhas verticais ou horizontais, podendo se
 Na generalidade dos casos, a quantidade de linhas detetadas será muito superior aos delimitadores esperados, devido ao o ruído, texto do documento e morfologias aplicadas. 
 Diferentes valores de parâmetros para o algoritmo de Hough variam estes resultados.
 
-%% TODO : ilustracao de linhas identificadas, antes de reduzir
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=7cm]{images/ilustracoes/get_delimiters_all_lines_example.png}
+	\caption{Resultados de identificação de linhas verticais e horizontais.}
+	\label{fig:get_delimiters_all_lines_example}
+\end{figure}
+
+
 
 É então recomendado uma aplicação de métodos para reduzir o número de delimitadores encontrados.
 Os que foram desenvolvidos foram:
@@ -964,8 +976,14 @@ Os que foram desenvolvidos foram:
 	\item \textbf{remover linhas com demasiadas componentes ligadas} : linhas com muitas componentes ligadas, são provavelmente texto, ruído ou outro tipo de elemento, sendo portanto removidas
 \end{itemize}
 
-%% TODO : ilustracao de linhas identificadas, depois de reduzir
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=7cm]{images/ilustracoes/get_delimiters_final_example.png}
+	\caption{Resultados de identificação de delimitadores, aplicados métodos de redução.}
+	\label{fig:get_delimiters_final_example}
+\end{figure}
 
+Como se pode observar na figura \ref{fig:get_delimiters_final_example}, embora os métodos de redução filtrem de forma considerável a quantidade de delimitadores identificados, o resultado ainda contém elementos que não devia. Vários destes são resultados de texto de maior grossura, sendo portanto possível ainda realizar uma limpeza posterior onde, tendo em conta os resultados de OCR, se resolvem conflitos de delimitadores inseridos em blocos de texto. Um método deste tipo está disponível no Toolkit (delimiters\_fix).
 
 
 \highlight{Identificação de imagens no documento}
