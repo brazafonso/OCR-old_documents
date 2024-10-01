@@ -4,6 +4,7 @@
 *.jpg
 *.png
 !**/ocr_editor/assets/*.png
+!**/dissertacao/**/*.png
 *.json
 docs/jornais/*
 results

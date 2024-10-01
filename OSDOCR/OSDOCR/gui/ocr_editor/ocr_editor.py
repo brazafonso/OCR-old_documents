@@ -5,6 +5,7 @@ import random
 import shutil
 import time
 import cv2
+import pyperclip
 import matplotlib
 import matplotlib.patches
 import matplotlib.pyplot as plt
@@ -1271,22 +1272,35 @@ def apply_ocr_block():
     if highlighted_blocks:
         print('Apply OCR on highlighted ocr block')
 
+        image = cv2.imread(current_image_path)
         block = highlighted_blocks[-1]
         ocr_block = block['block']
         ocr_block:OCR_Tree
-        box = ocr_block.box
+        box = ocr_block.box.copy()
+
+        # fix box if invalida coordinates
+        if box.left < 0:
+            box.left = 0
+        if box.top < 0:
+            box.top = 0
+        if box.right > image.shape[1]:
+            box.right = image.shape[1]
+        if box.bottom > image.shape[0]:
+            box.bottom = image.shape[0]
+
         # cut part of image
-        image = cv2.imread(current_image_path)
         left = int(box.left)
         top = int(box.top)
         right = int(box.right)
         bottom = int(box.bottom)
         image = image[top:bottom,left:right]
+
         # add some padding
         padding = 20
         avg_color = np.average(image,axis=(0,1))
         image = cv2.copyMakeBorder(image,padding,padding,padding,padding,
                                    cv2.BORDER_CONSTANT,value=avg_color)
+        
         # save tmp image
         tmp_dir = consts.ocr_editor_tmp_path
         os.makedirs(tmp_dir,exist_ok=True)
@@ -1329,6 +1343,17 @@ def apply_ocr_block():
         ocr_block.children = new_children
         # # remove tmp dir
         # shutil.rmtree(tmp_dir)
+
+
+def copy_block_text():
+    '''Copy highlighted ocr block text to clipboard'''
+    global highlighted_blocks,config
+    if highlighted_blocks:
+        block = highlighted_blocks[-1]
+        ocr_block = block['block']
+        ocr_block:OCR_Tree
+        text = ocr_block.to_text(conf=config['base']['text_confidence'])
+        pyperclip.copy(text)
         
 
 
@@ -2114,6 +2139,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             apply_ocr_block()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # copy block text
+        elif event == 'button_copy_block_text':
+            copy_block_text()
         # toggle articles
         elif event == 'checkbox_toggle_articles':
             toogle = values[event]

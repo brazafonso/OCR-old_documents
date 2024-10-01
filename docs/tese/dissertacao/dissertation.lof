@@ -14,12 +14,18 @@
 \contentsline {figure}{\numberline {9}{\ignorespaces Arquitetura OSDOCR Pipeline - reduzida}}{36}{figure.caption.23}%
 \contentsline {figure}{\numberline {10}{\ignorespaces Arquitetura MVC}}{37}{figure.caption.24}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {11}{\ignorespaces Árvore de resultados OCR num documento}}{40}{figure.caption.25}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {12}{\ignorespaces Variação dos resultados de OCR em diferentes níveis de rotação de texto.}}{70}{figure.caption.26}%
+\contentsline {figure}{\numberline {13}{\ignorespaces Exemplo de aplicação do algoritmo. \textbf {1ª} imagem representa a imagem do documento original. \textbf {2ª} imagem representa a identificação dos pixeis á esquerda no documento. \textbf {3ª} apresenta os 3 maiores sets de cada tipo: set de pixeis com mesmo x (azul); set de pixeis counter-clockwise (verde); set de pixeis clockwise (vermelho). \textbf {4ª} mostra o ângulo de rotação calculado a partir do maior set. \textbf {5ª} tem a imagem corrigida.}}{71}{figure.caption.27}%
+\contentsline {figure}{\numberline {14}{\ignorespaces Exemplo de documento com inclinação de texto e sombra de bainha.}}{72}{figure.caption.28}%
+\contentsline {figure}{\numberline {15}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local com pouco ruído.}}{74}{figure.caption.29}%
+\contentsline {figure}{\numberline {16}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local com muito ruído.}}{74}{figure.caption.30}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11}{\ignorespaces Pipeline - secção pré-processamento}}{81}{figure.caption.25}%
-\contentsline {figure}{\numberline {12}{\ignorespaces Pipeline - secção OCR}}{83}{figure.caption.26}%
-\contentsline {figure}{\numberline {13}{\ignorespaces Pipeline - secção pós-processamento}}{85}{figure.caption.27}%
-\contentsline {figure}{\numberline {14}{\ignorespaces Pipeline - secção output}}{87}{figure.caption.28}%
+\contentsline {figure}{\numberline {17}{\ignorespaces Pipeline - secção pré-processamento}}{85}{figure.caption.31}%
+\contentsline {figure}{\numberline {18}{\ignorespaces Pipeline - secção OCR}}{87}{figure.caption.32}%
+\contentsline {figure}{\numberline {19}{\ignorespaces Pipeline - secção pós-processamento}}{89}{figure.caption.33}%
+\contentsline {figure}{\numberline {20}{\ignorespaces Pipeline - secção output}}{91}{figure.caption.34}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

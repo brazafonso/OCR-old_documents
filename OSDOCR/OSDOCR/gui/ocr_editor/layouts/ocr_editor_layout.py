@@ -271,7 +271,10 @@ def ocr_editor_layout()->sg.Window:
                                size=(32,10),auto_size_text=True,autoscroll=True, font=('Calibri', 11)))
         ],
         [
-            place(sg.Button('OCR',key='button_ocr_block', font=('Calibri', 13)))
+            place(sg.Button('OCR',key='button_ocr_block', font=('Calibri', 13))),
+            place(sg.Image(source=f'{file_path}/../assets/copy.png'
+                           ,key='button_copy_block_text',enable_events=True,
+                           tooltip='Copy')),
         ],
         [
             place(sg.Image(source=f'{file_path}/../assets/save.png'

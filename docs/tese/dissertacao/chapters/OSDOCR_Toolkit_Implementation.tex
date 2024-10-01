@@ -725,7 +725,7 @@ Um outro ponto de abordagem natural quando se trabalha com OCR, é o tratamento 
 
 Os principais problemas que se procurou abordar neste trabalho em relação ao tratamento de imagens de documento foram: correção automática de rotações do documento em relação ao texto; remoção de sombras de bainha nas bordas do documento; métodos de binarização para documentos antigos e em mau estado; segmentação de documentos, focando em jornais (divisão entre header e body, divisão de colunas); identificação de imagens/ilustrações no documento; identificação de delimitadores/linhas divisórias no documento. 
 
-Além disso, trabalho já realizado para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{contribution_toolkit_pipeline}).
+Além disso, trabalho já realizado para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{cap_osdocr_toolkit_implementacao}).
 
 %% TODO ilustracao : imagens de documentos antigos em mau estado, aplicação de alguns métodos para melhorar estado
 
@@ -737,18 +737,30 @@ Esta secção irá abordar os métodos desenvolvidos neste sentido.
 
 Para imagens de alta definição, i.e. normalmente com dpi elevado e, portanto, mais favorável para realização de OCR, notou-se que mesmo pequenas inclinações no texto podem resultar em resultados de OCR extremamente ruidosos e desorganizados.
 
-%% TODO : ilustracao de pequenas rotacoes e resultado depois de OCR
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/OCR_rotation_variations.png}
+	\caption{Variação dos resultados de OCR em diferentes níveis de rotação de texto.}
+	\label{fig:ocr_rotation_variations}
+\end{figure}
+
 
 Foi então desenvolvido um algoritmo com o propósito de automaticamente detetar a existência de uma rotação do texto e, calculando o seu ângulo, corrigi-la. 
 
 Este algoritmo foi baseado maioritariamente na solução proposta por \cite{4283429} (discutida na secção de estado da arte) com adaptações adicionadas para complementar pontos não explicados da solução e para ser mais viável para documentos com algum ruído.
 
-Na sua essência o algoritmo procura, num documento com texto, analisar as posições do primeiro pixel preto (expectável ser a primeira instância de texto à esquerda) à esquerda em diferentes linhas, para tentar desenhar uma linha, na qual a inclinação será calculada. As adaptações realizadas serviram para fazer uma decisão inicial sobre a direção da rotação, e para, assumindo que se trabalha com imagens com ruído, procurar a linha mais confiável para o cálculo da inclinação.
+Na sua essência o algoritmo procura, num documento com texto, analisar as posições do primeiro pixel preto (expectável a primeira instância de texto estar do lado esquerdo) à esquerda em diferentes linhas, para tentar desenhar uma linha, na qual a inclinação será calculada. As adaptações realizadas serviram para fazer uma decisão inicial sobre a direção da rotação, e para, assumindo que se trabalha com imagens com ruído, procurar a linha mais confiável para o cálculo da inclinação.
 
 Para ajustes mais minuciosos, também é aplicado o método de ajuste de rotação da biblioteca leptonica. Este método por si só não é capaz de corrigir ângulos mais consideráveis (+- acima de 6 graus).
 
 
-%% TODO : ilustracao no estilo do paper para analise dos pixeis
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/rotation_algorithm_example.png}
+	\caption{Exemplo de aplicação do algoritmo. 
+		\textbf{1ª} imagem representa a imagem do documento original. \textbf{2ª} imagem representa a identificação dos pixeis á esquerda no documento. \textbf{3ª} apresenta os 3 maiores sets de cada tipo: set de pixeis com mesmo x (azul); set de pixeis counter-clockwise (verde); set de pixeis clockwise (vermelho). \textbf{4ª} mostra o ângulo de rotação calculado a partir do maior set. \textbf{5ª} tem a imagem corrigida.}
+	\label{fig:rotation_algorithm_example}
+\end{figure}
 
 \highlight{calculate\_rotation\_direction}[\normalsize]
 
@@ -778,7 +790,14 @@ Se possível, aplica o método \textit{pixFindSkewAndDeskew} de leptonica para c
 
 No caso de documentos com múltiplas folhas, como livros ou jornais, é comum a presença de uma sombra nas margens das páginas. Esta pode, como mencionado anteriormente, impactar a solução para correção de rotação de documento, mas também, quando aplicado OCR, esta sombra poderá ser detetada como um elemento (um tipo de delimitador ou figura) que na realidade gera ruído extra. Pode ser então útil a remoção desta secção da imagem.
 
-%% TODO : ilustracao de documento com sombra da bainha
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=5cm]{images/ilustracoes/document_margin_example.png}
+	\caption{Exemplo de documento com inclinação de texto e sombra de bainha.}
+	\label{fig:document_margin_example}
+\end{figure}
+
+
 
 O algoritmo de remoção segue uma lógica semelhante aos métodos de análise de tamanhos de texto ou de deteção de colunas anteriormente explicados. Na imagem binarizada, é analisada a frequência de pixeis pretos na imagem e, se nas suas extremidades esquerda ou direta (10\% de cada uma das pontas) for detetado um pico seguido de uma descida muito acentuada (igual ou menor a 10\% da frequência máxima de pontos pretos) é recortado a zona desse pico da imagem.
 
@@ -804,6 +823,22 @@ Com o trabalho realizado, conclui-se que para documentos com pouco ruído, ou on
 No caso de o ruído estar focado num local específico da imagem, verificou-se que binarizações mais extremas no tresholding, como estilo fax, conseguem obter melhor resultado nas zonas mais afetadas.
 
 %% TODO : ilustracao 2 binarizacoes em casos de documento sem ruido focado e com ruido focado. mostrar resultado de ocr
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/ilustracoes/ocr_different_binarizations.png}
+	\caption{Exemplo de resultado de OCR com diferentes binarizações em local sem ruído muito acentuado.}
+	\label{fig:ocr_different_binarizations}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/ilustracoes/ocr_different_binarizations_noisy.png}
+	\caption{Exemplo de resultado de OCR com diferentes binarizações em local com muito ruído.}
+	\label{fig:ocr_different_binarizations_noisy}
+\end{figure}
+
 
 Um método para cada uma destas binarizações foi desenvolvido.
 
