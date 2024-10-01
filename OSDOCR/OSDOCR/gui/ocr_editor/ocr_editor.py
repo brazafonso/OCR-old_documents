@@ -1113,9 +1113,9 @@ def create_new_ocr_block(x:int=None,y:int=None):
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
     '''Save ocr results'''
-    global current_ocr_results,current_ocr_results_path
+    global current_ocr_results,current_ocr_results_path,current_image_path
     if current_ocr_results:
-        save_path = path if path else current_ocr_results_path
+        save_path = path if path else current_ocr_results_path if current_ocr_results_path else current_image_path
         # copy ocr results
         if save_as_copy:
             valid_name = False
