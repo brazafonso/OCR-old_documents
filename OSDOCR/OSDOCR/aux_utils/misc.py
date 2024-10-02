@@ -192,6 +192,11 @@ def metadata_get_transformation(metadata:dict,transformation:str):
             return t
     return None
 
+def metadata_clean_transformations(metadata:dict):
+    '''Clean metadata transformations'''
+    metadata['transformations'] = []
+    save_target_metadata(metadata['target_original_path'],metadata)
+
 def get_last_image_path(target_path:str):
     '''From target metadata, get last image path'''
     metadata = get_target_metadata(target_path)

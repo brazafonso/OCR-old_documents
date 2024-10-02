@@ -584,7 +584,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
         delimiters = get_document_delimiters(target,debug=False)
 
         ocr_results = OCR_Tree(metadata['ocr_results_path'])
-        
+
         ocr_results.id_boxes(level=[2])
         # clean ocr results
         ocr_results = remove_empty_boxes(ocr_results,text_confidence=args.text_confidence,
@@ -863,6 +863,7 @@ def run_target(target:str,args:argparse.Namespace):
         force_ocr = args.force_ocr
         # check if target has been ocrd before or force
         if force_ocr or not metadata['ocr']:
+            metadata_clean_transformations(metadata)
             ocr_results,_ = run_target_image(original_target_path,processed_path,args)
             
             # get most recent metadata
