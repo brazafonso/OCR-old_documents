@@ -1815,7 +1815,7 @@ def categorize_blocks_method():
     if highlighted_blocks:
         # apply categorize
         tree = current_ocr_results.copy()
-        tree = categorize_boxes(tree,conf=30)
+        tree = categorize_boxes(tree,conf=30,override=True)
 
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
@@ -1886,7 +1886,7 @@ def generate_output_md():
     if current_ocr_results and current_image_path:
         doc_type = config['methods']['doc_type']
         results_path = config['base']['output_path']
-        text_confidence = config['methods']['text_confidence']
+        text_confidence = config['base']['text_confidence']
         ignore_delimiters = config['methods']['ignore_delimiters']
         calculate_reading_order = config['methods']['calculate_reading_order']
         # newspaper

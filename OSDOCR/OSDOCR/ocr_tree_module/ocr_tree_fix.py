@@ -295,14 +295,14 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs
                     # remove from main tree and lists
                     same_type_below_blocks.remove(leftmost_block)
                     available_blocks.remove(leftmost_block)
-                    non_visited.remove(leftmost_block.id)
+                    non_visited = [id for id in non_visited if id != leftmost_block.id]
                     ocr_results.remove_box_id(leftmost_block.id,level=2)
                     while same_type_below_blocks:
                         next_block = min(same_type_below_blocks,key=lambda b:b.box.left)
                         # remove from main tree and lists
                         same_type_below_blocks.remove(next_block)
                         available_blocks.remove(next_block)
-                        non_visited.remove(next_block.id)
+                        non_visited = [id for id in non_visited if id != next_block.id]
                         ocr_results.remove_box_id(next_block.id,level=2)
                         leftmost_block.join_trees(next_block,orientation='horizontal')
 

@@ -1144,7 +1144,7 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
 
 
 
-def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tree:
+def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,override:bool=False,debug:bool=False)->OCR_Tree:
     '''Categorize blocks into different types
     
     Types:
@@ -1168,7 +1168,7 @@ def categorize_boxes(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tre
 
     # categorize blocks
     for block in blocks:
-        if block.type:
+        if block.type and not override:
             continue
         type = categorize_box(block,blocks,box_analysis,conf=conf,debug=debug)
         block.type = type
