@@ -49,9 +49,33 @@ Estas ferramentas são então pertinentes para os diversos passos do processo co
 
 O resultado da aplicação de OCR em imagens de baixa qualidade ou complexas como é o caso de jornais, é na generalidade propício a um output ruidoso e com vários defeitos em diferentes níveis, quer seja nas bounding boxes dos blocos, texto reconhecido com erros, ruído reconhecido como texto, blocos que deveriam ser separados, etc. 
 
-%% TODO : ilustracoes de resultados OCR ruidosos
-%%% intersecoes e caixas dentro de caixas
-%%% ruido considerado como texto
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=4.5cm]{images/ilustracoes/noisy_ocr_results.png}
+		\caption{Resultados ruidosos}
+		\label{fig:noisy_image}
+	\end{subfigure}%
+
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=2cm]{images/ilustracoes/noisy_ocr_results_intersections.png}
+		\caption{Interseções e caixas inseridas em outras.}
+		\label{fig:noisy_image_intersections}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=4cm]{images/ilustracoes/noisy_ocr_results_noise.png}
+		\caption{Ruído detetado como texto}
+		\label{fig:noisy_image_noise}
+	\end{subfigure}
+	\caption{Exemplo de jornal com resultados OCR ruidosos e com conflitos.}
+	\label{fig:fig}
+\end{figure}
+
 
 Deste modo, surgiu a oportunidade de adicionar ao \textit{toolkit} funcionalidades que fossem capazes de abordar estes problemas.
 
@@ -89,10 +113,14 @@ Uma das características fundamentais de OCR é a sua capacidade para visualiza�
 	\item id : flag para desenhar id do bloco, caso disponível
 \end{itemize}
 
+\begin{figure}[H]
+	 	\centering
+	 	\includegraphics[width=0.4\textwidth]{images/ilustracoes/drawn_blocks.png}
+	 	\caption{Exemplo de desenho de OCR Tree por cima do documento.}
+	 	\label{fig:draw_ocr_results}
+\end{figure}
 
-%% TODO : ilustracao de resultado de drawing blocks
-
-Outros métodos, mais circunstanciais, criados são para o desenho do template de um jornal e de artigos respetivamente.
+Outros métodos criados, mais circunstanciais, permitem o desenho do template de um jornal e de artigos respetivamente.
 
 \highlight{draw\_journal\_template}[\normalsize]
 

@@ -235,7 +235,7 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=Fa
 
 
 
-def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->list[Box]:
+def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=False)->dict:
     '''Get areas of journal (header, body, footer) based on line box top margin frequency.\n
     
     Frequency graph is smoothened using chosen method.
@@ -342,12 +342,14 @@ def get_journal_areas(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:b
             elif group[0]:
                 groups.append(group)
                 group = (None,None)
-        if group:
+        if group[0]:
             groups.append(group)
 
-        print('groups:',groups)
         biggest_group = max(groups, key=lambda x: x[1]-x[0])
-        print('body:',biggest_group)
+
+        # print('groups:',groups)
+        # print('body:',biggest_group)
+
         # get width of first peak inside biggest group
         first_peak = None
         for p,value in enumerate(peaks_smooth_l):
@@ -545,7 +547,7 @@ def estimate_journal_template(ocr_results:OCR_Tree,image_info:Box)->dict:
     }
 
 
-def draw_journal_template(journal_data:dict,image_path:Union[str,cv2.typing.MatLike])->cv2.typing.MatLike:
+def draw_journal_template(journal_data:dict,image_path:Union[str,cv2.typing.MatLike],line_thickness:int=2)->cv2.typing.MatLike:
     '''Draw bounding boxes on journal image of path \'image_path\'\n'''
 
     if isinstance(image_path,str):
@@ -557,12 +559,12 @@ def draw_journal_template(journal_data:dict,image_path:Union[str,cv2.typing.MatL
     if journal_data['header']:
         header = journal_data['header']
         (x, y, w, h) = (header.left, header.top, header.width, header.height)
-        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), thickness=line_thickness)
     
     # draw columns
     for column in journal_data['columns']:
         (x, y, w, h) = (column.left, column.top, column.width, column.height)
-        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), thickness=line_thickness)
 
     return img
 

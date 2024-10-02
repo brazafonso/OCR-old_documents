@@ -1811,11 +1811,11 @@ def categorize_blocks_method():
     '''Categorize blocks method. If no highlighted blocks, apply on all blocks. 
     Else, apply on highlighted blocks.'''
     global current_ocr_results,bounding_boxes,highlighted_blocks,\
-        bounding_boxes,default_edge_color,window
+        bounding_boxes,default_edge_color,window,config
     if highlighted_blocks:
         # apply categorize
         tree = current_ocr_results.copy()
-        tree = categorize_boxes(tree,conf=30,override=True)
+        tree = categorize_boxes(tree,conf=config['base']['text_confidence'],override=True)
 
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
@@ -1828,7 +1828,7 @@ def categorize_blocks_method():
         refresh_highlighted_blocks()
     elif current_ocr_results:
         # apply categorize
-        categorize_boxes(current_ocr_results,conf=30)
+        categorize_boxes(current_ocr_results,conf=config['base']['text_confidence'])
 
         # update assets
         for b in bounding_boxes.values():
@@ -1840,10 +1840,10 @@ def categorize_blocks_method():
 
 def find_titles_method():
     '''Find titles method.'''
-    global current_ocr_results,bounding_boxes
+    global current_ocr_results,bounding_boxes,config
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
-        find_text_titles(current_ocr_results,conf=30,id_blocks=True,
+        find_text_titles(current_ocr_results,conf=config['base']['text_confidence'],id_blocks=True,
                          categorize_blocks=False,debug=True)
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
@@ -2300,10 +2300,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui(position=window.CurrentLocation())
-            changed = update_config_dependent_variables()
-            # redraw canvas if config changed
-            if changed:
-                refresh_canvas()
+            update_config_dependent_variables()
         # collapsible section
         elif event.startswith('-OPEN collapse_'):
             # get section key

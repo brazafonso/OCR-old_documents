@@ -23,8 +23,8 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/ocr_results.json'
-        # ocr_results = OCR_Tree(ocr_results_path)
+        ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/result_united.json'
+        ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
         # get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True)
@@ -70,6 +70,13 @@ def run_test():
         # img = draw_bounding_boxes(ocr_results,target_image,id=True)
         # cv2.imwrite('test.png',img)
         # ocr_results.save_hocr('test.hocr')
+
+        # draw journal template
+        metadata = get_target_metadata(target_image)
+        image_info = get_image_info(metadata['target_path'])
+        areas = estimate_journal_template(ocr_results,image_info)
+        img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
+        cv2.imwrite('test.png',img)
 
         pass
 

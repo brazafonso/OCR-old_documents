@@ -25,3 +25,4 @@ OSDOCR/OSDOCR/models/DE_GAN_old_docs/
 OSDOCR/OSDOCR/models/nunif/
 packages/iopath/
 calibrate
+**/tmp
