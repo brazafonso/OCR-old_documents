@@ -21,6 +21,7 @@ default_config = {
         'vertex_radius' : 5,
         'edge_thickness' : 2,
         'id_text_size' : 10,
+        'debug' : False,
     },
     'ocr_pipeline' : {
         'fix_rotation' : 'none',
@@ -74,6 +75,7 @@ def read_config_window(values:dict)->dict:
     config['base']['output_type'] = values['list_output_type']
     config['base']['use_pipeline_results'] = values['checkbox_use_pipeline_results']
     config['base']['output_path'] = values['input_output_path']
+    config['base']['debug'] = values['checkbox_debug_mode']
     try:
         config['base']['cache_size'] = int(values['input_operations_cache_size'])
     except:
@@ -148,6 +150,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['list_output_type'].update(refresh_conf['base']['output_type'])
     window['checkbox_use_pipeline_results'].update(refresh_conf['base']['use_pipeline_results'])
     window['input_output_path'].update(refresh_conf['base']['output_path'])
+    window['checkbox_debug_mode'].update(refresh_conf['base']['debug'])
     window['input_operations_cache_size'].update(refresh_conf['base']['cache_size'])
     window['input_default_ppi'].update(refresh_conf['base']['ppi'])
     window['input_vertex_radius'].update(refresh_conf['base']['vertex_radius'])

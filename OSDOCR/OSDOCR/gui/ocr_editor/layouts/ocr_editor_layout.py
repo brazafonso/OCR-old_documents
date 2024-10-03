@@ -489,7 +489,11 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Input(10,key='input_operations_cache_size',size=(5,1), enable_events=True))
         ],
         [
-            place(sg.Text('Default PPI: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Text('Debug mode: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox('',key='checkbox_debug_mode',enable_events=True))
+        ],
+        [
+            place(sg.Text('Default PPI (zoom): ',font=("Calibri", 12,"bold"),text_color='#046380')),
             place(sg.Input(300,key='input_default_ppi',size=(5,1), enable_events=True))
         ],
         [

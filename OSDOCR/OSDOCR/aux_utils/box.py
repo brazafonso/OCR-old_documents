@@ -180,8 +180,8 @@ class Box:
             self_box.left = 0
             self_box.right = box.right + 1
             
-        intercept_vertical = extend_vertical or (self_box.top <= box.top and self_box.bottom >= box.top) or (box.top <= self_box.top and box.bottom >= self_box.top)
-        intercept_horizontal = extend_horizontal or (self_box.left <= box.right and self_box.right >= box.left) or (self_box.left <= box.right and self_box.right >= box.right)
+        intercept_vertical = extend_vertical or (self_box.top < box.top and self_box.bottom > box.top) or (box.top < self_box.top and box.bottom > self_box.top)
+        intercept_horizontal = extend_horizontal or (self_box.left < box.right and self_box.right > box.left) or (self_box.left < box.right and self_box.right > box.right)
         if intercept_horizontal and intercept_vertical:
             return True
         
@@ -257,8 +257,6 @@ class Box:
                             to_right = c == 'to_right'
                             below = c == 'below'
                             break
-
-
 
                     # Remove area from box
                     if to_right:

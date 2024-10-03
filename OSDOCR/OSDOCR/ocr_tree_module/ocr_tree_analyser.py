@@ -21,7 +21,6 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
     Available methods:
         - WhittakerSmoother
         - savgol_filter'''
-    
     methods = ['WhittakerSmoother','savgol_filter']
     if method not in methods:
         method = 'WhittakerSmoother'
@@ -37,7 +36,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
     # save line sizes
     for line in lines:
         if not line.is_empty(conf=conf) and not line.is_vertical_text(conf=conf):
-            lmh = line.calculate_mean_height(level=4)
+            lmh = line.calculate_mean_height(level=5,conf=conf)
             lmh = round(lmh)
             if len(line_sizes) <= lmh:
                 line_sizes += [0] * (lmh - len(line_sizes) + 2)
@@ -84,24 +83,26 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
 
         peaks_smooth:np.ndarray
         peaks_smooth = peaks_smooth.tolist()
+        frequencies = [line_sizes_smooth[peak] for peak in peaks_smooth]
+
+        sizes = {k:v for k,v in zip(peaks_smooth,frequencies)}
         
 
-        text_sizes['normal_text_size'] = max(peaks_smooth)
+        text_sizes['normal_text_size'] = max(sizes,key=sizes.get)
         
         # categorize greater and smaller other text sizes
-        id_normal = peaks_smooth.index(text_sizes['normal_text_size'])
-        lower_peaks = peaks_smooth[:id_normal]
-        higher_peaks = peaks_smooth[id_normal+1:]
+        lower_peaks = {k:v for k,v in sizes.items() if k < text_sizes['normal_text_size']}
+        higher_peaks = {k:v for k,v in sizes.items() if k > text_sizes['normal_text_size']}
         i = 0
         while lower_peaks:
-            text_sizes[f'small_text_size_{i}'] = max(lower_peaks)
-            lower_peaks.remove(text_sizes[f'small_text_size_{i}'])
+            text_sizes[f'small_text_size_{i}'] = max(lower_peaks,key=lower_peaks.get)
+            del lower_peaks[text_sizes[f'small_text_size_{i}']]
             i += 1
 
         i = 0
         while higher_peaks:
-            text_sizes[f'big_text_size_{i}'] = max(higher_peaks)
-            higher_peaks.remove(text_sizes[f'big_text_size_{i}'])
+            text_sizes[f'big_text_size_{i}'] = max(higher_peaks,key=higher_peaks.get)
+            del higher_peaks[text_sizes[f'big_text_size_{i}']]
             i += 1
         
     return text_sizes

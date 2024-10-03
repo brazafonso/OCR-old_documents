@@ -59,7 +59,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
             print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
 
         if dpi < target_dpi:
-            scale_times = math.ceil((target_dpi/dpi - 1) / 2)
+            scale_times = math.ceil((target_dpi/dpi) / 2)
             scaling_type = None
             if scale_times >= 2:
                 model_main = 'scale4x'
@@ -99,7 +99,7 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
             if logs:
                 w,h = result.size
                 dpi = calculate_dpi(Box(0,w,0,h),Box(0,dimensions[0],0,dimensions[1]))
-                print('Auto Scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
+                print('Finished auto scaling image | dpi: ',dpi,' | target_dpi: ',target_dpi)
 
 
 

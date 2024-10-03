@@ -256,8 +256,8 @@ def sidebar_update_block_info():
         window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
         window['text_block_level'].update(highlighted_blocks[-1]['z'])
         ## type
-        if block.type:
-            window['list_block_type'].update(block.type)
+        block_type = block.type if block.type else ''
+        window['list_block_type'].update(block_type)
         ## text
         text_delimiters = {3: '\n'}
         text_confidence = config['base']['text_confidence']
@@ -730,7 +730,10 @@ def canvas_on_mouse_move(event):
 
     # check if mouse is within interaction range of any block
     ## used to update mouse cursor
-    block_id,_ = closest_block(event.xdata,event.ydata)
+    try:
+        block_id,_ = closest_block(event.xdata,event.ydata)
+    except:
+        block_id = None
     if block_id is not None:
         # interaction range cursor
         window.set_cursor('fleur')
@@ -1815,7 +1818,8 @@ def categorize_blocks_method():
     if highlighted_blocks:
         # apply categorize
         tree = current_ocr_results.copy()
-        tree = categorize_boxes(tree,conf=config['base']['text_confidence'],override=True)
+        tree = categorize_boxes(tree,conf=config['base']['text_confidence'],
+                                override=True,debug=config['base']['debug'])
 
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
@@ -1828,7 +1832,8 @@ def categorize_blocks_method():
         refresh_highlighted_blocks()
     elif current_ocr_results:
         # apply categorize
-        categorize_boxes(current_ocr_results,conf=config['base']['text_confidence'])
+        categorize_boxes(current_ocr_results,conf=config['base']['text_confidence']
+                         ,override=True,debug=config['base']['debug'])
 
         # update assets
         for b in bounding_boxes.values():
@@ -1844,7 +1849,7 @@ def find_titles_method():
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
         find_text_titles(current_ocr_results,conf=config['base']['text_confidence'],id_blocks=True,
-                         categorize_blocks=False,debug=True)
+                         categorize_blocks=False,debug=config['base']['debug'])
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()
