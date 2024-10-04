@@ -676,12 +676,14 @@ class OCR_Tree:
         return boxes
     
 
-    def get_boxes_intersect_area(self,area:Box,level:int=2,conf:int=-1,ignore_type:list[str]=[],area_ratio:float=0)->list['OCR_Tree']:
+    def get_boxes_intersect_area(self,area:Box,level:int=2,conf:int=-1,
+                                 ignore_type:list[str]=[],area_ratio:float=0)->list['OCR_Tree']:
         '''Get boxes that intersect area\n
         If level is -1, get all boxes in area'''
         boxes = []
         if area:
-            if (level == -1 or self.level == level ) and self.conf >= conf and self.type not in ignore_type:
+            if (level == -1 or self.level == level ) and \
+                self.conf >= conf and self.type not in ignore_type:
                 if self.box.intersects_box(area):
                     if area_ratio > 0:
                         if self.box.intersect_area_box(area).area()/self.box.area() >= area_ratio:
@@ -691,7 +693,8 @@ class OCR_Tree:
             elif self.level < level or level == -1:
                 for child in self.children:
                     child:OCR_Tree
-                    boxes += child.get_boxes_intersect_area(area,level,conf,ignore_type,area_ratio)
+                    boxes += child.get_boxes_intersect_area(area,level,conf,
+                                                            ignore_type,area_ratio)
         return boxes
     
     def prune_children_area(self,area:Box=None):

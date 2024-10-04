@@ -1,3 +1,5 @@
+from typing import Union
+import cv2
 import numpy as np
 from scipy import stats
 from .ocr_tree import *
@@ -5,6 +7,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text,categorize_box
 from OSDOCR.aux_utils.box import Box
 from pytesseract import Output
 from PIL import Image
+from document_image_utils.image import binarize_fax
 import pytesseract
 import jellyfish
 
@@ -215,8 +218,8 @@ def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=Fa
 
 
 
-
-def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box=None,text_confidence:int=10,find_images:bool=True,find_delimiters:bool=True,debug:bool=False)->OCR_Tree:
+def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box=None,text_confidence:int=10,
+                  find_images:bool=True,find_delimiters:bool=True,debug:bool=False)->OCR_Tree:
     '''Fix bound boxes\n
     Mainly overlaping boxes'''
     new_ocr_results = {}
@@ -226,6 +229,124 @@ def bound_box_fix(ocr_results:OCR_Tree,level:int,image_info:Box=None,text_confid
         new_ocr_results = text_bound_box_fix(ocr_results,text_confidence=text_confidence,debug=debug)
 
     return new_ocr_results
+
+
+def bound_box_fix_image(ocr_results:OCR_Tree,target_image:Union[str,cv2.typing.MatLike],
+                        level:int=5,text_confidence:int=10,debug:bool=False)->OCR_Tree:
+    '''Fix bound boxes of blocks by pixel analysis of bounding boxes in image.
+    
+    For each direction (left, right, top, bottom) we check (iterating on the interesting direction) 
+    for the first black pixel that has neighbouring black pixels.'''
+
+    img = None
+    if isinstance(target_image,str):
+        img = cv2.imread(target_image)
+    else:
+        img = target_image
+
+    # get image box
+    img_box = Box(0,img.shape[1],0,img.shape[0])
+
+    # treat image
+    ## binarize
+    img = binarize_fax(img)
+    ## threshold
+    img = cv2.threshold(img, 123, 255, cv2.THRESH_BINARY)[1]
+    ## erode - reduce noise
+    # kernel = np.ones((3,3),np.uint8)
+    # img = cv2.erode(img,kernel,iterations = 1)
+
+    # get all blocks
+    blocks = ocr_results.get_boxes_level(level=level,conf=text_confidence)
+
+    # prepare black pixels arrays for better performance
+    black_pixels = (img == 0)
+    shifted_down = np.roll(black_pixels,1,axis=0)
+    shifted_right = np.roll(black_pixels,1,axis=1)
+    shifted_up = np.roll(black_pixels,-1,axis=0)
+    shifted_left = np.roll(black_pixels,-1,axis=1)
+    
+    # for each block check finds first black pixels in area, to reduce bounding box
+    ## first pixel needs to have black neighbors
+    for b in blocks:
+        if b.box.width and b.box.height and b.box.is_inside_box(img_box):
+            block_image = black_pixels[b.box.top:b.box.bottom,b.box.left:b.box.right]
+            new_top = 0
+            new_bottom = block_image.shape[0]
+            new_left = 0
+            new_right = block_image.shape[1]
+            # check top
+            ## shift up
+            shifted_block_image = shifted_up[b.box.top:b.box.bottom,b.box.left:b.box.right]
+            ## invalidate last row
+            shifted_block_image[-1,:] = False
+            ## get candidates
+            candidates = np.argwhere(block_image & shifted_block_image)
+            ## get first black pixel
+            if len(candidates) > 0:
+                new_top = candidates[0][0]
+
+
+            # check bottom
+            ## shift down
+            shifted_block_image = shifted_down[b.box.top+new_top:b.box.bottom,b.box.left:b.box.right]
+            ## invalidate first row
+            shifted_block_image[0,:] = False
+            ## get candidates
+            candidates = np.argwhere(block_image[new_top:] & shifted_block_image)
+            ## get first black pixel
+            if len(candidates) > 0:
+                new_bottom = candidates[-1][0] + new_top
+
+            # check left
+            ## shift left
+            shifted_block_image = shifted_left[b.box.top:b.box.bottom,b.box.left:b.box.right]
+            ## invalidate last column
+            shifted_block_image[:,-1] = False
+            ## get candidates
+            candidates = np.argwhere(block_image & shifted_block_image)
+            ## get first black pixel
+            if len(candidates) > 0:
+                new_left = np.min(candidates[:,1])
+
+            # check right
+            ## shift right
+            shifted_block_image = shifted_right[b.box.top:b.box.bottom,b.box.left+new_left:b.box.right]
+            ## invalidate first column
+            shifted_block_image[:,0] = False
+            ## get candidates
+            candidates = np.argwhere(block_image[:,new_left:] & shifted_block_image)
+            ## get first black pixel
+            if len(candidates) > 0:
+                new_right = np.max(candidates[:,1]) + new_left
+
+            new_top = b.box.top + new_top
+            new_bottom = b.box.bottom - (b.box.height - new_bottom)
+            new_left = b.box.left + new_left
+            new_right = b.box.right - (b.box.width - new_right)
+
+            if new_top == b.box.top and new_bottom == b.box.bottom and new_left == b.box.left and new_right == b.box.right:
+                continue
+
+            # make sure new coordinates are valid
+            if new_top == new_bottom:
+                new_bottom += 1
+            if new_left == new_right:
+                new_right += 1
+
+            if debug:
+                print(f'Updating box {b.id} with left {new_left} and right {new_right} and top {new_top} and bottom {new_bottom} width {new_right - new_left} and height {new_bottom - new_top}| Old box: {b.box}')
+
+            b.update_size(left=new_left,right=new_right,top=new_top,bottom=new_bottom,absolute=True,invert=False)
+
+    return ocr_results
+
+
+
+
+
+    
+
 
 
 
@@ -331,35 +452,6 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs
 
     return ocr_results
 
-
-
-def improve_bounds_precision(ocr_results,target_image_path,progress_key,window):
-    'Rerun tesseract on within the boundings of a text box to improve its width and height precision'
-    progress_text = f'Progress: 0 / {len(ocr_results["text"])}'
-    window[progress_key].update(progress_text)
-    window.refresh()
-    original_img = Image.open(target_image_path)
-    for i in range(len(ocr_results['text'])):
-        if ocr_results[i].level == 5 and ocr_results[i].conf > 60:
-            (x, y, w, h) = (ocr_results[i].left, ocr_results[i].top, ocr_results[i].width, ocr_results[i].height)
-            img = original_img.crop((x-0.2*w,y-0.2*h,x+w*1.2,y+h*1.2))
-            new_values = pytesseract.image_to_data(img, output_type=Output.DICT,config='--psm 8',lang='por')
-            print(ocr_results[i].text)
-            print(new_values['text'])
-            print(new_values['conf'])
-            for j in range(len(new_values['text'])):
-                if new_values['level'][j] == 5 and jellyfish.levenshtein_distance(new_values['text'][j],ocr_results[i].text) < len(ocr_results[i].text)*0.3:
-                    print('Updated:',ocr_results[i].text,new_values['text'][j])
-                    print(' Old:',ocr_results[i].width,ocr_results[i].height)
-                    print(' New:',new_values['width'][j],new_values['height'][j])
-                    ocr_results[i].width = new_values['width'][j]
-                    ocr_results[i].height = new_values['height'][j]
-                    break
-        progress_text = f'Progress: {i} / {len(ocr_results["text"])}'
-        window[progress_key].update(progress_text)
-        window.refresh()
-
-    return ocr_results
 
 
 def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=False)->OCR_Tree:
@@ -948,3 +1040,7 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                         print('No new block added')
 
     return ocr_results
+
+
+
+

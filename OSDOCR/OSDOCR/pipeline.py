@@ -620,6 +620,7 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
 
     find_images_flag = 'remove_document_images' not in args.skip_method
     find_delimiters_flag = 'identify_document_delimiters' not in args.skip_method
+    bound_box_fix_image_flag = 'bound_box_fix_image' not in args.skip_method
     split_whitespaces_flag = 'split_whitespaces' not in args.skip_method
 
     metadata = get_target_metadata(o_target)
@@ -633,6 +634,16 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     ocr_results = remove_empty_boxes(ocr_results,text_confidence=args.text_confidence,
                                       find_images=find_images_flag,find_delimiters=find_delimiters_flag,
                                       debug=args.debug)
+    
+    if bound_box_fix_image_flag:
+        # adjust bounding boxes of text by analyzing image
+        if args.logs:
+            print('------------------------------------------')
+            print('\tAdjust bounding boxes of text by analyzing image')
+            print('------------------------------------------')
+        ocr_results = bound_box_fix_image(ocr_results,target_img,level=5,
+                                        text_confidence=args.text_confidence,debug=args.debug)
+
 
     # clean bounding boxes according to text confidence
     if args.logs:

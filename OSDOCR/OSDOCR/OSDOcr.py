@@ -3,6 +3,8 @@
 import argparse
 import os
 import sys
+
+from .ocr_tree_module.ocr_tree_fix import bound_box_fix_image,text_bound_box_fix
 from .parse_args import process_args
 from .aux_utils.misc import *
 from .aux_utils import consts
@@ -72,11 +74,28 @@ def run_test():
         # ocr_results.save_hocr('test.hocr')
 
         # draw journal template
+        # metadata = get_target_metadata(target_image)
+        # image_info = get_image_info(metadata['target_path'])
+        # areas = estimate_journal_template(ocr_results,image_info)
+        # img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
+        # cv2.imwrite('test.png',img)
+
+
+        # test bound_box_fix_image
         metadata = get_target_metadata(target_image)
-        image_info = get_image_info(metadata['target_path'])
-        areas = estimate_journal_template(ocr_results,image_info)
-        img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
-        cv2.imwrite('test.png',img)
+        image = metadata['target_path']
+        print(analyze_text(ocr_results))
+        ocr_results = bound_box_fix_image(ocr_results,image,level=5,debug=False)
+        print(analyze_text(ocr_results)) 
+
+        # x = np.random.randint(0,2,(10,10))
+        # x = x == 0
+        # print(x)
+        # y = np.roll(x,-1,axis=1)
+        # y[:,-1] = False
+        # print(y)
+        # z = np.argwhere(x & y)
+        # print(z)
 
         pass
 

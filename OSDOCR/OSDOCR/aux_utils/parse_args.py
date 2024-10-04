@@ -128,7 +128,8 @@ class CustomAction_skip_method(argparse.Action):
                          'image_preprocess','remove_document_margins','remove_document_images',
                          'image_upscaling','identify_document_delimiters','binarize_image']
 
-    posprocessing_methods = ['clean_ocr','split_whitespace','unite_blocks','calculate_reading_order','extract_articles','posprocessing']
+    posprocessing_methods = ['clean_ocr','bound_box_fix_image','split_whitespace','unite_blocks',
+                         'calculate_reading_order','extract_articles','posprocessing']
 
     skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
 
