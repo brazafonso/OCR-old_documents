@@ -63,6 +63,7 @@ ocr_results_articles = {}
 Possible actions:
     - move
     - expand
+    - select
     - split_block
     - split_image
 '''
@@ -311,6 +312,23 @@ def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
         update_canvas_column(window)
 
 
+def select_action_assets():
+    '''Create assets for select action. Transparent square representing selection area.'''
+    global current_action,current_action_start,highlighted_blocks,image_plot
+    assets = []
+    if current_action == 'select':
+        start_x,start_y = current_action_start
+        x,y = last_mouse_position
+        if x is not None and y is not None:
+            width = x - start_x
+            height = y - start_y
+            edge_color = (0.0157,0.3882,0.5019,1)
+            selection_square = Rectangle((start_x,start_y),width,height,linewidth=3,
+                                         edgecolor=edge_color,facecolor=(0,0,1,0.1),)
+            image_plot.add_patch(selection_square)
+            assets.append(selection_square)
+    return assets
+
 def split_action_assets():
     '''Create assets for split action'''
     global current_action,last_mouse_position,highlighted_blocks,\
@@ -391,6 +409,11 @@ def update(frame):
         if current_action == 'split_image' and current_image_path:
             split_assets = split_action_assets()
             assets.extend(split_assets)
+
+        # case of select block action
+        if current_action == 'select':
+            select_assets = select_action_assets()
+            assets.extend(select_assets)
 
     return assets
 
@@ -663,8 +686,7 @@ def canvas_on_button_press(event):
                 # update block info in sidebar
 
             else:
-                reset_highlighted_blocks()
-                print('no block found')
+                current_action = 'select'
 
             sidebar_update_block_info()
 
@@ -678,6 +700,7 @@ def canvas_on_button_press(event):
             # create event for main window
             ## bug - if creating popup windows from handler, blocks the main window
             window.write_event_value('method_split_image',(click_x,click_y))
+            
             
 
     # middle click
@@ -700,8 +723,33 @@ def canvas_on_button_release(event):
     print(f'release {event}')
     release_x = event.xdata
     release_y = event.ydata
+    
+    # select action
+    if current_action == 'select' and \
+        (current_action_start[0] != release_x or current_action_start[1] != release_y):
+        current_action = None
+        # select area
+        select_area_left = min(current_action_start[0],release_x)
+        select_area_top = min(current_action_start[1],release_y)
+        select_area_right = max(current_action_start[0],release_x)
+        select_area_bottom = max(current_action_start[1],release_y)
+        select_area = Box({'left':select_area_left,
+                           'right':select_area_right,
+                           'top':select_area_top,
+                           'bottom':select_area_bottom})
+        # get blocks inside select area
+        blocks = current_ocr_results.get_boxes_in_area(select_area,level=2)
+
+        # highlight blocks
+        for block in blocks:
+            block = bounding_boxes[block.id]
+            highlight_block(block)
+        # update sidebar block info
+        sidebar_update_block_info()
+
     # if click on a block and highlighted_blocks and click without moving, disselect block
-    if highlighted_blocks and \
+    ## if click outside of block and highlighted_blocks and click without moving, disselect blocks
+    elif highlighted_blocks and \
         (current_action_start[0] == release_x and current_action_start[1] == release_y):
 
         block_id,_ = closest_block(release_x,release_y)
@@ -714,12 +762,16 @@ def canvas_on_button_release(event):
                 block['rectangle'].set_facecolor((1,1,1,0))
                 # update block info in sidebar
                 sidebar_update_block_info()
+        else:
+            reset_highlighted_blocks()
+
     elif highlighted_blocks and \
         (current_action_start[0] != release_x or current_action_start[1] != release_y):
 
         if current_action in ['move','expand']:
             add_ocr_result_cache(current_ocr_results)
             print(highlighted_blocks[-1]['block'].min_left())
+
 
     current_action = None
 
