@@ -1777,36 +1777,53 @@ def change_block_id(id:int,new_id:int):
 
 def calculate_reading_order_method():
     '''Calculate reading order method'''
-    global current_ocr_results,current_image_path,bounding_boxes,config
+    global current_ocr_results,current_image_path,bounding_boxes,config,highlighted_blocks
     if current_ocr_results and current_image_path:
-        # get block order
-        ## get body area using delimiters
-        delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-        target_segments = config['methods']['target_segments']
-        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
-                                                target_segments=target_segments)[1]
-        ## blocks returned are only part of the body of the image
-        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
-                                        area=body_area)
-        ordered_block_ids = [b.id for b in ordered_blocks]
-        # update ids values
-        last_id = len(ordered_blocks) - 1
-        for b in bounding_boxes.values():
-            if b['id'] not in ordered_block_ids:
-                # block not in order
-                ## update id to be after last_id
+
+        # if no highlighted blocks, apply calculate reading order
+        if not highlighted_blocks:
+            # get block order
+            ## get body area using delimiters
+            delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
+            target_segments = config['methods']['target_segments']
+            body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
+                                                    target_segments=target_segments)[1]
+            ## blocks returned are only part of the body of the image
+            ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
+                                            area=body_area)
+            ordered_block_ids = [b.id for b in ordered_blocks]
+            # update ids values
+            last_id = len(ordered_blocks) - 1
+            for b in bounding_boxes.values():
+                if b['id'] not in ordered_block_ids:
+                    # block not in order
+                    ## update id to be after last_id
+                    b['id'] = last_id
+                    b['block'].id = b['id']
+                    b['id_text'].set_text(f'{b["id"]}')
+                    last_id += 1
+                else:
+                    # block in order
+                    ## update id to be position in order list
+                    new_id = ordered_block_ids.index(b['id'])
+                    b['id'] = new_id
+                    b['block'].id = b['id']
+                    b['id_text'].set_text(f'{b["id"]}')
+        # change ids of highlighted blocks according to order in list
+        elif len(highlighted_blocks) > 1:
+            last_id = highlighted_blocks[0]['id'] + 1
+            for b in highlighted_blocks[1:]:
+                # if id is already in use, change id of block that use it
+                if last_id in bounding_boxes:
+                    same_id_block = bounding_boxes[last_id]
+                    same_id_block['id'] = b['id']
+                    same_id_block['block'].id = same_id_block['id']
+                    same_id_block['id_text'].set_text(f'{same_id_block["id"]}')
                 b['id'] = last_id
                 b['block'].id = b['id']
                 b['id_text'].set_text(f'{b["id"]}')
                 last_id += 1
-            else:
-                # block in order
-                ## update id to be position in order list
-                new_id = ordered_block_ids.index(b['id'])
-                b['id'] = new_id
-                b['block'].id = b['id']
-                b['id_text'].set_text(f'{b["id"]}')
-
+            
         # update ids text
         refresh_blocks_ids()
 
