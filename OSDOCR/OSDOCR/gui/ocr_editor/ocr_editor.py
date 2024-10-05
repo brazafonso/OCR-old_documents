@@ -1294,13 +1294,14 @@ def delete_ocr_block():
     '''Delete highlighted ocr block'''
     global highlighted_blocks,current_ocr_results,bounding_boxes
     if highlighted_blocks:
-        block = highlighted_blocks[-1]
-        ## remove block from ocr_results
-        current_ocr_results.remove_box_id(block['block'].id)
-        ## remove block from bounding_boxes
-        del bounding_boxes[block['block'].id]
-        ## remove block from highlighted_blocks
-        highlighted_blocks.remove(block)
+        while highlighted_blocks:
+            block = highlighted_blocks[0]
+            ## remove block from ocr_results
+            current_ocr_results.remove_box_id(block['id'])
+            ## remove block from bounding_boxes
+            del bounding_boxes[block['id']]
+            ## remove block from highlighted_blocks
+            highlighted_blocks.remove(block)
 
                 
 def remove_empty_blocks_method():
