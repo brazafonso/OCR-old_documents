@@ -626,6 +626,13 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     metadata = get_target_metadata(o_target)
     target_img = metadata['target_path']
 
+    # remove text of low confidence
+    if args.logs:
+        print('------------------------------------------')
+        print('\tRemove text of low confidence')
+        print('------------------------------------------')
+    ocr_results.remove_nodes_conf(conf=args.text_confidence)
+
     # remove empty boxes
     if args.logs:
         print('------------------------------------------')
@@ -911,7 +918,7 @@ def run_target(target:str,args:argparse.Namespace):
         else:
             if os.path.exists(metadata['ocr_results_original_path']):
                 ocr_results_path = metadata['ocr_results_original_path']
-                ocr_results = OCR_Tree(ocr_results_path)
+                ocr_results = OCR_Tree(ocr_results_path,args.text_confidence)
             else:
                 print('File not found: ',ocr_results_path)
                 print('Please run ocr first')

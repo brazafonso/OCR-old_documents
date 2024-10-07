@@ -337,7 +337,7 @@ def bound_box_fix_image(ocr_results:OCR_Tree,target_image:Union[str,cv2.typing.M
             if debug:
                 print(f'Updating box {b.id} with left {new_left} and right {new_right} and top {new_top} and bottom {new_bottom} width {new_right - new_left} and height {new_bottom - new_top}| Old box: {b.box}')
 
-            b.update_size(left=new_left,right=new_right,top=new_top,bottom=new_bottom,absolute=True,invert=False)
+            b.update_box(left=new_left,right=new_right,top=new_top,bottom=new_bottom,invert=False)
 
     return ocr_results
 

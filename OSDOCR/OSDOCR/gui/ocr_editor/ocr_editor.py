@@ -29,7 +29,7 @@ from OSDOCR.pipeline import run_target_image
 from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
                                                 split_whitespaces,block_bound_box_fix,\
                                                 text_bound_box_fix,remove_empty_boxes,\
-                                                unite_blocks
+                                                unite_blocks,bound_box_fix_image,delimiters_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
                                                      order_ocr_tree
 from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
@@ -47,6 +47,7 @@ config = {}
 ## variables for canvas
 image_plot = None
 current_image_path = None
+current_image = None
 figure_canvas_agg = None
 figure = None
 animation = None
@@ -229,7 +230,8 @@ def update_canvas(window:sg.Window,figure):
     if figure:
         bounding_boxes = get_bounding_boxes()
         if bounding_boxes:
-            animation = FuncAnimation(figure, update, frames=60, blit=True,interval=1000/60,repeat=True)
+            animation = FuncAnimation(figure, update, frames=60, blit=True,
+                                      interval=1000/60,repeat=True)
         # update canvas
         canvas = window['canvas']
         ## use TKinter canvas
@@ -294,13 +296,16 @@ def clear_canvas():
 
 def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
     '''Redraws canvas with current ocr results'''
-    global window,current_image_path,current_ocr_results,image_plot
+    global window,current_image_path,current_image,current_ocr_results,image_plot
     if current_image_path or current_ocr_results:
         # draw image
         if current_image_path and refresh_image:
+            if not current_image:
+                current_image = cv2.imread(current_image_path)
+                current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
             clear_canvas()
             # create new plot
-            image_plot = create_plot(current_image_path)
+            image_plot = create_plot(current_image)
             # update canvas
             update_canvas(window,figure)
 
@@ -417,12 +422,13 @@ def update(frame):
 
     return assets
 
-def create_plot(path:str):
+def create_plot(image:Union[str,cv2.typing.MatLike]):
     '''Create plot with image'''
     global ppi,figure
     # read image
-    image = cv2.imread(path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    if isinstance(image,str):
+        image = cv2.imread(image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # change image size
     sizes = image.shape
     figure = plt.figure(figsize=(sizes[1]/ppi,sizes[0]/ppi))
@@ -446,7 +452,7 @@ def create_plot(path:str):
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
     global image_plot,figure,figure_canvas_agg,current_image_path,ppi,\
-        default_edge_color,config
+        default_edge_color,config,current_image
     if values['target_input']:
         path = values['target_input']
         if config['base']['use_pipeline_results']:
@@ -464,9 +470,11 @@ def update_canvas_image(window:sg.Window,values:dict):
             browse_file_initial_folder = f'{results_path}/processed'
         
         current_image_path = target_img_path
+        current_image = cv2.imread(target_img_path)
+        current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
 
         # update default edge color for ocr results
-        default_edge_color = get_average_inverse_color(target_img_path)
+        default_edge_color = get_average_inverse_color(current_image)
         color = default_edge_color * 255
         color = (int(color[0]),int(color[1]),int(color[2]))
         window['text_default_color'].update(text_color = rgb_to_hex(color),
@@ -474,7 +482,7 @@ def update_canvas_image(window:sg.Window,values:dict):
 
         clear_canvas()
         # create new plot
-        image_plot = create_plot(target_img_path)
+        image_plot = create_plot(current_image)
         # update canvas
         update_canvas(window,figure)
 
@@ -485,7 +493,7 @@ def update_canvas_image(window:sg.Window,values:dict):
 
 def update_canvas_ocr_results(window:sg.Window,values:dict):
     '''Update canvas ocr_results element. Creates new plot with ocr_results'''
-    global current_ocr_results,current_ocr_results_path,current_image_path
+    global current_ocr_results,current_ocr_results_path,current_image_path,config
     if values['ocr_results_input'] and current_image_path:
         current_ocr_results_path = values['ocr_results_input']
 
@@ -495,7 +503,8 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
             return
         
         # read ocr results
-        current_ocr_results = OCR_Tree(current_ocr_results_path)
+        current_ocr_results = OCR_Tree(current_ocr_results_path,
+                                       config['base']['text_confidence'])
         ## draw ocr results in canvas
         draw_ocr_results(current_ocr_results,window)
         # update browse location for 'ocr_results_input'
@@ -552,9 +561,9 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
     global image_plot,figure,figure_canvas_agg,ppi,current_image_path,\
-        bounding_boxes,default_edge_color
+        bounding_boxes,default_edge_color,current_image
     # get new plot to draw ocr results
-    image_plot = create_plot(current_image_path)
+    image_plot = create_plot(current_image)
 
     # id blocks and get them
     ocr_results.id_boxes(level=[2],override=False)
@@ -597,7 +606,7 @@ def draw_articles():
     global ocr_results_articles,bounding_boxes,default_edge_color,window
     # reset color of all blocks
     toggle_ocr_results_block_type(bounding_boxes,default_edge_color,
-                                  window['checkbox_toggle_block_type'])
+                                  window['checkbox_toggle_block_type'].get())
     # update color of blocks in articles
     for i,article in ocr_results_articles.items():
         article_color = article['color']
@@ -938,11 +947,12 @@ def reset_highlighted_blocks():
 
 def reset_ocr_results(window:sg.Window):
     '''Reset ocr results'''
-    global current_ocr_results,highlighted_blocks,current_action
+    global current_ocr_results,highlighted_blocks,current_action,config
     print('Reset ocr results')
     if current_ocr_results and current_ocr_results_path:
         # reload ocr results
-        current_ocr_results = OCR_Tree(current_ocr_results_path)
+        current_ocr_results = OCR_Tree(current_ocr_results_path,
+                                       config['base']['text_confidence'])
         # reset variables
         reset_highlighted_blocks()
         current_action = None
@@ -1053,7 +1063,7 @@ def refresh_ocr_results():
 
         toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                       default_color=default_edge_color,
-                                      toogle=window['checkbox_toggle_block_type'])
+                                      toogle=window['checkbox_toggle_block_type'].get())
 
 
 def update_sidebar_articles():
@@ -1385,7 +1395,8 @@ def apply_ocr_block():
         # run ocr
         run_target_image(tmp_path,results_path=tmp_dir,args=args)
         # load ocr results
-        ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json')
+        ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json',
+                                       config['base']['text_confidence'])
         new_box = ocr_results.get_boxes_level(0)[0].box
         ## scale dimensions, OCR results may not align with ocr block size
         scale_height = box.height/new_box.height
@@ -1646,7 +1657,7 @@ def split_image_method(x:int,y:int):
                 if ocr_results_path:
                     values['ocr_results_input'] = ocr_results_path
                     update_canvas_ocr_results(window,values)
-                    add_ocr_result_cache(OCR_Tree(ocr_results_path))
+                    add_ocr_result_cache(OCR_Tree(ocr_results_path,config['base']['text_confidence']))
                     toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),
                                                   default_color=default_edge_color,
                                                   toogle=values['checkbox_toggle_block_type'])
@@ -1910,7 +1921,7 @@ def categorize_blocks_method():
             create_ocr_block_assets(b['block'])
 
     toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,
-                                  toogle=window['checkbox_toggle_block_type'])
+                                  toogle=window['checkbox_toggle_block_type'].get())
 
 
 def find_titles_method():
@@ -2094,6 +2105,20 @@ def move_article_method(article_id:int, up:bool=True):
             ocr_results_articles = {k: ocr_results_articles[k] for k in keys}
         refresh_articles()
 
+
+def test_method():
+    '''Test method'''
+    global current_ocr_results,current_image_path,config,window
+    print('Test method')
+    if current_ocr_results:
+        print('Bound box fix image')
+        print(current_ocr_results.get_box_id(7).box)
+        current_ocr_results = delimiters_fix(current_ocr_results,conf=config['base']['text_confidence'])
+
+        refresh_ocr_results()
+        
+        add_ocr_result_cache(current_ocr_results)
+
 ################################################
 ###########                   ##################
 ###########     MAIN LOOP     ##################
@@ -2199,7 +2224,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                           default_color=default_edge_color,
-                                          toogle=values[event])
+                                          toogle=values[event].get())
         # save block changes
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
@@ -2225,7 +2250,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             else:
                 toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                               default_color=default_edge_color,
-                                              toogle=window['checkbox_toggle_block_type'])
+                                              toogle=window['checkbox_toggle_block_type'].get())
         # article button
         elif 'table_articles' in event[0]:
             row,_ = event[2]
@@ -2372,6 +2397,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 split_image_method(int(click_x),int(click_y))
                 current_action = None
                 print('split image')
+        # test method
+        elif event == 'method_test':
+            test_method()
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui(position=window.CurrentLocation())
@@ -2383,7 +2411,6 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             # update section status
             section_status = not collapsible_sections_status[section_key]
             collapsible_sections_status[section_key] = section_status
-            print(f'section {section_key} status changed to {section_status}')
             # update section visibility
             window[section_key].update(visible= section_status)
             # update section arrow

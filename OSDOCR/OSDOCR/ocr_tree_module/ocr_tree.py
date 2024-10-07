@@ -63,6 +63,17 @@ class OCR_Tree:
                             self.from_hocr(f.read())
                 else:
                     raise OCR_Tree_load_error(f'File {args[0]} not found')
+        elif len(args) == 2:
+            if isinstance(args[0],str):
+                if os.path.isfile(args[0]):
+                    if args[0].endswith('.json'):
+                        with open(args[0],'r') as f:
+                            self.from_json(json.load(f),args[1])
+                    elif args[0].endswith('.hocr'):
+                        with open(args[0],'r') as f:
+                            self.from_hocr(f.read(),args[1])
+                else:
+                    raise OCR_Tree_load_error(f'File {args[0]} not found')
         # normal method
         else:
             self.init(*args)
@@ -88,7 +99,7 @@ class OCR_Tree:
             for k,v in opts.items():
                 setattr(self,k,v)
 
-    def from_json(self,json_list:list[dict]):
+    def from_json(self,json_list:list[dict],conf:int=-1):
         '''Load ocr_results from json list'''
         for k in json_list[0].keys():
             if k != 'box':
@@ -99,6 +110,8 @@ class OCR_Tree:
         for i in range(1,len(json_list)):
             current_node = node_stack[-1]
             node = OCR_Tree(json_list[i])
+            # if node.level == 5 and node.conf < conf:
+            #     continue
             if node.level == current_node.level + 1:
                 current_node.add_child(node)
                 node_stack.append(node)
@@ -170,13 +183,14 @@ class OCR_Tree:
 
 
 
-    def from_hocr(self,hocr:str,new_tree:bool=True):
+    def from_hocr(self,hocr:str,conf:int=-1,new_tree:bool=True):
         '''Load ocr_results from hocr string'''
         page = BeautifulSoup(hocr,features='xml')
         element = page.find('body')
         # create ocr_tree
         if new_tree:
-            self.init(**{'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,'box':Box(0,0,0,0),'text':'','conf':-1})
+            self.init(**{'level':0,'page_num':0,'block_num':0,'par_num':0,'line_num':0,'word_num':0,
+                         'box':Box(0,0,0,0),'text':'','conf':-1})
         else:
             element = element.find_next()
             node_data = self.hocr_element_to_dict(element)
@@ -218,6 +232,8 @@ class OCR_Tree:
                 'type':node_data['type']
 
             })
+            if node.level ==  5 and node.conf < conf:
+                continue
             if node.level == current_node.level + 1:
                 current_node.add_child(node)
                 box_stack.append(node)
@@ -1069,7 +1085,7 @@ class OCR_Tree:
 
 
 
-    def update_box(self,left:int=None,right:int=None,top:int=None,bottom:int=None,children:bool=False):
+    def update_box(self,left:int=None,right:int=None,top:int=None,bottom:int=None,invert:bool=True,children:bool=False):
         '''Update box and children positions.
         
         Arguments:
@@ -1085,30 +1101,30 @@ class OCR_Tree:
         
         if left:
             if children:
-                self.box.update(left=max(self.box.left,left))
+                self.box.update(left=max(self.box.left,left),invert=invert)
             else:
-                self.box.update(left=left)
+                self.box.update(left=left,invert=invert)
 
         if right:
             if children:
-                self.box.update(right=min(self.box.right,right))
+                self.box.update(right=min(self.box.right,right),invert=invert)
             else:
-                self.box.update(right=right)
+                self.box.update(right=right,invert=invert)
 
         if top:
             if children:
-                self.box.update(top=max(self.box.top,top))
+                self.box.update(top=max(self.box.top,top),invert=invert)
             else:
-                self.box.update(top=top)
+                self.box.update(top=top,invert=invert)
 
         if bottom:
             if children:
-                self.box.update(bottom=min(self.box.bottom,bottom))
+                self.box.update(bottom=min(self.box.bottom,bottom),invert=invert)
             else:
-                self.box.update(bottom=bottom)
+                self.box.update(bottom=bottom,invert=invert)
 
         for child in self.children:
-            child.update_box(left=left,right=right,top=top,bottom=bottom,children=True)
+            child.update_box(left=left,right=right,top=top,bottom=bottom,invert=invert,children=True)
 
 
 
@@ -1154,6 +1170,21 @@ class OCR_Tree:
         
         
 
-    
+    def remove_nodes_conf(self,level:int=5,conf:int=10):
+        '''Remove nodes of level with confidence lower than conf'''
+        if self.level == level - 1:
+            i = 0
+            while i < len(self.children):
+                child = self.children[i]
+                if child.conf < conf:
+                    self.children.remove(child)
+                    del child
+                else:
+                    i += 1
+
+        elif self.level < level - 1:
+            for child in self.children:
+                child.remove_nodes_conf(level=level,conf=conf)
+            
 
 

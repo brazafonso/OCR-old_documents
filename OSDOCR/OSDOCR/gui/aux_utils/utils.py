@@ -101,10 +101,12 @@ def rgb_to_hex(rgb:tuple[int,int,int]) -> str:
     return '#%02x%02x%02x' % rgb
 
 
-def get_average_inverse_color(path:str)->tuple:
+def get_average_inverse_color(image:Union[str,cv2.typing.MatLike])->tuple:
     '''Get average inverse color of image. Returns tuple (R,G,B) normalized to 0-1'''
-    image = cv2.imread(path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    if isinstance(image,str):
+        image = cv2.imread(image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
     average_color = np.average(image, axis=(0, 1))
     inverted = 255 - average_color
 

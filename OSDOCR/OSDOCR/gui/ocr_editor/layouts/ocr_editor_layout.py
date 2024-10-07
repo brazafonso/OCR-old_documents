@@ -119,6 +119,9 @@ def ocr_editor_layout()->sg.Window:
         [
             place(sg.Image(source=f'{file_path}/../assets/refresh_block_id.png',
                            key='method_refresh_block_id',enable_events=True,tooltip='Refresh block id')),
+        ],
+        [
+            place(sg.Button('Test',key='method_test',font=("Calibri", 15))),
         ]
     ]
 
