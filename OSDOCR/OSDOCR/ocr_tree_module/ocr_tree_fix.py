@@ -957,60 +957,138 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
 
         # get lines
         lines = block.get_boxes_level(4)
-        line_seq_positions = []     # list of positions of whitespaces in each line
+        lines_seq_positions = []     # list of positions of whitespaces in each line
         valid_split = True
 
         # for each line, check if it contains a valid sequence of whitespaces
         ## saves the coordinates of the first and last whitespace in the sequence
         for line in lines:
             line_words = line.get_boxes_level(5,conf=conf)
-            line_seq_position = [None,None]
+            line_seq_positions = [] # list of positions of whitespaces in the line
             line_word_dists = []
             line_word_pairs = []
+
+            # add first distance
+            if len(line_words) > 0:
+                line_word_dists.append(line_words[0].box.left - block.box.left)
+                line_word_pairs.append((block,line_words[0]))
 
             for i,word in enumerate(line_words[:-1]):
                 line_word_dists.append(line_words[i+1].box.left - word.box.right)
                 line_word_pairs.append((word,line_words[i+1]))
 
+            # add last distance
+            if len(line_words) > 0:
+                line_word_dists.append(block.box.right - line_words[-1].box.right)
+                line_word_pairs.append((line_words[-1],block))
+
             # identify word distance outliers
-            line_word_dists = [d for d in line_word_dists if d > 0]
+            j = 0
+            while j < len(line_word_dists[1:-1]):
+                if line_word_dists[j+1] <= 0:
+                    line_word_dists.pop(j+1)
+                    line_word_pairs.pop(j+1)
+                else:
+                    j += 1
+
             if line_word_dists:
                 # get average (adjusted with overall word distance)
-                average = (sum(line_word_dists)/len(line_word_dists) + avg_word_dist)/2
+                average = (sum(line_word_dists)/len(line_word_dists)*0.3 + avg_word_dist*0.7)/2
                 # check if any of the dists are bigger than 'dif_ratio' times the median
                 for i,d in enumerate(line_word_dists):
+                    line_seq_position = [None,None]
                     if d >= dif_ratio*average:
-                        line_seq_position[0] = line_word_pairs[i][0].box.right
-                        line_seq_position[1] = line_word_pairs[i][1].box.left
-                        break
+                        if i == 0:
+                            line_seq_position[0] = block.box.left
+                            line_seq_position[1] = line_word_pairs[i][1].box.left
+                        elif i == len(line_word_dists)-1:
+                            line_seq_position[0] = line_word_pairs[i][0].box.right
+                            line_seq_position[1] = block.box.right
+                        else:
+                            line_seq_position[0] = line_word_pairs[i][0].box.right
+                            line_seq_position[1] = line_word_pairs[i][1].box.left
 
-                if not line_seq_position[0]:
+                        line_seq_positions.append(line_seq_position)
+
+                if not line_seq_positions:
                     valid_split = False
                     break
                 else:
-                    line_seq_positions.append(line_seq_position)
+                    lines_seq_positions.append(line_seq_positions)
 
-                
-
-        if valid_split and line_seq_positions:
+        if valid_split and len(lines_seq_positions) == len(lines):
             if debug:
-                print(f'Valid split found for block {block.id} | nº of lines: {len(line_seq_positions)}')
+                print(f'Valid split found for block {block.id} | nº of lines: {len(lines)}')
 
             # check max matching coordinates for split
-            ## first check if all intervals intercept
-            interception = True
-            widest_interval = max(line_seq_positions,key=lambda x: x[1]-x[0])
-            for interval in line_seq_positions:
-                # check left and right
-                if interval[0] > widest_interval[1] or interval[1] < widest_interval[0]:
-                    interception = False
+            ## check for all intervals of first line, if any intercepts with at least one interval of the other lines
+            interception = False
+            intersecting_intervals = []
+            intervals_path = []
+            for first_line_interval in lines_seq_positions[0]:
+
+                intervals_path = [first_line_interval]
+                intersecting_intervals = [[first_line_interval]]
+                i = 1
+                # get all other line intervals that intersect 
+                while i < len(lines_seq_positions):
+                    line_intersection_intervals = []
+                    for other_line_interval in lines_seq_positions[i]:
+                        if first_line_interval[0] <= other_line_interval[1] and other_line_interval[0] <= first_line_interval[1]:
+                            line_intersection_intervals.append(other_line_interval)
+
+                    if line_intersection_intervals:
+                        intersecting_intervals.append(line_intersection_intervals)
+                    else:
+                        break
+
+                    i += 1
+
+                # check if at least one interval in all other lines intersects
+                if len(intersecting_intervals) != len(lines):
+                    continue
+
+                # check if for each interval in other lines, at least one interval in remaining lines intersects
+                ## for current target_interval, check the next line for interval with intersection, and so forth until last line
+                i = 0
+                j = [0]*len(lines_seq_positions)
+                found_intersection = False
+                while i < len(intersecting_intervals) - 1:
+                    target_interval = intersecting_intervals[i][j[i]]
+                    i += 1
+                    comparing_intervals = intersecting_intervals[i]
+                    found_intersection = False
+                    # compare with intervals of next line
+                    k = j[i]
+                    while k < len(comparing_intervals):
+                        comparing_interval = comparing_intervals[k]
+                        if target_interval[0] <= comparing_interval[1] and comparing_interval[0] <= target_interval[1]:
+                            j[i] = k
+                            found_intersection = True
+                            break
+
+                        k += 1
+                    
+                    # if no intersection found, go to previous line and try next interval
+                    if not found_intersection:
+                        i -= 1
+                        j[i] += 1
+
+                if found_intersection:
+                    interception = True
+                    # add intervals to path
+                    for i in range(1,len(j)):
+                        intervals_path.append(lines_seq_positions[i][j[i]])
+
                     break
+
+                         
             ## if all intervals intercept, check widest common interval
             if interception:
                 if debug:
-                    print(f'Valid split found for block {block.id} | nº of lines: {len(line_seq_positions)} | widest interval: {widest_interval}')
-                left = widest_interval[0]
-                right = widest_interval[1]
+                    print(f'Valid split found for block {block.id} | nº of lines: {len(lines)}')
+                left = intervals_path[0][0]
+                right = intervals_path[0][1]
                 for interval in line_seq_positions:
                     if interval[0] > left:
                         left = interval[0]
@@ -1020,7 +1098,6 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                 # split block
                 delimiter = Box(left,right,block.box.top,block.box.bottom)
                 blocks = split_block(block,delimiter,orientation='vertical',keep_all=True,conf=conf,debug=debug)
-                block.update(blocks[0])
                 new_block = blocks[1] if len(blocks) == 2 else None
 
                 if debug:

@@ -1672,14 +1672,17 @@ def split_image_method(x:int,y:int):
 
 def split_ocr_blocks_by_whitespaces_method():
     '''Split ocr blocks by whitespaces. If highlighted blocks, apply only on them. Else, apply on all blocks'''
-    global highlighted_blocks,current_ocr_results,image_plot,animation,figure_canvas_agg
+    global highlighted_blocks,current_ocr_results,image_plot,animation,\
+        figure_canvas_agg,config
     bounding_boxes = get_bounding_boxes()
     blocks = highlighted_blocks if highlighted_blocks else bounding_boxes.values()
     last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id + 1
 
     new_blocks = []
     # split by whitespaces on whole results
-    split_tree = split_whitespaces(current_ocr_results.copy(),conf=0,debug=True)
+    split_tree = split_whitespaces(current_ocr_results.copy(),
+                                   conf=config['base']['text_confidence'],
+                                   debug=config['base']['debug'])
     split_tree_blocks = split_tree.get_boxes_level(level=2)
     split_tree_blocks.sort(key=lambda b: b.id)
 
