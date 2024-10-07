@@ -5,6 +5,7 @@ import re
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import analyze_text
 from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
 from OSDOCR.aux_utils.box import Box
+from OSDOCR.output_module.text import fix_hifenization
 
 
 class Article:
@@ -178,12 +179,14 @@ class Article:
     def __str__(self):
         return f'Article(title={self.title},authors={self.authors},bounding_box={self.bounding_box})'
     
-    def to_md(self,output_path:str):
+    def to_md(self,output_path:str,fix_hifenization_flag:bool=True):
         '''Returns article in markdown format.Output path is optional, used to create relative image paths.'''
         text = ''
         # title
         clean_title = 'Default Title'
         if self.title:
+            if fix_hifenization_flag:
+                clean_title = fix_hifenization(self.title)
             clean_title = re.sub(r'\s\s+', ' ', self.title)
             clean_title = re.sub(r'\n', ' ', clean_title)
         text += f'''# {clean_title}
@@ -191,11 +194,14 @@ class Article:
         
         # body
         text += f'''
+
 ------------------------------------------------------------------'''
 
         for item in self.body:
             if item[0] == 'text':
                 box_text = item[1]
+                if fix_hifenization_flag:
+                    box_text = fix_hifenization(box_text)
                 # small replace because of markdown specific formatting
                 box_text = re.sub(r'(^|\n) *([\#\*\-])\s', r'\1\\\2 ', box_text)
                 text += f'{box_text}'
@@ -212,16 +218,19 @@ class Article:
                 text += '\n\n'
 
         text +=f'''
+
 ------------------------------------------------------------------'''
         return text
     
 
-    def to_txt(self):
+    def to_txt(self,fix_hifenization_flag:bool=True):
         '''Returns article in txt format'''
         text = f'{self.title}\n'
 
         for item in self.body:
             if item[0] == 'text':
+                if fix_hifenization_flag:
+                    item = (item[0],fix_hifenization(item[1]))
                 text += f'{item[1]}'
             
         text += f'\n'

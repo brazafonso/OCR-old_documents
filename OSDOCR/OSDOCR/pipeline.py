@@ -7,22 +7,25 @@ from OSDOCR.ocr_tree_module.ocr_tree import *
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import *
 from OSDOCR.ocr_tree_module.ocr_tree_fix import *
 from OSDOCR.ocr_engines.engine_utils import *
+from OSDOCR.output_module.text import *
 from OSDOCR.output_module.journal.article import Article
 from OSDOCR.preprocessing.image import *
 
 
 def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,
-                  output_types:list[str],min_text_conf:int):
+                  output_types:list[str],min_text_conf:int,fix_hifenization_flag:bool):
     '''Save articles. Type of output is defined in args : markdown, html, txt'''
     metadata = get_target_metadata(o_taget)
 
     if 'markdown' in output_types:
 
         with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
+            txt = ''
             for article in articles:
                 article = Article(article,min_text_conf)
-                f.write(article.to_md(f'{results_path}'))
-                f.write('\n')
+                txt += article.to_md(f'{results_path}',fix_hifenization_flag) + '\n'
+
+            f.write(txt)
 
         metadata['output']['markdown'] = f'{results_path}/articles.md'
 
@@ -40,9 +43,12 @@ def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,
 
     if 'txt_simple' in output_types:
         with open(f'{results_path}/articles.txt','w',encoding='utf-8') as f:
+            txt = ''
             for article in articles:
                 article = Article(article,min_text_conf)
-                f.write(article.to_txt())
+                txt += article.to_txt(fix_hifenization_flag)
+
+            f.write(txt)
 
         metadata['output']['txt_simple'] = f'{results_path}/articles.txt'
 
@@ -78,7 +84,9 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
 
 
     # save articles
-    save_articles(articles,o_target,results_path,args.output_type,args.text_confidence)
+    fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
+    save_articles(articles,o_target,results_path,args.output_type,
+                  args.text_confidence,fix_hifenization_flag)
 
 
 def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
@@ -91,6 +99,8 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
 
 
     calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
+
     if calculate_reading_order:
         blocks = order_ocr_tree(target_img_path,ocr_results,args.ignore_delimiters,args.logs)
     else:
@@ -100,15 +110,27 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
 
     if 'txt' in args.output_type:
         with open(f'{results_path}/output.txt','w',encoding='utf-8') as f:
+            txt = ''
             for block in blocks:
-                block_txt = block.to_text(args.text_confidence)
-                f.write(block_txt)
+                txt += block.to_text(args.text_confidence)
+
+            if fix_hifenization_flag:
+                txt = fix_hifenization(txt)
+
+            f.write(txt)
+                
+            
 
     if 'markdown' in args.output_type:
         with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+            txt = ''
             for block in blocks:
-                block_txt = block.to_text(args.text_confidence)
-                f.write(block_txt)
+                txt += block.to_text(args.text_confidence)
+
+            if fix_hifenization_flag:
+                txt = fix_hifenization(txt)
+
+            f.write(txt)
 
     
 
@@ -150,11 +172,6 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
     og_img = cv2.imread(o_target)
     cv2.imwrite(processed_image_path,og_img)
 
-    # image distortion
-    if 'fix_distortions' not in args.skip_method:
-        # TODO
-        pass
-
             
     # image rotation
     if args.fix_rotation and 'auto_rotate' not in args.skip_method:
@@ -192,11 +209,6 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
 
         metadata['transformations'].append(('remove_document_margins'))
 
-
-    # blur removal
-    if 'blur_removal' not in args.skip_method:
-        # TODO
-        pass
 
     # image upscaling
     if 'image_upscaling' not in args.skip_method:
@@ -345,15 +357,11 @@ def binarize_image(o_target:Union[str,cv2.typing.MatLike],args:argparse.Namespac
         if method == 'fax':
             binarized = binarize_fax(binarized)
         elif method == 'otsu':
-            denoise_strength = args.binarize_image[1] if len(args.binarize_image) > 1 else None
+            denoise_strength = float(args.binarize_image[1]) if len(args.binarize_image) > 1 else None
             binarized = binarize(binarized,denoise_strength=denoise_strength)
 
     return binarized
 
-
-def run_target_hocr(target:str,args:argparse.Namespace):
-    '''Run pipeline for single OCR target.'''
-    return None
 
 
 

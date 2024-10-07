@@ -32,6 +32,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
                                                 unite_blocks,bound_box_fix_image,delimiters_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
                                                      order_ocr_tree
+from OSDOCR.output_module.text import fix_hifenization
 from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -2111,14 +2112,18 @@ def move_article_method(article_id:int, up:bool=True):
 
 def test_method():
     '''Test method'''
-    global current_ocr_results,current_image_path,config,window
+    global current_ocr_results,current_image_path,config,window,highlighted_blocks
     print('Test method')
     if current_ocr_results:
-        print('Bound box fix image')
-        print(current_ocr_results.get_box_id(7).box)
-        current_ocr_results = delimiters_fix(current_ocr_results,conf=config['base']['text_confidence'])
+        print('Test button')
+        if highlighted_blocks:
+            block = highlighted_blocks[-1]['block']
+            print('- Cleaned text :')
+            print(fix_hifenization(block.to_text(conf=config['base']['text_confidence'])))
+            
 
         refresh_ocr_results()
+        sidebar_update_block_info()
         
         add_ocr_result_cache(current_ocr_results)
 
@@ -2204,9 +2209,15 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # zoom in   
         elif event == 'zoom_in':
             zoom_canvas(factor=-30)
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=window['checkbox_toggle_block_type'].get())
         # zoom out
         elif event == 'zoom_out':
             zoom_canvas(factor=30)
+            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+                                          default_color=default_edge_color,
+                                          toogle=window['checkbox_toggle_block_type'].get())
         # generate md
         elif event == 'generate_md':
             generate_output_md()
@@ -2227,7 +2238,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         elif event == 'checkbox_toggle_block_type':
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                           default_color=default_edge_color,
-                                          toogle=values[event].get())
+                                          toogle=values[event])
         # save block changes
         elif event == 'button_save_block':
             save_ocr_block_changes(values=values)
