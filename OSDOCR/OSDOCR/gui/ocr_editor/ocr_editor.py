@@ -257,7 +257,11 @@ def sidebar_update_block_info():
         top = int(block.box.top)
         right = int(block.box.right)
         bottom = int(block.box.bottom)
+        width = int(block.box.width)
+        height = int(block.box.height)
         window['text_block_coords'].update(f'({left},{top}) - ({right},{bottom})')
+        window['text_block_height'].update(height)
+        window['text_block_width'].update(width)
         window['text_block_level'].update(highlighted_blocks[-1]['z'])
         ## type
         block_type = block.type if block.type else ''
@@ -1201,11 +1205,32 @@ def save_ocr_results(path:str=None,save_as_copy:bool=False):
         current_ocr_results.save_json(save_path)
 
 
+def apply_block_type_to_all(blocks:list,type:str):
+    '''Apply block type to all blocks'''
+    global window,bounding_boxes,default_edge_color
+    # get type color
+    if type is None:
+        color = default_edge_color
+    else:
+        dummy_tree = OCR_Tree()
+        dummy_tree.type = type
+        color = dummy_tree.type_color(normalize=True,rgb=True)
+
+    # apply type to all blocks
+    for block in blocks:
+        block['block'].type = type
+        block['rectangle'].set_edgecolor(color)
+
+
+
+
 def save_ocr_block_changes(values:dict):
     '''Save changes to current highlighted block. 
     The coordinates will be divided equally within the block.
     Confidence of words will be set to 100.'''
-    global current_ocr_results,highlighted_blocks,config
+    global current_ocr_results,highlighted_blocks,config,\
+        default_edge_color
+    
     if current_ocr_results and highlighted_blocks:
         target_block = highlighted_blocks[-1]
         block = target_block['block']
@@ -1233,7 +1258,7 @@ def save_ocr_block_changes(values:dict):
             pars[i] = par_lines
 
         #### create OCR Trees
-        par_height = int(block.box.height / len(pars))
+        par_height = int(block.box.height / len(pars)) if len(pars) > 0 else 0
         new_children = []
         ##### par level
         for i,par in enumerate(pars):
@@ -1286,11 +1311,16 @@ def save_ocr_block_changes(values:dict):
             block.children = new_children
 
         # change block type
-        if block_type and block_type != block.type:
+        if block_type is not None and block_type != block.type:
+            if block_type == '':
+                block_type = None
             block.type = block_type
             ## change color of rectangle if type color is toogled
             if values['checkbox_toggle_block_type']:
-                color = block.type_color(normalize=True,rgb=True)
+                if block_type:
+                    color = block.type_color(normalize=True,rgb=True)
+                else:
+                    color = default_edge_color
                 rectangle.set_edgecolor(color)
 
         # change block id
@@ -2255,6 +2285,14 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             apply_ocr_block()
             sidebar_update_block_info()
             add_ocr_result_cache(current_ocr_results)
+        # apply block type to all
+        elif event == 'button_type_apply_all':
+            if highlighted_blocks:
+                type = window['list_block_type'].get()
+                if type == '':
+                    type = None
+                apply_block_type_to_all(highlighted_blocks,type)
+                add_ocr_result_cache(current_ocr_results)
         # copy block text
         elif event == 'button_copy_block_text':
             copy_block_text()

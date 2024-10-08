@@ -191,7 +191,7 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Checkbox(text='', key='checkbox_toggle_block_type', enable_events=True)),
         ],
         [
-            place(sg.Text('Filter Box Type: ', font=('Calibri', 15))),
+            place(sg.Text('Box Type: ', font=('Calibri', 15))),
         ],
         [
             place(sg.Text('* ', enable_events=True, key='box_type_title_text', font=('Calibri', 13))),
@@ -258,13 +258,23 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Text('',key='text_block_coords', font=('Calibri', 10))),
         ],
         [
-            place(sg.Text('Z: ', font=('Calibri', 13))),
+            place(sg.Text('Height:', font=('Calibri', 13))),
+            place(sg.Text('',key='text_block_height', font=('Calibri', 13))),
+        ],
+        [
+            place(sg.Text('Width:', font=('Calibri', 13))),
+            place(sg.Text('',key='text_block_width', font=('Calibri', 13))),
+        ],
+        [
+            place(sg.Text('Z:', font=('Calibri', 13))),
             place(sg.Text('',key='text_block_level', font=('Calibri', 13))),
         ],
         [
             place(sg.Text('Type: ', font=('Calibri', 13))),
-            place(sg.Combo(['title','text','image','highlight','caption','delimiter','other'],
-                           default_value='',key='list_block_type',enable_events=True, font=('Calibri', 13))),
+            place(sg.Combo(['title','text','image','highlight','caption','delimiter','other',''],
+                           default_value='',key='list_block_type',enable_events=True, font=('Calibri', 13),
+                           readonly=True)),
+            place(sg.Button('░░',key='button_type_apply_all', font=('Calibri', 13),tooltip='Apply to all blocks')),
         ],
         [
             place(sg.Text('Text: ', font=('Calibri', 13)))
@@ -339,7 +349,7 @@ def ocr_editor_layout()->sg.Window:
         [
                 sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_type_legend-',
                      font=("Calibri", 20,"bold"),text_color='#046380'), 
-                sg.T('Block Type Legend', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT',
+                sg.T('Block Filter', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT',
                      font=("Calibri", 20,"bold"),text_color='#046380'),
         ],
         [
