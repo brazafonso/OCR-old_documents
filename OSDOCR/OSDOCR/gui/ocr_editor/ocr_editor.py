@@ -1393,6 +1393,7 @@ def apply_ocr_block():
         args.skip_method =  skip_methods
         args.binarize_image = [config['ocr_pipeline']['binarize']]
         args.logs = True
+        args.debug = config['base']['debug']
         # run ocr
         run_target_image(tmp_path,results_path=tmp_dir,args=args)
         # load ocr results

@@ -173,6 +173,7 @@ class Box:
     def intersects_box(self,box:'Box',extend_vertical:bool=False,extend_horizontal:bool=False,inside:bool=False):
         '''Check if box intersects another box'''
         self_box = self.copy()
+        self_box:Box
         if extend_vertical:
             self_box.top = 0
             self_box.bottom = box.bottom + 1
@@ -180,8 +181,12 @@ class Box:
             self_box.left = 0
             self_box.right = box.right + 1
             
-        intercept_vertical = extend_vertical or (self_box.top < box.top and self_box.bottom > box.top) or (box.top < self_box.top and box.bottom > self_box.top)
-        intercept_horizontal = extend_horizontal or (self_box.left < box.right and self_box.right > box.left) or (self_box.left < box.right and self_box.right > box.right)
+        intercept_vertical = extend_vertical or (self_box.top <= box.top and self_box.bottom >= box.top) \
+                                or (box.top <= self_box.top and box.bottom >= self_box.top)
+        
+        intercept_horizontal = extend_horizontal or (self_box.left <= box.right and self_box.right >= box.left) \
+                                or (self_box.left <= box.right and self_box.right >= box.right)
+        
         if intercept_horizontal and intercept_vertical:
             return True
         

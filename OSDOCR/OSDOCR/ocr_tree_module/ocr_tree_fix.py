@@ -516,13 +516,17 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                     extended_delimiter_box = current_delimiter_box.copy()
                     extended_delimiter_box.left = block.box.left
                     extended_delimiter_box.right = block.box.right
+                    ## get text above and below
                     above_area = block.box.copy()
                     above_area.bottom = current_delimiter_box.top
+                    above_text_blocks = block.get_boxes_intersect_area(above_area,level=5,conf=conf)
                     below_area = block.box.copy()
                     below_area.top = current_delimiter_box.bottom
+                    below_text_blocks = block.get_boxes_intersect_area(below_area,level=5,conf=conf)
+                    ## remove from below_text_blocks blocks that are in above_text_blocks
+                    below_text_blocks = [b for b in below_text_blocks if b not in above_text_blocks]
                     if len(block.get_boxes_intersect_area(extended_delimiter_box,level=5,conf=conf,area_ratio=0.4)) == 0\
-                        and len(block.get_boxes_intersect_area(above_area,level=5,conf=conf)) > 0\
-                        and len(block.get_boxes_intersect_area(below_area,level=5,conf=conf)) > 0:
+                            and len(above_text_blocks) > 0 and len(below_text_blocks) > 0:
                         if debug:
                             print(f'Splitting block {block.id} into two')
 
