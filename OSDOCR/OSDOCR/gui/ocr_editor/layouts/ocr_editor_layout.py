@@ -183,9 +183,8 @@ def ocr_editor_layout()->sg.Window:
                 )
             ]
         ]
-    
 
-    block_type_legend = [
+    block_type_filter = [
         [
             place(sg.Text('Toogle Block Type: ', font=('Calibri', 15))),
             place(sg.Checkbox(text='', key='checkbox_toggle_block_type', enable_events=True)),
@@ -247,6 +246,68 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Text('', size=(2, 1), text_color='black', background_color='black', key='text_default_color'))
         ],
     ]
+
+    frame_block_type_filter = [
+        place(sg.Frame('Block Type Filter', block_type_filter))
+    ]
+
+    block_misc_filter = [
+        [
+            place(sg.Text('ID: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Input('',key='block_misc_filter_id',size=(6,1), font=('Calibri', 13))),
+        ],
+        [
+
+            place(sg.Text('TEXT: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Text('REGEX: ', font=('Calibri', 11))),
+            place(sg.Checkbox(text='', key='checkbox_block_misc_filter_regex', enable_events=True)),
+        ],
+        [
+            place(sg.Multiline(default_text='',key='block_misc_filter_text',enable_events=True,
+                               size=(20,2),auto_size_text=True,autoscroll=True, font=('Calibri', 11)))
+        ],
+        [
+            place(sg.Text('LEFT: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Input('',key='block_misc_filter_left',size=(6,1), font=('Calibri', 13))),
+        ],
+        [
+            place(sg.Text('TOP: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Input('',key='block_misc_filter_top',size=(6,1), font=('Calibri', 13))),
+        ],
+        [
+            place(sg.Text('RIGHT: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Input('',key='block_misc_filter_right',size=(6,1), font=('Calibri', 13))),
+        ],
+        [
+            place(sg.Text('BOTTOM: ', font=('Calibri', 13))),
+            sg.Push(),
+            place(sg.Input('',key='block_misc_filter_bottom',size=(6,1), font=('Calibri', 13))),
+        ],
+        [
+            sg.Push(),
+            place(sg.Button('APPLY',key='button_block_misc_filter_apply', font=('Calibri', 10))),
+            sg.Push(),
+            place(sg.Button('CLEAR',key='button_block_misc_filter_clear', font=('Calibri', 10))),
+            sg.Push(),
+            place(sg.Button('RESET',key='button_block_misc_filter_reset', font=('Calibri', 10))),
+        ]
+    ]
+
+    frame_block_misc_filter = [
+        place(sg.Frame('Block Misc Filter', block_misc_filter))
+    ]
+
+    block_filters = [
+        frame_block_type_filter,
+        frame_block_misc_filter
+    ]
+
+
 
     block_info = [
         [
@@ -347,16 +408,16 @@ def ocr_editor_layout()->sg.Window:
     # side bar for info about ocr results
     right_side_bar = [
         [
-                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_type_legend-',
+                sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_filter-',
                      font=("Calibri", 20,"bold"),text_color='#046380'), 
-                sg.T('Block Filter', enable_events=True, k='-OPEN collapse_block_type_legend-TEXT',
+                sg.T('Block Filter', enable_events=True, k='-OPEN collapse_block_filter-TEXT',
                      font=("Calibri", 20,"bold"),text_color='#046380'),
         ],
         [
             sg.HorizontalSeparator(),
         ],
         [
-            collapse([[sg.Frame('',block_type_legend)]],key='collapse_block_type_legend')
+            collapse([[sg.Frame('',block_filters)]],key='collapse_block_filter')
         ],
         [
             sg.T(SYMBOL_DOWN, enable_events=True, k='-OPEN collapse_block_info-',

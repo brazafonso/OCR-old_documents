@@ -280,6 +280,19 @@ def sidebar_update_block_info():
         window['input_block_text'].update('')
 
 
+
+def reset_window_block_filter():
+    global window
+    window['block_misc_filter_id'].update('')
+    window['block_misc_filter_text'].update('')
+    window['checkbox_block_misc_filter_regex'].update(False)
+    window['block_misc_filter_left'].update('')
+    window['block_misc_filter_top'].update('')
+    window['block_misc_filter_right'].update('')
+    window['block_misc_filter_bottom'].update('')
+
+
+
 ################################################
 ###########                   ##################
 ###########  CANVAS FUNCTIONS ##################
@@ -2142,6 +2155,117 @@ def move_article_method(article_id:int, up:bool=True):
         refresh_articles()
 
 
+def create_block_filter():
+    '''Create block filter'''
+    global block_filter,window
+    
+    block_filter = None
+
+    # id filter
+    id_filter = None
+    id_filter_text = window['block_misc_filter_id'].get().strip()
+    if id_filter_text:
+        if re.match(r'^[0-9]+$',id_filter_text):
+            id_filter = lambda b: b.id == int(id_filter_text)
+        elif re.match(r'^[0-9]+\s*-\s*[0-9]+$',id_filter_text):
+            min_id = int(id_filter_text.split('-')[0])
+            max_id = int(id_filter_text.split('-')[1])
+            id_filter = lambda b: min_id <= b.id <= max_id
+        elif re.match(r'^-[0-9]+$',id_filter_text):
+            max_id = int(id_filter_text[1:])
+            id_filter = lambda b: b.id <= max_id
+        elif re.match(r'^[0-9]+-$',id_filter_text):
+            min_id = int(id_filter_text[:-1])
+            id_filter = lambda b: min_id <= b.id
+
+            
+    # text filter
+    text_filter = None
+    regex_flag = window['checkbox_block_misc_filter_regex'].get()
+    text_filter_text = window['block_misc_filter_text'].get().strip()
+    if text_filter_text:
+        if regex_flag:
+            text_filter = lambda b: re.search(text_filter_text,b.to_text(conf=config['base']['text_confidence']),re.IGNORECASE)
+        else:
+            text_filter = lambda b: b.to_text(conf=config['base']['text_confidence']).find(text_filter_text) >= 0
+
+
+    # coordinates filter
+    left_filter_text = window['block_misc_filter_left'].get().strip()
+    left_filter = None
+    right_filter_text = window['block_misc_filter_right'].get().strip()
+    right_filter = None
+    top_filter_text = window['block_misc_filter_top'].get().strip()
+    top_filter = None
+    bottom_filter_text = window['block_misc_filter_bottom'].get().strip()
+    bottom_filter = None
+    if left_filter_text:
+        if re.match(r'^[0-9]+$',left_filter_text):
+            left_filter = lambda b: b.box.left == int(left_filter_text)
+        elif re.match(r'>[0-9]+$',left_filter_text):
+            left_filter = lambda b: b.box.left > int(left_filter_text[1:])
+        elif re.match(r'>=[0-9]+$',left_filter_text):
+            left_filter = lambda b: b.box.left >= int(left_filter_text[2:])
+        elif re.match(r'<[0-9]+$',left_filter_text):
+            left_filter = lambda b: b.box.left < int(left_filter_text[1:])
+        elif re.match(r'=<[0-9]+$',left_filter_text):
+            left_filter = lambda b: b.box.left <= int(left_filter_text[2:])
+
+
+    if right_filter_text:
+        if re.match(r'^[0-9]+$',right_filter_text):
+            right_filter = lambda b: b.box.right == int(right_filter_text)
+        elif re.match(r'>[0-9]+$',right_filter_text):
+            right_filter = lambda b: b.box.right > int(right_filter_text[1:])
+        elif re.match(r'>=[0-9]+$',right_filter_text):
+            right_filter = lambda b: b.box.right >= int(right_filter_text[2:])
+        elif re.match(r'<[0-9]+$',right_filter_text):
+            right_filter = lambda b: b.box.right < int(right_filter_text[1:])
+        elif re.match(r'=<[0-9]+$',right_filter_text):
+            right_filter = lambda b: b.box.right <= int(right_filter_text[2:])
+
+
+    if top_filter_text:
+        if re.match(r'^[0-9]+$',top_filter_text):
+            top_filter = lambda b: b.box.top == int(top_filter_text)
+        elif re.match(r'>[0-9]+$',top_filter_text):
+            top_filter = lambda b: b.box.top > int(top_filter_text[1:])
+        elif re.match(r'>=[0-9]+$',top_filter_text):
+            top_filter = lambda b: b.box.top >= int(top_filter_text[2:])
+        elif re.match(r'<[0-9]+$',top_filter_text):
+            top_filter = lambda b: b.box.top < int(top_filter_text[1:])
+        elif re.match(r'=<[0-9]+$',top_filter_text):
+            top_filter = lambda b: b.box.top <= int(top_filter_text[2:])
+
+
+    if bottom_filter_text:
+        if re.match(r'^[0-9]+$',bottom_filter_text):
+            bottom_filter = lambda b: b.box.bottom == int(bottom_filter_text)
+        elif re.match(r'>[0-9]+$',bottom_filter_text):
+            bottom_filter = lambda b: b.box.bottom > int(bottom_filter_text[1:])
+        elif re.match(r'>=[0-9]+$',bottom_filter_text):
+            bottom_filter = lambda b: b.box.bottom >= int(bottom_filter_text[2:])
+        elif re.match(r'<[0-9]+$',bottom_filter_text):
+            bottom_filter = lambda b: b.box.bottom < int(bottom_filter_text[1:])
+        elif re.match(r'=<[0-9]+$',bottom_filter_text):
+            bottom_filter = lambda b: b.box.bottom <= int(bottom_filter_text[2:])
+
+
+
+    # join filters
+    block_filter = lambda b: (id_filter(b) if id_filter else True)\
+                            and (text_filter(b) if text_filter else True)\
+                            and (left_filter(b) if left_filter else True)\
+                            and (right_filter(b) if right_filter else True)\
+                            and (top_filter(b) if top_filter else True)\
+                            and (bottom_filter(b) if bottom_filter else True)
+
+
+
+
+
+
+
 def test_method():
     '''Test method'''
     global current_ocr_results,current_image_path,config,window,highlighted_blocks
@@ -2362,12 +2486,29 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 current_action = 'split_block'
             else:
                 sg.popup('Please select a single block to split')
-        # filter blocks
+        # filter blocks by type
         elif 'box_type' in event:
+            # refresh block filter
+            create_block_filter()
+            # update block type filter
             block_type = event.split('_')[2]
             block_filter = lambda b: b.type == block_type if block_type != 'all' else True
             refresh_highlighted_blocks()
             sidebar_update_block_info()
+        # construct block filter
+        elif event == 'button_block_misc_filter_apply':
+            create_block_filter()
+            refresh_highlighted_blocks()
+            sidebar_update_block_info()
+        # clear block filter
+        elif event == 'button_block_misc_filter_clear':
+            block_filter = None
+            refresh_highlighted_blocks()
+        # reset block filter
+        elif event == 'button_block_misc_filter_reset':
+            reset_window_block_filter()
+            create_block_filter()
+            refresh_highlighted_blocks()
         # context menu send to back
         elif 'context_menu_send_to_back' in event:
             if len(highlighted_blocks) > 0:
