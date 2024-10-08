@@ -90,7 +90,7 @@ def main():
                                     logs=args.debug)
 
     if args.toggle_unite_bounding_boxes:
-        ocr_results = unite_blocks(ocr_results,conf=text_confidence,logs=args.debug)
+        ocr_results = unite_blocks(ocr_results,conf=text_confidence,debug=args.debug)
     
 
     # save ocr results

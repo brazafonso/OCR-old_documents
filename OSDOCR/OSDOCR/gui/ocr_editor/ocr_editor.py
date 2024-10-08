@@ -1924,8 +1924,9 @@ def categorize_blocks_method():
         for b in bounding_boxes.values():
             create_ocr_block_assets(b['block'])
 
+    window['checkbox_toggle_block_type'].update(True)
     toggle_ocr_results_block_type(bounding_boxes,default_color=default_edge_color,
-                                  toogle=window['checkbox_toggle_block_type'].get())
+                                  toogle=True)
 
 
 def find_titles_method():
@@ -1942,10 +1943,10 @@ def find_titles_method():
 
 def unite_blocks_method():
     '''Unite blocks method.'''
-    global current_ocr_results,bounding_boxes
+    global current_ocr_results,bounding_boxes,config
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
-        unite_blocks(current_ocr_results,logs=True)
+        unite_blocks(current_ocr_results,debug=config['base']['debug'])
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()

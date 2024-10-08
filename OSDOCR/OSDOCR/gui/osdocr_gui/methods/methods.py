@@ -234,7 +234,7 @@ def unite_blocks_method(window:sg.Window,target:str,values:dict):
     ocr_results = OCR_Tree(ocr_results_path)
     ocr_results.id_boxes([2])
     ocr_results = categorize_boxes(ocr_results)
-    ocr_results = unite_blocks(ocr_results,logs=logs)
+    ocr_results = unite_blocks(ocr_results,debug=logs)
     # save results
     result_dict_file = open(f'{processed_folder_path}/result_united.json','w')
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)

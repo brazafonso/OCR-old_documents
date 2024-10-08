@@ -350,7 +350,7 @@ def bound_box_fix_image(ocr_results:OCR_Tree,target_image:Union[str,cv2.typing.M
 
 
 
-def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs:bool=False)->OCR_Tree:
+def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,debug:bool=False)->OCR_Tree:
     '''Unite same type of blocks if they are horizontally aligned and adjacent to each other'''
 
     
@@ -367,10 +367,11 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs
 
         target_block = ocr_results.get_box_id(target_block_id,level=2)
         target_block:OCR_Tree
-        if logs:
+        if debug:
             print(f'Visiting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
         # get adjacent bellow blocks
         below_blocks = target_block.boxes_directly_below(available_blocks)
+        print([b.id for b in below_blocks])
         
 
         # if below blocks exist
@@ -395,60 +396,75 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,logs
             
             # if single block passed, unite with target block
             if len(aligned_below_blocks) == 1:
-                if logs:
+                if debug:
                     print('Unite with block',aligned_below_blocks[0].id)
                 # get bellow block
                 below_block = aligned_below_blocks[0]
-                # remove bellow block
-                available_blocks = [b for b in available_blocks if b.id != below_block.id]
-                non_visited = [id for id in non_visited if id != below_block.id]
+                joined_area = target_block.box.copy()
+                joined_area.join(below_block.box)
+                # check if joined area conflicts with other blocks
+                ## if conflicts with other blocks, continue
+                if len([b for b in ocr_results.get_boxes_intersect_area(joined_area,level=2)\
+                        if b.id not in [target_block.id,below_block.id]]) > 0:
+                    pass
+                else:
+                    # remove bellow block
+                    available_blocks = [b for b in available_blocks if b.id != below_block.id]
+                    non_visited = [id for id in non_visited if id != below_block.id]
 
-                # unite
-                target_block.join_trees(below_block)
+                    # unite
+                    target_block.join_trees(below_block)
 
-                # remove bellow block from main tree
-                ocr_results.remove_box_id(below_block.id,level=2)
+                    # remove bellow block from main tree
+                    ocr_results.remove_box_id(below_block.id,level=2)
 
-                united = True
+                    united = True
 
             # no aligned blocks, but all below blocks are of same type
             ## join them horizontally, and then unite with target block
             elif len(aligned_below_blocks) == len(same_type_below_blocks) and len(same_type_below_blocks) == len(below_blocks):
                 if horizontal_join:
-                    if logs:
+                    if debug:
                         print('Horizontal join of below blocks')
 
-                    # join below blocks horizontally
-                    leftmost_block = min(same_type_below_blocks,key=lambda b:b.box.left)
-                    leftmost_block:OCR_Tree
-                    # remove from main tree and lists
-                    same_type_below_blocks.remove(leftmost_block)
-                    available_blocks.remove(leftmost_block)
-                    non_visited = [id for id in non_visited if id != leftmost_block.id]
-                    ocr_results.remove_box_id(leftmost_block.id,level=2)
-                    while same_type_below_blocks:
-                        next_block = min(same_type_below_blocks,key=lambda b:b.box.left)
-                        if logs:
-                            print(f'Horizontal join | {leftmost_block.id} -> {next_block.id}')
+                    # check if joined area conflicts with other blocks
+                    ## if conflicts with other blocks, continue
+                    joined_area = target_block.box.copy()
+                    for b in same_type_below_blocks:
+                        joined_area.join(b.box)
+                    if len([b for b in ocr_results.get_boxes_intersect_area(joined_area,level=2)\
+                            if b.id not in [target_block.id] + [b.id for b in same_type_below_blocks]]) > 0:
+                        pass
+                    else:
+                        # join below blocks horizontally
+                        leftmost_block = min(same_type_below_blocks,key=lambda b:b.box.left)
+                        leftmost_block:OCR_Tree
                         # remove from main tree and lists
-                        same_type_below_blocks.remove(next_block)
-                        available_blocks.remove(next_block)
-                        non_visited = [id for id in non_visited if id != next_block.id]
-                        ocr_results.remove_box_id(next_block.id,level=2)
-                        leftmost_block.join_trees(next_block,orientation='horizontal')
+                        same_type_below_blocks.remove(leftmost_block)
+                        available_blocks.remove(leftmost_block)
+                        non_visited = [id for id in non_visited if id != leftmost_block.id]
+                        ocr_results.remove_box_id(leftmost_block.id,level=2)
+                        while same_type_below_blocks:
+                            next_block = min(same_type_below_blocks,key=lambda b:b.box.left)
+                            if debug:
+                                print(f'Horizontal join | {leftmost_block.id} -> {next_block.id}')
+                            # remove from main tree and lists
+                            same_type_below_blocks.remove(next_block)
+                            available_blocks.remove(next_block)
+                            non_visited = [id for id in non_visited if id != next_block.id]
+                            ocr_results.remove_box_id(next_block.id,level=2)
+                            leftmost_block.join_trees(next_block,orientation='horizontal')
 
-                    if logs:
-                        print('Unite with block',leftmost_block.id)
-                    # unite
-                    target_block.join_trees(leftmost_block)
-                    united = True
+                        if debug:
+                            print('Unite with block',leftmost_block.id)
+                        # unite
+                        target_block.join_trees(leftmost_block)
+                        united = True
 
         # if block was not united, go to next block
         ## else repeat same block
         if not united:
             target_block_id = non_visited.pop(0)
-
-
 
     return ocr_results
 
@@ -496,15 +512,22 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                     break
                 else:
                     # inside text block
-                    ## if within area with no text, split block horizontally in two and keep delimiter
+                    ## if within area with no text and has text above and below, split block horizontally in two and keep delimiter
                     extended_delimiter_box = current_delimiter_box.copy()
                     extended_delimiter_box.left = block.box.left
                     extended_delimiter_box.right = block.box.right
-                    if len(block.get_boxes_intersect_area(extended_delimiter_box,level=5,conf=conf,area_ratio=0.4)) == 0:
+                    above_area = block.box.copy()
+                    above_area.bottom = current_delimiter_box.top
+                    below_area = block.box.copy()
+                    below_area.top = current_delimiter_box.bottom
+                    if len(block.get_boxes_intersect_area(extended_delimiter_box,level=5,conf=conf,area_ratio=0.4)) == 0\
+                        and len(block.get_boxes_intersect_area(above_area,level=5,conf=conf)) > 0\
+                        and len(block.get_boxes_intersect_area(below_area,level=5,conf=conf)) > 0:
                         if debug:
                             print(f'Splitting block {block.id} into two')
 
-                        split_blocks = split_block(block,current_delimiter_box,orientation='horizontal',conf=conf,keep_all=True,debug=debug)
+                        split_blocks = split_block(block,current_delimiter_box,orientation='horizontal',
+                                                   conf=conf,keep_all=True,debug=debug)
 
                         if len(split_blocks) > 1:
                             block_2 = split_blocks[1]

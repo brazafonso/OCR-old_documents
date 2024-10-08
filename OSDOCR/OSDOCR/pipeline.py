@@ -62,12 +62,19 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
     target_img_path = metadata['target_path']
 
     calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    if args.logs:
+        print(f'''
+    Parameters:
+        * ignore_delimiters: {args.ignore_delimiters}
+        * calculate_reading_order: {calculate_reading_order}
+        * target_segments: {args.target_segments}''')
     order_list,articles = extract_articles(image_path=target_img_path,
                                            ocr_results=ocr_results,
                                            ignore_delimiters=args.ignore_delimiters,
                                            calculate_reading_order=calculate_reading_order,
                                            target_segments=args.target_segments,
-                                           logs=args.logs)
+                                           logs=args.logs,
+                                           debug=args.debug)
 
     if args.debug:
         articles_img = draw_articles(articles,target_img_path)
@@ -589,6 +596,7 @@ def run_target_image(o_target:str,results_path:str,args:argparse.Namespace):
     # identify image delimiters
     if 'identify_document_delimiters' not in args.skip_method:
         delimiters = get_document_delimiters(target,debug=False)
+        metadata['transformations'].append(('identify_document_delimiters'))
         ocr_results = OCR_Tree(metadata['ocr_results_path'])
 
         ocr_results.id_boxes(level=[2])
@@ -626,13 +634,14 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
         print('CLEAN OCR')
         print('------------------------------------------')
 
-    find_images_flag = 'remove_document_images' not in args.skip_method
-    find_delimiters_flag = 'identify_document_delimiters' not in args.skip_method
+    metadata = get_target_metadata(o_target)
+    target_img = metadata['target_path']
+
+    find_images_flag = metadata_get_transformation(metadata,'remove_document_images') is None
+    find_delimiters_flag = metadata_get_transformation(metadata,'identify_document_delimiters') is None
     bound_box_fix_image_flag = 'bound_box_fix_image' not in args.skip_method
     split_whitespaces_flag = 'split_whitespaces' not in args.skip_method
 
-    metadata = get_target_metadata(o_target)
-    target_img = metadata['target_path']
 
     # remove text of low confidence
     if args.logs:
@@ -645,6 +654,10 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
     if args.logs:
         print('------------------------------------------')
         print('\tRemoving empty boxes')
+        print(f'''\t\tParameters:
+\t\t\t* text_confidence: {args.text_confidence}
+\t\t\t* find_images: {find_images_flag}
+\t\t\t* find_delimiters: {find_delimiters_flag}''')
         print('------------------------------------------')
     ocr_results = remove_empty_boxes(ocr_results,text_confidence=args.text_confidence,
                                       find_images=find_images_flag,find_delimiters=find_delimiters_flag,
@@ -677,25 +690,24 @@ def clean_ocr(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.N
                                         dif_ratio=args.split_whitespace,debug=args.debug)
 
     # clean delimiters
-    if find_delimiters_flag:
-        if args.logs:
-            print('------------------------------------------')
-            print('\tCleaning delimiters')
-            print('------------------------------------------')
+    if args.logs:
+        print('------------------------------------------')
+        print('\tCleaning delimiters')
+        print('------------------------------------------')
 
-        if args.debug:
-            delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
-            print('delimiters:',len(delimiters))
-            img = draw_bounding_boxes(delimiters,target_img)
-            cv2.imwrite(f'{results_path}/delimiters_1.png',img)
+    if args.debug:
+        delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
+        print('delimiters:',len(delimiters))
+        img = draw_bounding_boxes(delimiters,target_img)
+        cv2.imwrite(f'{results_path}/delimiters_1.png',img)
 
-        ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,debug=args.debug)
+    ocr_results = delimiters_fix(ocr_results,conf=args.text_confidence,debug=args.debug)
 
-        if args.debug:
-            delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
-            print('delimiters:',len(delimiters))
-            img = draw_bounding_boxes(delimiters,target_img)
-            cv2.imwrite(f'{results_path}/delimiters_2.png',img)
+    if args.debug:
+        delimiters = ocr_results.get_boxes_type(level=2,types=['delimiter'])
+        print('delimiters:',len(delimiters))
+        img = draw_bounding_boxes(delimiters,target_img)
+        cv2.imwrite(f'{results_path}/delimiters_2.png',img)
 
     # clean bounding boxes of blocks
     if args.logs:
@@ -731,7 +743,7 @@ def unite_ocr_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:arg
     '''Unite ocr_tree'''
     
 
-    ocr_results = unite_blocks(ocr_results,conf=args.text_confidence,logs=args.debug)
+    ocr_results = unite_blocks(ocr_results,conf=args.text_confidence,debug=args.debug)
 
     # small extra cleaning
     ocr_results = remove_solo_words(ocr_results,conf=args.text_confidence,debug=args.debug)
@@ -925,6 +937,8 @@ def run_target(target:str,args:argparse.Namespace):
 
         else:
             if os.path.exists(metadata['ocr_results_original_path']):
+                if args.logs:
+                    print('Using existing ocr results. |',metadata['ocr_results_original_path'])
                 ocr_results_path = metadata['ocr_results_original_path']
                 ocr_results = OCR_Tree(ocr_results_path,args.text_confidence)
             else:
