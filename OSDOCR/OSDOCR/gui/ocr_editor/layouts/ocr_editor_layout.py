@@ -174,7 +174,7 @@ def ocr_editor_layout()->sg.Window:
                 sg.Frame('',layout=[
                         [
                             sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True)
-                        ]
+                        ],
                     ],
                     # relief=sg.RELIEF_SUNKEN,
                     # border_width=0.1,
@@ -474,17 +474,19 @@ def ocr_editor_layout()->sg.Window:
     canvas = [
         canvas_top,
         [
-            place(sg.Text('Block Level: ', font=('Calibri', 15))),
+            place(sg.Text('BLOCK LEVEL:', font=('Calibri', 15,"bold"))),
             place(sg.Combo(['page','block','par','line','word'],
                            default_value='block',key='list_block_level',enable_events=True, font=('Calibri', 13),
-                           readonly=True)),
+                           readonly=True,auto_size_text=True)),
             place(sg.Text('⟲',key='button_block_level_refresh', font=('Calibri', 25,"bold"),text_color='#046380',
                          enable_events=True)),
+            sg.Push(),
+            place(sg.Button('SELECT ALL',key='button_select_all', font=('Calibri', 10,"bold"),enable_events=True)),
         ],
         [
             sg.Column(canvas_body,scrollable=True,
                       expand_x=True,expand_y=True,right_click_menu=context_menu,
-                      size=column_2_size,key='body_canvas')
+                      size=column_2_size,key='body_canvas'),
         ],
     ]
 

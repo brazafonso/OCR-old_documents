@@ -455,7 +455,12 @@ def create_plot(image:Union[str,cv2.typing.MatLike]):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # change image size
     sizes = image.shape
-    figure = plt.figure(figsize=(sizes[1]/ppi,sizes[0]/ppi))
+    if ppi <= 0:
+        ppi = 1
+    size_w = sizes[1]/ppi
+    size_h = sizes[0]/ppi
+    print('Image size:',size_w,'x',size_h)
+    figure = plt.figure(figsize=(size_w,size_h))
     ax = plt.Axes(figure, [0., 0., 1., 1.])
     ax.set_axis_off()
     figure.add_axes(ax)
@@ -757,7 +762,7 @@ def canvas_on_button_press(event):
 def canvas_on_button_release(event):
     '''Mouse release event handler'''
     global current_action,current_action_start,current_ocr_results
-    print(f'release {event}')
+    print(f'release {event} || {current_action}')
     release_x = event.xdata
     release_y = event.ydata
     
@@ -900,12 +905,23 @@ def canvas_on_key_press(event):
     global last_key,ppi,highlighted_blocks,current_action_start,\
             last_mouse_position,last_activity_time,\
             focused_block,current_ocr_results
-    print(f'key {event.key}')
-    if event.key == 'ctrl++':
+    print(f'key press {event.key}')
+    
+    last_key = event.key
+    
+
+
+def canvas_on_key_release(event):
+    global last_key,ppi,highlighted_blocks,current_action_start,\
+            last_mouse_position,last_activity_time,\
+            focused_block,current_ocr_results
+    print(f'key release {event.key}')
+
+    if event.key in ['ctrl++','ctrl+add']:
         zoom_canvas(factor=-30)
-    elif event.key == 'ctrl+-':
+    elif event.key in ['ctrl+-','ctrl+minus']:
         zoom_canvas(factor=30)
-    elif event.key == 'ctrl+z' and last_key == 'ctrl+shift':
+    elif event.key == 'ctrl+z' and last_key == 'ctrl+shift' or event.key == 'ctrl+shift+z':
         redo_operation()
         sidebar_update_block_info()
     elif event.key == 'ctrl+z':
@@ -926,16 +942,16 @@ def canvas_on_key_press(event):
                 else:
                     new_id = target_block['id']
             
-            change_block_id(target_block['id'],int(new_id))
-            sidebar_update_block_info()
-            add_ocr_result_cache(current_ocr_results)
-
-    last_key = event.key
+            if new_id != target_block['id']:
+                change_block_id(target_block['id'],int(new_id))
+                sidebar_update_block_info()
+                add_ocr_result_cache(current_ocr_results)
+    elif event.key == 'delete':
+        delete_ocr_block(all=True)
+        sidebar_update_block_info()
+        add_ocr_result_cache(current_ocr_results)
+    
     last_activity_time = time.time()
-
-
-def canvas_on_key_release(event):
-    return
 
 
 def destroy_canvas():
@@ -954,6 +970,8 @@ def zoom_canvas(factor:int=1):
     '''Zoom canvas, altering ppi value by factor'''
     global ppi,current_ocr_results
     ppi += factor
+    if ppi <= 0:
+        ppi = 1
     # refresh canvas
     refresh_image = True if not current_ocr_results else False
     refresh_ocr_results = True if current_ocr_results else False 
@@ -1357,18 +1375,21 @@ def save_ocr_block_changes(values:dict):
         sidebar_update_block_info()
 
 
-def delete_ocr_block():
+def delete_ocr_block(all=False):
     '''Delete highlighted ocr block'''
     global highlighted_blocks,current_ocr_results,bounding_boxes
     if highlighted_blocks:
-        while highlighted_blocks:
-            block = highlighted_blocks[0]
+        blocks_to_delete = highlighted_blocks[:] if all else [highlighted_blocks[-1]]
+        i = 0
+        while i < len(blocks_to_delete):
+            block = blocks_to_delete[i]
             ## remove block from ocr_results
             current_ocr_results.remove_box_id(block['id'])
             ## remove block from bounding_boxes
             del bounding_boxes[block['id']]
             ## remove block from highlighted_blocks
             highlighted_blocks.remove(block)
+            i += 1
 
                 
 def remove_empty_blocks_method():
@@ -2213,7 +2234,7 @@ def change_block_level(level:int = 2,force:bool=False):
         blocks = []
         # if level is 5, and highlighted blocks exist, only show blocks inside highlighted blocks
         ## for better performance
-        if level == 5 and highlighted_blocks:
+        if highlighted_blocks and highlighted_blocks[0]['block'].level < level:
             blocks = [hb['block'].get_boxes_level(level=level) for hb in highlighted_blocks]
             blocks = [item for sublist in blocks for item in sublist]
         else:
@@ -2610,6 +2631,18 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             level = level_hash[level_filter_value]
             change_block_level(level=level)
             reset_highlighted_blocks()
+            sidebar_update_block_info()
+        # refresh block level
+        elif event == 'button_block_level_refresh':
+            level = current_block_level
+            change_block_level(level=level,force=True)
+            refresh_highlighted_blocks()
+            sidebar_update_block_info()
+        # select all blocks
+        elif event == 'button_select_all':
+            blocks = get_bounding_boxes()
+            for block in blocks.values():
+                highlight_block(block)
             sidebar_update_block_info()
         # calculate reading order method
         elif event == 'method_calculate_reading_order':
