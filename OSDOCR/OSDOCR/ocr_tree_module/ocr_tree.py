@@ -448,26 +448,46 @@ class OCR_Tree:
         for child in self.children:
             child.reset_level(level + 1)
 
-    def id_boxes(self,level:list[int]=[2],ids:dict=None,delimiters:bool=True,area:Box=None,override:bool=True):
+    def id_boxes(self,level:list[int]=[2],ids:list=None,delimiters:bool=True,area:Box=None,override:bool=True):
         '''Id boxes in ocr_results
         
         Args:
             * level (list[int], optional): Levels to id. Defaults to [2].
-            * ids (dict, optional): Dict that saves the current id for each level. Defaults to None.
+            * ids (list, optional): List of ids. 
+                * Works as a tuple of size 2. 
+                * First position is greatest id, second is dict with number of occurences of each id. 
+                * Defaults to None.
             * delimiters (bool, optional): If False, only id non delimiters. Defaults to True.
             * area (Box, optional): Area to id boxes. Defaults to None.
             * override (bool, optional): If True or has no id, override id. Defaults to True.'''
         if not ids:
-            ids = {l:0 for l in level}
+            ids = {l:[0,{0:0}] for l in level} # first position is greatest id, 
+                                               # seconds is number of occurences of each id
+            # if not override, needs to check greatest id in each level
+            if not override:
+                for l in level:
+                    level_ids = [b.id for b in self.get_boxes_level(l) if b.id is not None]
+                    if level_ids:
+                        max_id = max(level_ids) + 1
+                        ids[l] = [max_id,{k:0 for k in range(max_id)}]
+
         if self.level in level:
             if (delimiters or not self.is_delimiter()) and (not area or self.box.is_inside_box(area)):
                 if self.id is None or override:
-                    self.id = ids[self.level]
-                    ids[self.level] += 1
-                else:
-                    # update level id if same or greater than current level id
-                    if self.id >= ids[self.level]:
-                        ids[self.level] = self.id + 1
+                    self.id = ids[self.level][0]
+                    ids[self.level][0] += 1
+                    ids[self.level][1][self.id] = 1
+                # check if id is already in ids
+                elif self.id <= ids[self.level][0]:
+                    # id is already in use, need to override
+                    if ids[self.level][1][self.id] == 1:
+                        self.id = ids[self.level][0]
+                        ids[self.level][1][self.id] = 1
+                    else:
+                        ids[self.level][1][self.id] += 1
+                        
+                    ids[self.level][0] += 1
+                
         if self.level < max(level):
             for child in self.children:
                 child.id_boxes(level,ids,delimiters,area,override)
@@ -1022,7 +1042,7 @@ class OCR_Tree:
             conf = 0
             count = 0
             for child in self.children:
-                chlid_conf, child_count = child.average_conf(level)
+                chlid_conf, child_count = child.conf_sum(level)
                 conf += chlid_conf
                 count += child_count
             return conf,count

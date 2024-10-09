@@ -60,6 +60,7 @@ current_ocr_results_path = None
 cache_ocr_results = []
 current_cache_ocr_results_index = -1
 ocr_results_articles = {}
+current_block_level = 2
 ## actions
 '''
 Possible actions:
@@ -227,9 +228,8 @@ def update_canvas_column(window:sg.Window):
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
-    global figure_canvas_agg,animation
+    global figure_canvas_agg,animation,bounding_boxes
     if figure:
-        bounding_boxes = get_bounding_boxes()
         if bounding_boxes:
             animation = FuncAnimation(figure, update, frames=60, blit=True,
                                       interval=1000/60,repeat=True)
@@ -271,6 +271,10 @@ def sidebar_update_block_info():
         text_confidence = config['base']['text_confidence']
         block_text = block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip()
         window['input_block_text'].update(block_text)
+        ## avg conf
+        total_conf,total_blocks = block.conf_sum(level=5)
+        avg_conf = round(total_conf/total_blocks) if total_blocks > 0 else 0
+        window['text_avg_conf'].update(avg_conf)
     else:
         # clear block info
         window['input_block_id'].update('')
@@ -278,11 +282,12 @@ def sidebar_update_block_info():
         window['text_block_level'].update('')
         window['list_block_type'].update('')
         window['input_block_text'].update('')
+        window['text_avg_conf'].update('')
 
 
 
 def reset_window_block_filter():
-    global window
+    global window,current_block_level
     window['block_misc_filter_id'].update('')
     window['block_misc_filter_text'].update('')
     window['checkbox_block_misc_filter_regex'].update(False)
@@ -316,6 +321,7 @@ def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
     '''Redraws canvas with current ocr results'''
     global window,current_image_path,current_image,current_ocr_results,image_plot
     if current_image_path or current_ocr_results:
+        print('Refresh canvas')
         # draw image
         if current_image_path and refresh_image:
             if not current_image:
@@ -393,10 +399,10 @@ def update(frame):
     '''Update canvas'''
     global current_action,last_mouse_position,highlighted_blocks,block_filter
     assets = []
-    bounding_boxes = get_bounding_boxes()
-    if bounding_boxes:
+    boxes = get_bounding_boxes()
+    if boxes:
         # update position of boxes and id texts
-        for block in bounding_boxes.values():
+        for block in boxes.values():
             box = block['box']
             # if filter is set, check if block is valid
             if block_filter:
@@ -579,7 +585,10 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
 def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     '''Draw ocr results in canvas'''
     global image_plot,figure,figure_canvas_agg,ppi,current_image_path,\
-        bounding_boxes,default_edge_color,current_image
+        bounding_boxes,default_edge_color,current_image,block_filter
+    
+    print('Draw ocr results')
+    
     # get new plot to draw ocr results
     image_plot = create_plot(current_image)
 
@@ -590,7 +599,8 @@ def draw_ocr_results(ocr_results:OCR_Tree,window:sg.Window):
     bounding_boxes = {}
     # draw ocr results
     for block in blocks:
-        create_ocr_block_assets(block,override=False)
+        if block_filter is None or block_filter(block):
+            create_ocr_block_assets(block,override=True)
         
     # clear canvas
     clear_canvas()
@@ -1067,17 +1077,21 @@ def get_bounding_boxes()->dict:
 def refresh_ocr_results():
     '''Refresh ocr results and bounding boxes'''
     global current_ocr_results,bounding_boxes,window,\
-        default_edge_color,ocr_results_articles
+        default_edge_color,ocr_results_articles,block_filter,\
+        current_block_level
+    
     if current_ocr_results:
+        print('Refresh ocr results')
         # reset bounding boxes
         bounding_boxes = {}
         # reset articles
         ocr_results_articles = {}
         # reset highlighted blocks
         reset_highlighted_blocks()
-        blocks = current_ocr_results.get_boxes_level(level=2)
+        blocks = current_ocr_results.get_boxes_level(level=current_block_level)
         for block in blocks:
-            create_ocr_block_assets(block,override=False)
+            if block_filter is None or block_filter(block):
+                create_ocr_block_assets(block,override=False)
 
         toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                       default_color=default_edge_color,
@@ -1099,10 +1113,9 @@ def update_sidebar_articles():
 
 def closest_block(click_x,click_y)->Union[int,float]:
     '''Get closest block to click. Returns block id'''
-    global max_block_dist
+    global max_block_dist,bounding_boxes
     block_id = None
     block_dist = None
-    bounding_boxes = get_bounding_boxes()
 
     if bounding_boxes:
         # calculate distances
@@ -1378,7 +1391,8 @@ def remove_empty_blocks_method():
 
 def apply_ocr_block():
     '''Apply OCR on highlighted ocr block'''
-    global highlighted_blocks,current_image_path,config
+    global highlighted_blocks,current_image_path,config,\
+            current_ocr_results,bounding_boxes
     if highlighted_blocks:
         print('Apply OCR on highlighted ocr block')
 
@@ -1442,6 +1456,7 @@ def apply_ocr_block():
         # load ocr results
         ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json',
                                        config['base']['text_confidence'])
+        
         new_box = ocr_results.get_boxes_level(0)[0].box
         ## scale dimensions, OCR results may not align with ocr block size
         scale_height = box.height/new_box.height
@@ -1451,10 +1466,32 @@ def apply_ocr_block():
         move_top = box.top - new_box.top
         move_left = box.left - new_box.left
         ocr_results.update_position(move_top,move_left)
-        new_children = ocr_results.get_boxes_level(3)
-        ocr_block.children = new_children
-        # # remove tmp dir
-        # shutil.rmtree(tmp_dir)
+
+        # single block output
+        if config['ocr_pipeline']['output_single_block']:
+            new_children = ocr_results.get_boxes_level(3)
+            ocr_block.children = new_children
+            # # remove tmp dir
+            # shutil.rmtree(tmp_dir)
+        # keep blocks as detected
+        else:
+            if len(ocr_results.get_boxes_level(2)) > 0:
+                # delete current block
+                current_ocr_results.remove_box_id(ocr_block.id)
+                del bounding_boxes[ocr_block.id]
+                # add blocks from pipeline results
+                last_id = max(current_ocr_results.get_boxes_level(2),key=lambda b: b.id).id + 1
+                page = current_ocr_results.get_boxes_level(1)[0]
+                new_blocks = ocr_results.get_boxes_level(2)
+                ## filter blocks with no text
+                new_blocks = [b for b in new_blocks if not b.is_empty(conf=config['base']['text_confidence'])]
+                for b in new_blocks:
+                    b.id = last_id
+                    last_id += 1
+                    page.add_child(b)
+                    create_ocr_block_assets(b)
+
+                refresh_highlighted_blocks()
 
 
 def copy_block_text():
@@ -2155,9 +2192,43 @@ def move_article_method(article_id:int, up:bool=True):
         refresh_articles()
 
 
+
+def change_block_level(level:int = 2,force:bool=False):
+    '''Change block level'''
+    global current_ocr_results,bounding_boxes,current_block_level,block_filter,\
+            highlighted_blocks
+    if current_ocr_results:
+
+        # if level is already the current level, do nothing
+        if not force and current_block_level == level:
+            return
+        
+        current_block_level = level
+        
+        # reset bounding boxes
+        bounding_boxes = {}
+
+
+        current_ocr_results.id_boxes(level=[level],override=False)
+        blocks = []
+        # if level is 5, and highlighted blocks exist, only show blocks inside highlighted blocks
+        ## for better performance
+        if level == 5 and highlighted_blocks:
+            blocks = [hb['block'].get_boxes_level(level=level) for hb in highlighted_blocks]
+            blocks = [item for sublist in blocks for item in sublist]
+        else:
+            blocks = current_ocr_results.get_boxes_level(level=level)
+
+        for b in blocks:
+            if block_filter is None or block_filter(b):
+                create_ocr_block_assets(b)
+
+        print(f'Changed block level to {level}')
+
+
 def create_block_filter():
     '''Create block filter'''
-    global block_filter,window
+    global block_filter,window,current_ocr_results
     
     block_filter = None
 
@@ -2178,7 +2249,6 @@ def create_block_filter():
             min_id = int(id_filter_text[:-1])
             id_filter = lambda b: min_id <= b.id
 
-            
     # text filter
     text_filter = None
     regex_flag = window['checkbox_block_misc_filter_regex'].get()
@@ -2188,7 +2258,6 @@ def create_block_filter():
             text_filter = lambda b: re.search(text_filter_text,b.to_text(conf=config['base']['text_confidence']),re.IGNORECASE)
         else:
             text_filter = lambda b: b.to_text(conf=config['base']['text_confidence']).find(text_filter_text) >= 0
-
 
     # coordinates filter
     left_filter_text = window['block_misc_filter_left'].get().strip()
@@ -2211,7 +2280,6 @@ def create_block_filter():
         elif re.match(r'=<[0-9]+$',left_filter_text):
             left_filter = lambda b: b.box.left <= int(left_filter_text[2:])
 
-
     if right_filter_text:
         if re.match(r'^[0-9]+$',right_filter_text):
             right_filter = lambda b: b.box.right == int(right_filter_text)
@@ -2224,7 +2292,6 @@ def create_block_filter():
         elif re.match(r'=<[0-9]+$',right_filter_text):
             right_filter = lambda b: b.box.right <= int(right_filter_text[2:])
 
-
     if top_filter_text:
         if re.match(r'^[0-9]+$',top_filter_text):
             top_filter = lambda b: b.box.top == int(top_filter_text)
@@ -2236,7 +2303,6 @@ def create_block_filter():
             top_filter = lambda b: b.box.top < int(top_filter_text[1:])
         elif re.match(r'=<[0-9]+$',top_filter_text):
             top_filter = lambda b: b.box.top <= int(top_filter_text[2:])
-
 
     if bottom_filter_text:
         if re.match(r'^[0-9]+$',bottom_filter_text):
@@ -2251,7 +2317,6 @@ def create_block_filter():
             bottom_filter = lambda b: b.box.bottom <= int(bottom_filter_text[2:])
 
 
-
     # join filters
     block_filter = lambda b: (id_filter(b) if id_filter else True)\
                             and (text_filter(b) if text_filter else True)\
@@ -2259,10 +2324,6 @@ def create_block_filter():
                             and (right_filter(b) if right_filter else True)\
                             and (top_filter(b) if top_filter else True)\
                             and (bottom_filter(b) if bottom_filter else True)
-
-
-
-
 
 
 
@@ -2277,11 +2338,12 @@ def test_method():
             print('- Cleaned text :')
             print(fix_hifenization(block.to_text(conf=config['base']['text_confidence'])))
             
-
         refresh_ocr_results()
         sidebar_update_block_info()
         
         add_ocr_result_cache(current_ocr_results)
+
+        
 
 ################################################
 ###########                   ##################
@@ -2294,7 +2356,8 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     '''Run GUI'''
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
-            current_action,block_filter,last_window_size,config,ocr_results_articles
+            current_action,block_filter,last_window_size,config,ocr_results_articles,\
+            current_block_level
 
     create_base_folders()
     tmp_folder_path = f'{consts.ocr_editor_path}/tmp'
@@ -2365,13 +2428,15 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # zoom in   
         elif event == 'zoom_in':
             zoom_canvas(factor=-30)
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+            change_block_level(current_block_level,force=True)
+            toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),
                                           default_color=default_edge_color,
                                           toogle=window['checkbox_toggle_block_type'].get())
         # zoom out
         elif event == 'zoom_out':
             zoom_canvas(factor=30)
-            toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
+            change_block_level(current_block_level,force=True)
+            toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),
                                           default_color=default_edge_color,
                                           toogle=window['checkbox_toggle_block_type'].get())
         # generate md
@@ -2492,7 +2557,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             create_block_filter()
             # update block type filter
             block_type = event.split('_')[2]
-            block_filter = lambda b: b.type == block_type if block_type != 'all' else True
+            proxy_filter = block_filter
+            type_filter = lambda b: b.type == block_type if block_type != 'all' else True
+            block_filter = lambda b: proxy_filter(b) and type_filter(b)
+            refresh_ocr_results()
             refresh_highlighted_blocks()
             sidebar_update_block_info()
         # construct block filter
@@ -2503,11 +2571,13 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # clear block filter
         elif event == 'button_block_misc_filter_clear':
             block_filter = None
+            refresh_ocr_results()
             refresh_highlighted_blocks()
         # reset block filter
         elif event == 'button_block_misc_filter_reset':
             reset_window_block_filter()
             create_block_filter()
+            refresh_ocr_results()
             refresh_highlighted_blocks()
         # context menu send to back
         elif 'context_menu_send_to_back' in event:
@@ -2533,6 +2603,14 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             toggle_ocr_results_block_type(bounding_boxes=bounding_boxes,
                                           default_color=default_edge_color,
                                           toogle=values['checkbox_toggle_block_type'])
+        # change block level
+        elif event == 'list_block_level':
+            level_filter_value = window['list_block_level'].get().strip()
+            level_hash = {'page':1,'block':2,'par':3,'line':4,'word':5}
+            level = level_hash[level_filter_value]
+            change_block_level(level=level)
+            reset_highlighted_blocks()
+            sidebar_update_block_info()
         # calculate reading order method
         elif event == 'method_calculate_reading_order':
             calculate_reading_order_method()

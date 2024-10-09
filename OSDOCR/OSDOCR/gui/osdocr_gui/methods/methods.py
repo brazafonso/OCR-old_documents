@@ -219,7 +219,6 @@ def auto_rotate_method(window:sg.Window,target:str,values:dict):
     update_image_element(window,'result_img',img)
 
 
-
 def unite_blocks_method(window:sg.Window,target:str,values:dict):
     '''Apply unite blocks method to image and update image element'''
     results_path = f'{consts.result_path}/{path_to_id(target)}'

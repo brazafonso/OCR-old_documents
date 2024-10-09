@@ -34,6 +34,7 @@ default_config = {
             'dpi' : 300,
             'psm' : 3
         },
+        'output_single_block' : False
     },
     'methods' : {
         'article_gathering' : 'selected',
@@ -112,6 +113,7 @@ def read_config_window(values:dict)->dict:
     except:
         pass
     config['ocr_pipeline']['tesseract_config']['l'] = values['tesseract_list_lang']
+    config['ocr_pipeline']['output_single_block'] = values['checkbox_pipeline_output_single_block']
 
     # methods values
     config['methods']['article_gathering'] = values['list_article_gathering']
@@ -166,6 +168,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['tesseract_input_dpi'].update(refresh_conf['ocr_pipeline']['tesseract_config']['dpi'])
     window['tesseract_input_psm'].update(refresh_conf['ocr_pipeline']['tesseract_config']['psm'])
     window['tesseract_list_lang'].update(refresh_conf['ocr_pipeline']['tesseract_config']['l'])
+    window['checkbox_pipeline_output_single_block'].update(refresh_conf['ocr_pipeline']['output_single_block'])
 
     # method values
     window['list_type_of_document'].update(refresh_conf['methods']['doc_type'])

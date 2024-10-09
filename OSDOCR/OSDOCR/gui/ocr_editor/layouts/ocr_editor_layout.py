@@ -184,6 +184,8 @@ def ocr_editor_layout()->sg.Window:
             ]
         ]
 
+
+
     block_type_filter = [
         [
             place(sg.Text('Toogle Block Type: ', font=('Calibri', 15))),
@@ -345,6 +347,10 @@ def ocr_editor_layout()->sg.Window:
                                size=(32,10),auto_size_text=True,autoscroll=True, font=('Calibri', 11)))
         ],
         [
+            place(sg.Text('Avg. Conf:', font=('Calibri', 13))),
+            place(sg.Text('',key='text_avg_conf', font=('Calibri', 13))),
+        ],
+        [
             place(sg.Button('OCR',key='button_ocr_block', font=('Calibri', 13))),
             place(sg.Image(source=f'{file_path}/../assets/copy.png'
                            ,key='button_copy_block_text',enable_events=True,
@@ -467,6 +473,14 @@ def ocr_editor_layout()->sg.Window:
 
     canvas = [
         canvas_top,
+        [
+            place(sg.Text('Block Level: ', font=('Calibri', 15))),
+            place(sg.Combo(['page','block','par','line','word'],
+                           default_value='block',key='list_block_level',enable_events=True, font=('Calibri', 13),
+                           readonly=True)),
+            place(sg.Text('⟲',key='button_block_level_refresh', font=('Calibri', 25,"bold"),text_color='#046380',
+                         enable_events=True)),
+        ],
         [
             sg.Column(canvas_body,scrollable=True,
                       expand_x=True,expand_y=True,right_click_menu=context_menu,
@@ -663,6 +677,16 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
         [
             sg.Column(pipeline_tesseract_options)
         ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Text('Output Options',font=("Calibri", 14,"bold"),text_color='#046380')
+        ],
+        [
+            place(sg.Text('Single Block: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox('',key='checkbox_pipeline_output_single_block',enable_events=True))
+        ]
     ]
 
 
@@ -750,7 +774,8 @@ def popup_window(title:str='',message:str='',options:list=[],location:tuple=(Non
     for option in options:
         layout[1].append(place(sg.Button(option,key=option)))
 
-    window = sg.Window(title,layout,finalize=True,resizable=True,location=location,keep_on_top=True,force_toplevel=True,modal=modal)
+    window = sg.Window(title,layout,finalize=True,resizable=True,location=location,
+                       keep_on_top=True,force_toplevel=True,modal=modal)
     window.bind('<Configure>',"Event")
 
     option = None
