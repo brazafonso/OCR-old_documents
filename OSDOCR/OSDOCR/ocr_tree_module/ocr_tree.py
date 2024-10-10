@@ -1155,9 +1155,13 @@ class OCR_Tree:
         if not any([scale_width,scale_height]):
             return
         if scale_width:
-            self.box.update(left=int(self.box.left * scale_width),right=int(self.box.right * scale_width))
+            new_left = int(self.box.left - (self.box.left - (self.box.left  * scale_width)))
+            new_right = int(self.box.right - (self.box.right - (self.box.right  * scale_width)))
+            self.box.update(left=new_left,right=new_right)
         if scale_height:
-            self.box.update(top=int(self.box.top * scale_height),bottom=int(self.box.bottom * scale_height))
+            new_top = int(self.box.top - (self.box.top - (self.box.top  * scale_height)))
+            new_bottom = int(self.box.bottom - (self.box.bottom - (self.box.bottom  * scale_height)))
+            self.box.update(top=new_top,bottom=new_bottom)
 
         for child in self.children:
             child.scale_dimensions(scale_width=scale_width,scale_height=scale_height)

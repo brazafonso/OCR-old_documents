@@ -1106,6 +1106,7 @@ def refresh_ocr_results():
         ocr_results_articles = {}
         # reset highlighted blocks
         reset_highlighted_blocks()
+        current_ocr_results.id_boxes(level=[current_block_level],override=False)
         blocks = current_ocr_results.get_boxes_level(level=current_block_level)
         for block in blocks:
             if block_filter is None or block_filter(block):
@@ -1181,7 +1182,9 @@ def create_new_ocr_block(x:int=None,y:int=None):
     ## get last id
     last_id = 0
     if current_ocr_results is not None:
-        last_id = max(current_ocr_results.get_boxes_level(level=2),key=lambda b: b.id).id
+        blocks = current_ocr_results.get_boxes_level(level=2)
+        if blocks:
+            last_id = max(blocks,key=lambda b: b.id).id
     else:
         # create new ocr results
         ## also needs to resume animation
@@ -1478,22 +1481,18 @@ def apply_ocr_block():
         ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json',
                                        config['base']['text_confidence'])
         
-        new_box = ocr_results.get_boxes_level(0)[0].box
-        ## scale dimensions, OCR results may not align with ocr block size
-        scale_height = box.height/new_box.height
-        scale_width = box.width/new_box.width
-        ocr_results.scale_dimensions(scale_width,scale_height)
+        new_page = ocr_results.get_boxes_level(1)[0]
+        new_box = new_page.box
         ## move ocr results to position of ocr block
-        move_top = box.top - new_box.top
-        move_left = box.left - new_box.left
-        ocr_results.update_position(move_top,move_left)
+        move_top = box.top - new_box.top - padding
+        move_left = box.left - new_box.left - padding
+        new_page.update_position(move_top,move_left)
 
         # single block output
         if config['ocr_pipeline']['output_single_block']:
             new_children = ocr_results.get_boxes_level(3)
             ocr_block.children = new_children
-            # # remove tmp dir
-            # shutil.rmtree(tmp_dir)
+            create_ocr_block_assets(ocr_block,override=True)
         # keep blocks as detected
         else:
             if len(ocr_results.get_boxes_level(2)) > 0:
@@ -1501,7 +1500,10 @@ def apply_ocr_block():
                 current_ocr_results.remove_box_id(ocr_block.id)
                 del bounding_boxes[ocr_block.id]
                 # add blocks from pipeline results
-                last_id = max(current_ocr_results.get_boxes_level(2),key=lambda b: b.id).id + 1
+                last_id = 0
+                blocks = current_ocr_results.get_boxes_level(2)
+                if blocks:
+                    last_id = max(blocks,key=lambda b: b.id).id + 1
                 page = current_ocr_results.get_boxes_level(1)[0]
                 new_blocks = ocr_results.get_boxes_level(2)
                 ## filter blocks with no text
