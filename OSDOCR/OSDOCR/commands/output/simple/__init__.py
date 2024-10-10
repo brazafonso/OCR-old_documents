@@ -78,7 +78,7 @@ def main():
     # get blocks of text
     if calculate_reading_order_flag:
         # calculate reading order
-        blocks = order_ocr_tree(target_path,ocr_results,args.ignore_delimiters,args.logs)
+        blocks = order_ocr_tree(target_path,ocr_results,args.ignore_delimiters,debug=args.logs)
     else:
         # natural OCR order
         blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]

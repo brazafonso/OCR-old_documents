@@ -109,7 +109,7 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
     fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
 
     if calculate_reading_order:
-        blocks = order_ocr_tree(target_img_path,ocr_results,args.ignore_delimiters,args.logs)
+        blocks = order_ocr_tree(target_img_path,ocr_results,args.ignore_delimiters,debug=args.debug)
     else:
         blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
         blocks = sorted(blocks,key=lambda x: x.id)

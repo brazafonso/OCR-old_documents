@@ -199,6 +199,7 @@ def run_config_gui(position:tuple=None):
 
     while True:
         event, values = config_window.read()
+        print(f'Config window event: {event}')
         if event in [sg.WIN_CLOSED, 'button_cancel']:
             break
         elif event == 'button_save':
@@ -209,6 +210,7 @@ def run_config_gui(position:tuple=None):
             config = deepcopy(default_config)
             refresh_config_window(config_window, config)
 
+    print('Closing config window')
     config_window.close()
     config = read_ocr_editor_configs_file()
     return config

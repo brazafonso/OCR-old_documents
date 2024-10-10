@@ -195,33 +195,42 @@ class Box:
 
         return False
 
-    def intersect_area_box(self,box:'Box'):
+    def intersect_area_box(self,box:'Box',extend_vertical:bool=False,extend_horizontal:bool=False):
         '''Get intersect area box between two boxes'''
         area_box = Box(0,0,0,0)
+
+        self_box = self.copy()
+        self_box:Box
+        if extend_vertical:
+            self_box.top = 0
+            self_box.bottom = box.bottom + 1
+        if extend_horizontal:
+            self_box.left = 0
+            self_box.right = box.right + 1
         
         left = 0
         right = 0
         bottom = 0
         top = 0
-        if self.left <= box.left:
+        if self_box.left <= box.left:
             left = box.left
         else:
-            left = self.left
+            left = self_box.left
 
-        if self.right >= box.right:
+        if self_box.right >= box.right:
             right = box.right
         else:
-            right = self.right
+            right = self_box.right
 
-        if self.top <= box.top:
+        if self_box.top <= box.top:
             top = box.top
         else:
-            top = self.top
+            top = self_box.top
 
-        if self.bottom >= box.bottom:
+        if self_box.bottom >= box.bottom:
             bottom = box.bottom
         else:
-            bottom = self.bottom
+            bottom = self_box.bottom
 
         area_box.update(left=left,right=right,top=top,bottom=bottom)
 

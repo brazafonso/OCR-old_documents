@@ -27,13 +27,13 @@ def ocr_editor_layout()->sg.Window:
                 sg.Push(),
                 place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",
                                     key='browse_image',target='target_input',initial_folder=os.getcwd(),
-                                    font=("Calibri", 15))),
+                                    font=("Calibri", 15),enable_events=True)),
                 place(sg.Input(default_text=browse_img_input_value,key='target_input',
                                enable_events=True,font=("Calibri", 15),size=(25,1))),
 
                 place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),
                                     button_text="OCR Results",key='browse_file',target='ocr_results_input',
-                                    initial_folder=os.getcwd(),font=("Calibri", 15))),
+                                    initial_folder=os.getcwd(),font=("Calibri", 15),enable_events=True)),
                 place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',
                                enable_events=True,font=("Calibri", 15),size=(25,1))),
 
@@ -757,7 +757,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
     location = position if position is not None else (0,0)
     window = sg.Window('OCR Editor - Configuration', layout,
                        finalize=True,resizable=True,keep_on_top=True,
-                       force_toplevel=True,location=location
+                       force_toplevel=True,location=location,
                        )
     window.bind('<Configure>',"Event")
     return window

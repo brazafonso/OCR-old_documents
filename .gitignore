@@ -3,6 +3,7 @@
 *.csv
 *.jpg
 *.png
+*.md
 !**/ocr_editor/assets/*.png
 !**/dissertacao/**/*.png
 *.json

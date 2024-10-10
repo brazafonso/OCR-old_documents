@@ -324,7 +324,7 @@ def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
         print('Refresh canvas')
         # draw image
         if current_image_path and refresh_image:
-            if not current_image:
+            if current_image is not None:
                 current_image = cv2.imread(current_image_path)
                 current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
             clear_canvas()
@@ -1910,7 +1910,7 @@ def calculate_reading_order_method():
                                                     target_segments=target_segments)[1]
             ## blocks returned are only part of the body of the image
             ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
-                                            area=body_area)
+                                            area=body_area,debug=config['base']['debug'])
             ordered_block_ids = [b.id for b in ordered_blocks]
             # update ids values
             last_id = len(ordered_blocks) - 1
@@ -1929,6 +1929,7 @@ def calculate_reading_order_method():
                     b['id'] = new_id
                     b['block'].id = b['id']
                     b['id_text'].set_text(f'{b["id"]}')
+
         # change ids of highlighted blocks according to order in list
         elif len(highlighted_blocks) > 1:
             last_id = highlighted_blocks[0]['id'] + 1
@@ -2124,7 +2125,7 @@ def generate_output_md():
         else:
             calculate_reading_order = config['methods']['calculate_reading_order']
             if calculate_reading_order:
-                blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters)
+                blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters,debug=config['base']['debug'])
             else:
                 blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] if not ignore_delimiters else ['delimiter'])]
                 blocks = sorted(blocks,key=lambda x: x.id)
@@ -2356,15 +2357,40 @@ def test_method():
     print('Test method')
     if current_ocr_results:
         print('Test button')
-        if highlighted_blocks:
-            block = highlighted_blocks[-1]['block']
-            print('- Cleaned text :')
-            print(fix_hifenization(block.to_text(conf=config['base']['text_confidence'])))
-            
-        refresh_ocr_results()
-        sidebar_update_block_info()
-        
-        add_ocr_result_cache(current_ocr_results)
+
+        # get block order
+        ## get body area using delimiters
+        delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
+        target_segments = config['methods']['target_segments']
+        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
+                                                target_segments=target_segments)[1]
+        ## blocks returned are only part of the body of the image
+        next_block_filter = lambda node: node if node.value.type == 'title' else None
+        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
+                                        next_node_filter=next_block_filter,area=body_area,
+                                        debug=config['base']['debug'])
+        ordered_block_ids = [b.id for b in ordered_blocks]
+        # update ids values
+        last_id = len(ordered_blocks) - 1
+        for b in bounding_boxes.values():
+            if b['id'] not in ordered_block_ids:
+                # block not in order
+                ## update id to be after last_id
+                b['id'] = last_id
+                b['block'].id = b['id']
+                b['id_text'].set_text(f'{b["id"]}')
+                last_id += 1
+            else:
+                # block in order
+                ## update id to be position in order list
+                new_id = ordered_block_ids.index(b['id'])
+                b['id'] = new_id
+                b['block'].id = b['id']
+                b['id_text'].set_text(f'{b["id"]}')
+
+        refresh_blocks_ids()
+
+        add_ocr_result_cache(ocr_result=current_ocr_results)
 
         
 
@@ -2710,7 +2736,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             test_method()
         # configurations button
         elif event == 'configurations_button':
-            config = run_config_gui(position=window.CurrentLocation())
+            config = run_config_gui(window.current_location())
             update_config_dependent_variables()
         # collapsible section
         elif event.startswith('-OPEN collapse_'):
