@@ -193,10 +193,6 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
 
 
 
-    
-
-    
-
 
 def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,
                           args:argparse.Namespace):

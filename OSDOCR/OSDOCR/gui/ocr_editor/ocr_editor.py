@@ -33,7 +33,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
                                                      order_ocr_tree
 from OSDOCR.output_module.text import fix_hifenization
-from .configuration_gui import run_config_gui,read_ocr_editor_configs_file
+from .configuration_gui import run_config_gui,read_ocr_editor_configs_file,save_config_file
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -124,6 +124,19 @@ def update_config_dependent_variables():
         pass
 
     return changed
+
+
+def update_config_user_settings():
+    '''Update config user settings'''
+    global config,current_image_path,current_ocr_results_path
+
+    try:
+        config['user']['image_input_path'] = current_image_path
+        config['user']['ocr_results_input_path'] = current_ocr_results_path
+    except:
+        pass
+
+    save_config_file(config)
 
 
 
@@ -520,6 +533,9 @@ def update_canvas_image(window:sg.Window,values:dict):
         # update browse location for 'target_input'
         window['browse_image'].InitialFolder = os.path.dirname(path)
 
+        # update user configs
+        update_config_user_settings()
+
 def update_canvas_ocr_results(window:sg.Window,values:dict):
     '''Update canvas ocr_results element. Creates new plot with ocr_results'''
     global current_ocr_results,current_ocr_results_path,current_image_path,config
@@ -538,6 +554,8 @@ def update_canvas_ocr_results(window:sg.Window,values:dict):
         draw_ocr_results(current_ocr_results,window)
         # update browse location for 'ocr_results_input'
         window['ocr_results_input'].InitialFolder = os.path.dirname(current_ocr_results_path)
+
+        update_config_user_settings()
 
 
 def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
@@ -2438,15 +2456,24 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     config = read_ocr_editor_configs_file()
     update_config_dependent_variables()
 
+    try:
+        if config['user']['image_input_path'] != input_image_path:
+            input_image_path = config['user']['image_input_path']
+
+        if config['user']['ocr_results_input_path'] != input_ocr_results_path:
+            input_ocr_results_path = config['user']['ocr_results_input_path']
+
+    except Exception as e:
+        print(e)
+
     window = ocr_editor_layout()
     last_window_size = window.size
-    event,values = window._ReadNonBlocking()    # for development
+    event,values = window._ReadNonBlocking()
     if input_image_path:
         values['target_input'] = input_image_path
     if input_ocr_results_path:
         values['ocr_results_input'] = input_ocr_results_path
 
-    # start values - for development
     if values:
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)

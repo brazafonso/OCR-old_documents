@@ -45,6 +45,10 @@ default_config = {
         'target_segments' : ['header', 'body'],
         'use_pipeline_results' : True,
         'image_split_keep_all' : False
+    },
+    'user' : {
+        'image_input_path' : '',
+        'ocr_results__input_path' : '',
     }
 }
 
@@ -65,6 +69,9 @@ def read_ocr_editor_configs_file()->dict:
                 config = json.load(f)
         except Exception as e:
             config = deepcopy(default_config)
+
+    # update config to have all keys in default config
+    config = fill_dict(config, default_config)
 
     return config
 
@@ -139,6 +146,14 @@ def update_dict(d: dict, new_values: dict):
             d[k] = update_dict(d.get(k, {}), v)
         else:
             d[k] = v
+    return d
+
+def fill_dict(d: dict, new_values: dict):
+    for k, v in new_values.items():
+        if k not in d:
+            d[k] = v
+        elif isinstance(v, collections.abc.Mapping):
+            d[k] = fill_dict(d.get(k, {}), v)
     return d
 
 
