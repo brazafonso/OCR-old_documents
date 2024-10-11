@@ -85,6 +85,17 @@ def clean_tmp_folder():
             if 'OSDOcr' in file:
                 os.remove(f'{consts.tmp_path}/{file}')
 
+
+def clean_editor_tmp_folder():
+    '''Clean ocr editor tmp folder.'''
+    tmp_folder_path = f'{consts.ocr_editor_path}/tmp'
+    # clean tmp folder
+    for f in os.listdir(tmp_folder_path):
+        if os.path.isfile(os.path.join(tmp_folder_path, f)):
+            os.remove(os.path.join(tmp_folder_path, f))
+        else:
+            shutil.rmtree(os.path.join(tmp_folder_path, f))
+
 def create_target_results_folder(target_path:str):
     '''Create results folder for target image'''
     results_folder = f'{consts.result_path}/{path_to_id(target_path)}'

@@ -24,6 +24,7 @@ default_config = {
         'debug' : False,
     },
     'ocr_pipeline' : {
+        'image_preprocess' : True,
         'fix_rotation' : 'none',
         'upscaling_image' : 'none',
         'denoise_image' : 'none',
@@ -34,6 +35,12 @@ default_config = {
             'dpi' : 300,
             'psm' : 3
         },
+        'posprocess' : True,
+        'clean_ocr' : True,
+        'bound_box_fix_image' : True,
+        'split_whitespace' : 3,
+        'unite_blocks' : True,
+        'find_titles' : True,
         'output_single_block' : False
     },
     'methods' : {
@@ -107,6 +114,7 @@ def read_config_window(values:dict)->dict:
         pass
 
     # ocr pipeline values
+    config['ocr_pipeline']['image_preprocess'] = values['checkbox_image_preprocessing']
     config['ocr_pipeline']['fix_rotation'] = values['list_fix_rotation']
     config['ocr_pipeline']['upscaling_image'] = values['list_upscaling_image']
     config['ocr_pipeline']['denoise_image'] = values['list_denoise_image']
@@ -121,6 +129,18 @@ def read_config_window(values:dict)->dict:
     except:
         pass
     config['ocr_pipeline']['tesseract_config']['l'] = values['tesseract_list_lang']
+    config['ocr_pipeline']['posprocess'] = values['checkbox_posprocessing']
+    config['ocr_pipeline']['clean_ocr'] = values['checkbox_clean_ocr']
+    config['ocr_pipeline']['bound_box_fix_image'] = values['checkbox_bound_box_fix_image']
+    if values['checkbox_split_whitespaces']:
+        try:
+            config['ocr_pipeline']['split_whitespace'] = int(values['input_split_whitespaces_diff_ratio'])
+        except:
+            pass
+    else:
+        config['ocr_pipeline']['split_whitespace'] = 'none'
+    config['ocr_pipeline']['unite_blocks'] = values['checkbox_unite_blocks']
+    config['ocr_pipeline']['find_titles'] = values['checkbox_find_titles']
     config['ocr_pipeline']['output_single_block'] = values['checkbox_pipeline_output_single_block']
 
     # methods values
@@ -176,6 +196,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['input_id_text_size'].update(refresh_conf['base']['id_text_size'])
 
     # ocr pipeline values
+    window['checkbox_image_preprocessing'].update(refresh_conf['ocr_pipeline']['image_preprocess'])
     window['list_fix_rotation'].update(refresh_conf['ocr_pipeline']['fix_rotation'])
     window['list_upscaling_image'].update(refresh_conf['ocr_pipeline']['upscaling_image'])
     window['list_denoise_image'].update(refresh_conf['ocr_pipeline']['denoise_image'])
@@ -184,6 +205,13 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['tesseract_input_dpi'].update(refresh_conf['ocr_pipeline']['tesseract_config']['dpi'])
     window['tesseract_input_psm'].update(refresh_conf['ocr_pipeline']['tesseract_config']['psm'])
     window['tesseract_list_lang'].update(refresh_conf['ocr_pipeline']['tesseract_config']['l'])
+    window['checkbox_posprocessing'].update(refresh_conf['ocr_pipeline']['posprocess'])
+    window['checkbox_clean_ocr'].update(refresh_conf['ocr_pipeline']['clean_ocr'])
+    window['checkbox_bound_box_fix_image'].update(refresh_conf['ocr_pipeline']['bound_box_fix_image'])
+    window['checkbox_split_whitespaces'].update(refresh_conf['ocr_pipeline']['split_whitespace'] != 'none')
+    window['input_split_whitespaces_diff_ratio'].update(refresh_conf['ocr_pipeline']['split_whitespace'])
+    window['checkbox_unite_blocks'].update(refresh_conf['ocr_pipeline']['unite_blocks'])
+    window['checkbox_find_titles'].update(refresh_conf['ocr_pipeline']['find_titles'])
     window['checkbox_pipeline_output_single_block'].update(refresh_conf['ocr_pipeline']['output_single_block'])
 
     # method values

@@ -1050,7 +1050,8 @@ def run_target(target:str,args:argparse.Namespace):
 
 
     # output
-    output_target_results(ocr_results,original_target_path,results_path,args)
+    if 'output' not in args.skip_method:
+        output_target_results(ocr_results,original_target_path,results_path,args)
 
 
     restore_document_images(original_target_path,processed_path,args.debug)

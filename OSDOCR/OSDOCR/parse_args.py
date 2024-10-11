@@ -9,9 +9,11 @@ preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','light_cor
 
 posprocessing_methods = ['clean_ocr','bound_box_fix_image','split_whitespace','unite_blocks',
                          'calculate_reading_order','extract_articles','posprocessing',
-                         'fix_hifenization']
+                         'fix_hifenization','find_titles']
 
-skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
+other = ['output']
+
+skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods + other
 
 def process_args():
     '''Process command line arguments'''

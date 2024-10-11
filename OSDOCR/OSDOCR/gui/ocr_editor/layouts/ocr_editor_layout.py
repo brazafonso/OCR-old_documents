@@ -549,46 +549,86 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
     
     simple_options = [
         [
-            place(sg.Text('Text Confidence: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Text('Text Confidence: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Slider(range=(0,100),default_value=70,key='slider_text_confidence'
-                            ,orientation='h',enable_events=True,size=(15,13)))
+                            ,orientation='h',enable_events=True,size=(40,20)))
         ],
         [
-            place(sg.Text('Output Type: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',enable_events=True))
+            sg.VPush()
         ],
         [
-            place(sg.Text('Use Pipeline Results: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Checkbox('',key='checkbox_use_pipeline_results',enable_events=True))
+            place(sg.Text('Output Type: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',
+                           enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Use Pipeline Results: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_use_pipeline_results',enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
         ],
         [
             place(sg.FolderBrowse('Output Path: ',target='input_output_path',enable_events=True,
-                                  font=("Calibri", 12,"bold"))),
-            place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True))
+                                  font=("Calibri", 18,"bold"))),
+            sg.Push(),
+            place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True,
+                           size=(20,1),font=("Calibri", 18,"bold")))
         ],
         [
-            place(sg.Text('Operations Cache Size: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Input(10,key='input_operations_cache_size',size=(5,1), enable_events=True))
+            sg.VPush()
         ],
         [
-            place(sg.Text('Debug mode: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Checkbox('',key='checkbox_debug_mode',enable_events=True))
+            place(sg.Text('Operations Cache Size: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input(10,key='input_operations_cache_size',size=(5,3), enable_events=True,
+                           font=("Calibri", 18,"bold")))
         ],
         [
-            place(sg.Text('Default PPI (zoom): ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Input(300,key='input_default_ppi',size=(5,1), enable_events=True))
+            sg.VPush()
         ],
         [
-            place(sg.Text('Vertex radius: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Input(5,key='input_vertex_radius',size=(5,1), enable_events=True))
+            place(sg.Text('Debug mode: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_debug_mode',enable_events=True,font=("Calibri", 18,"bold")))
         ],
         [
-            place(sg.Text('Edge thickness: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Input(2,key='input_edge_thickness',size=(5,1), enable_events=True))
+            sg.VPush()
         ],
         [
-            place(sg.Text('Id Text size: ',font=("Calibri", 12,"bold"),text_color='#046380')),
-            place(sg.Input(10,key='input_id_text_size',size=(5,1), enable_events=True))
+            place(sg.Text('Default PPI (zoom): ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input(300,key='input_default_ppi',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Vertex radius: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input(5,key='input_vertex_radius',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Edge thickness: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input(2,key='input_edge_thickness',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Id Text size: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input(10,key='input_id_text_size',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
         ],
 
     ]
@@ -607,27 +647,41 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
     pipeline_preprocessing_options = [
         [
+            place(sg.Text('Image Preprocessing: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox('',key='checkbox_image_preprocessing'))
+        ],
+        [
+            sg.Push(),
             place(sg.Text('Fix Rotation: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',
                            key='list_fix_rotation',enable_events=True,size=(10,13)))
         ],
         [
+            sg.Push(),
             place(sg.Text('Upscaling Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['none','waifu2x'],default_value='none',key='list_upscaling_image',
                            enable_events=True))
         ],
         [
+            sg.Push(),
             place(sg.Text('Denoise Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['none','waifu2x'],default_value='none',key='list_denoise_image',
                            enable_events=True))
         ],
         [
+            sg.Push(),
             place(sg.Text('Fix Illumination: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='',key='checkbox_fix_illumination',
                               enable_events=True))
         ],
         [
+            sg.Push(),
             place(sg.Text('Binarize: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['none','fax','otsu'],default_value='none',key='list_binarize',
                            enable_events=True))
         ]
@@ -635,17 +689,67 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
     pipeline_tesseract_options = [
         [
+            sg.Push(),
             place(sg.Text('DPI: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.InputText(key='tesseract_input_dpi',enable_events=True,size=(5,1)))
         ],
         [
+            sg.Push(),
             place(sg.Text('PSM: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.InputText(key='tesseract_input_psm',enable_events=True,size=(5,1)))
         ],
         [
+            sg.Push(),
             place(sg.Text('Language: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['eng','por'],default_value='eng',key='tesseract_list_lang',
                            enable_events=True,size=(5,1)))
+        ]
+    ]
+
+    pipeline_posprocessing_options = [
+        [
+            place(sg.Text('Posprocessing: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox('',key='checkbox_posprocessing',default=True,enable_events=True,
+                              size=(10,1)))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Clean OCR: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_clean_ocr',default=True,enable_events=True))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Bound Box Image Fix: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_bound_box_fix_image',default=True,enable_events=True))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Split Whitespaces: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_split_whitespaces',default=True,enable_events=True))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Diff ratio [split whitespaces]: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.InputText(key='input_split_whitespaces_diff_ratio',enable_events=True,size=(2,1)))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Unite Blocks: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_unite_blocks',enable_events=True))
+        ],
+        [
+            sg.Push(),
+            place(sg.Text('Find Titles: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Checkbox('',key='checkbox_find_titles',enable_events=True))
         ]
     ]
 
@@ -675,6 +779,18 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             sg.HorizontalSeparator()
         ],
         [
+            sg.Text('Posprocessing Options',font=("Calibri", 14,"bold"),text_color='#046380')
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Column(pipeline_posprocessing_options)
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
             sg.Text('Output Options',font=("Calibri", 14,"bold"),text_color='#046380')
         ],
         [
@@ -694,50 +810,75 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
     methods_options = [
         [
-            place(sg.Text('Type of Document: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Text('Type of Document: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['newspaper','other'],default_value='newspaper',
-                           key='list_type_of_document',enable_events=True))
+                           key='list_type_of_document',enable_events=True,font=("Calibri", 18,"bold")))
         ],
         [
-            place(sg.Text('Ignore Delimiters: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Ignore Delimiters: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='',key='checkbox_ignore_delimiters',enable_events=True))
         ],
         [
-            place(sg.Text('Calculate Reading Order [Output]: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Calculate Reading Order [Output]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='',key='checkbox_calculate_reading_order',enable_events=True))
         ],
         [
-            place(sg.Text('Title priority [Calculate Reading Order]: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Title priority [Calculate Reading Order]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='',key='checkbox_title_priority_calculate_reading_order',enable_events=True))
         ],
         [
-            place(sg.Text(text='Target Segments: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text(text='Target Segments: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='Header',key='checkbox_target_header',enable_events=True)),
             place(sg.Checkbox(text='Body',key='checkbox_target_body',enable_events=True)),
             place(sg.Checkbox(text='Footer',key='checkbox_target_footer',enable_events=True))
         ],
         [
-            place(sg.Text('Image Split [Keep Intersecting Boxes]: ',font=("Calibri", 12,"bold"),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Image Split [Keep Intersecting Boxes]: ',font=("Calibri", 18,"bold"),
                           text_color='#046380')),
+            sg.Push(),
             place(sg.Checkbox(text='',key='checkbox_image_split_keep_intersecting_boxes',enable_events=True))
         ],
         [
-            place(sg.Text('Article Gathering: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Article Gathering: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
             place(sg.Combo(['selected','fill'],default_value='selected',key='list_article_gathering',
-                           enable_events=True))
+                           enable_events=True,font=("Calibri", 18,"bold")))
         ]
     ]
 
 
-    simple_optios_tab = sg.Tab('Editor',simple_options)
-    methods_options_tab = sg.Tab('Tools',methods_options)
-    pipeline_options_tab = sg.Tab('Pipeline',pipeline_options)
+    simple_optios_tab = sg.Tab('Editor',simple_options,expand_y=True)
+    methods_options_tab = sg.Tab('Tools',methods_options,expand_y=True)
+    pipeline_options_tab = sg.Tab('Pipeline',pipeline_options,expand_y=True)
 
     # final layout
     layout = [
         [
             place(sg.TabGroup([[simple_optios_tab,methods_options_tab,pipeline_options_tab]],
-                              font=("Calibri", 15,'bold'),title_color='#046380'))
+                              font=("Calibri", 15,'bold'),title_color='#046380',expand_y=True))
         ],
         [
             place(sg.Image(source=f'{file_path}/../assets/save.png'
@@ -756,6 +897,8 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
                        force_toplevel=True,location=location,
                        )
     window.bind('<Configure>',"Event")
+
+    window['checkbox_image_preprocessing'].widget.configure(takefocus=0) # bugged for some reason
     return window
 
 

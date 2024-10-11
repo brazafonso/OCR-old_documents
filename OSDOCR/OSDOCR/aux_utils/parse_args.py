@@ -145,10 +145,12 @@ class CustomAction_skip_method(argparse.Action):
                          'image_upscaling','identify_document_delimiters','binarize_image']
 
     posprocessing_methods = ['clean_ocr','bound_box_fix_image','split_whitespace','unite_blocks',
-                         'calculate_reading_order','extract_articles','posprocessing',
-                         'fix_hifenization']
+                            'calculate_reading_order','extract_articles','posprocessing',
+                            'fix_hifenization','find_titles']
 
-    skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
+    other = ['output']
+
+    skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods + other
 
     def __init__(self, *args, **kwargs):
         """

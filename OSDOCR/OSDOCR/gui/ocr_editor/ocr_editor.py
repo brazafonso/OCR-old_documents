@@ -23,9 +23,10 @@ from OSDOCR.aux_utils.misc import *
 from OSDOCR.output_module.journal.article import Article
 from .layouts.ocr_editor_layout import *
 from ..aux_utils.utils import *
-from OSDOCR.parse_args import preprocessing_methods,process_args
+from OSDOCR.parse_args import preprocessing_methods,posprocessing_methods,other,\
+                                process_args
 from OSDOCR.ocr_tree_module.ocr_tree import *
-from OSDOCR.pipeline import run_target_image
+from OSDOCR.pipeline import run_target
 from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
                                                 split_whitespaces,block_bound_box_fix,\
                                                 text_bound_box_fix,remove_empty_boxes,\
@@ -1438,6 +1439,9 @@ def apply_ocr_block():
     if highlighted_blocks:
         print('Apply OCR on highlighted ocr block')
 
+        # clean tmp folder
+        clean_editor_tmp_folder()
+
         image = cv2.imread(current_image_path)
         block = highlighted_blocks[-1]
         ocr_block = block['block']
@@ -1469,34 +1473,61 @@ def apply_ocr_block():
         
         # save tmp image
         tmp_dir = consts.ocr_editor_tmp_path
+        consts.result_path = tmp_dir
         os.makedirs(tmp_dir,exist_ok=True)
         tmp_path = f'{tmp_dir}/tmp.png'
         cv2.imwrite(tmp_path,image)
+
         # create args for pipeline function
         ## skip methods
-        skip_methods = preprocessing_methods.copy()
-        skip_methods.remove('image_preprocess')
-        if config['ocr_pipeline']['fix_rotation']  != 'none':
-            skip_methods.remove('auto_rotate')
-        if config['ocr_pipeline']['fix_illumination']:
-            skip_methods.remove('light_correction')
-        if config['ocr_pipeline']['upscaling_image'] != 'none':
-            skip_methods.remove('image_upscaling')
-        if config['ocr_pipeline']['denoise_image'] != 'none':
-            skip_methods.remove('noise_removal')
-        if config['ocr_pipeline']['binarize'] != 'none':
-            skip_methods.remove('binarize_image')
+        skip_methods = preprocessing_methods.copy() + posprocessing_methods.copy() + other.copy()
+        
+        # image preprocessing
+        if config['ocr_pipeline']['image_preprocess'] != 'none':
+            skip_methods.remove('image_preprocess')
+        else:
+            if config['ocr_pipeline']['fix_rotation']  != 'none':
+                skip_methods.remove('auto_rotate')
+            if config['ocr_pipeline']['fix_illumination']:
+                skip_methods.remove('light_correction')
+            if config['ocr_pipeline']['upscaling_image'] != 'none':
+                skip_methods.remove('image_upscaling')
+            if config['ocr_pipeline']['denoise_image'] != 'none':
+                skip_methods.remove('noise_removal')
+            if config['ocr_pipeline']['binarize'] != 'none':
+                skip_methods.remove('binarize_image')
 
+        # image posprocessing
+        if config['ocr_pipeline']['posprocess'] != 'none':
+            skip_methods.remove('posprocessing')
+        else:
+            if config['ocr_pipeline']['clean_ocr']:
+                skip_methods.remove('clean_ocr')
+            if config['ocr_pipeline']['bound_box_fix_image']:
+                skip_methods.remove('bound_box_fix_image')
+            if config['ocr_pipeline']['split_whitespace'] != 'none':
+                skip_methods.remove('split_whitespace')
+            if config['ocr_pipeline']['unite_blocks']:
+                skip_methods.remove('unite_blocks')
+            if config['ocr_pipeline']['find_titles']:
+                skip_methods.remove('find_titles')
+
+        ## update args according to config    
         args = process_args()
         args.tesseract_config = config['ocr_pipeline']['tesseract_config']
+
         args.skip_method =  skip_methods
         args.binarize_image = [config['ocr_pipeline']['binarize']]
+        args.split_whitespace = config['ocr_pipeline']['split_whitespace']
         args.logs = True
         args.debug = config['base']['debug']
+
         # run ocr
-        run_target_image(tmp_path,results_path=tmp_dir,args=args)
+        run_target(target=tmp_path,args=args)
+        tmp_metadata = get_target_metadata(tmp_path)
+        tmp_ocr_results_path = tmp_metadata['ocr_results_path']
         # load ocr results
-        ocr_results = OCR_Tree(f'{tmp_dir}/ocr_results.json',
+        ocr_results = OCR_Tree(tmp_ocr_results_path,
                                        config['base']['text_confidence'])
         
         new_page = ocr_results.get_boxes_level(1)[0]
@@ -2444,13 +2475,8 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             current_block_level
 
     create_base_folders()
-    tmp_folder_path = f'{consts.ocr_editor_path}/tmp'
-    # clean tmp folder
-    for f in os.listdir(tmp_folder_path):
-        if os.path.isfile(os.path.join(tmp_folder_path, f)):
-            os.remove(os.path.join(tmp_folder_path, f))
-        else:
-            shutil.rmtree(os.path.join(tmp_folder_path, f))
+    clean_editor_tmp_folder()
+    
 
     # read config and update dependent variables
     config = read_ocr_editor_configs_file()
