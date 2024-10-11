@@ -8,7 +8,8 @@ preprocessing_methods = ['auto_rotate','noise_removal','blur_removal','light_cor
                          'image_upscaling','identify_document_delimiters','binarize_image']
 
 posprocessing_methods = ['clean_ocr','bound_box_fix_image','split_whitespace','unite_blocks',
-                         'calculate_reading_order','extract_articles','posprocessing']
+                         'calculate_reading_order','extract_articles','posprocessing',
+                         'fix_hifenization']
 
 skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
 
@@ -18,24 +19,6 @@ def process_args():
 --------------------------------------------------------------
 |        Old Structured Document OCR - Main program          |
 --------------------------------------------------------------
-            
-Components:
-            - INPUT:
-            * Image 
-            * hOCR
-            * json
-            
-            - PIPELINE:
-            * A : Image input
-                ^ TODO
-            * B : hOCR input
-                ^ TODO
-            
-            - OUTPUT:
-            * Markdown
-            * HTML
-            * TXT
-            * TXT Simple
                                      
                                      ''',formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('target'                        ,type=str,nargs='*'                                             ,help='Target image path')
@@ -48,10 +31,12 @@ Components:
     parser.add_argument('-ot','--output_type'           ,type=str,nargs='*' ,default=['markdown']                       ,help='Output type. Possible values: markdown, html, txt (default: markdown).', choices=['markdown','html','txt','txt_simple'])
     parser.add_argument('-tc','--text_confidence'       ,type=int,nargs='?'   ,default=10                               ,help='Text confidence level. Possible values: 0-100.')
     parser.add_argument('-tt','--target_type'           ,type=str,nargs=1   ,default='newspaper'                        ,help='Target type. Possible values: newspaper.',choices=['newspaper'])
-    parser.add_argument('-ts','--target_segments'       ,type=str,nargs='*'   ,default=['header','body']                  ,help='Target segments, used for segmenting ocr results and processing output. Possible values: header, body, footer. Default: header,body. Body is always considered.',choices=['header','body','footer'])
+    parser.add_argument('-ts','--target_segments'       ,type=str,nargs='*'   ,default=['header','body']                ,help='Target segments, used for segmenting ocr results and processing output. Possible values: header, body, footer. Default: header,body. Body is always considered.',choices=['header','body','footer'])
+    parser.add_argument('-os','--output_segments'       ,type=str,nargs='*' ,default=['all']                            ,help='Output segments, used for dividing output. Possible values: all, header, body, footer. If "all", single output. Default: all.',choices=['all','header','body','footer'])
     parser.add_argument('-tod','--target_old_document'  ,action='store_false',default=True                              ,help='Target is an old document (default: True). Used for automatic pipeline decisions, ex.: choosing model to identify document images.')
     parser.add_argument('-focr','--force_ocr'           ,action='store_true',default=False                              ,help='Force OCR engine to run again')
-    parser.add_argument('-igd','--ignore_delimiters'     ,action='store_true',default=False                             ,help='Ignore delimiters as page/column boundaries (default: False)')
+    parser.add_argument('-igd','--ignore_delimiters'    ,action='store_true',default=False                              ,help='Ignore delimiters as page/column boundaries (default: False)')
+    parser.add_argument('-tp','--title_priority'        ,action='store_true',default=False                              ,help='Title priority for calculating reading order.')
     parser.add_argument('-sw','--split_whitespace'      ,type=str,nargs=1   ,default=3                                  ,help="Ratio of whitespace sequence, compared to line's words distances, to split the line (default: 3)")
     parser.add_argument('-fr','--fix_rotation'          ,type=str,nargs='?' ,default=['auto'],const='auto'              ,help='Fix image rotation automatically (default: True). Further options: auto, clockwise, counter_clockwise (default: auto).',choices=['auto','clockwise','counter_clockwise'])
     parser.add_argument('-upi','--upscaling_image'      ,type=str,nargs='*' ,default=['waifu2x']                        ,help='''
@@ -62,8 +47,8 @@ Further options:
             * scale4x
             * autoscale
                         ''',action=CustomAction_upscale_image)
-    parser.add_argument('-tdpi','--target_dpi'          ,type=int,nargs='?' ,default=300                            ,help='Target dpi for image (default: 300)')
-    parser.add_argument('-tdim','--target_dimensions'   ,type=str,nargs='?' ,default='A3'                           ,help='''
+    parser.add_argument('-tdpi','--target_dpi'          ,type=int,nargs='?' ,default=300                                ,help='Target dpi for image (default: 300)')
+    parser.add_argument('-tdim','--target_dimensions'   ,type=str,nargs='?' ,default='A3'                               ,help='''
 Real page dimensions for image (default: A3). 
 Used to calculate image dpi.
 Available formats ('/OSDOCR/consts/dimensions.json' , more can be added):

@@ -175,10 +175,7 @@ def ocr_editor_layout()->sg.Window:
                         [
                             sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True)
                         ],
-                    ],
-                    # relief=sg.RELIEF_SUNKEN,
-                    # border_width=0.1,
-                    # background_color='#046380',
+                    ]
                     )
                 )
             ]
@@ -537,11 +534,6 @@ def ocr_editor_layout()->sg.Window:
 
 
 
-
-
-
-
-
 def configurations_layout(position:tuple=(None,None))->sg.Window:
     '''Window for configurations'''
 
@@ -711,8 +703,12 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Checkbox(text='',key='checkbox_ignore_delimiters',enable_events=True))
         ],
         [
-            place(sg.Text('Calculate Reading Order: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Text('Calculate Reading Order [Output]: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             place(sg.Checkbox(text='',key='checkbox_calculate_reading_order',enable_events=True))
+        ],
+        [
+            place(sg.Text('Title priority [Calculate Reading Order]: ',font=("Calibri", 12,"bold"),text_color='#046380')),
+            place(sg.Checkbox(text='',key='checkbox_title_priority_calculate_reading_order',enable_events=True))
         ],
         [
             place(sg.Text(text='Target Segments: ',font=("Calibri", 12,"bold"),text_color='#046380')),
@@ -734,7 +730,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
 
 
     simple_optios_tab = sg.Tab('Editor',simple_options)
-    methods_options_tab = sg.Tab('Methods',methods_options)
+    methods_options_tab = sg.Tab('Tools',methods_options)
     pipeline_options_tab = sg.Tab('Pipeline',pipeline_options)
 
     # final layout

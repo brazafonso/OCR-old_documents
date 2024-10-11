@@ -41,6 +41,7 @@ default_config = {
         'doc_type' : 'newspaper',
         'ignore_delimiters' : False,
         'calculate_reading_order' : False,
+        'title_priority_calculate_reading_order' : False,
         'target_segments' : ['header', 'body'],
         'use_pipeline_results' : True,
         'image_split_keep_all' : False
@@ -119,7 +120,7 @@ def read_config_window(values:dict)->dict:
     config['methods']['article_gathering'] = values['list_article_gathering']
     config['methods']['doc_type'] = values['list_type_of_document']
     config['methods']['ignore_delimiters'] = values['checkbox_ignore_delimiters']
-    config['methods']['calculate_reading_order'] = values['checkbox_calculate_reading_order']
+    config['methods']['title_priority_calculate_reading_order'] = values['checkbox_title_priority_calculate_reading_order']
     config['methods']['target_segments'] = []
     if values['checkbox_target_header']:
         config['methods']['target_segments'].append('header')
@@ -174,6 +175,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['list_type_of_document'].update(refresh_conf['methods']['doc_type'])
     window['checkbox_ignore_delimiters'].update(refresh_conf['methods']['ignore_delimiters'])
     window['checkbox_calculate_reading_order'].update(refresh_conf['methods']['calculate_reading_order'])
+    window['checkbox_title_priority_calculate_reading_order'].update(refresh_conf['methods']['title_priority_calculate_reading_order'])
     window['checkbox_target_header'].update('header' in refresh_conf['methods']['target_segments'])
     window['checkbox_target_body'].update('body' in refresh_conf['methods']['target_segments'])
     window['checkbox_target_footer'].update('footer' in refresh_conf['methods']['target_segments'])
@@ -213,4 +215,6 @@ def run_config_gui(position:tuple=None):
     print('Closing config window')
     config_window.close()
     config = read_ocr_editor_configs_file()
+    del config_window
+    print('Config window closed')
     return config

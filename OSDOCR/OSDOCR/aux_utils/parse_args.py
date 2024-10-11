@@ -117,7 +117,23 @@ Options (seperated by '__')
 
 
 
+class CustomAction_output_segments(argparse.Action):
+    '''
+    Custom Action for Output Segments option
+    '''
+    def __init__(self, *args, **kwargs):
+        """
+        argparse custom action.
+        :param check_func: callable to do the real check.
+        """
+        super(CustomAction_output_segments, self).__init__(*args, **kwargs)
 
+    def __call__(self, parser, namespace, values, option_string):
+        # if output segments "all" is given, remove other segments
+        if 'all' in values:
+            values = ['all']
+        setattr(namespace, self.dest, values)
+        
 
 class CustomAction_skip_method(argparse.Action):
     '''
@@ -129,7 +145,8 @@ class CustomAction_skip_method(argparse.Action):
                          'image_upscaling','identify_document_delimiters','binarize_image']
 
     posprocessing_methods = ['clean_ocr','bound_box_fix_image','split_whitespace','unite_blocks',
-                         'calculate_reading_order','extract_articles','posprocessing']
+                         'calculate_reading_order','extract_articles','posprocessing',
+                         'fix_hifenization']
 
     skipable_methods = ['all'] + preprocessing_methods + posprocessing_methods
 

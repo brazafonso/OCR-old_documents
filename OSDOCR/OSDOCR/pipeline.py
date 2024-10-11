@@ -62,17 +62,23 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
     target_img_path = metadata['target_path']
 
     calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    title_priority = args.title_priority
     if args.logs:
         print(f'''
     Parameters:
         * ignore_delimiters: {args.ignore_delimiters}
         * calculate_reading_order: {calculate_reading_order}
         * target_segments: {args.target_segments}''')
+
+    next_block_filter = None
+    if title_priority:
+        next_block_filter = lambda node: node if node.value.type == 'title' else None
     order_list,articles = extract_articles(image_path=target_img_path,
                                            ocr_results=ocr_results,
                                            ignore_delimiters=args.ignore_delimiters,
                                            calculate_reading_order=calculate_reading_order,
                                            target_segments=args.target_segments,
+                                           next_node_filter=next_block_filter,
                                            logs=args.logs,
                                            debug=args.debug)
 
@@ -96,27 +102,14 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
                   args.text_confidence,fix_hifenization_flag)
 
 
-def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
-    '''Save default output'''
-    if args.logs:
-        print('SAVE DEFAULT OUTPUT')
 
-    metadata = get_target_metadata(o_target)
-    target_img_path = metadata['target_path']
+def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespace):
+    '''Create default output'''
 
-
-    calculate_reading_order = 'calculate_reading_order' not in args.skip_method
     fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
 
-    if calculate_reading_order:
-        blocks = order_ocr_tree(target_img_path,ocr_results,args.ignore_delimiters,debug=args.debug)
-    else:
-        blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
-        blocks = sorted(blocks,key=lambda x: x.id)
-
-
     if 'txt' in args.output_type:
-        with open(f'{results_path}/output.txt','w',encoding='utf-8') as f:
+        with open(f'{results_path}.txt','w',encoding='utf-8') as f:
             txt = ''
             for block in blocks:
                 txt += block.to_text(args.text_confidence)
@@ -127,9 +120,8 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
             f.write(txt)
                 
             
-
     if 'markdown' in args.output_type:
-        with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+        with open(f'{results_path}.md','w',encoding='utf-8') as f:
             txt = ''
             for block in blocks:
                 txt += block.to_text(args.text_confidence)
@@ -138,6 +130,70 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
                 txt = fix_hifenization(txt)
 
             f.write(txt)
+
+
+def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
+    '''Save default output'''
+    if args.logs:
+        print('SAVE DEFAULT OUTPUT')
+
+    metadata = get_target_metadata(o_target)
+    target_img_path = metadata['target_path']
+
+
+    calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    output_segments = args.output_segments
+    target_segments = args.target_segments
+
+    if args.logs:
+        print(f'''
+    Parameters:
+        * calculate_reading_order: {calculate_reading_order}
+        * output_segments: {output_segments}
+        * target_segments: {target_segments}''')
+    
+
+    header,body,footer = segment_document(target_img_path,target_segments=target_segments)
+
+    areas = [header,body,footer]
+
+    if calculate_reading_order:
+        title_priority = args.title_priority
+        next_block_filter = None
+        if title_priority:
+            next_block_filter = lambda node: node if node.value.type == 'title' else None
+        blocks = order_ocr_tree(image_path=target_img_path,ocr_results=ocr_results,
+                                ignore_delimiters=args.ignore_delimiters,
+                                area=areas,target_segments=target_segments,
+                                next_node_filter=next_block_filter,debug=args.debug)
+    else:
+        blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
+        blocks = sorted(blocks,key=lambda x: x.id)
+
+    # divide output according to output segments
+    if 'all' in output_segments:
+        output_default(blocks,f'{results_path}/output',args)
+
+    if 'header' in output_segments and header:
+        header_area_blocks = ocr_results.get_boxes_in_area(areas[0])
+        header_blocks = [block for block in blocks if block in header_area_blocks]
+        output_default(header_blocks,f'{results_path}/header',args)
+
+    if 'body' in output_segments and body:
+        body_area_blocks = ocr_results.get_boxes_in_area(areas[1])
+        body_blocks = [block for block in blocks if block in body_area_blocks]
+        output_default(body_blocks,f'{results_path}/body',args)
+
+    if 'footer' in output_segments and footer:
+        footer_area_blocks = ocr_results.get_boxes_in_area(areas[2])
+        footer_blocks = [block for block in blocks if block in footer_area_blocks]
+        output_default(footer_blocks,f'{results_path}/footer',args)
+
+
+
+
+
+    
 
     
 
@@ -158,8 +214,8 @@ def output_target_results(ocr_results:OCR_Tree,o_target:str,results_path:str,
         if args.logs:
             print('EXTRACT ARTICLES')
         output_articles(o_target,ocr_results,results_path,args)
-    else:
-        save_output(ocr_results,o_target,results_path,args)
+
+    save_output(ocr_results,o_target,results_path,args)
 
     
 

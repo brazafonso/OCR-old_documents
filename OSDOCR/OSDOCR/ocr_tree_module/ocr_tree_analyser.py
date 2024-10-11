@@ -1193,6 +1193,10 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,deb
     Return:
     - topological graph: for each block, Node object with list of blocks that come after it'''
 
+    if debug:
+        print('Generating topologic graph...')
+        print('Area:',area)
+
     # get blocks
     if area:
         blocks = ocr_results.get_boxes_in_area(area,2)
@@ -1201,6 +1205,9 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,deb
     non_delimiters = [block for block in blocks if block.type != 'delimiter']
     if debug:
         print('Non delimiters:',[(block.id,block.type) for block in non_delimiters])
+
+    if len(non_delimiters) == 0:
+        return None
 
     # calculate graph
     first_block = next_top_block(non_delimiters)
@@ -1691,30 +1698,86 @@ def graph_isolate_articles(graph:Graph,order_list:list=None,logs:bool=False)->li
 
 
 
-def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,area:Box=None,ignore_delimiters:bool=False,
-                   next_node_filter:any=None,debug:bool=False)->list[OCR_Tree]:
+def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,area:list[Box]=None,ignore_delimiters:bool=False,
+                   target_segments:list[str]=['body'],next_node_filter:any=None,debug:bool=False)->list[OCR_Tree]:
     '''Calculates level 2 OCR Tree reading order and returns these blocks in an ordered list'''
     ordered_blocks = []
+    header = None
+    columns_area = None
+    footer = None
 
     if area is None:
-        _,body,_ = segment_document(image=image_path)
-        columns_area = body
+        areas = segment_document(image=image_path,target_segments=target_segments)
+        header = areas[0]
+        columns_area = areas[1]
+        footer = areas[2]
     else:
-        columns_area = area
+        if len(area) >= len(target_segments):
+            i = 0
+            if 'header' in target_segments:
+                header = area[i]
+                i += 1
+            if 'body' in target_segments:
+                columns_area = area[i]
+                i += 1
+            if 'footer' in target_segments:
+                footer = area[i]
+        else:
+            raise ValueError('Area must have same length as target segments')
+        
+    # clean areas
+    if header and not header.valid():
+        header = None
 
-    # run topologic_order context
-    t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters,
-                                      debug=debug)
+    if columns_area and not columns_area.valid():
+        columns_area = None
 
-    order_list = sort_topologic_order(t_graph,sort_weight=True,next_node_filter=next_node_filter,
-                                      log=True,debug=debug)
+    if footer and not footer.valid():
+        footer = None
 
-    if debug:
-        print('Order list:',order_list)
+    if 'header' in target_segments and header:
+        t_graph = topologic_graph(ocr_results,area=header,clean_graph=False,debug=debug)
+    
+        if t_graph:
+            order_list = sort_topologic_order(t_graph,sort_weight=False,log=True,debug=debug)
 
-    for block_id in order_list:
-        block = t_graph.get_node(block_id).value
-        ordered_blocks.append(block)
+            if debug:
+                print('Order list:',order_list)
+
+            for block_id in order_list:
+                block = t_graph.get_node(block_id).value
+                ordered_blocks.append(block)
+
+    if 'body' in target_segments and columns_area:
+        # run topologic_order context
+        t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters,
+                                        debug=debug)
+
+        if t_graph:
+            order_list = sort_topologic_order(t_graph,sort_weight=True,next_node_filter=next_node_filter,
+                                            log=True,debug=debug)
+
+            if debug:
+                print('Order list:',order_list)
+
+            for block_id in order_list:
+                block = t_graph.get_node(block_id).value
+                ordered_blocks.append(block)
+
+    if 'footer' in target_segments and footer:
+        # run topologic_order context
+        t_graph = topologic_graph(ocr_results,area=footer,clean_graph=False,debug=debug)
+
+        if t_graph:
+
+            order_list = sort_topologic_order(t_graph,sort_weight=False,log=True,debug=debug)
+
+            if debug:
+                print('Order list:',order_list)
+
+            for block_id in order_list:
+                block = t_graph.get_node(block_id).value
+                ordered_blocks.append(block)
 
     return ordered_blocks
 
@@ -1722,7 +1785,7 @@ def order_ocr_tree(image_path:str,ocr_results:OCR_Tree,area:Box=None,ignore_deli
 
 def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=False,
                      calculate_reading_order:bool=True,target_segments:list[str]=['header','body','footer'],
-                     logs:bool=False,debug:bool=False)->Tuple[list[int],list[OCR_Tree]]:
+                     next_node_filter:any=None,logs:bool=False,debug:bool=False)->Tuple[list[int],list[OCR_Tree]]:
     '''Extract articles from document using OCR results and image information. Articles are assumed to only be in body segment of target.'''
 
     delimiters = [b.box for b in ocr_results.get_boxes_type(level=2,types=['delimiter'])]
@@ -1733,7 +1796,7 @@ def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters,debug=debug)
 
     if calculate_reading_order:
-        order_list = sort_topologic_order(t_graph,sort_weight=True)
+        order_list = sort_topologic_order(t_graph,sort_weight=True,next_node_filter=next_node_filter,log=logs,debug=debug)
     else:
         # current order of ids
         ## small consideration if delimiters are ignored

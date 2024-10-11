@@ -1900,17 +1900,28 @@ def calculate_reading_order_method():
     global current_ocr_results,current_image_path,bounding_boxes,config,highlighted_blocks
     if current_ocr_results and current_image_path:
 
+        target_segments = config['methods']['target_segments']
         # if no highlighted blocks, apply calculate reading order
-        if not highlighted_blocks:
+        if not highlighted_blocks and target_segments:
             # get block order
             ## get body area using delimiters
             delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-            target_segments = config['methods']['target_segments']
-            body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
-                                                    target_segments=target_segments)[1]
+            areas = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
+                                                    target_segments=target_segments)
+            if 'header' not in target_segments:
+                areas.pop(0)
+            if 'body' not in target_segments:
+                areas.pop(0)
+            if 'footer' not in target_segments:
+                areas.pop(-1)
+
+            next_node_filter = None
+            if config['methods']['title_priority_calculate_reading_order']:
+                next_node_filter = lambda node: node if node.value.type == 'title' else None
             ## blocks returned are only part of the body of the image
             ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
-                                            area=body_area,debug=config['base']['debug'])
+                                            area=areas,target_segments=target_segments,next_node_filter=next_node_filter,
+                                            debug=config['base']['debug'])
             ordered_block_ids = [b.id for b in ordered_blocks]
             # update ids values
             last_id = len(ordered_blocks) - 1
@@ -2125,9 +2136,15 @@ def generate_output_md():
         else:
             calculate_reading_order = config['methods']['calculate_reading_order']
             if calculate_reading_order:
-                blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters,debug=config['base']['debug'])
+                title_priority = config['methods']['title_priority_calculate_reading_order']
+                next_block_filter = None
+                if title_priority:
+                    next_block_filter = lambda node: node if node.value.type == 'title' else None
+                blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters,
+                                        next_node_filter=next_block_filter,debug=config['base']['debug'])
             else:
-                blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] if not ignore_delimiters else ['delimiter'])]
+                blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] \
+                                                        if not ignore_delimiters else ['delimiter'])]
                 blocks = sorted(blocks,key=lambda x: x.id)
 
             with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
