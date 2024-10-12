@@ -1,5 +1,5 @@
 import collections
-from .layouts.ocr_editor_layout import configurations_layout
+from .layouts.ocr_editor_layout import configurations_layout,checked,unchecked
 from copy import deepcopy
 import PySimpleGUI as sg
 import json
@@ -82,16 +82,16 @@ def read_ocr_editor_configs_file()->dict:
 
     return config
 
-def read_config_window(values:dict)->dict:
+def read_config_window(window:sg.Window,values:dict)->dict:
     '''Read config window values'''
     config = read_ocr_editor_configs_file()
 
     # base values
     config['base']['text_confidence'] = values['slider_text_confidence']
     config['base']['output_type'] = values['list_output_type']
-    config['base']['use_pipeline_results'] = values['checkbox_use_pipeline_results']
+    config['base']['use_pipeline_results'] = window['-CHECKBOX-checkbox_use_pipeline_results'].metadata
     config['base']['output_path'] = values['input_output_path']
-    config['base']['debug'] = values['checkbox_debug_mode']
+    config['base']['debug'] = window['-CHECKBOX-checkbox_debug_mode'].metadata
     try:
         config['base']['cache_size'] = int(values['input_operations_cache_size'])
     except:
@@ -146,16 +146,16 @@ def read_config_window(values:dict)->dict:
     # methods values
     config['methods']['article_gathering'] = values['list_article_gathering']
     config['methods']['doc_type'] = values['list_type_of_document']
-    config['methods']['ignore_delimiters'] = values['checkbox_ignore_delimiters']
-    config['methods']['title_priority_calculate_reading_order'] = values['checkbox_title_priority_calculate_reading_order']
+    config['methods']['ignore_delimiters'] = window['-CHECKBOX-checkbox_ignore_delimiters'].metadata
+    config['methods']['title_priority_calculate_reading_order'] = window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].metadata
     config['methods']['target_segments'] = []
-    if values['checkbox_target_header']:
+    if window['-CHECKBOX-checkbox_target_header'].metadata:
         config['methods']['target_segments'].append('header')
-    if values['checkbox_target_body']:
+    if window['-CHECKBOX-checkbox_target_body'].metadata:
         config['methods']['target_segments'].append('body')
-    if values['checkbox_target_footer']:
+    if window['-CHECKBOX-checkbox_target_footer'].metadata:
         config['methods']['target_segments'].append('footer')
-    config['methods']['image_split_keep_all'] = values['checkbox_image_split_keep_intersecting_boxes']
+    config['methods']['image_split_keep_all'] = window['-CHECKBOX-checkbox_image_split_keep_intersecting_boxes'].metadata
 
     return config
 
@@ -186,9 +186,11 @@ def refresh_config_window(window:sg.Window, config:dict):
     # base values
     window['slider_text_confidence'].update(refresh_conf['base']['text_confidence'])
     window['list_output_type'].update(refresh_conf['base']['output_type'])
-    window['checkbox_use_pipeline_results'].update(refresh_conf['base']['use_pipeline_results'])
+    window['-CHECKBOX-checkbox_use_pipeline_results'].update(checked if refresh_conf['base']['use_pipeline_results'] else unchecked)
+    window['-CHECKBOX-checkbox_use_pipeline_results'].metadata = refresh_conf['base']['use_pipeline_results']
     window['input_output_path'].update(refresh_conf['base']['output_path'])
-    window['checkbox_debug_mode'].update(refresh_conf['base']['debug'])
+    window['-CHECKBOX-checkbox_debug_mode'].update(checked if refresh_conf['base']['debug'] else unchecked)
+    window['-CHECKBOX-checkbox_debug_mode'].metadata = refresh_conf['base']['debug']
     window['input_operations_cache_size'].update(refresh_conf['base']['cache_size'])
     window['input_default_ppi'].update(refresh_conf['base']['ppi'])
     window['input_vertex_radius'].update(refresh_conf['base']['vertex_radius'])
@@ -216,14 +218,21 @@ def refresh_config_window(window:sg.Window, config:dict):
 
     # method values
     window['list_type_of_document'].update(refresh_conf['methods']['doc_type'])
-    window['checkbox_ignore_delimiters'].update(refresh_conf['methods']['ignore_delimiters'])
-    window['checkbox_calculate_reading_order'].update(refresh_conf['methods']['calculate_reading_order'])
-    window['checkbox_title_priority_calculate_reading_order'].update(refresh_conf['methods']['title_priority_calculate_reading_order'])
-    window['checkbox_target_header'].update('header' in refresh_conf['methods']['target_segments'])
-    window['checkbox_target_body'].update('body' in refresh_conf['methods']['target_segments'])
-    window['checkbox_target_footer'].update('footer' in refresh_conf['methods']['target_segments'])
+    window['-CHECKBOX-checkbox_ignore_delimiters'].update(checked if refresh_conf['methods']['ignore_delimiters'] else unchecked)
+    window['-CHECKBOX-checkbox_ignore_delimiters'].metadata = refresh_conf['methods']['ignore_delimiters']
+    window['-CHECKBOX-checkbox_calculate_reading_order'].update(checked if refresh_conf['methods']['calculate_reading_order'] else unchecked)
+    window['-CHECKBOX-checkbox_calculate_reading_order'].metadata = refresh_conf['methods']['calculate_reading_order']
+    window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].update(checked if refresh_conf['methods']['title_priority_calculate_reading_order'] else unchecked)
+    window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].metadata = refresh_conf['methods']['title_priority_calculate_reading_order']
+    window['-CHECKBOX-checkbox_target_header'].update(checked if 'header' in refresh_conf['methods']['target_segments'] else unchecked)
+    window['-CHECKBOX-checkbox_target_header'].metadata = 'header' in refresh_conf['methods']['target_segments']
+    window['-CHECKBOX-checkbox_target_body'].update(checked if 'body' in refresh_conf['methods']['target_segments'] else unchecked)
+    window['-CHECKBOX-checkbox_target_body'].metadata = 'body' in refresh_conf['methods']['target_segments']
+    window['-CHECKBOX-checkbox_target_footer'].update(checked if 'footer' in refresh_conf['methods']['target_segments'] else unchecked)
+    window['-CHECKBOX-checkbox_target_footer'].metadata = 'footer' in refresh_conf['methods']['target_segments']
     window['list_article_gathering'].update(refresh_conf['methods']['article_gathering'])
-    window['checkbox_image_split_keep_intersecting_boxes'].update(refresh_conf['methods']['image_split_keep_all'])
+    window['-CHECKBOX-checkbox_image_split_keep_intersecting_boxes'].update(checked if refresh_conf['methods']['image_split_keep_all'] else unchecked)
+    window['-CHECKBOX-checkbox_image_split_keep_intersecting_boxes'].metadata = refresh_conf['methods']['image_split_keep_all']
 
 
 
@@ -248,12 +257,15 @@ def run_config_gui(position:tuple=None):
         if event in [sg.WIN_CLOSED, 'button_cancel']:
             break
         elif event == 'button_save':
-            config = read_config_window(values)
+            config = read_config_window(config_window,values)
             save_config_file(config)
             break
         elif event == 'button_reset':
             config = deepcopy(default_config)
             refresh_config_window(config_window, config)
+        elif '-CHECKBOX-' in event:
+            config_window[event].metadata = not config_window[event].metadata
+            config_window[event].update(checked if config_window[event].metadata else unchecked)
 
     print('Closing config window')
     config_window.close()

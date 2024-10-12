@@ -1802,6 +1802,7 @@ def split_image_method(x:int,y:int):
                 _,values = window.read(timeout=0)
                 # reset image
                 values['target_input'] = image_path
+                window['target_input'].update(image_path)
                 choose_window_image_input(values)
 
                 # reset variables
@@ -2497,8 +2498,10 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     event,values = window._ReadNonBlocking()
     if input_image_path:
         values['target_input'] = input_image_path
+        window['target_input'].update(input_image_path)
     if input_ocr_results_path:
         values['ocr_results_input'] = input_ocr_results_path
+        window['ocr_results_input'].update(input_ocr_results_path)
 
     if values:
         update_canvas_image(window,values)
