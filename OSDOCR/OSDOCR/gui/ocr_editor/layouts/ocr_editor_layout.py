@@ -156,8 +156,6 @@ def ocr_editor_layout()->sg.Window:
                            key='zoom_out',enable_events=True,
                            tooltip='Zoom Out')),
 
-            place(sg.Button('Generate MD',key='generate_md',font=("Calibri", 15))),
-
             place(sg.Image(source=f'{file_path}/../assets/send_block_back.png',
                            key='send_block_back',enable_events=True,
                            tooltip='Send block back')),
@@ -169,6 +167,8 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Image(source=f'{file_path}/../assets/reset_block_height.png',
                            key='reset_blocks_height',enable_events=True,
                            tooltip='Reset blocks height')),
+
+            place(sg.Button('Output',key='generate_output',font=("Calibri", 15))),
         ]
     
     canvas_body = [
@@ -561,18 +561,19 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             sg.VPush()
         ],
         [
-            place(sg.Text('Output Type: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text('Output Format: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
-            place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',
-                           enable_events=True,font=("Calibri", 18,"bold")))
+            place(sg.Combo(['markdown','txt'],default_value='markdown',key='list_output_format',
+                           enable_events=True,font=("Calibri", 18,"bold"),readonly=True))
         ],
         [
             sg.VPush()
         ],
         [
-            place(sg.Text('Use Pipeline Results: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text('Output Type: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
-            place(sg.Image(unchecked,key='-CHECKBOX-checkbox_use_pipeline_results',metadata=False,enable_events=True))
+            place(sg.Combo(['newspaper','simple'],default_value='newspaper',key='list_output_type',
+                           enable_events=True,font=("Calibri", 18,"bold"),readonly=True))
         ],
         [
             sg.VPush()
@@ -583,6 +584,30 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             sg.Push(),
             place(sg.Input(default_text=os.getcwd(),key='input_output_path',enable_events=True,
                            size=(20,1),font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Fix hifenization [output]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Image(checked,key='-CHECKBOX-checkbox_fix_hifenization',enable_events=True,metadata=True))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Calculate Reading Order [Output]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Image(checked,key='-CHECKBOX-checkbox_calculate_reading_order',enable_events=True,metadata=True))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Use Pipeline Results: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Image(unchecked,key='-CHECKBOX-checkbox_use_pipeline_results',metadata=False,enable_events=True))
         ],
         [
             sg.VPush()
@@ -658,21 +683,21 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Text('Fix Rotation: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Combo(['none','auto','clockwise','counter-clockwise'],default_value='none',
-                           key='list_fix_rotation',enable_events=True,size=(10,13)))
+                           key='list_fix_rotation',enable_events=True,size=(10,13),readonly=True))
         ],
         [
             sg.Push(),
             place(sg.Text('Upscaling Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Combo(['none','waifu2x'],default_value='none',key='list_upscaling_image',
-                           enable_events=True))
+                           enable_events=True,readonly=True))
         ],
         [
             sg.Push(),
             place(sg.Text('Denoise Image: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Combo(['none','waifu2x'],default_value='none',key='list_denoise_image',
-                           enable_events=True))
+                           enable_events=True,readonly=True))
         ],
         [
             sg.Push(),
@@ -686,7 +711,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Text('Binarize: ',font=("Calibri", 12,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Combo(['none','fax','otsu'],default_value='none',key='list_binarize',
-                           enable_events=True))
+                           enable_events=True,readonly=True))
         ]
     ]
 
@@ -815,7 +840,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
         [
             place(sg.Text('Type of Document: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
-            place(sg.Combo(['newspaper','other'],default_value='newspaper',
+            place(sg.Combo(['newspaper','other'],default_value='newspaper',readonly=True,
                            key='list_type_of_document',enable_events=True,font=("Calibri", 18,"bold")))
         ],
         [
@@ -830,9 +855,9 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             sg.VPush()
         ],
         [
-            place(sg.Text('Calculate Reading Order [Output]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text('Override type [categorize blocks]: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
-            place(sg.Image(checked,key='-CHECKBOX-checkbox_calculate_reading_order',enable_events=True,metadata=True))
+            place(sg.Image(checked,key='-CHECKBOX-checkbox_override_type',enable_events=True,metadata=True))
         ],
         [
             sg.VPush()
@@ -848,11 +873,11 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
         [
             place(sg.Text(text='Target Segments: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
-            place(sg.Text(text='Header',key='text_target_header',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text(text='Header',key='text_target_header',font=("Calibri", 15),text_color='#046380')),
             place(sg.Image(checked,key='-CHECKBOX-checkbox_target_header',enable_events=True,metadata=True)),
-            place(sg.Text(text='Body',key='text_target_body',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text(text='Body',key='text_target_body',font=("Calibri", 15),text_color='#046380')),
             place(sg.Image(checked,key='-CHECKBOX-checkbox_target_body',enable_events=True,metadata=True)),
-            place(sg.Text(text='Footer',key='text_target_footer',font=("Calibri", 18,"bold"),text_color='#046380')),
+            place(sg.Text(text='Footer',key='text_target_footer',font=("Calibri", 15),text_color='#046380')),
             place(sg.Image(checked,key='-CHECKBOX-checkbox_target_footer',enable_events=True,metadata=True))
         ],
         [
@@ -871,7 +896,7 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Text('Article Gathering: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Combo(['selected','fill'],default_value='selected',key='list_article_gathering',
-                           enable_events=True,font=("Calibri", 18,"bold")))
+                           enable_events=True,font=("Calibri", 18,"bold"),readonly=True))
         ]
     ]
 

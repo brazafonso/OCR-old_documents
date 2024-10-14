@@ -39,15 +39,6 @@ def save_articles(articles:list[OCR_Tree],output_path:str,output_type:str,min_te
             output_stream.write('\n'+'==='*40 + '\n')
 
 
-    if 'html' in output_type:
-        # TODO
-        pass
-
-
-    if 'txt' in output_type:
-        # TODO
-        pass
-
 
     if 'txt_simple' in output_type:
         output_stream = open(f'{output_path}/articles.txt','w',encoding='utf-8') if output_path else sys.stdout

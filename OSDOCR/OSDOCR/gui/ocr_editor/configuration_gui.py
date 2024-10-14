@@ -14,7 +14,10 @@ default_config = {
     'base': {
         'text_confidence' : 0,
         'output_type' : ['newspaper'],
+        'output_format' : 'markdown',
         'output_path' : os.getcwd(),
+        'fix_hifenization' : True,
+        'calculate_reading_order' : False,
         'cache_size' : 10,
         'ppi' : 300,
         'interaction_range' : 10,
@@ -47,7 +50,7 @@ default_config = {
         'article_gathering' : 'selected',
         'doc_type' : 'newspaper',
         'ignore_delimiters' : False,
-        'calculate_reading_order' : False,
+        'override_type_categorize_blocks' : True,
         'title_priority_calculate_reading_order' : False,
         'target_segments' : ['header', 'body'],
         'use_pipeline_results' : True,
@@ -58,6 +61,7 @@ default_config = {
         'ocr_results__input_path' : '',
     }
 }
+
 
 def read_ocr_editor_configs_file()->dict:
     '''Read config file if exists, else return default config'''
@@ -88,9 +92,12 @@ def read_config_window(window:sg.Window,values:dict)->dict:
 
     # base values
     config['base']['text_confidence'] = values['slider_text_confidence']
+    config['base']['output_format'] = values['list_output_format']
     config['base']['output_type'] = values['list_output_type']
-    config['base']['use_pipeline_results'] = window['-CHECKBOX-checkbox_use_pipeline_results'].metadata
     config['base']['output_path'] = values['input_output_path']
+    config['base']['fix_hifenization'] = window['-CHECKBOX-checkbox_fix_hifenization'].metadata
+    config['base']['calculate_reading_order'] = window['-CHECKBOX-checkbox_calculate_reading_order'].metadata
+    config['base']['use_pipeline_results'] = window['-CHECKBOX-checkbox_use_pipeline_results'].metadata
     config['base']['debug'] = window['-CHECKBOX-checkbox_debug_mode'].metadata
     try:
         config['base']['cache_size'] = int(values['input_operations_cache_size'])
@@ -147,6 +154,7 @@ def read_config_window(window:sg.Window,values:dict)->dict:
     config['methods']['article_gathering'] = values['list_article_gathering']
     config['methods']['doc_type'] = values['list_type_of_document']
     config['methods']['ignore_delimiters'] = window['-CHECKBOX-checkbox_ignore_delimiters'].metadata
+    config['methods']['override_type_categorize_blocks'] = window['-CHECKBOX-checkbox_override_type'].metadata
     config['methods']['title_priority_calculate_reading_order'] = window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].metadata
     config['methods']['target_segments'] = []
     if window['-CHECKBOX-checkbox_target_header'].metadata:
@@ -185,10 +193,15 @@ def refresh_config_window(window:sg.Window, config:dict):
 
     # base values
     window['slider_text_confidence'].update(refresh_conf['base']['text_confidence'])
+    window['list_output_format'].update(refresh_conf['base']['output_format'])
     window['list_output_type'].update(refresh_conf['base']['output_type'])
+    window['input_output_path'].update(refresh_conf['base']['output_path'])
+    window['-CHECKBOX-checkbox_fix_hifenization'].update(checked if refresh_conf['base']['fix_hifenization'] else unchecked)
+    window['-CHECKBOX-checkbox_fix_hifenization'].metadata = refresh_conf['base']['fix_hifenization']
+    window['-CHECKBOX-checkbox_calculate_reading_order'].update(checked if refresh_conf['methods']['calculate_reading_order'] else unchecked)
+    window['-CHECKBOX-checkbox_calculate_reading_order'].metadata = refresh_conf['methods']['calculate_reading_order']
     window['-CHECKBOX-checkbox_use_pipeline_results'].update(checked if refresh_conf['base']['use_pipeline_results'] else unchecked)
     window['-CHECKBOX-checkbox_use_pipeline_results'].metadata = refresh_conf['base']['use_pipeline_results']
-    window['input_output_path'].update(refresh_conf['base']['output_path'])
     window['-CHECKBOX-checkbox_debug_mode'].update(checked if refresh_conf['base']['debug'] else unchecked)
     window['-CHECKBOX-checkbox_debug_mode'].metadata = refresh_conf['base']['debug']
     window['input_operations_cache_size'].update(refresh_conf['base']['cache_size'])
@@ -220,8 +233,8 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['list_type_of_document'].update(refresh_conf['methods']['doc_type'])
     window['-CHECKBOX-checkbox_ignore_delimiters'].update(checked if refresh_conf['methods']['ignore_delimiters'] else unchecked)
     window['-CHECKBOX-checkbox_ignore_delimiters'].metadata = refresh_conf['methods']['ignore_delimiters']
-    window['-CHECKBOX-checkbox_calculate_reading_order'].update(checked if refresh_conf['methods']['calculate_reading_order'] else unchecked)
-    window['-CHECKBOX-checkbox_calculate_reading_order'].metadata = refresh_conf['methods']['calculate_reading_order']
+    window['-CHECKBOX-checkbox_override_type'].update(checked if refresh_conf['methods']['override_type_categorize_blocks'] else unchecked)
+    window['-CHECKBOX-checkbox_override_type'].metadata = refresh_conf['methods']['override_type_categorize_blocks']
     window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].update(checked if refresh_conf['methods']['title_priority_calculate_reading_order'] else unchecked)
     window['-CHECKBOX-checkbox_title_priority_calculate_reading_order'].metadata = refresh_conf['methods']['title_priority_calculate_reading_order']
     window['-CHECKBOX-checkbox_target_header'].update(checked if 'header' in refresh_conf['methods']['target_segments'] else unchecked)

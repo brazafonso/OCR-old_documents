@@ -536,7 +536,6 @@ def estimate_journal_template(ocr_results:OCR_Tree,image_info:Box)->dict:
     '''Tries to estimate a journal's template, such as header and different columns'''
     # get header boxes
     header = estimate_journal_header(ocr_results,image_info)
-    #TODO: get footer boxes
     footer = None
     # get columns
     columns = estimate_journal_columns(ocr_results,image_info,header,footer)
@@ -900,14 +899,11 @@ def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None)->O
                     potential_blocks = [block for block in text_blocks if  block.box.top < below_block.box.top and block.box.within_horizontal_boxes(below_block.box,range=0.3)]
                     if potential_blocks:
                         # get top block
-                        ## TODO: may lack title context
                         next_block = next_top_block(potential_blocks)
                 ## if below block is not delimiter, search for text blocks below current block with start_text=False
                 ### if text block is found with start_text=True before a block with start_text=False, search for text blocks to the right of block with start_text=False
-                #### TODO: title context could be helpful
                 elif below_block:
                     print('Bellow block is not delimiter')
-                    #### TODO: dont ignore non text blocks
                     below_blocks = [block for block in text_blocks if block.box.top > current_block.box.top and block.box.within_horizontal_boxes(current_block.box,range=0.3)]
                     if below_blocks:
                         # get top block
@@ -934,7 +930,6 @@ def next_top_block_context(blocks:list[OCR_Tree],current_block:OCR_Tree=None)->O
                     next_block = next_top_block(potential_blocks)
             ## text finished
             ### if below block is delimiter, search to the right of block and within delimiter's horizontal range
-            ### TODO: title context could be helpful to decide if search to the right
             else:
                 print('Text finished')
                 if below_block:
@@ -1079,9 +1074,11 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
        Returns block type'''
     block_type = None
 
-    
+    if debug:
+        print('Categorizing block:',target_block.id,'Type:',target_block.type)
+
     # empty block
-    if target_block.is_empty(conf=conf):
+    if target_block.is_empty(conf=conf,only_text=True):
         if target_block.is_delimiter(conf=conf):
             block_type = 'delimiter'
         else:

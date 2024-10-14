@@ -96,11 +96,6 @@ class Article:
         if abstract_boxes and self.title:
             self.abstract = ' '.join([box.to_text() for box in abstract_boxes])
 
-        # authors
-        ## TODO
-
-        # body
-        ## TODO fix
         body_boxes = []
         if self.title:
             body_boxes = [b for b in ocr_trees if b != title_box]

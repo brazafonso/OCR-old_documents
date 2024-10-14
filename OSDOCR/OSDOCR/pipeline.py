@@ -29,17 +29,6 @@ def save_articles(articles:list[OCR_Tree],o_taget:str,results_path:str,
 
         metadata['output']['markdown'] = f'{results_path}/articles.md'
 
-    if 'html' in output_types:
-        # TODO
-        pass
-
-        metadata['output']['html'] = f'{results_path}/articles.html'
-
-    if 'txt' in output_types:
-        # TODO
-        pass
-
-        metadata['output']['txt'] = f'{results_path}/articles.txt'
 
     if 'txt_simple' in output_types:
         with open(f'{results_path}/articles.txt','w',encoding='utf-8') as f:

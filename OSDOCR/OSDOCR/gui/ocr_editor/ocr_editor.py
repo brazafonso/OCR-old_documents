@@ -13,6 +13,9 @@ import PySimpleGUI as sg
 import matplotlib.text
 import matplotlib.typing
 import numpy as np
+from .layouts.ocr_editor_layout import *
+from ..aux_utils.utils import *
+from .configuration_gui import run_config_gui,read_ocr_editor_configs_file,save_config_file
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.lines import Line2D
@@ -21,8 +24,7 @@ from document_image_utils.image import segment_document_delimiters
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
 from OSDOCR.output_module.journal.article import Article
-from .layouts.ocr_editor_layout import *
-from ..aux_utils.utils import *
+from OSDOCR.output_module.text import *
 from OSDOCR.parse_args import preprocessing_methods,posprocessing_methods,other,\
                                 process_args
 from OSDOCR.ocr_tree_module.ocr_tree import *
@@ -34,7 +36,6 @@ from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
                                                      order_ocr_tree
 from OSDOCR.output_module.text import fix_hifenization
-from .configuration_gui import run_config_gui,read_ocr_editor_configs_file,save_config_file
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -2066,11 +2067,14 @@ def categorize_blocks_method():
     Else, apply on highlighted blocks.'''
     global current_ocr_results,bounding_boxes,highlighted_blocks,\
         bounding_boxes,default_edge_color,window,config
+    
+    override_type = config['methods']['override_type_categorize_blocks']
+
     if highlighted_blocks:
         # apply categorize
         tree = current_ocr_results.copy()
         tree = categorize_boxes(tree,conf=config['base']['text_confidence'],
-                                override=True,debug=config['base']['debug'])
+                                override=override_type,debug=config['base']['debug'])
 
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
@@ -2084,7 +2088,7 @@ def categorize_blocks_method():
     elif current_ocr_results:
         # apply categorize
         categorize_boxes(current_ocr_results,conf=config['base']['text_confidence']
-                         ,override=True,debug=config['base']['debug'])
+                         ,override=override_type,debug=config['base']['debug'])
 
         # update assets
         for b in bounding_boxes.values():
@@ -2137,6 +2141,50 @@ def find_articles_method():
         update_sidebar_articles()
 
 
+def generate_output():
+    '''Generate output'''
+    global current_ocr_results,current_image_path,config
+    if current_ocr_results and current_image_path:
+        format = config['base']['output_format']
+        if format == 'markdown':
+            generate_output_md()
+        else:
+            generate_output_txt()
+
+
+def generate_output_txt():
+    '''Generate output text'''
+    global current_ocr_results,current_image_path,config
+    if current_ocr_results and current_image_path:
+        results_path = config['base']['output_path']
+        text_confidence = config['base']['text_confidence']
+        ignore_delimiters = config['methods']['ignore_delimiters']
+        calculate_reading_order = config['base']['calculate_reading_order']
+        fix_hifenization_flag = config['base']['fix_hifenization']
+        title_priority = config['methods']['title_priority_calculate_reading_order']
+
+        if calculate_reading_order:
+            next_block_filter = None
+            if title_priority:
+                next_block_filter = lambda node: node if node.value.type == 'title' else None
+            blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters,
+                                    next_node_filter=next_block_filter,debug=config['base']['debug'])
+        else:
+            blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] \
+                                                    if not ignore_delimiters else ['delimiter'])]
+            blocks = sorted(blocks,key=lambda x: x.id)
+
+        with open(f'{results_path}/output.txt','w',encoding='utf-8') as f:
+            txt = ''
+            for block in blocks:
+                txt += block.to_text(text_confidence)
+
+            if fix_hifenization_flag:
+                txt = fix_hifenization(txt)
+
+            f.write(txt)
+
+
 def generate_output_md():
     '''Generate output markdown'''
     global current_ocr_results,current_image_path,ocr_results_articles,config
@@ -2145,7 +2193,9 @@ def generate_output_md():
         results_path = config['base']['output_path']
         text_confidence = config['base']['text_confidence']
         ignore_delimiters = config['methods']['ignore_delimiters']
-        calculate_reading_order = config['methods']['calculate_reading_order']
+        calculate_reading_order = config['base']['calculate_reading_order']
+        fix_hifenization_flag = config['base']['fix_hifenization']
+        title_priority = config['methods']['title_priority_calculate_reading_order']
         # newspaper
         if doc_type == 'newspaper':
             articles = []
@@ -2178,15 +2228,14 @@ def generate_output_md():
             with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
                 for article in articles:
                     article = Article(article,min_text_conf)
-                    f.write(article.to_md(f'{results_path}'))
+                    f.write(article.to_md(f'{results_path}',
+                                          fix_hifenization_flag=fix_hifenization_flag))
                     f.write('\n')
             
             print(f'Output generated: {results_path}/articles.md')
         # simple output
         else:
-            calculate_reading_order = config['methods']['calculate_reading_order']
             if calculate_reading_order:
-                title_priority = config['methods']['title_priority_calculate_reading_order']
                 next_block_filter = None
                 if title_priority:
                     next_block_filter = lambda node: node if node.value.type == 'title' else None
@@ -2198,9 +2247,14 @@ def generate_output_md():
                 blocks = sorted(blocks,key=lambda x: x.id)
 
             with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+                txt = ''
                 for block in blocks:
-                    block_txt = block.to_text(text_confidence)
-                    f.write(block_txt)
+                    txt += block.to_text(text_confidence)
+
+                if fix_hifenization_flag:
+                    txt = fix_hifenization(txt)
+
+                f.write(txt)
 
 
 def add_article_method():
@@ -2561,9 +2615,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             toggle_ocr_results_block_type(bounding_boxes=get_bounding_boxes(),
                                           default_color=default_edge_color,
                                           toogle=window['checkbox_toggle_block_type'].get())
-        # generate md
-        elif event == 'generate_md':
-            generate_output_md()
+        # generate output
+        elif event == 'generate_output':
+            generate_output()
         # send block back
         elif event == 'send_block_back':
             if len(highlighted_blocks) > 0:
