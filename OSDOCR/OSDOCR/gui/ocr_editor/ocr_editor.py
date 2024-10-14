@@ -167,15 +167,14 @@ def refresh_layout():
     window_size = window.size
     print('Window size:',window_size)
     # update body columns
-    ## ratios of | 1/8 | 4/8 | 3/8 |
-    ratio_1 = 1/10
+    ## ratios of | 1/12 | 7/12 | 4/12 |
+    ratio_1 = 1/12
     # left side bar is collapsible, so ratio is dynamic
-    ratio_2 = 6/10 if window['collapse_body_left_side_bar'].visible else 7/10
-    ratio_3 = 3/10
+    ratio_2 = 7/12 if window['collapse_body_left_side_bar'].visible else 8/12
+    ratio_3 = 4/12
     window['body_left_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_1,'height':None})
     window['body_canvas'].Widget.canvas.configure({'width':window_size[0]*ratio_2,'height':None})
     window['body_right_side_bar'].Widget.canvas.configure({'width':window_size[0]*ratio_3,'height':None})
-
     window.refresh()
 
 
@@ -1692,6 +1691,7 @@ def split_image_method(x:int,y:int):
         height,width,_ = img.shape
         image_box = Box({'left':0,'right':width,'top':0,'bottom':height})
         orientation,split_delimiter = split_line(x,y,image_box)
+        intersect_edge = None
         if split_delimiter:
             popup_location = window.mouse_location()
             image_area = None
@@ -1703,10 +1703,12 @@ def split_image_method(x:int,y:int):
                     img = img[0:split_delimiter.top,0:width]
                     image_area = Box({'left':0,'right':width,
                                       'top':0,'bottom':split_delimiter.top})
+                    intersect_edge = 'bottom'
                 elif option == 'bottom':
                     img = img[split_delimiter.bottom:height,0:width]
                     image_area = Box({'left':0,'right':width,
                                       'top':split_delimiter.bottom,'bottom':height})
+                    intersect_edge = 'top'
                     
             elif orientation == 'vertical':
                 option = popup_window(title='Area to keep',message='Choose area to keep',
@@ -1715,10 +1717,12 @@ def split_image_method(x:int,y:int):
                     img = img[0:height,0:split_delimiter.left]
                     image_area = Box({'left':0,'right':split_delimiter.left,
                                       'top':0,'bottom':height})
+                    intersect_edge = 'right'
                 elif option == 'right':
                     img = img[0:height,split_delimiter.right:width]
                     image_area = Box({'left':split_delimiter.right,'right':width,
                                       'top':0,'bottom':height})
+                    intersect_edge = 'left'
             
             # save image
             image_name = os.path.splitext(os.path.basename(current_image_path))[0]
@@ -1733,11 +1737,12 @@ def split_image_method(x:int,y:int):
             # split ocr results
             if current_ocr_results and image_area:
                 image_area:Box
+                keep_all = config['methods']['image_split_keep_all']
                 tree = current_ocr_results.get_boxes_level(0)[0].copy()
                 page = tree.get_boxes_level(1)[0]
                 # split ocr results
                 ## keep only boxes in image area
-                if not config['methods']['image_split_keep_all']:
+                if not keep_all:
                     blocks = page.get_boxes_in_area(image_area,level=2)
                     # clear page
                     page.children = []
@@ -1753,10 +1758,10 @@ def split_image_method(x:int,y:int):
                     page.children = []
                     page.update_box(left=image_area.left,top=image_area.top,
                                     right=image_area.right,bottom=image_area.bottom)
+                    
                     # cut boxes that intersect image area
                     for block in blocks:
                         if not block.box.is_inside_box(image_area):
-                            intersect_edge = image_area.closest_edge_point(*block.box.center_point())
                             cut_orientation = None
                             if intersect_edge == 'left':
                                 cut_line = Box({'left':image_area.left-1,'right':image_area.left,
@@ -1777,6 +1782,9 @@ def split_image_method(x:int,y:int):
 
                             cut_blocks= split_block(block,cut_line,cut_orientation,
                                                     conf=-1,keep_all=True)
+                            
+                            print(intersect_edge,cut_orientation)
+                            print('cut blocks',cut_blocks)
                             if cut_blocks:
                                 # final block depends on edge and cut orientation
                                 if cut_orientation == 'vertical':
@@ -1786,7 +1794,7 @@ def split_image_method(x:int,y:int):
                                         block = cut_blocks[0]
                                 elif cut_orientation == 'horizontal':
                                     if intersect_edge == 'top':
-                                        block = cut_blocks[1] if len(cut_blocks) > 1 else None
+                                        block = cut_blocks[1] if len(cut_blocks) > 1 else cut_blocks[0]
                                     elif intersect_edge == 'bottom':
                                         block = cut_blocks[0]
 

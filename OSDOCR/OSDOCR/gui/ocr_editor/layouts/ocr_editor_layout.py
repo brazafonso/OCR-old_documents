@@ -454,9 +454,9 @@ def ocr_editor_layout()->sg.Window:
 
     
 
-    ratio_1 = 1/10
-    ratio_2 = 6/10
-    ratio_3 = 3/10
+    ratio_1 = 1/12
+    ratio_2 = 7/12
+    ratio_3 = 4/12
 
     column_1_size = (window_size[0]*ratio_1,None)
     column_2_size = (window_size[0]*ratio_2,None)
