@@ -101,6 +101,19 @@ def rgb_to_hex(rgb:tuple[int,int,int]) -> str:
     return '#%02x%02x%02x' % rgb
 
 
+def hex_to_rgb(hex:str,normalize:bool=False) -> tuple[int,int,int]:
+    '''Convert hex string to rgb tuple'''
+    if hex[0] == '#':
+        hex = hex[1:]
+        
+    color = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+
+    if normalize:
+        color = tuple(c/255 for c in color)
+
+    return color
+
+
 def get_average_inverse_color(image:Union[str,cv2.typing.MatLike])->tuple:
     '''Get average inverse color of image. Returns tuple (R,G,B) normalized to 0-1'''
     if isinstance(image,str):

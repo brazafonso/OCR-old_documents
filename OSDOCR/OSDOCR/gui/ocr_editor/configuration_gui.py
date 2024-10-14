@@ -1,4 +1,5 @@
 import collections
+import re
 from .layouts.ocr_editor_layout import configurations_layout,checked,unchecked
 from copy import deepcopy
 import PySimpleGUI as sg
@@ -23,6 +24,7 @@ default_config = {
         'interaction_range' : 10,
         'vertex_radius' : 5,
         'edge_thickness' : 2,
+        'default_edge_color' : None,
         'id_text_size' : 10,
         'debug' : False,
     },
@@ -115,6 +117,7 @@ def read_config_window(window:sg.Window,values:dict)->dict:
         config['base']['edge_thickness'] = int(values['input_edge_thickness'])
     except:
         pass
+    config['base']['default_edge_color'] = values['input_edge_color']
     try:
         config['base']['id_text_size'] = int(values['input_id_text_size'])
     except:
@@ -208,6 +211,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['input_default_ppi'].update(refresh_conf['base']['ppi'])
     window['input_vertex_radius'].update(refresh_conf['base']['vertex_radius'])
     window['input_edge_thickness'].update(refresh_conf['base']['edge_thickness'])
+    window['input_edge_color'].update(refresh_conf['base']['default_edge_color'] if refresh_conf['base']['default_edge_color'] else '')
     window['input_id_text_size'].update(refresh_conf['base']['id_text_size'])
 
     # ocr pipeline values

@@ -98,7 +98,7 @@ SYMBOL_DOWN =  '▼'
 
 def update_config_dependent_variables():
     '''Update config dependent variables'''
-    global config,ppi,vertex_radius,edge_thickness,id_text_size
+    global config,ppi,vertex_radius,edge_thickness,id_text_size,default_edge_color
     changed = False
     try:
         if config['base']['ppi'] != ppi:
@@ -117,6 +117,15 @@ def update_config_dependent_variables():
             changed = True
             edge_thickness = config['base']['edge_thickness']
     except:
+        pass
+    try:
+        color = hex_to_rgb(config['base']['default_edge_color'],normalize=True)
+        print(color,default_edge_color)
+        if color != default_edge_color:
+            changed = True
+            default_edge_color = color
+    except Exception as e:
+        print(e)
         pass
     try:
         if config['base']['id_text_size'] != id_text_size:
@@ -495,7 +504,7 @@ def create_plot(image:Union[str,cv2.typing.MatLike]):
 def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
     global image_plot,figure,figure_canvas_agg,current_image_path,ppi,\
-        default_edge_color,config,current_image
+        default_edge_color,config,current_image,config
     if values['target_input']:
         path = values['target_input']
         if config['base']['use_pipeline_results']:
@@ -517,7 +526,9 @@ def update_canvas_image(window:sg.Window,values:dict):
         current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
 
         # update default edge color for ocr results
-        default_edge_color = get_average_inverse_color(current_image)
+        if not config['base']['default_edge_color'] or not default_edge_color:
+            default_edge_color = get_average_inverse_color(current_image)
+
         color = default_edge_color * 255
         color = (int(color[0]),int(color[1]),int(color[2]))
         window['text_default_color'].update(text_color = rgb_to_hex(color),
@@ -1079,9 +1090,17 @@ def reset_blocks_z(boxes:list):
 
 def highlight_article(id:int):
     '''Highlight blocks of an article'''
-    global ocr_results_articles,bounding_boxes
+    global ocr_results_articles,bounding_boxes,window
     print(f'Highlight article {id}')
     if id in ocr_results_articles:
+        # change article color information
+        article_color = ocr_results_articles[id]['color']
+        hex_color = rgb_to_hex((int(article_color[0]*255),int(article_color[1]*255),int(article_color[2]*255)))
+        window['article_color'].update(background_color=hex_color)
+        window['article_color_r'].update(int(ocr_results_articles[id]['color'][0]*255))
+        window['article_color_g'].update(int(ocr_results_articles[id]['color'][1]*255))
+        window['article_color_b'].update(int(ocr_results_articles[id]['color'][2]*255))
+
         # reset highlighted blocks
         reset_highlighted_blocks()
 
@@ -1111,7 +1130,7 @@ def get_bounding_boxes()->dict:
     return return_boxes
 
 
-def refresh_ocr_results():
+def refresh_ocr_results(articles:bool=True):
     '''Refresh ocr results and bounding boxes'''
     global current_ocr_results,bounding_boxes,window,\
         default_edge_color,ocr_results_articles,block_filter,\
@@ -1121,8 +1140,9 @@ def refresh_ocr_results():
         print('Refresh ocr results')
         # reset bounding boxes
         bounding_boxes = {}
-        # reset articles
-        ocr_results_articles = {}
+        if articles:
+            # reset articles
+            ocr_results_articles = {}
         # reset highlighted blocks
         reset_highlighted_blocks()
         current_ocr_results.id_boxes(level=[current_block_level],override=False)
@@ -2345,6 +2365,34 @@ def move_article_method(article_id:int, up:bool=True):
         refresh_articles()
 
 
+def update_article_color(article_id:int):
+    '''Update article color method'''
+    global ocr_results_articles,window
+    if article_id in ocr_results_articles:
+        current_article_color = ocr_results_articles[article_id]['color']
+        # read color in window
+        try:
+            r = int(window['article_color_r'].get())
+            g = int(window['article_color_g'].get())
+            b = int(window['article_color_b'].get())
+        except:
+            print('Invalid color')
+            return
+        # normalize
+        color = (r/255,g/255,b/255)
+        # check if color is valid
+        if color != current_article_color and \
+            r >= 0 and r <= 255 and g >= 0 and g <= 255 and b >= 0 and b <= 255:
+            # check if color is already used
+            used_colors = [a['color'] for a in ocr_results_articles.values()]
+            if color not in used_colors:
+                # update article color
+                ocr_results_articles[article_id]['color'] = color
+                draw_articles()
+                hex_color = rgb_to_hex((r,g,b))
+                window['article_color'].update(background_color=hex_color)
+
+
 
 def change_block_level(level:int = 2,force:bool=False):
     '''Change block level'''
@@ -2719,6 +2767,13 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 update_sidebar_articles()
                 draw_articles()
                 reset_highlighted_blocks()
+        # update article color
+        elif 'article_color_apply' in event:
+            selected_row = values['table_articles'][0] if len(values['table_articles']) > 0 else None
+            if selected_row is not None:
+                print(selected_row)
+                article_id = int(window['table_articles'].get()[selected_row][0])
+                update_article_color(article_id)
         # create new block
         elif event == 'method_new_block':
             create_new_ocr_block()
@@ -2755,13 +2810,13 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # clear block filter
         elif event == 'button_block_misc_filter_clear':
             block_filter = None
-            refresh_ocr_results()
+            refresh_ocr_results(articles=False)
             refresh_highlighted_blocks()
         # reset block filter
         elif event == 'button_block_misc_filter_reset':
             reset_window_block_filter()
             create_block_filter()
-            refresh_ocr_results()
+            refresh_ocr_results(articles=False)
             refresh_highlighted_blocks()
         # context menu send to back
         elif 'context_menu_send_to_back' in event:

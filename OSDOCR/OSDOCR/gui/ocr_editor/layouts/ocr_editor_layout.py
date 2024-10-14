@@ -373,10 +373,11 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Checkbox(text='', key='checkbox_toggle_articles', enable_events=True)),
         ],
         [
-            place(sg.Table(values=[],headings=['Articles: '],auto_size_columns=False,def_col_width=10,
+            place(sg.Table(values=[],headings=['Articles'],auto_size_columns=False,def_col_width=7,
                            key='table_articles',expand_x=True,expand_y=True,enable_events=True,
                            enable_click_events=True,visible=True,select_mode=sg.TABLE_SELECT_MODE_BROWSE,
-                           font=('Calibri', 13))),
+                           font=('Calibri', 15, 'bold'),header_font=('Calibri', 16, 'bold'),
+                           justification='center',num_rows=5)),
             sg.Column(
               [
                   [
@@ -408,6 +409,25 @@ def ocr_editor_layout()->sg.Window:
                 ]
             ),
         ],
+        [
+            place(sg.Text('')),
+            sg.Push(),
+            place(sg.Text('Article Color', font=('Calibri', 16,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Text('')),
+        ],
+        [
+            place(sg.Text('', size=(50, 1),  key='article_color'))
+        ],
+        [
+            place(sg.Text('R:', font=('Calibri', 13),text_color='red')),
+            place(sg.Input('', key='article_color_r', size=(3, 1), font=('Calibri', 13))),
+            place(sg.Text('G:', font=('Calibri', 13),text_color='green')),
+            place(sg.Input('', key='article_color_g', size=(3, 1), font=('Calibri', 13))),
+            place(sg.Text('B:', font=('Calibri', 13),text_color='blue')),
+            place(sg.Input('', key='article_color_b', size=(3, 1), font=('Calibri', 13))),
+            place(sg.Text('✔', key='article_color_apply', font=('Calibri', 15),enable_events=True)),
+        ]
     ]
 
 
@@ -649,6 +669,14 @@ def configurations_layout(position:tuple=(None,None))->sg.Window:
             place(sg.Text('Edge thickness: ',font=("Calibri", 18,"bold"),text_color='#046380')),
             sg.Push(),
             place(sg.Input(2,key='input_edge_thickness',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
+        ],
+        [
+            sg.VPush()
+        ],
+        [
+            place(sg.Text('Edge color: ',font=("Calibri", 18,"bold"),text_color='#046380')),
+            sg.Push(),
+            place(sg.Input('',key='input_edge_color',size=(5,3), enable_events=True,font=("Calibri", 18,"bold")))
         ],
         [
             sg.VPush()
