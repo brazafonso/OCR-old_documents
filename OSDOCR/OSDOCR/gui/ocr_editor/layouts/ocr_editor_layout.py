@@ -124,7 +124,7 @@ def ocr_editor_layout()->sg.Window:
                            key='method_refresh_block_id',enable_events=True,tooltip='Refresh block id')),
         ],
         [
-            place(sg.Button('Test',key='method_test',font=("Calibri", 15))),
+            place(sg.Button('Test',key='method_test',font=("Calibri", 15),visible=False)),
         ]
     ]
 

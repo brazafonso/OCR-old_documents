@@ -748,6 +748,7 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
 
 
 
+
 def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:int=10,keep_all:bool=False,debug:bool=False)->list['OCR_Tree']:
     '''Splits block into new blocks, based on delimiter and cut direction. Adjust text inside blocks to fit new area.'''
     new_blocks = [block]
@@ -795,110 +796,45 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
     #### gather all lines and paragraphs
     #### for each line check what words belong to what area
 
-    # horizontal cut
-    if orientation == 'horizontal':
-        lines = block.get_boxes_level(4)
-        area_1_lines = []
-        area_2_lines = []
-        for line in lines:
-            if line.box.is_inside_box(area_1):
-                area_1_lines.append(line)
-            elif line.box.is_inside_box(area_2):
-                area_2_lines.append(line)
+    # id words
+    block.id_boxes(level=[3,4,5])
+    blocks_1 = [b.copy() for b in block.get_boxes_level(3)]
+    blocks_2 = [b.copy() for b in block.get_boxes_level(3)]
+    # only leave each word in one of the areas
+    for i,p in enumerate(blocks_1):
+        par_words = p.get_boxes_level(5)
+        for w in par_words:
+            if w.box.is_inside_box(area_1):
+                blocks_2[i].remove_box_id(w.id,level=5)
+            elif w.box.is_inside_box(area_2):
+                blocks_1[i].remove_box_id(w.id,level=5)
             elif keep_all:
                 # add to area with biggest intersection
-                if area_1.intersect_area_box(line.box).area() > area_2.intersect_area_box(line.box).area():
-                    area_1_lines.append(line)
-                else:
-                    area_2_lines.append(line)
-
-        blocks_1 = []
-        if area_1_lines:
-            par_box = None
-            par_lines = []
-            cur_par = None
-            for line in area_1_lines:
-                if not par_box:
-                    par_box = line.box
-                    cur_par = line.par_num
-                    par_lines.append(line)
-                else:
-                    if cur_par == line.par_num:
-                        par_lines.append(line)
-                        par_box.join(line.box)
-                    else:
-                        # conclude paragraph
-                        par = OCR_Tree({'level':3,'box':par_box})
-                        for par_line in par_lines:
-                            par.add_child(par_line)
-                        blocks_1.append(par)
-                        # create new paragraph
-                        par_box = line.box
-                        par_lines = [line]
-                        cur_par = line.par_num
-            # add last paragraph
-            if par_lines:
-                par = OCR_Tree({'level':3,'box':par_box})
-                for line in par_lines:
-                    par.add_child(line)
-                blocks_1.append(par)
-
-        if area_2_lines:
-            par_box = None
-            par_lines = []
-            cur_par = None
-            for line in area_2_lines:
-                # create new paragraph
-                if not par_box:
-                    par_box = line.box
-                    cur_par = line.par_num
-                    par_lines.append(line)
-                else:
-                    # continue paragraph
-                    if cur_par == line.par_num:
-                        par_lines.append(line)
-                        par_box.join(line.box)
-                    # conclude paragraph
-                    else:
-                        par = OCR_Tree({'level':3,'box':par_box})
-                        # add lines to paragraph
-                        for par_line in par_lines:
-                            par.add_child(par_line)
-                        blocks_2.append(par)
-                        # create new paragraph
-                        par_box = line.box
-                        par_lines = [line]
-                        cur_par = line.par_num
-
-            if par_lines:
-                par = OCR_Tree({'level':3,'box':par_box})
-                for line in par_lines:
-                    par.add_child(line)
-                blocks_2.append(par)
-
-    # vertical cut
-    else:
-        # id words
-        block.id_boxes(level=[5])
-        blocks_1 = [b.copy() for b in block.get_boxes_level(3)]
-        blocks_2 = [b.copy() for b in block.get_boxes_level(3)]
-        # only leave each word in one of the areas
-        for i,p in enumerate(blocks_1):
-            par_words = p.get_boxes_level(5)
-            for w in par_words:
-                if w.box.is_inside_box(area_1):
+                if area_1.intersect_area_box(w.box).area() > area_2.intersect_area_box(w.box).area():
                     blocks_2[i].remove_box_id(w.id,level=5)
-                elif w.box.is_inside_box(area_2):
+                else:
                     blocks_1[i].remove_box_id(w.id,level=5)
-                elif keep_all:
-                    # add to area with biggest intersection
-                    if area_1.intersect_area_box(w.box).area() > area_2.intersect_area_box(w.box).area():
-                        blocks_2[i].remove_box_id(w.id,level=5)
-                    else:
-                        blocks_1[i].remove_box_id(w.id,level=5)
-            # update par boxes
-            blocks_1[i].update_box(right=area_1.right)
-            blocks_2[i].update_box(left=area_2.left)
+
+        # remove empty lines
+        lines_1 = blocks_1[i].get_boxes_level(4)
+        lines_2 = blocks_2[i].get_boxes_level(4)
+
+        for l in lines_1:
+            if l.is_empty(conf=conf,only_text=True):
+                blocks_1[i].remove_box_id(l.id,level=4)
+
+        for l in lines_2:
+            if l.is_empty(conf=conf,only_text=True):
+                blocks_2[i].remove_box_id(l.id,level=4)
+
+        
+        # update par boxes
+        blocks_1[i].update_box(right=area_1.right)
+        blocks_2[i].update_box(left=area_2.left)
+
+    # remove empty pars
+    blocks_1 = [b for b in blocks_1 if not b.is_empty(conf=conf,only_text=True)]
+    blocks_2 = [b for b in blocks_2 if not b.is_empty(conf=conf,only_text=True)]
 
     if blocks_1:
         # update current block
@@ -1080,11 +1016,16 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                 i = 0
                 j = [0]*len(lines_seq_positions)
                 found_intersection = False
-                while i < len(intersecting_intervals) - 1:
+                while i < len(intersecting_intervals) - 1 and i >= 0:
+                    found_intersection = False
+                    if j[i] >= len(intersecting_intervals[i]):
+                        i -= 1
+                        j[i] += 1
+                        continue
+
                     target_interval = intersecting_intervals[i][j[i]]
                     i += 1
                     comparing_intervals = intersecting_intervals[i]
-                    found_intersection = False
                     # compare with intervals of next line
                     k = j[i]
                     while k < len(comparing_intervals):

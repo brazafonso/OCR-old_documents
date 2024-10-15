@@ -791,7 +791,7 @@ def canvas_on_button_press(event):
 
 def canvas_on_button_release(event):
     '''Mouse release event handler'''
-    global current_action,current_action_start,current_ocr_results
+    global current_action,current_action_start,current_ocr_results,bounding_boxes,current_block_level
     print(f'release {event} || {current_action}')
     release_x = event.xdata
     release_y = event.ydata
@@ -810,12 +810,13 @@ def canvas_on_button_release(event):
                            'top':select_area_top,
                            'bottom':select_area_bottom})
         # get blocks inside select area
-        blocks = current_ocr_results.get_boxes_in_area(select_area,level=2)
-
+        blocks = current_ocr_results.get_boxes_in_area(select_area,level=current_block_level)
+        current_bounding_boxes = get_bounding_boxes()
         # highlight blocks
         for block in blocks:
-            block = bounding_boxes[block.id]
-            highlight_block(block)
+            if block.id in current_bounding_boxes:
+                block = bounding_boxes[block.id]
+                highlight_block(block)
         # update sidebar block info
         sidebar_update_block_info()
 
@@ -1171,9 +1172,10 @@ def update_sidebar_articles():
 
 def closest_block(click_x,click_y)->Union[int,float]:
     '''Get closest block to click. Returns block id'''
-    global max_block_dist,bounding_boxes
+    global max_block_dist
     block_id = None
     block_dist = None
+    bounding_boxes = get_bounding_boxes()
 
     if bounding_boxes:
         # calculate distances
