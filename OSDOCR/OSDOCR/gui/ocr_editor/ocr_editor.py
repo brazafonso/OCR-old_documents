@@ -143,6 +143,7 @@ def update_config_user_settings():
     '''Update config user settings'''
     global config,current_image_path,current_ocr_results_path
 
+    print('Update config user settings')
     try:
         config['user']['image_input_path'] = current_image_path
         config['user']['ocr_results_input_path'] = current_ocr_results_path
@@ -153,15 +154,17 @@ def update_config_user_settings():
 
 
 
+
 def choose_window_image_input(values:dict):
     global figure,current_ocr_results,current_ocr_results_path,bounding_boxes,animation\
-            ,ocr_results_articles, ppi, current_image_path,window,config
+            ,ocr_results_articles, ppi, current_image_path,window,config,highlighted_blocks
     if current_image_path:
         # reset variables
         figure = None
         current_ocr_results = None
         current_ocr_results_path = None
         bounding_boxes = {}
+        highlighted_blocks = []
         ocr_results_articles = {}
         ppi = config['base']['ppi']
         if animation:
@@ -194,6 +197,9 @@ def add_ocr_result_cache(ocr_result:OCR_Tree):
     '''Add ocr result to cache'''
     global cache_ocr_results,current_cache_ocr_results_index,config
     print('Add ocr result to cache',current_cache_ocr_results_index,'len:',len(cache_ocr_results))
+    if current_ocr_results is None:
+        return
+    
     if len(cache_ocr_results) >= config['base']['cache_size'] and len(cache_ocr_results) > 0:
         cache_ocr_results.pop(0)
 
@@ -256,7 +262,10 @@ def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
     global figure_canvas_agg,animation,bounding_boxes
     if figure:
+        print('Update canvas')
+
         if bounding_boxes:
+            print('Creating animation')
             animation = FuncAnimation(figure, update, frames=60, blit=True,
                                       interval=1000/60,repeat=True)
         # update canvas
@@ -522,13 +531,15 @@ def update_canvas_image(window:sg.Window,values:dict):
         metadata = get_target_metadata(path)
         browse_file_initial_folder = None
 
-        if not metadata:
+        if not metadata or not config['base']['use_pipeline_results']:
             target_img_path = path
             browse_file_initial_folder = os.path.dirname(path)
         else:
             target_img_path = metadata['target_path']
             browse_file_initial_folder = f'{results_path}/processed'
         
+        print('Target image:',target_img_path)
+
         current_image_path = target_img_path
         current_image = cv2.imread(target_img_path)
         current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
@@ -588,6 +599,9 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     if block_id in bounding_boxes and not override:
         # if exists, change to biggest id
         block.id = max(bounding_boxes.keys())+1
+
+    print('Create ocr block assets | id:',block.id)
+
     # bounding box
     box = block.box
     left = box.left
@@ -611,7 +625,6 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',
                 fontproperties=matplotlib.font_manager.FontProperties(size=id_text_size))
     image_plot.add_artist(id_text)
-
     # save bounding box in dictionary
     bounding_boxes[block.id] = {
         'rectangle':bounding_box,
@@ -853,7 +866,6 @@ def canvas_on_button_release(event):
 
         if current_action in ['move','expand']:
             add_ocr_result_cache(current_ocr_results)
-            print(highlighted_blocks[-1]['block'].min_left())
 
 
     current_action = None
@@ -1240,9 +1252,13 @@ def create_new_ocr_block(x:int=None,y:int=None):
         if blocks:
             last_id = max(blocks,key=lambda b: b.id).id
     else:
+        ## needs to resume animation
+        if animation is not None:
+            animation.resume()
+        else:
+            clear_canvas()
+
         # create new ocr results
-        ## also needs to resume animation
-        animation.resume()
         last_id = -1
         img = cv2.imread(current_image_path)
         current_ocr_results = OCR_Tree({
@@ -1282,12 +1298,23 @@ def create_new_ocr_block(x:int=None,y:int=None):
     ## bounding boxes
     create_ocr_block_assets(new_block,override=False)
 
+    if animation is None:
+        update_canvas(window,figure)
+
+    
+
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
     '''Save ocr results'''
     global current_ocr_results,current_ocr_results_path,current_image_path,window
     if current_ocr_results:
-        save_path = path if path else current_ocr_results_path if current_ocr_results_path else current_image_path
+        save_path = None
+        if path:
+            save_path = path  
+        elif current_ocr_results_path:
+            save_path = current_ocr_results_path
+        else:
+            save_path = f'{current_image_path}_ocr_results.json'
         # copy ocr results
         if save_as_copy:
             valid_name = False
@@ -1303,9 +1330,11 @@ def save_ocr_results(path:str=None,save_as_copy:bool=False):
                     
                 id += 1
 
-            # update path
-            current_ocr_results_path = save_path
-            window['ocr_results_input'].update(save_path)
+        # update path
+        current_ocr_results_path = save_path
+        window['ocr_results_input'].update(save_path)
+
+        print(f'Saving ocr results to {save_path}')
 
         current_ocr_results.save_json(save_path)
 
@@ -1875,7 +1904,7 @@ def split_image_method(x:int,y:int):
 
 def split_ocr_blocks_by_whitespaces_method():
     '''Split ocr blocks by whitespaces. If highlighted blocks, apply only on them. Else, apply on all blocks'''
-    global highlighted_blocks,current_ocr_results,image_plot,animation,\
+    global highlighted_blocks,current_ocr_results,image_plot,\
         figure_canvas_agg,config
     bounding_boxes = get_bounding_boxes()
     blocks = highlighted_blocks if highlighted_blocks else bounding_boxes.values()
@@ -2087,11 +2116,13 @@ def adjust_bounding_boxes_method():
     '''Adjust bounding boxes method. 
     Adjusts bounding boxes according with inside text and text confidence.
     If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
-    global current_ocr_results,bounding_boxes,highlighted_blocks
+    global current_ocr_results,bounding_boxes,highlighted_blocks,config
+    text_confidence = config['base']['text_confidence']
+
     if highlighted_blocks:
         # apply fix
         tree = current_ocr_results.copy()
-        tree = text_bound_box_fix(tree,debug=True)
+        tree = text_bound_box_fix(tree,text_confidence=text_confidence,debug=True)
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
             # update highlighted block
@@ -2103,7 +2134,7 @@ def adjust_bounding_boxes_method():
         refresh_highlighted_blocks()
     elif current_ocr_results:
         # apply fix
-        text_bound_box_fix(current_ocr_results,debug=True)
+        text_bound_box_fix(current_ocr_results,text_confidence=text_confidence,debug=True)
 
         # update assets
         for b in bounding_boxes.values():
@@ -2164,7 +2195,8 @@ def unite_blocks_method():
     global current_ocr_results,bounding_boxes,config
     if current_ocr_results:
         og_block_num = len(current_ocr_results.get_boxes_level(2))
-        unite_blocks(current_ocr_results,debug=config['base']['debug'])
+        unite_blocks(current_ocr_results,conf=config['base']['text_confidence'],
+                     debug=config['base']['debug'])
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
             refresh_ocr_results()
@@ -2469,6 +2501,11 @@ def create_block_filter():
         elif re.match(r'^[0-9]+-$',id_filter_text):
             min_id = int(id_filter_text[:-1])
             id_filter = lambda b: min_id <= b.id
+        elif re.match(r'^[0-9]+\s*(,\s*[0-9]+)+$',id_filter_text):
+            ids = id_filter_text.split(',')
+            ids = [int(i) for i in ids]
+            print(ids)
+            id_filter = lambda b: b.id in ids
 
     # text filter
     text_filter = None
@@ -2616,12 +2653,18 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     try:
         if config['user']['image_input_path'] != input_image_path:
             input_image_path = config['user']['image_input_path']
+            img = cv2.imread(input_image_path)
+            cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    except Exception as e:
+        input_image_path = None
 
+    try:
         if config['user']['ocr_results_input_path'] != input_ocr_results_path:
             input_ocr_results_path = config['user']['ocr_results_input_path']
-
+            OCR_Tree(input_ocr_results_path)
     except Exception as e:
-        print(e)
+        input_ocr_results_path = None
+
 
     window = ocr_editor_layout()
     last_window_size = window.size
@@ -2634,6 +2677,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         window['ocr_results_input'].update(input_ocr_results_path)
 
     if values:
+        print('Initial values:',input_image_path,input_ocr_results_path)
         update_canvas_image(window,values)
         update_canvas_ocr_results(window,values)
         if current_ocr_results:

@@ -878,7 +878,7 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
 
         else:
             # create second block
-            new_block = OCR_Tree({'level':block.level,'box':area_2})
+            new_block = OCR_Tree({'level':block.level,'box':area_2.copy()})
             
             for b in blocks_2:
                 new_block.add_child(b)
@@ -1046,7 +1046,7 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                     interception = True
                     # add intervals to path
                     for i in range(1,len(j)):
-                        intervals_path.append(lines_seq_positions[i][j[i]])
+                        intervals_path.append(intersecting_intervals[i][j[i]])
 
                     break
 
@@ -1057,7 +1057,7 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                     print(f'Valid split found for block {block.id} | nº of lines: {len(lines)}')
                 left = intervals_path[0][0]
                 right = intervals_path[0][1]
-                for interval in line_seq_positions:
+                for interval in intervals_path:
                     if interval[0] > left:
                         left = interval[0]
                     if interval[1] < right:
