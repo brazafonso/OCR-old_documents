@@ -21,11 +21,12 @@ from .validation.calibrate import run_calibrate
 
 def run_test():
     '''Run tests'''
-    target_image = consts.config['target_image_path']
+    target_image = '/home/braz/projetos/OCR-old_documents/study_cases/ideal/AAA-13.png'
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
         ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/result_united.json'
+        print('test','ocr_results_path',ocr_results_path)
         ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
@@ -74,19 +75,20 @@ def run_test():
         # ocr_results.save_hocr('test.hocr')
 
         # draw journal template
-        # metadata = get_target_metadata(target_image)
-        # image_info = get_image_info(metadata['target_path'])
-        # areas = estimate_journal_template(ocr_results,image_info)
-        # img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
-        # cv2.imwrite('test.png',img)
+        metadata = get_target_metadata(target_image)
+        image_info = get_image_info(metadata['target_path'])
+        areas = estimate_journal_template(ocr_results,image_info)
+        print(areas)
+        img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
+        cv2.imwrite('test.png',img)
 
 
         # test bound_box_fix_image
-        metadata = get_target_metadata(target_image)
-        image = metadata['target_path']
-        print(analyze_text(ocr_results))
-        ocr_results = bound_box_fix_image(ocr_results,image,level=5,debug=False)
-        print(analyze_text(ocr_results)) 
+        # metadata = get_target_metadata(target_image)
+        # image = metadata['target_path']
+        # print(analyze_text(ocr_results))
+        # ocr_results = bound_box_fix_image(ocr_results,image,level=5,debug=False)
+        # print(analyze_text(ocr_results)) 
 
         # x = np.random.randint(0,2,(10,10))
         # x = x == 0

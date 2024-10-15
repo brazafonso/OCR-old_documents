@@ -79,6 +79,7 @@ last_mouse_position = (0,0)
 highlighted_blocks = []
 focused_block = None
 last_activity_time = time.time()
+toggle_block_id = True
 ## constants
 ppi = 300   # default pixels per inch
 max_block_dist = 10 # max distance from a block to a click
@@ -99,6 +100,7 @@ SYMBOL_DOWN =  '▼'
 def update_config_dependent_variables():
     '''Update config dependent variables'''
     global config,ppi,vertex_radius,edge_thickness,id_text_size,default_edge_color
+    print('Update config dependent variables')
     changed = False
     try:
         if config['base']['ppi'] != ppi:
@@ -162,7 +164,8 @@ def choose_window_image_input(values:dict):
         bounding_boxes = {}
         ocr_results_articles = {}
         ppi = config['base']['ppi']
-        animation.pause()
+        if animation:
+            animation.pause()
         clean_ocr_result_cache()
     
     update_canvas_image(window,values)
@@ -342,9 +345,12 @@ def clear_canvas():
 
 def refresh_canvas(refresh_image:bool=True,refresh_ocr_results:bool=True):
     '''Redraws canvas with current ocr results'''
-    global window,current_image_path,current_image,current_ocr_results,image_plot
+    global window,current_image_path,current_image,current_ocr_results,image_plot,\
+        toggle_block_id
     if current_image_path or current_ocr_results:
         print('Refresh canvas')
+        toggle_block_id = True
+        window['checkbox_toggle_block_id'].update(toggle_block_id)
         # draw image
         if current_image_path and refresh_image:
             if current_image is not None:
@@ -420,7 +426,8 @@ def split_action_assets():
 
 def update(frame):
     '''Update canvas'''
-    global current_action,last_mouse_position,highlighted_blocks,block_filter
+    global current_action,last_mouse_position,highlighted_blocks,block_filter,\
+        window,toggle_block_id
     assets = []
     boxes = get_bounding_boxes()
     if boxes:
@@ -441,16 +448,17 @@ def update(frame):
             vertices = box.vertices()
             for i,vertex in enumerate(vertices):
                 vertices_circles[i].set_center(vertex)
-            # update id text
-            id_text = block['id_text']
-            id_text_x = box.left+15
-            id_text_y = box.top+30
-            id_text.set_x(id_text_x)
-            id_text.set_y(id_text_y)
-
             assets.append(rect)
             assets.extend(vertices_circles)
-            assets.append(id_text)
+
+            # update id text
+            if toggle_block_id:
+                id_text = block['id_text']
+                id_text_x = box.left+15
+                id_text_y = box.top+30
+                id_text.set_x(id_text_x)
+                id_text.set_y(id_text_y)
+                assets.append(id_text)
 
         # case of split block action
         if current_action == 'split_block':
@@ -574,6 +582,7 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
     '''Create ocr block assets and add them to canvas figure'''
     global image_plot,bounding_boxes,default_edge_color,vertex_radius,\
         edge_thickness,id_text_size
+
     # check if block id exists
     block_id = block.id
     if block_id in bounding_boxes and not override:
@@ -597,6 +606,7 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
         vertex_circle = Circle((x,y),radius=vertex_radius,edgecolor='b',facecolor='b')
         image_plot.add_patch(vertex_circle)
         vertices_circles.append(vertex_circle)
+
     # draw id text in top left corner of bounding box
     id_text = matplotlib.text.Text(left+15,top+30,block.id,color='r',
                 fontproperties=matplotlib.font_manager.FontProperties(size=id_text_size))
@@ -1024,9 +1034,12 @@ def reset_highlighted_blocks():
 
 def reset_ocr_results(window:sg.Window):
     '''Reset ocr results'''
-    global current_ocr_results,highlighted_blocks,current_action,config
+    global current_ocr_results,highlighted_blocks,current_action,config,\
+        toggle_block_id
     print('Reset ocr results')
     if current_ocr_results and current_ocr_results_path:
+        toggle_block_id = True
+        window['checkbox_toggle_block_id'].update(toggle_block_id)
         # reload ocr results
         current_ocr_results = OCR_Tree(current_ocr_results_path,
                                        config['base']['text_confidence'])
@@ -1272,7 +1285,7 @@ def create_new_ocr_block(x:int=None,y:int=None):
 
 def save_ocr_results(path:str=None,save_as_copy:bool=False):
     '''Save ocr results'''
-    global current_ocr_results,current_ocr_results_path,current_image_path
+    global current_ocr_results,current_ocr_results_path,current_image_path,window
     if current_ocr_results:
         save_path = path if path else current_ocr_results_path if current_ocr_results_path else current_image_path
         # copy ocr results
@@ -1289,6 +1302,10 @@ def save_ocr_results(path:str=None,save_as_copy:bool=False):
                     valid_name = True
                     
                 id += 1
+
+            # update path
+            current_ocr_results_path = save_path
+            window['ocr_results_input'].update(save_path)
 
         current_ocr_results.save_json(save_path)
 
@@ -2044,11 +2061,12 @@ def calculate_reading_order_method():
 def fix_ocr_block_intersections_method():
     '''Fix ocr block intersections method. If no highlighted blocks, apply on all blocks. 
     Else, apply on highlighted blocks.'''
-    global highlighted_blocks,current_ocr_results,bounding_boxes
+    global highlighted_blocks,current_ocr_results,bounding_boxes,config
+    text_confidence = config['base']['text_confidence']
     if highlighted_blocks:
         # apply fix
         tree = current_ocr_results.copy()
-        tree = block_bound_box_fix(tree,find_delimiters=False,find_images=False,debug=True)
+        tree = block_bound_box_fix(tree,text_confidence=text_confidence,find_delimiters=False,find_images=False,debug=True)
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
             # update highlighted block
@@ -2059,7 +2077,7 @@ def fix_ocr_block_intersections_method():
 
         refresh_highlighted_blocks()
     elif current_ocr_results:
-        block_bound_box_fix(current_ocr_results)
+        block_bound_box_fix(current_ocr_results,text_confidence=text_confidence,find_delimiters=False,find_images=False,debug=True)
         # update assets
         for b in bounding_boxes.values():
             create_ocr_block_assets(b['block'])
@@ -2585,7 +2603,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     global window,highlighted_blocks,current_ocr_results,current_ocr_results_path,\
             bounding_boxes,ppi,animation,figure,default_edge_color,\
             current_action,block_filter,last_window_size,config,ocr_results_articles,\
-            current_block_level
+            current_block_level,toggle_block_id
 
     create_base_folders()
     clean_editor_tmp_folder()
@@ -2926,6 +2944,9 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         # test method
         elif event == 'method_test':
             test_method()
+        # toggle block id
+        elif event == 'checkbox_toggle_block_id':
+            toggle_block_id = not toggle_block_id
         # configurations button
         elif event == 'configurations_button':
             config = run_config_gui(window.current_location())
