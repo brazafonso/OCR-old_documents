@@ -132,7 +132,15 @@ Outros métodos criados, mais circunstanciais, permitem o desenho do template de
 	\item img : imagem a ser modificada
 \end{itemize}
 
-%% TODO : ilustracao de resultado de drawing journal template
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.25\textwidth]{images/ilustracoes/drawn_journal_template.png}
+	\caption{Exemplo de desenho de template de jornal.}
+	\label{fig:draw_journal_template}
+\end{figure}
+
+
 
 \highlight{draw\_articles}[\normalsize]
 
@@ -144,7 +152,13 @@ Outros métodos criados, mais circunstanciais, permitem o desenho do template de
 	\item img : imagem a ser modificada
 \end{itemize}
 
-%% TODO : ilustracao de resultado de drawing articles
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{images/ilustracoes/draw_articles.png}
+	\caption{Exemplo de desenho de artigos de jornal. Cada um dos artigos é desenhado com uma cor única.}
+	\label{fig:draw_articles}
+\end{figure}
+
 
 
 \highlight{Análise de texto}
@@ -241,10 +255,18 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 \highlight{Limpeza de OCR Tree}
 \label{contribution_clean_ocr}
 
-Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar blocos demasiado afastados; ajustar dimensões das bounding boxes, etc..
+Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar texto com espaço vazio pronunciado; ajustar dimensões das bounding boxes, etc..
 
 
-%% TODO : ilustracao : exemplos dos problemas listados
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{images/ilustracoes/clean_ocr_cases_example.png}
+	\caption{Exemplo de alguns dos casos listados que o toolkit irá abranger.}
+	\label{fig:clean_ocr_cases_example}
+\end{figure}
+
+
+
 
 Descrevem-se então alguns dos métodos propostos para resolver alguns destes problemas.
 
@@ -265,7 +287,14 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 %% TODO : escrever algoritmo, depois de dar refactoring na funcao
 
-%% TODO : ilustracao : exemplo de uso do metodo para limpar blocos
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/fix_bound_box_blocks.png}
+	\caption{Exemplo de uso de block\_bound\_box\_fix (10 de confiança de texto mínima).}
+	\label{fig:fix_bound_box_blocks}
+\end{figure}
+
 
 
 \highlight{text\_bound\_box\_fix}[\normalsize]
@@ -303,7 +332,13 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{breakablealgorithm}
 
-%% TODO : ilustracao : exemplo de uso do metodo para ajustar blocos
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/text_bound_box_fix_blocks.png}
+	\caption{Exemplo de uso de text\_bound\_box\_fix (10 de confiança de texto mínima).}
+	\label{fig:text_bound_box_fix_blocks}
+\end{figure}
 
 
 
@@ -363,8 +398,13 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\end{algorithmic}
 \end{breakablealgorithm}
 
-%% TODO : ilustracao :exemplo de uso do metodo para unir blocos
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/ilustracoes/unite_blocks.png}
+	\caption{Exemplo de uso de unite\_blocks (10 de confiança de texto mínima).}
+	\label{fig:unite_blocks}
+\end{figure}
 
 
 \highlight{split\_whitespaces}[\normalsize]
@@ -436,8 +476,13 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 \end{breakablealgorithm}
 
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/split_by_whitespaces_blocks.png}
+	\caption{Exemplo de uso de split\_whitespaces.}
+	\label{fig:split_by_whitespaces_blocks}
+\end{figure}
 
-%% TODO : ilustracao : exemplo de uso do metodo para separar usando whitespaces
 
 \highlight{Categorização de blocos}
 \label{contribution_categorize_blocks}
@@ -469,7 +514,13 @@ Estas características de texto guardam informação relevante utilizada em mét
 
 
 
-%% TODO : ilustracao : exemplo de uso do metodo para categorizar os blocos de um jornal
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{images/ilustracoes/categorize_blocks.png}
+	\caption{Exemplo de uso de categorize\_blocks.}
+	\label{fig:categorize_blocks}
+\end{figure}
+
 
 
 \highlight{Divisão de blocos}
@@ -477,7 +528,13 @@ Estas características de texto guardam informação relevante utilizada em mét
 
 Uma funcionalidade de extrema utilidade para a manipulação dos produtos de OCR é a capacidade de dividir um bloco em dois, cada um destes novos ficando com parte dos conteúdos do bloco original. Tal operação facilita a remoção de partes ruidosas de um bloco, ou a segmentação de bloco quando este foi incorretamente unido pelo software de OCR. Exemplo: bloco de texto cuja primeira linha tem potencial de ser título, permite facilmente dividir o bloco em o título e restante texto.
 
-%% TODO : ilustracao : exemplo de divisao de bloco, para separar titulo do texto
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/split_blocks_example.png}
+	\caption{Divisão de bloco para separar título do texto (aplicou-se também um ajuste de bounding boxes para acentuar a diferença).}
+	\label{fig:split_blocks_example}
+\end{figure}
+
 
 Esta é no entanto uma operação de relativa complexidade, visto que é necessário ir descendo na árvore e fazer múltiplas verificações para calcular o melhor destino final (entre os novos blocos) para cada um dos filhos.
 
@@ -596,8 +653,19 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 \end{breakablealgorithm}
 
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/split_block_horizontal.png}
+	\caption{Exemplo de uso de split\_block com corte horizontal.}
+	\label{fig:split_block_horizontal}
+\end{figure}
 
-%% TODO : ilustracao : exemplo de divisao de bloco, vertical e horizontal
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/split_block_vertical.png}
+	\caption{Exemplo de uso de split\_block com corte vertical.}
+	\label{fig:split_block_vertical}
+\end{figure}
 
 
 

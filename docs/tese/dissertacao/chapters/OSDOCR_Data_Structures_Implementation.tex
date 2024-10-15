@@ -285,7 +285,14 @@ $ box.width >= box.height*4 || box.height >= box.widht*4 $.
 
 \textbf{Descrição:} Junta duas OCR Tree com do mesmo nível numa única árvore. Tem dois métodos principais de junção das árvores: vertical, operação mais simples em que basicamente apenas se juntam as duas listas de ramos dos nodos raíz (assume-se que uma das árvores é mais alta do que a outra e não se intersetam); e horizontal, onde se procura juntar árvores que têm interseção no eixo y, sendo necessário verificar as posições que os filhos devem tomar e se certos filhos devem ser unidos num único (podendo resultar numa junção de linhas).
 
-%% TODO : ilustração poderá ajudar
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/ocr_tree_join_trees_example.png}
+	\caption{Exemplos de junção de OCR Tree}
+	\label{fig:ocr_tree_join_trees_example}
+\end{figure}
+
+
 
 
 \textbf{Argumentos:}
