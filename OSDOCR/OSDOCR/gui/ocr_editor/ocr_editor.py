@@ -698,10 +698,11 @@ def draw_articles():
         article_color = article['color']
         for block in article['article']:
             block:OCR_Tree
-            bb_block = bounding_boxes[block.id]
-            rect = bb_block['rectangle']
-            # update edge color
-            rect.set_edgecolor(article_color)
+            if block.id in bounding_boxes:
+                bb_block = bounding_boxes[block.id]
+                rect = bb_block['rectangle']
+                # update edge color
+                rect.set_edgecolor(article_color)
 
     window['checkbox_toggle_articles'].update(True)
 
@@ -2226,16 +2227,7 @@ def generate_output():
     global current_ocr_results,current_image_path,config
     if current_ocr_results and current_image_path:
         format = config['base']['output_format']
-        if format == 'markdown':
-            generate_output_md()
-        else:
-            generate_output_txt()
-
-
-def generate_output_txt():
-    '''Generate output text'''
-    global current_ocr_results,current_image_path,config
-    if current_ocr_results and current_image_path:
+        doc_type = config['base']['output_type']
         results_path = config['base']['output_path']
         text_confidence = config['base']['text_confidence']
         ignore_delimiters = config['methods']['ignore_delimiters']
@@ -2243,39 +2235,8 @@ def generate_output_txt():
         fix_hifenization_flag = config['base']['fix_hifenization']
         title_priority = config['methods']['title_priority_calculate_reading_order']
 
-        if calculate_reading_order:
-            next_block_filter = None
-            if title_priority:
-                next_block_filter = lambda node: node if node.value.type == 'title' else None
-            blocks = order_ocr_tree(current_image_path,current_ocr_results,ignore_delimiters,
-                                    next_node_filter=next_block_filter,debug=config['base']['debug'])
-        else:
-            blocks = [block for block in current_ocr_results.get_boxes_level(2,ignore_type=[] \
-                                                    if not ignore_delimiters else ['delimiter'])]
-            blocks = sorted(blocks,key=lambda x: x.id)
+        print('Generate output |',format,doc_type,results_path)
 
-        with open(f'{results_path}/output.txt','w',encoding='utf-8') as f:
-            txt = ''
-            for block in blocks:
-                txt += block.to_text(text_confidence)
-
-            if fix_hifenization_flag:
-                txt = fix_hifenization(txt)
-
-            f.write(txt)
-
-
-def generate_output_md():
-    '''Generate output markdown'''
-    global current_ocr_results,current_image_path,ocr_results_articles,config
-    if current_ocr_results and current_image_path:
-        doc_type = config['methods']['doc_type']
-        results_path = config['base']['output_path']
-        text_confidence = config['base']['text_confidence']
-        ignore_delimiters = config['methods']['ignore_delimiters']
-        calculate_reading_order = config['base']['calculate_reading_order']
-        fix_hifenization_flag = config['base']['fix_hifenization']
-        title_priority = config['methods']['title_priority_calculate_reading_order']
         # newspaper
         if doc_type == 'newspaper':
             articles = []
@@ -2305,15 +2266,16 @@ def generate_output_md():
 
             # generate output
             min_text_conf = text_confidence
-            with open(f'{results_path}/articles.md','w',encoding='utf-8') as f:
+            file_path = f'{results_path}/articles.txt' if format == 'txt' else f'{results_path}/articles.md'
+            with open(file_path,'w',encoding='utf-8') as f:
                 for article in articles:
                     article = Article(article,min_text_conf)
-                    f.write(article.to_md(f'{results_path}',
-                                          fix_hifenization_flag=fix_hifenization_flag))
+                    if format == 'markdown':
+                        f.write(article.to_md(f'{results_path}',fix_hifenization_flag=fix_hifenization_flag))
+                    else:
+                        f.write(article.to_txt(fix_hifenization_flag=fix_hifenization_flag))
                     f.write('\n')
-            
-            print(f'Output generated: {results_path}/articles.md')
-        # simple output
+
         else:
             if calculate_reading_order:
                 next_block_filter = None
@@ -2326,7 +2288,8 @@ def generate_output_md():
                                                         if not ignore_delimiters else ['delimiter'])]
                 blocks = sorted(blocks,key=lambda x: x.id)
 
-            with open(f'{results_path}/output.md','w',encoding='utf-8') as f:
+            file_path = f'{results_path}/output.md' if format == 'markdown' else f'{results_path}/output.txt'
+            with open(file_path,'w',encoding='utf-8') as f:
                 txt = ''
                 for block in blocks:
                     txt += block.to_text(text_confidence)
@@ -2335,6 +2298,8 @@ def generate_output_md():
                     txt = fix_hifenization(txt)
 
                 f.write(txt)
+
+
 
 
 def add_article_method():
