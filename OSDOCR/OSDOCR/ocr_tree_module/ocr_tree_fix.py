@@ -730,8 +730,10 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
 
                 ## adjust current blocks
                 new_blocks = split_block(block,title_block.box,orientation='horizontal',conf=conf,debug=debug)
+                print(new_blocks[0].to_text(conf=conf))
 
                 if len(new_blocks) > 1:
+                    print(new_blocks[1].to_text(conf=conf))
                     # add new block
                     new_block = new_blocks[-1]
                     new_block.id = last_id
@@ -814,6 +816,9 @@ def split_block(block:OCR_Tree,delimiter:Box,orientation:str='horizontal',conf:i
                     blocks_2[i].remove_box_id(w.id,level=5)
                 else:
                     blocks_1[i].remove_box_id(w.id,level=5)
+            else:
+                blocks_2[i].remove_box_id(w.id,level=5)
+                blocks_1[i].remove_box_id(w.id,level=5)
 
         # remove empty lines
         lines_1 = blocks_1[i].get_boxes_level(4)

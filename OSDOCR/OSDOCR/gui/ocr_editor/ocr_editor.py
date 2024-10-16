@@ -600,7 +600,7 @@ def create_ocr_block_assets(block:OCR_Tree,override:bool=True):
         # if exists, change to biggest id
         block.id = max(bounding_boxes.keys())+1
 
-    print('Create ocr block assets | id:',block.id)
+    # print('Create ocr block assets | id:',block.id)
 
     # bounding box
     box = block.box
@@ -1681,6 +1681,8 @@ def join_ocr_blocks():
         highlighted_blocks.remove(second_block)
         ## remove second block from blocks
         blocks.remove(second_block)
+
+    refresh_highlighted_blocks()
 
 
 
