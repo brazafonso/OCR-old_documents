@@ -98,9 +98,6 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
         # check if boxes are within each other
         if current_box and blocks[i].id != current_box.id:
             compare_box = blocks[i]
-            if debug:
-                print(f'Checking if {current_box.id} and {compare_box.id} are within each other')
-        
             # compared box inside current box
             if (compare_box_empty:=compare_box.is_empty(conf=text_confidence)) and compare_box.box.is_inside_box(current_box.box):
                 if debug:

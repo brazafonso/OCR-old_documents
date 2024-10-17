@@ -1012,8 +1012,9 @@ class OCR_Tree:
                                     self.children = self_children[:i] + [child] + self_children[i:]
                                     joined = True
                                 # if intercept, will have to use recursive join
-                                elif self_children[i].box.intersects_box(child.box,extend_horizontal=True):
-                                    intersect_height = min(self_children[i].box.bottom,child.box.bottom) - max(self_children[i].box.top,child.box.top)
+                                elif self_children[i].box.intersects_box(child.box,inside=True,extend_horizontal=True):
+                                    intersect_area = self_children[i].box.intersect_area_box(child.box,extend_horizontal=True)
+                                    intersect_height = intersect_area.height
                                     # if intersecting with more than 70% of child, join the two
                                     if intersect_height / child.box.height >= 0.7 or intersect_height / self_children[i].box.height >= 0.7:
                                         if self_children[i].children:
@@ -1021,22 +1022,32 @@ class OCR_Tree:
                                         else:
                                             self.children = self_children[:i+1] + [child] + self_children[i+1:]
                                         joined = True
-                                    else:
-                                        # find lowest place to insert
-                                        for j in range(i,len(self_children)):
-                                            if not self_children[j].box.bottom < child.box.bottom:
-                                                self.children = self_children[:j] + [child] + self_children[j:]
-                                                joined = True
-                                                break
-                                        # if not found, insert at the end
-                                        if not joined:
-                                            self.children+=[child]
-                                            joined = True
+                                        
                                 if joined:
                                     break
-                    # if lowest level, insert at the end
+
+                            if not joined:
+                                # find lowest place to insert
+                                for j in range(i,len(self_children)):
+                                    if not self_children[j].box.bottom < child.box.bottom:
+                                        self.children = self_children[:j] + [child] + self_children[j:]
+                                        joined = True
+                                        break
+                                # if not found, insert at the end
+                                if not joined:
+                                    self.children+=[child]
+                                    joined = True
+
+                    # if lowest level, insert at first possible place
                     else:
-                        self.children += [child]
+                        i = 0
+                        while i < len(self_children):
+                            if self_children[i].box.right >= child.box.right:
+                                self.children = self_children[:i] + [child] + self_children[i:]
+                                break
+                            i += 1
+                        if i == len(self_children):
+                            self.children += [child]
                     
                     self_children = self.children
 

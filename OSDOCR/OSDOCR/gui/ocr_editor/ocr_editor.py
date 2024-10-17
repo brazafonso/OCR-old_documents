@@ -2096,10 +2096,12 @@ def fix_ocr_block_intersections_method():
             # update highlighted block
             block = tree.get_box_id(id=highlighted_block['id'],level=2)
             found_block = current_ocr_results.get_box_id(id=highlighted_block['id'])
-            if found_block:
+            if block:
                 found_block.update(block)
                 # update assets
                 create_ocr_block_assets(block)
+            else:
+                current_ocr_results.remove_box_id(id=highlighted_block['id'])
 
         refresh_highlighted_blocks()
     elif current_ocr_results:
