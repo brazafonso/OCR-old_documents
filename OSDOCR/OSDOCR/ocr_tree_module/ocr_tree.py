@@ -943,9 +943,29 @@ class OCR_Tree:
     def join_trees(self,tree:'OCR_Tree',orientation:str='vertical'):
         '''Join trees of the same level'''
         if self.level == tree.level:
-            if orientation not in ['vertical','horizontal']:
+            if orientation not in ['vertical','horizontal','auto']:
                 raise ValueError('orientation must be vertical or horizontal')
+            if orientation == 'auto':
+                # if intersects, join horizontal
+                if self.box.intersects_box(tree.box,inside=True):
+                    orientation = 'horizontal'
+                elif self.box.intersects_box(tree.box,extend_horizontal=True,inside=True):
+                    orientation = 'horizontal'
+                else:
+                    orientation = 'vertical'
+
             if orientation == 'vertical':
+                # make sure join is top tree with bottom tree
+                blocks = [self,tree]
+                blocks = sorted(blocks,key=lambda b: b.box.top)
+                if blocks[0] != self:
+                    # swap join source and target, but keep wanted id
+                    id = self.id
+                    tree.join_trees(self.copy(),orientation='vertical')
+                    self.update(tree)
+                    self.id = id
+                    return
+
                 # join tree bellow self
                 # add tree childrens
                 ## adapt children metadata to make sense in new tree (block_num,par_num)
@@ -954,6 +974,17 @@ class OCR_Tree:
                     tree.update_children_metadata(reference_block=last_child.block_num,reference_par=last_child.par_num)
                 self.children += tree.children
             else:
+                # make sure join is left tree with right tree
+                blocks = [self,tree]
+                blocks = sorted(blocks,key=lambda b: b.box.left)
+                if blocks[0] != self:
+                    # swap join source and target, but keep wanted id
+                    id = self.id
+                    tree.join_trees(self.copy(),orientation='horizontal')
+                    self.update(tree)
+                    self.id = id
+                    return 
+                
                 self_children = self.children
                 tree_children = tree.children
                 # when in last level, children are sorted from left to right

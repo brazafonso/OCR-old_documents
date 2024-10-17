@@ -1655,23 +1655,12 @@ def join_ocr_blocks():
         return
     
     blocks = highlighted_blocks.copy()
-    # sort blocks by highest
-    blocks.sort(key=lambda b:b['block'].box.top)
-    blocks_tree = [b['block'] for b in blocks]
+    first = blocks[0]['block']
+    first:OCR_Tree
     while len(blocks) > 1:
-        first = blocks[0]['block']
-        first_block = blocks[0]
         second = blocks[1]['block']
         second_block = blocks[1]
-        # horizontal or vertical depend on which block is on the right
-        orientation = 'horizontal' if second in first.boxes_directly_right(blocks_tree) \
-                        or first in second.boxes_directly_right(blocks_tree) else 'vertical'
-        # if horizontal, sort by left
-        if orientation == 'horizontal':
-            if first.box.left > second.box.left:
-                first,second = second,first
-                first_block,second_block = second_block,first_block
-        first.join_trees(second,orientation=orientation)
+        first.join_trees(second,orientation='auto')
         # remove second block
         ## remove second block from ocr_results
         current_ocr_results.remove_box_id(second.id)
@@ -1681,6 +1670,9 @@ def join_ocr_blocks():
         highlighted_blocks.remove(second_block)
         ## remove second block from blocks
         blocks.remove(second_block)
+
+    #update first block
+    create_ocr_block_assets(first,override=True)
 
     refresh_highlighted_blocks()
 
@@ -2103,16 +2095,16 @@ def fix_ocr_block_intersections_method():
             block = highlighted_block['block']
             # update highlighted block
             block = tree.get_box_id(id=highlighted_block['id'],level=2)
-            current_ocr_results.get_box_id(id=highlighted_block['id']).update(block)
-            # update assets
-            create_ocr_block_assets(block)
+            found_block = current_ocr_results.get_box_id(id=highlighted_block['id'])
+            if found_block:
+                found_block.update(block)
+                # update assets
+                create_ocr_block_assets(block)
 
         refresh_highlighted_blocks()
     elif current_ocr_results:
         block_bound_box_fix(current_ocr_results,text_confidence=text_confidence,find_delimiters=False,find_images=False,debug=True)
-        # update assets
-        for b in bounding_boxes.values():
-            create_ocr_block_assets(b['block'])
+        refresh_ocr_results()
 
 
 def adjust_bounding_boxes_method():

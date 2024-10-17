@@ -98,20 +98,46 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
         # check if boxes are within each other
         if current_box and blocks[i].id != current_box.id:
             compare_box = blocks[i]
-
+            if debug:
+                print(f'Checking if {current_box.id} and {compare_box.id} are within each other')
+        
             # compared box inside current box
-            if compare_box.is_empty(conf=text_confidence) and compare_box.box.is_inside_box(current_box.box):
+            if (compare_box_empty:=compare_box.is_empty(conf=text_confidence)) and compare_box.box.is_inside_box(current_box.box):
                 if debug:
                     print(f'Removing Box : {compare_box.id} is inside {current_box.id}')
                 ocr_results.remove_box_id(compare_box.id)
+                blocks.pop(i)
                 if compare_box.id in boxes_to_check: 
                     del boxes_to_check[compare_box.id]
             # current box inside compared box
-            elif current_box.is_empty(conf=text_confidence) and current_box.box.is_inside_box(compare_box.box):
+            elif (current_box_empty:=current_box.is_empty(conf=text_confidence)) and current_box.box.is_inside_box(compare_box.box):
                 if debug:
                     print(f'Removing Box : {current_box.id} is inside {compare_box.id}')
                 ocr_results.remove_box_id(current_box.id)
+                blocks = [b for b in blocks if b.id != current_box.id]
                 current_box = None
+            # boxes not empty and mostly or completly overlap
+            elif (not compare_box_empty and not current_box_empty):
+                if current_box.box.intersects_box(compare_box.box,inside=True) and\
+                    ((box_area:=current_box.box.area())>0) and current_box.box.intersect_area_box(compare_box.box).area()/box_area >= 0.7:
+                    # join boxes
+                    if debug:
+                        print(f'Merging Boxes : {current_box.id} and {compare_box.id}')
+                    current_box.join_trees(compare_box,orientation='auto')
+                    ocr_results.remove_box_id(compare_box.id)
+                    blocks.pop(i)
+                    if compare_box.id in boxes_to_check: 
+                        del boxes_to_check[compare_box.id]
+                elif compare_box.box.intersects_box(current_box.box,inside=True) and\
+                    ((box_area:=compare_box.box.area())>0) and compare_box.box.intersect_area_box(current_box.box).area()/box_area >= 0.7:
+                    # join boxes
+                    if debug:
+                        print(f'Merging Boxes : {compare_box.id} and {current_box.id}')
+                    compare_box.join_trees(current_box,orientation='auto')
+                    ocr_results.remove_box_id(current_box.id)
+                    blocks = [b for b in blocks if b.id != current_box.id]
+                    current_box = None
+
             # boxes intersect (with same level, so as to be able to merge seamlessly)
             elif current_box.box.intersects_box(compare_box.box):
                 # update boxes so that they don't intersect
@@ -152,6 +178,7 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                     if current_box.is_image(conf=text_confidence,text_size=text_analysis['normal_text_size'],
                                             only_type= find_images == False):
                         ocr_results.remove_box_id(current_box.id)
+                        blocks = [b for b in blocks if b.id != current_box.id]
                         current_box = None
                 i = 0
 
@@ -725,7 +752,6 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
 
                 ## adjust current blocks
                 new_blocks = split_block(block,title_block.box,orientation='horizontal',conf=conf,debug=debug)
-                print(new_blocks[0].to_text(conf=conf))
 
                 if len(new_blocks) > 1:
                     print(new_blocks[1].to_text(conf=conf))
