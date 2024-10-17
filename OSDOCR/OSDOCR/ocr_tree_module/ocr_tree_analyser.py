@@ -1231,6 +1231,7 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,deb
         visited.append(current_node.id)
         if debug:
             print('Current block:',current_block.id,current_block.type,'|',current_block.to_text().strip()[:20])
+
         # block is before blocks directly below and to the right of it
         potential_before_blocks = []
         right_blocks = current_block.boxes_directly_right(non_delimiters)
@@ -1278,14 +1279,16 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,deb
             next_block = next_top_block(non_visited)
             if next_block:
                 next_node = topologic_graph.get_node(next_block.id)
-                # add node as child
-                current_node.add_child_edge(next_node)
+                if not below_blocks:
+                    # add node as child
+                    current_node.add_child_edge(next_node)
 
         
         current_block = next_block
         current_node = next_node
 
     if debug:
+        print('Topologic graph:')
         topologic_graph.self_print()
 
     # clean graph
@@ -1331,10 +1334,10 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
             if next_node_filter:
                 potential_next_nodes = [next_node_filter(n) for n in topologic_graph.nodes if n.id not in order_list]
                 potential_next_nodes = [n for n in potential_next_nodes if n is not None]
-                print('Potential next nodes:',[n.id for n in potential_next_nodes if n])
 
             if not potential_next_nodes:
                 potential_next_nodes = [n for n in topologic_graph.nodes if n.id not in order_list]
+
                 
 
         # get valid next blocks
@@ -1344,13 +1347,14 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
                 valid = True
                 for other_node in potential_next_nodes:
                     # potential first block in other block's order map
-                    if other_node.in_children(potential_next_node):
+                    if other_node.is_connected(potential_next_node):
                         # other block not in order list
                         if other_node.id not in order_list:
                             valid = False
                             break
                 if valid:
                     next_node.append(potential_next_node)
+
 
         # if more than one block, choose block with greatest attraction
         if len(next_node) > 1:
@@ -1373,8 +1377,8 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
         elif len(next_node) == 1:
             next_node = next_node[0]
         else:
-            next_node = None
-            last_node = None
+            next_block = next_top_block([node.value for node in potential_next_nodes],debug=debug)
+            next_node = topologic_graph.get_node(next_block.id)
 
         if next_node:
             order_list.append(next_node.id)
@@ -1473,11 +1477,24 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             direction = 'below'
 
     below_blocks = block.boxes_directly_below(blocks)
+    
+    if debug:
+        print('Below blocks:',[b.id for b in below_blocks])
+
     right_blocks = block.boxes_directly_right(blocks)
 
-    if (direction == 'below' and child) or (direction == 'above' and not child):
+
+    if debug:
+        print('Right blocks:',[b.id for b in right_blocks])
+
+    top_blocks = block.boxes_directly_above(blocks)
+
+    if debug:
+        print('Top blocks:',[b.id for b in top_blocks])
+
+    if (direction in ['below','right'] and child) or (direction in ['above','left'] and not child):
         attraction += 20
-    elif direction == 'above' and child and len(below_blocks) == 0:
+    elif direction in ['above','right'] and child and len(below_blocks) == 0:
         attraction += 20
         
     if debug:
@@ -1511,10 +1528,10 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
         below_delimiters = [b for b in below_blocks if b.type == 'delimiter' and\
                                 b.box.get_box_orientation() == 'horizontal']
         
-        if len(below_delimiters) > 0:
+        if len(below_delimiters) > 0 and block_area > 0:
             widest_delimiter = max(below_delimiters,key=lambda x: x.box.width)
             widest_delimiter:OCR_Tree
-            intersection_area = widest_delimiter.box.intersect_area_box(target_block.box)
+            intersection_area = widest_delimiter.box.intersect_area_box(block.box,extend_vertical=True)
             intersection_area_area = intersection_area.area()
             if direction == 'below' and intersection_area_area > 0:
                 attraction -= (intersection_area_area/block_area) * 30
@@ -1523,6 +1540,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
 
             if debug:
                 print('Below blocks has delimiters','Attraction:',attraction)
+                print('Block area:',block_area,'Intersection area:',intersection_area_area)
 
     # checks for right blocks
     if right_blocks:
@@ -1531,10 +1549,10 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
         right_delimiters = [b for b in right_blocks if b.type == 'delimiter' and\
                                 b.box.get_box_orientation() == 'vertical']
         
-        if len(right_delimiters) > 0:
-            widest_delimiter = max(right_delimiters,key=lambda x: x.box.width)
+        if len(right_delimiters) > 0 and block_area > 0:
+            widest_delimiter = max(right_delimiters,key=lambda x: x.box.height)
             widest_delimiter:OCR_Tree
-            intersection_area = widest_delimiter.box.intersect_area_box(target_block.box)
+            intersection_area = widest_delimiter.box.intersect_area_box(block.box,extend_horizontal=True)
             intersection_area_area = intersection_area.area()
             if direction == 'right' and intersection_area_area > 0:
                 attraction -= (intersection_area_area/block_area) * 30
@@ -1542,12 +1560,26 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 attraction += (intersection_area_area/block_area) * 30
             if debug:
                 print('Right blocks has delimiters','Attraction:',attraction)
+                print('Block area:',block_area,'Intersection area:',intersection_area_area)
 
-    
     if below_blocks:
         attraction += round(20*(1-distance))
         if debug:
             print('Distance:',distance,'Attraction:',attraction)
+
+    # intersection rate
+    intersection_area = None
+    if direction == 'above' or direction == 'below':
+        intersection_area = target_block.box.intersect_area_box(block.box,extend_vertical=True)
+    elif direction == 'right' or direction == 'left':
+        intersection_area = target_block.box.intersect_area_box(block.box,extend_horizontal=True)
+
+    if intersection_area and block_area > 0:
+        intersection_area_area = intersection_area.area()
+        attraction += round(20*(intersection_area_area/block_area))
+
+        if debug:
+            print('Block intersects target block','Attraction:',attraction)
 
     if below_blocks:
         if target_block in below_blocks:
@@ -1560,13 +1592,25 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             if debug:
                 print(f'Direction: {direction}','Attraction:',attraction)
     
-    if direction == 'right':
+    if direction in ['below','right']:
         # if below block's width encompasses both block and target, more attraction
-        if leftmost_block and leftmost_block.box.within_horizontal_boxes(block.box,range=0.3) and\
-                leftmost_block.box.within_horizontal_boxes(target_block.box,range=0.3):
-            attraction += 20
-            if debug:
-                print('Below block encompansses block and target','Attraction:',attraction)
+        if below_blocks:
+            for below_block in below_blocks:
+                if below_block != target_block and below_block.box.within_horizontal_boxes(block.box,range=0.3,only_self=True) and\
+                        below_block.box.within_horizontal_boxes(target_block.box,range=0.3,only_self=True):
+                    attraction += 30
+                    if debug:
+                        print('Below block encompasses block and target','Attraction:',attraction)
+                    break
+        # top block encompasses both block and target, more attraction
+        if top_blocks:
+            for top_block in top_blocks:
+                if top_block != target_block and top_block.box.within_horizontal_boxes(block.box,range=0.3,only_self=True) and\
+                        top_block.box.within_horizontal_boxes(target_block.box,range=0.3,only_self=True):
+                    attraction += 30
+                    if debug:
+                        print('Top block encompasses block and target','Attraction:',attraction)
+                    break
 
 
     # title
@@ -1615,23 +1659,19 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             if debug:
                 print('Target block is text',target_block.start_text,target_block.end_text,'Attraction:',attraction)
             
+            if block.end_text == False and target_block.start_text == False:
+                attraction += 50
+                if debug:
+                    print('Block text is not finished and target block text is not started','Attraction:',attraction)
+
             if direction == 'below':
                 if debug:
                     print('Target block is below','Attraction:',attraction)
                 attraction += 20
-                
-                if block.end_text == False and target_block.start_text == False:
-                    attraction += 50
-                    if debug:
-                        print('Block text is not finished and target block text is started','Attraction:',attraction)
             else:
                 if debug:
                     print(f'Direction: {direction}','Attraction:',attraction)
                 # text content
-                if block.end_text == False and target_block.start_text == False:
-                    attraction += 30
-                    if debug:
-                        print('Block text is not finished and target block text is not started','Attraction:',attraction)
 
                 if below_blocks:
                     if debug:
@@ -1647,6 +1687,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             attraction -= 20
             if debug:
                 print('Target block is not text and block text is not finished','Attraction:',attraction)
+
 
     if debug:
         print('Attraction:',attraction)
@@ -1788,6 +1829,7 @@ def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=
     delimiters = [b.box for b in ocr_results.get_boxes_type(level=2,types=['delimiter'])]
     _,body,_ = segment_document_delimiters(image=image_path,delimiters=delimiters,target_segments=target_segments,debug=debug)
     columns_area = body
+    print('Columns area:',columns_area)
 
     # run topologic_order context
     t_graph = topologic_order_context(ocr_results,area=columns_area,ignore_delimiters=ignore_delimiters,debug=debug)

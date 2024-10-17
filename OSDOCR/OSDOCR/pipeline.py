@@ -51,17 +51,24 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
     target_img_path = metadata['target_path']
 
     calculate_reading_order = 'calculate_reading_order' not in args.skip_method
+    target_segments = args.target_segments
     title_priority = args.title_priority
     if args.logs:
         print(f'''
     Parameters:
         * ignore_delimiters: {args.ignore_delimiters}
         * calculate_reading_order: {calculate_reading_order}
-        * target_segments: {args.target_segments}''')
+        * target_segments: {args.target_segments}
+        * title_priority: {title_priority}''')
+
+    # header,body,footer = segment_document(target_img_path,target_segments=target_segments)
+    # areas = [header,body,footer]
 
     next_block_filter = None
     if title_priority:
         next_block_filter = lambda node: node if node.value.type == 'title' else None
+
+
     order_list,articles = extract_articles(image_path=target_img_path,
                                            ocr_results=ocr_results,
                                            ignore_delimiters=args.ignore_delimiters,
@@ -79,9 +86,10 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
     if args.debug:
         # change ids to order
         order_map = {order_list[i]:i for i in range(len(order_list))}
-        ocr_results.change_ids(order_map)
+        ocr_results_copy = ocr_results.copy()
+        ocr_results_copy.change_ids(order_map)
 
-        image = draw_bounding_boxes(ocr_results,target_img_path,[2],id=True)
+        image = draw_bounding_boxes(ocr_results_copy,target_img_path,[2],id=True)
         cv2.imwrite(f'{results_path}/reading_order.png',image)
 
 
@@ -145,6 +153,8 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
     header,body,footer = segment_document(target_img_path,target_segments=target_segments)
 
     areas = [header,body,footer]
+    for area in areas:
+        print(area)
 
     if calculate_reading_order:
         title_priority = args.title_priority
@@ -156,7 +166,7 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
                                 area=areas,target_segments=target_segments,
                                 next_node_filter=next_block_filter,debug=args.debug)
     else:
-        blocks = [block for block in ocr_results.get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
+        blocks = [block for block in ocr_results.copy().get_boxes_level(2,ignore_type=[] if not args.ignore_delimiters else ['delimiter'])]
         blocks = sorted(blocks,key=lambda x: x.id)
 
     # divide output according to output segments

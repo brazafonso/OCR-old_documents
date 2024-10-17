@@ -40,21 +40,17 @@ def remove_empty_boxes(ocr_results:OCR_Tree,text_confidence:int=10,find_delimite
                 continue
 
             if not find_delimiters:
-                if not block.is_delimiter(conf=text_confidence,only_type=True):
-                    if debug:
-                        print(f'Removing Box : {block.id} is empty and not a delimiter')
-                    ocr_results.remove_box_id(block.id)
-                    blocks.pop(i)
-                continue
+                if block.is_delimiter(conf=text_confidence,only_type=True):
+                    continue
             
             if not find_images:
-                if not block.is_image(conf=text_confidence,only_type=True):
-                    if debug:
-                        print(f'Removing Box : {block.id} is empty and not an image')
-                    ocr_results.remove_box_id(block.id)
-                    blocks.pop(i)
-                continue
+                if block.is_image(conf=text_confidence,only_type=True):
+                    continue
 
+            if debug:
+                print(f'Removing Box : {block.id} is empty')
+            ocr_results.remove_box_id(block.id)
+            blocks.pop(i)
 
     return ocr_results
 
@@ -371,7 +367,6 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,debu
             print(f'Visiting block {target_block_id}',f' Available blocks: {len(available_blocks)}',f' Non visited blocks: {len(non_visited)}')
         # get adjacent bellow blocks
         below_blocks = target_block.boxes_directly_below(available_blocks)
-        print([b.id for b in below_blocks])
         
 
         # if below blocks exist
@@ -1068,26 +1063,29 @@ def split_whitespaces(ocr_results:OCR_Tree,conf:int=10,dif_ratio:int=3,debug:boo
                     if interval[1] < right:
                         right = interval[1]
 
-                # split block
-                delimiter = Box(left,right,block.box.top,block.box.bottom)
-                blocks = split_block(block,delimiter,orientation='vertical',keep_all=True,conf=conf,debug=debug)
-                new_block = blocks[1] if len(blocks) == 2 else None
+                # check if interval is wide enough
+                d = right - left
+                if d >= dif_ratio*average:
+                    # split block
+                    delimiter = Box(left,right,block.box.top,block.box.bottom)
+                    blocks = split_block(block,delimiter,orientation='vertical',keep_all=True,conf=conf,debug=debug)
+                    new_block = blocks[1] if len(blocks) == 2 else None
 
-                if debug:
-                    print(f'Block: {block.id} | Box: {block.box}')
+                    if debug:
+                        print(f'Block: {block.id} | Box: {block.box}')
 
-                # add new block
-                if new_block:
-                    new_block.id = last_id
-                    if debug:
-                        print(f'Adding new block {new_block.id} | Box: {new_block.box}')
-                    last_id += 1
-                    page = ocr_results.get_boxes_level(1)[0]
-                    page.add_child(new_block)
-                    blocks.append(new_block)
-                else:
-                    if debug:
-                        print('No new block added')
+                    # add new block
+                    if new_block:
+                        new_block.id = last_id
+                        if debug:
+                            print(f'Adding new block {new_block.id} | Box: {new_block.box}')
+                        last_id += 1
+                        page = ocr_results.get_boxes_level(1)[0]
+                        page.add_child(new_block)
+                        blocks.append(new_block)
+                    else:
+                        if debug:
+                            print('No new block added')
 
     return ocr_results
 
