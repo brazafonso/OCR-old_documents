@@ -204,9 +204,7 @@ class Article:
                 # check if image path is valid
                 text += '\n\n'
                 if os.path.exists(item[1]):
-                    # print(output_path,item[1])
                     relative_image_path = os.path.relpath(item[1],output_path)
-                    # print(relative_image_path)
                     text += f'![image]({relative_image_path})'
                 else:
                     text += f'![image](image)'

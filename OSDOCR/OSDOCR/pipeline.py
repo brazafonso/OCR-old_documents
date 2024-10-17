@@ -1,5 +1,6 @@
 
 import argparse
+from pathlib import Path
 from OSDOCR.aux_utils.parse_args import *
 from OSDOCR.aux_utils.misc import *
 from OSDOCR.aux_utils import consts
@@ -118,10 +119,15 @@ def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespac
                 
             
     if 'markdown' in args.output_type:
+        directory_path = Path(results_path).parent
         with open(f'{results_path}.md','w',encoding='utf-8') as f:
             txt = ''
             for block in blocks:
-                txt += block.to_text(args.text_confidence)
+                if block.type == 'image' and block.__getattribute__('image_path'):
+                    relative_path = os.path.relpath(block.image_path,directory_path)
+                    txt += f'![image]({relative_path})\n'
+                else:
+                    txt += block.to_text(args.text_confidence)
 
             if fix_hifenization_flag:
                 txt = fix_hifenization(txt)

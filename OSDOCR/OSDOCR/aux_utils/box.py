@@ -207,6 +207,10 @@ class Box:
         if extend_horizontal:
             self_box.left = 0
             self_box.right = box.right + 1
+
+        if not self.intersects_box(self_box,extend_vertical=extend_vertical,
+                                   extend_horizontal=extend_horizontal,inside=True):
+            return area_box
         
         left = 0
         right = 0

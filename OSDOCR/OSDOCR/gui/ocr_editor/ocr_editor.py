@@ -2220,7 +2220,7 @@ def find_articles_method():
 
 def generate_output():
     '''Generate output'''
-    global current_ocr_results,current_image_path,config
+    global current_ocr_results,current_image_path,current_image,config
     if current_ocr_results and current_image_path:
         format = config['base']['output_format']
         doc_type = config['base']['output_type']
@@ -2232,6 +2232,24 @@ def generate_output():
         title_priority = config['methods']['title_priority_calculate_reading_order']
 
         print('Generate output |',format,doc_type,results_path)
+
+        # for markdown, create tmp images for image blocks
+        if format == 'markdown':
+            images = current_ocr_results.get_boxes_type(level=2,types=['image'])
+            if images:
+                # make output images folder
+                output_images_folder_path = os.path.join(results_path,'output_images')
+                shutil.rmtree(output_images_folder_path,ignore_errors=True)
+                os.mkdir(output_images_folder_path)
+                # save images
+                i = 0
+                bgr_image = cv2.cvtColor(current_image, cv2.COLOR_RGB2BGR)
+                for image in images:
+                    cut_image = bgr_image[image.box.top:image.box.bottom,image.box.left:image.box.right]
+                    image_path = os.path.join(output_images_folder_path,f'{i}.png')
+                    cv2.imwrite(image_path,cut_image)
+                    image.image_path = image_path
+                    i += 1
 
         # newspaper
         if doc_type == 'newspaper':
@@ -2288,7 +2306,11 @@ def generate_output():
             with open(file_path,'w',encoding='utf-8') as f:
                 txt = ''
                 for block in blocks:
-                    txt += block.to_text(text_confidence)
+                    if format == 'markdown' and block.type == 'image' and block.__getattribute__('image_path'):
+                        relative_path = os.path.relpath(block.image_path,results_path)
+                        txt += f'![image]({relative_path})\n'
+                    else:
+                        txt += block.to_text(text_confidence)
 
                 if fix_hifenization_flag:
                     txt = fix_hifenization(txt)
