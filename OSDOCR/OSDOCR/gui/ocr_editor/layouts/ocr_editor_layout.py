@@ -195,43 +195,43 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Text('Box Type: ', font=('Calibri', 15))),
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_title_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_title_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Title', enable_events=True, key='box_type_title_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='red', background_color='red', enable_events=True, key='box_type_title_text')),
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_text_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_text_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Text', enable_events=True, key='box_type_text_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='yellow', background_color='yellow', enable_events=True, key='box_type_text_text'))
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_image_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_image_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Image', enable_events=True, key='box_type_image_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='black', background_color='black', enable_events=True, key='box_type_image_text'))
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_highlight_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_highlight_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Highlight', enable_events=True, key='box_type_highlight_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='purple', background_color='purple', enable_events=True, key='box_type_highlight_text'))
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_caption_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_caption_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Caption', enable_events=True, key='box_type_caption_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='white', background_color='white', enable_events=True, key='box_type_caption_text'))
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_delimiter_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_delimiter_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Delimiter', enable_events=True, key='box_type_delimiter_text', font=('Calibri', 13))),
             sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='blue', background_color='blue', enable_events=True, key='box_type_delimiter_text'))
         ],
         [
-            place(sg.Text('* ', enable_events=True, key='box_type_other_text', font=('Calibri', 13))),
+            place(sg.Text('* ', enable_events=True, key='box_type_other_text_main', font=('Calibri', 13),metadata=True)),
             place(sg.Text('Other', enable_events=True, key='box_type_other_text', font=('Calibri', 13))),
         sg.Push(),  # Pushes the color square to the right
             place(sg.Text('', size=(2, 1), text_color='green', background_color='green', enable_events=True, key='box_type_other_text'))

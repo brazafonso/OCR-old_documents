@@ -88,6 +88,7 @@ edge_thickness = 2
 id_text_size = 10
 SYMBOL_UP =    '▲'
 SYMBOL_DOWN =  '▼'
+block_types = ['delimiter','title','caption','text','image','other','highlight']
 
 
 ################################################
@@ -99,7 +100,8 @@ SYMBOL_DOWN =  '▼'
 
 def update_config_dependent_variables():
     '''Update config dependent variables'''
-    global config,ppi,vertex_radius,edge_thickness,id_text_size,default_edge_color
+    global config,ppi,vertex_radius,edge_thickness,id_text_size,\
+        default_edge_color,window,current_image
     print('Update config dependent variables')
     changed = False
     try:
@@ -121,13 +123,15 @@ def update_config_dependent_variables():
     except:
         pass
     try:
-        color = hex_to_rgb(config['base']['default_edge_color'],normalize=True)
-        print(color,default_edge_color)
+        color = hex_to_rgb(config['base']['default_edge_color'],normalize=True) \
+                    if config['base']['default_edge_color'] \
+                    else get_average_inverse_color(current_image)
         if color != default_edge_color:
             changed = True
             default_edge_color = color
-    except Exception as e:
-        print(e)
+            color = rgb_to_hex((int(color[0]*255),int(color[1]*255),int(color[2]*255)))
+            window['text_default_color'].update(background_color=color,text_color=color)
+    except:
         pass
     try:
         if config['base']['id_text_size'] != id_text_size:
@@ -322,7 +326,7 @@ def sidebar_update_block_info():
 
 
 def reset_window_block_filter():
-    global window,current_block_level
+    global window,block_types
     window['block_misc_filter_id'].update('')
     window['block_misc_filter_text'].update('')
     window['checkbox_block_misc_filter_regex'].update(False)
@@ -330,6 +334,9 @@ def reset_window_block_filter():
     window['block_misc_filter_top'].update('')
     window['block_misc_filter_right'].update('')
     window['block_misc_filter_bottom'].update('')
+    
+    for t in block_types:
+        window[f'box_type_{t}_text_main'].metadata = True
 
 
 
@@ -545,11 +552,11 @@ def update_canvas_image(window:sg.Window,values:dict):
         current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
 
         # update default edge color for ocr results
-        if not config['base']['default_edge_color'] or not default_edge_color:
+        if not config["base"]["default_edge_color"] or not default_edge_color:
             default_edge_color = get_average_inverse_color(current_image)
 
-        color = default_edge_color * 255
-        color = (int(color[0]),int(color[1]),int(color[2]))
+        color = default_edge_color
+        color = (int(color[0]*255),int(color[1]*255),int(color[2]*255))
         window['text_default_color'].update(text_color = rgb_to_hex(color),
                                             background_color = rgb_to_hex(color))
 
@@ -2464,9 +2471,28 @@ def change_block_level(level:int = 2,force:bool=False):
 
 def create_block_filter():
     '''Create block filter'''
-    global block_filter,window,current_ocr_results
+    global block_filter,window,current_ocr_results,block_types
     
     block_filter = None
+
+    # box type filter
+    type_filter = None
+    type_filters = []
+    for t in block_types:
+        if window[f'box_type_{t}_text_main'].metadata:
+            type_filters.append(('+',t))
+        else:
+            type_filters.append(('-',t))
+
+    if type_filters:
+        type_filter = lambda b: (b.type != 'delimiter' if type_filters[0][0] == '-' else True)\
+                            and (b.type != 'title' if type_filters[1][0] == '-' else True)\
+                            and (b.type != 'caption' if type_filters[2][0] == '-' else True)\
+                            and (b.type != 'text' if type_filters[3][0] == '-' else True)\
+                            and (b.type != 'image' if type_filters[4][0] == '-' else True)\
+                            and (b.type != 'other' if type_filters[5][0] == '-' else True)\
+                            and (b.type != 'highlight' if type_filters[6][0] == '-' else True)\
+
 
     # id filter
     id_filter = None
@@ -2559,7 +2585,8 @@ def create_block_filter():
 
 
     # join filters
-    block_filter = lambda b: (id_filter(b) if id_filter else True)\
+    block_filter = lambda b: (type_filter(b) if type_filter else True)\
+                            and (id_filter(b) if id_filter else True)\
                             and (text_filter(b) if text_filter else True)\
                             and (left_filter(b) if left_filter else True)\
                             and (right_filter(b) if right_filter else True)\
@@ -2628,6 +2655,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     create_base_folders()
     clean_editor_tmp_folder()
     
+    window = ocr_editor_layout()
 
     # read config and update dependent variables
     config = read_ocr_editor_configs_file()
@@ -2649,7 +2677,6 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         input_ocr_results_path = None
 
 
-    window = ocr_editor_layout()
     last_window_size = window.size
     event,values = window._ReadNonBlocking()
     if input_image_path:
@@ -2839,13 +2866,16 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 sg.popup('Please select a single block to split')
         # filter blocks by type
         elif 'box_type' in event:
-            # refresh block filter
-            create_block_filter()
             # update block type filter
             block_type = event.split('_')[2]
-            proxy_filter = block_filter
-            type_filter = lambda b: b.type == block_type if block_type != 'all' else True
-            block_filter = lambda b: proxy_filter(b) and type_filter(b)
+            if block_type == 'all':
+                types = ['delimiter','title','caption','text','image','other']
+                for t in types:
+                    window[f'box_type_{t}_text_main'].metadata = True
+            else:
+                window[f'box_type_{block_type}_text_main'].metadata = not window[f'box_type_{block_type}_text_main'].metadata
+            # refresh block filter
+            create_block_filter()
             refresh_ocr_results()
             refresh_highlighted_blocks()
             sidebar_update_block_info()
