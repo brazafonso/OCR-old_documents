@@ -552,6 +552,7 @@ def ocr_editor_layout()->sg.Window:
     window = sg.Window('OCR Editor',editor_main,finalize=True,
                        resizable=True,size=window_size,
                        relative_location=window_location,
+                       grab_anywhere_using_control=False
                        )
     window.bind('<Configure>',"Event")
     return window

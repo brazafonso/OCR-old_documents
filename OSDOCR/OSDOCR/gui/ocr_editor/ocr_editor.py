@@ -20,7 +20,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.animation import FuncAnimation
-from document_image_utils.image import segment_document_delimiters
+from document_image_utils.image import segment_document_delimiters,calculate_dpi
 from OSDOCR.aux_utils import consts
 from OSDOCR.aux_utils.misc import *
 from OSDOCR.output_module.journal.article import Article
@@ -239,7 +239,7 @@ def undo_operation():
         
         current_cache_ocr_results_index -= 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
-        refresh_ocr_results()
+        refresh_ocr_results(articles=False)
 
 def redo_operation():
     '''Redo last opeartion'''
@@ -248,7 +248,7 @@ def redo_operation():
     if current_cache_ocr_results_index < len(cache_ocr_results)-1:
         current_cache_ocr_results_index += 1
         current_ocr_results = cache_ocr_results[current_cache_ocr_results_index].copy()
-        refresh_ocr_results()
+        refresh_ocr_results(articles=False)
 
 
 def update_canvas_column(window:sg.Window):
@@ -310,6 +310,8 @@ def sidebar_update_block_info():
         text_confidence = config['base']['text_confidence']
         block_text = block.to_text(conf=text_confidence,text_delimiters=text_delimiters).strip()
         window['input_block_text'].update(block_text)
+        ### bring scroll to top
+        window['input_block_text'].Widget.see('1.0')
         ## avg conf
         total_conf,total_blocks = block.conf_sum(level=5)
         avg_conf = round(total_conf/total_blocks) if total_blocks > 0 else 0
@@ -725,6 +727,17 @@ def refresh_articles():
             update_sidebar_articles()
 
 
+def clean_articles():
+    '''Clean articles in ocr editor, removing blocks not present in ocr_results'''
+    global ocr_results_articles,current_ocr_results
+    if ocr_results_articles:
+        blocks = current_ocr_results.get_boxes_level(level=2)
+        blocks_ids = {x.id for x in blocks}
+        for article in ocr_results_articles.values():
+            article['article'] = [x for x in article['article'] if x.id in blocks_ids]
+
+
+
 def highlight_block(block:dict):
     '''Add block to highlighted blocks. If already highlighted, bring it to front of stack.'''
     global highlighted_blocks
@@ -747,7 +760,8 @@ def highlight_block(block:dict):
 def canvas_on_button_press(event):
     '''Handle mouse click events'''
     global current_action,current_action_start,bounding_boxes,\
-        highlighted_blocks,last_activity_time,focused_block,window
+        highlighted_blocks,last_activity_time,focused_block,window,\
+        last_key
     print(f'click {event}')
     # left click
     if event.button == 1:
@@ -758,7 +772,10 @@ def canvas_on_button_press(event):
             current_action_start = (click_x,click_y)
             block_id,_ = closest_block(click_x,click_y)
             if block_id is not None:
-                # print(f'closest block {block_id}')
+                # if not pressing ctrl, single selection
+                if not last_key in ['ctrl','control']:
+                    reset_highlighted_blocks()
+
                 block = bounding_boxes[block_id]
                 # highlight block
                 highlight_block(block)
@@ -988,6 +1005,17 @@ def canvas_on_key_release(event):
     elif event.key == 'ctrl+z':
         undo_operation()
         sidebar_update_block_info()
+    elif event.key == 'ctrl+c':
+        if highlighted_blocks:
+            txt = ''
+            for block in highlighted_blocks:
+                txt += block['block'].to_text(conf=config['base']['text_confidence'])
+            pyperclip.copy(txt)
+    elif event.key == 'ctrl+a':
+        blocks = get_bounding_boxes()
+        for block in blocks.values():
+            highlight_block(block)
+        sidebar_update_block_info()
     elif str(event.key).isdigit():
         if len(highlighted_blocks) > 0:
             # update block id
@@ -1013,6 +1041,7 @@ def canvas_on_key_release(event):
         add_ocr_result_cache(current_ocr_results)
     
     last_activity_time = time.time()
+    last_key = None
 
 
 def destroy_canvas():
@@ -1177,6 +1206,9 @@ def refresh_ocr_results(articles:bool=True):
         if articles:
             # reset articles
             ocr_results_articles = {}
+        else:
+            # clean articles
+            clean_articles()
         # reset highlighted blocks
         reset_highlighted_blocks()
         current_ocr_results.id_boxes(level=[current_block_level],override=False)
@@ -1559,9 +1591,8 @@ def apply_ocr_block():
         skip_methods = preprocessing_methods.copy() + posprocessing_methods.copy() + other.copy()
         
         # image preprocessing
-        if config['ocr_pipeline']['image_preprocess'] != 'none':
+        if config['ocr_pipeline']['image_preprocess']:
             skip_methods.remove('image_preprocess')
-        else:
             if config['ocr_pipeline']['fix_rotation']  != 'none':
                 skip_methods.remove('auto_rotate')
             if config['ocr_pipeline']['fix_illumination']:
@@ -1574,9 +1605,9 @@ def apply_ocr_block():
                 skip_methods.remove('binarize_image')
 
         # image posprocessing
-        if config['ocr_pipeline']['posprocess'] != 'none':
+        if config['ocr_pipeline']['posprocess']:
             skip_methods.remove('posprocessing')
-        else:
+
             if config['ocr_pipeline']['clean_ocr']:
                 skip_methods.remove('clean_ocr')
             if config['ocr_pipeline']['bound_box_fix_image']:
@@ -1591,7 +1622,7 @@ def apply_ocr_block():
         ## update args according to config    
         args = process_args()
         args.tesseract_config = config['ocr_pipeline']['tesseract_config']
-
+        args.upscaling_image = ['waifu2x','scale2x']
         args.skip_method =  skip_methods
         args.binarize_image = [config['ocr_pipeline']['binarize']]
         args.split_whitespace = config['ocr_pipeline']['split_whitespace']
@@ -2113,7 +2144,7 @@ def fix_ocr_block_intersections_method():
         refresh_highlighted_blocks()
     elif current_ocr_results:
         block_bound_box_fix(current_ocr_results,text_confidence=text_confidence,find_delimiters=False,find_images=False,debug=True)
-        refresh_ocr_results()
+        refresh_ocr_results(articles=False)
 
 
 def adjust_bounding_boxes_method():
@@ -2191,7 +2222,7 @@ def find_titles_method():
                          categorize_blocks=False,debug=config['base']['debug'])
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
-            refresh_ocr_results()
+            refresh_ocr_results(articles=False)
 
 
 def unite_blocks_method():
@@ -2203,7 +2234,7 @@ def unite_blocks_method():
                      debug=config['base']['debug'])
         new_block_num = len(current_ocr_results.get_boxes_level(2))
         if og_block_num != new_block_num:
-            refresh_ocr_results()
+            refresh_ocr_results(articles=False)
 
 def find_articles_method():
     '''Find articles method.'''
@@ -2268,6 +2299,7 @@ def generate_output():
             else:
                 only_selected = config['methods']['article_gathering'] == 'selected'
 
+                clean_articles()
                 if only_selected:
                     for id in ocr_results_articles:
                         articles.append(ocr_results_articles[id]['article'])
@@ -2876,7 +2908,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
                 window[f'box_type_{block_type}_text_main'].metadata = not window[f'box_type_{block_type}_text_main'].metadata
             # refresh block filter
             create_block_filter()
-            refresh_ocr_results()
+            refresh_ocr_results(articles=False)
             refresh_highlighted_blocks()
             sidebar_update_block_info()
         # construct block filter

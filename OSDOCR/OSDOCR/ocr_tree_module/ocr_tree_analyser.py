@@ -1126,12 +1126,13 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
         # text characteristics
         block_text = target_block.to_text(conf=conf).strip()
         # if first character is not uppercase or start of dialogue, not starts text
-        if block_text and not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text):
+        if block_text and re.match(r'[a-z]',block_text) and not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text):
             target_block.start_text = False
         else:
             target_block.start_text = True
+
         # if last character is punctuation, ends text
-        if block_text[-1] in ['.','!','?','"','\'']:
+        if block_text[-1] in ['.','!','?','"','\''] or not re.match(r'[a-z]',block_text):
             target_block.end_text = True
         else:
             target_block.end_text = False

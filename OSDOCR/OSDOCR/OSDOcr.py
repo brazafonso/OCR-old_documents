@@ -21,13 +21,16 @@ from .validation.calibrate import run_calibrate
 
 def run_test():
     '''Run tests'''
-    target_image = '/home/braz/projetos/OCR-old_documents/study_cases/ideal/AAA-13.png'
+    target_image = '/home/braz/projetos/OCR-old_documents/study_cases/simple template/2-1.jpg'
+    # target_image = '/home/braz/projetos/OCR-old_documents/study_cases/ideal/AAA-13.png'
+    # target_image = '/home/braz/projetos/OCR-old_documents/study_cases/complicated reading order/1-09.jpg'
+    # target_image = '/home/braz/projetos/OCR-old_documents/study_cases/rotated/1928_0002.tif'
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/result_united.json'
-        print('test','ocr_results_path',ocr_results_path)
-        ocr_results = OCR_Tree(ocr_results_path)
+        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/result_united.json'
+        # print('test','ocr_results_path',ocr_results_path)
+        # ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
         # get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True)
@@ -46,6 +49,22 @@ def run_test():
         # test_detectron2(target_image)
 
         # layout parser test
+        # images = identify_document_images_layoutparser(target_image,old_document=True,logs=True)
+        # images_boxes = []
+        # for image in images:
+        #     t = OCR_Tree()
+        #     t.box = image
+        #     images_boxes.append(t)
+        # img = draw_bounding_boxes(images_boxes,target_image,draw_levels=[0])
+        # cv2.imwrite('test.png',img)
+        # images = identify_document_images(target_image)
+        # images_boxes = []
+        # for image in images:
+        #     t = OCR_Tree()
+        #     t.box = image
+        #     images_boxes.append(t)
+        # img = draw_bounding_boxes(images_boxes,target_image,draw_levels=[0])
+        # cv2.imwrite('test2.png',img)
         # remove_document_images(target_image,logs=True)
 
         # test run target split
@@ -55,9 +74,13 @@ def run_test():
         # cv2.imwrite('test.png',img)
 
         # run fix illumination
-        # img = fix_illumination(target_image)
-        # cv2.imwrite('test.png',img)
-
+        models = ['best_SSIM','best_PSNR','LOL-Blur','SICE','SID','w_perc']
+        for i in range(len(models)):
+            model = models[i]
+            img = fix_illumination(target_image,model_weight=model)
+            cv2.imwrite(f'test_{model}_patch.png',img)
+            img = fix_illumination(target_image,model_weight=model,split_image=False)
+            cv2.imwrite(f'test_{model}_nopatch.png',img)
 
         # tesseract to hocr
         # from pytesseract import pytesseract
@@ -75,12 +98,30 @@ def run_test():
         # ocr_results.save_hocr('test.hocr')
 
         # draw journal template
-        metadata = get_target_metadata(target_image)
-        image_info = get_image_info(metadata['target_path'])
-        areas = estimate_journal_template(ocr_results,image_info)
-        print(areas)
-        img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
-        cv2.imwrite('test.png',img)
+        # metadata = get_target_metadata(target_image)
+        # image_info = get_image_info(metadata['target_path'])
+        # areas = estimate_journal_template(ocr_results,image_info)
+        # print(areas)
+        # img = draw_journal_template(areas,metadata['target_path'],line_thickness=6)
+        # cv2.imwrite('test.png',img)
+
+        # draw columns
+        # target_image = remove_document_images(target_image)
+        # target_image = cv2.imread(target_image)
+        # target_image = rotate_image(target_image,auto_crop=True)
+        # crop = cut_document_margins(target_image)
+        # target_image = target_image[crop.top:crop.bottom,crop.left:crop.right]
+        # _,body,_ = segment_document(target_image.copy())
+        # target_image = target_image[body.top:body.bottom,body.left:body.right]
+        # cols = divide_columns(target_image)
+        # columns_boxes = []
+        # for image in cols:
+        #     t = OCR_Tree()
+        #     t.box = image
+        #     columns_boxes.append(t)
+
+        # img = draw_bounding_boxes(columns_boxes,target_image,draw_levels=[0])
+        # cv2.imwrite('test.png',img)
 
 
         # test bound_box_fix_image

@@ -1016,7 +1016,8 @@ class OCR_Tree:
                                     intersect_area = self_children[i].box.intersect_area_box(child.box,extend_horizontal=True)
                                     intersect_height = intersect_area.height
                                     # if intersecting with more than 70% of child, join the two
-                                    if intersect_height / child.box.height >= 0.7 or intersect_height / self_children[i].box.height >= 0.7:
+                                    if intersect_height and \
+                                        (intersect_height / child.box.height >= 0.7 or intersect_height / self_children[i].box.height >= 0.7):
                                         if self_children[i].children:
                                             self_children[i].join_trees(child,orientation=orientation)
                                         else:

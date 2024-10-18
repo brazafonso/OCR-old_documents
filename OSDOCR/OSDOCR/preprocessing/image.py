@@ -49,6 +49,9 @@ def run_waifu2x(target_image:str,method:str='autoscale',model_type:str='photo',n
     if not result_image_path:
         result_image_path = f'{consts.result_path}/{path_to_id(target_image)}/result_waifu2x.png'
 
+    # save original image
+    input_image.save(result_image_path)
+
     # autoscale
     ## discern how many times to run the model
     if method == 'autoscale':
@@ -213,7 +216,7 @@ def remove_image_blocks(image_path:str,blocks:list[Box],logs:bool=False)->cv2.Ma
 
     for block in blocks:
         # remove block
-            # creates white rectangle over the block
+        ## creates white rectangle over the block
         image = cv2.rectangle(image, (block.left, block.top), (block.right, block.bottom), average_color, -1)
 
         if logs:
