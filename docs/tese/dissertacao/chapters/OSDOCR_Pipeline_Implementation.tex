@@ -238,7 +238,13 @@ Esta funcionalidade, quando escolhida para realizar upscaling automático, é de
 
 A aplicação de OCR é recomendada para dpi no valor de 300 ou superior, sendo que para imagens antigas, esta funcionalidade é essencial.
 
-%% TODO : ilustracao de upscaling. zoom numa parte de imagem com e sem upscaling
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/upscaling_example.png}
+	\caption{Exemplo de diferença de OCR numa secção de texto sem (esquerda) e com (direita) upscaling. Upscaling realizado foi apenas de 2x, utilizando o modelo waifu2x.}
+	\label{fig:upscaling_example}
+\end{figure}
 
 
 \highlight{Remoção de ilustrações de documento}
@@ -252,11 +258,23 @@ Deste modo, aproveitou-se uma alternativa com resultados também satisfatórios 
 
 Comparando os dois, a opção de usar Leptonica é satisfatória na generalidade dos casos, até identificando com maior precisão as ilustrações (delimitando menos fundo do documento) em vários casos de estudo. Os métodos de Leptonica tendem no entanto a errar para ilustrações que não apresentem uma borda notável e tenham um fundo similar ao fundo do documento. Nestes casos, o Layout Parser é mais propício a acertar.
 
-%% TODO : ilustracao de ilustrações removidas de um documento
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/remove_images_example.png}
+	\caption{Exemplo de resultado de passo de remoção das imagens identificadas.}
+	\label{fig:remove_images_example}
+\end{figure}
+
+
 
 É também importante realçar que a pipeline, no processo de recortar as ilustrações, preenche o espaço vazio com uma média das cores de fundo da imagem. Este passo é importante pois caso contrário a binarização posterior da imagem, dependendo da distribuição das cores desta, pode resultar numa imagem inutilizável.
 
-%% TODO : ilustracao de binarizacao nos dois casos de remocao de ilustracoes
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/binarize_remove_images_example.png}
+	\caption{Resultado de binarização correspondente a diferentes preenchimentos da zona das ilustrações removidas. Esquerda: preenchido com a cor média da imagem; Meio: preenchido com branco; Direita: preenchido com preto.}
+	\label{fig:binarize_remove_images_example}
+\end{figure}
 
 \highlight{Denoising de imagem}
 
@@ -264,18 +282,27 @@ Para a realização de denoising, foi também aplicado o modelo de \textbf{waifu
 
 O denoising mais relevante é realizado na binarização realizada antes da aplicação de OCR.
 
-%% TODO : ilustracao de denoising.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/denoise_example.png}
+	\caption{Resultado de modelo de denoise do waifu2x.}
+	\label{fig:denoise_example}
+\end{figure}
+
 
 
 \highlight{Correção de iluminação}
 
-Para a correção de iluminação de documentos, também se conclui que modelos de Deep Learning são a melhor opção. A família de modelos que mostraram resultados mais interessantes foi \href{https://github.com/Fediory/HVI-CIDNet}{HVI-CIDNet}, Os pesos para estes estão disponibilizados nesse mesmo repositório.
+Para a correção de iluminação de documentos, também se conclui que modelos de Deep Learning são a melhor opção. A família de modelos que mostraram resultados mais interessantes e com instalação simples foi \href{https://github.com/Fediory/HVI-CIDNet}{HVI-CIDNet}. Os pesos para estes estão disponibilizados nesse mesmo repositório.
 
-Para imagens de maior resolução, o tempo de processamento destes modelos é considerável, sendo que como solução a pipeline apresenta uma opção para dividir a imagem em patches e correr o modelo em cada um destes, unindo-os no final. Para alguns modelos, esta divisão pode resultar em contrastes notáveis na imagem
+Para imagens de maior resolução, o tempo de processamento destes modelos é considerável, sendo que como solução a pipeline apresenta uma opção para dividir a imagem em patches e correr o modelo em cada um destes, unindo-os no final. Para alguns modelos, esta divisão pode resultar em contrastes notáveis na imagem, particularmente para imagens de maior resolução (por ser repartido em mais patches).
 
-%% TODO : ilustracao de correcao de iluminacao utilizando diferentes modelos
-
-%% TODO : ilustracao de correcao de iluminacao com e sem patches
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/fix_illumination_example.png}
+	\caption{Resultado de uso de diferentes modelos de correção de iluminação. Do lado esquerdo de cada modelo tem o resultado de uso sem divisão da imagem, e do lado direito o uso com divisão. Esta é uma imagem de resolução 1103x1612, já demonstrando para alguns modelos irregularidades no patch direito.}
+	\label{fig:fix_illumination_example}
+\end{figure}
 
 
 \section{OCR}
@@ -359,13 +386,27 @@ Esta secção é também o segundo ponto de entrada da pipeline, sendo possível
 
 
 %% clean OCR
+\highlight{Remover blocos vazios}
+
+Assumindo um valor de confiança de texto para ser vir de treshold, são removidos os blocos sem texto dos resultados. Estes são usualmente ruído que foi erradamente detetado como texto. 
+
+São exceções imagens e delimitadores, que no caso do Tesseract, são detetados como blocos vazios. Dependendo da configuração da pipeline estes são detetados de diferentes formas, como já foi descrito.
+
+
+
 \highlight{Ajustar Bounding Boxes}
 
 O primeiro bloco de ação tem como objetivo reduzir a dimensão das bounding boxes dos blocos. Isto consegue-se através do valor dado para treshold de confiança de texto. Fazendo uso deste e do método 'text\_bound\_box\_fix', faz-se uma análise dos nodos de texto dentro dos blocos e, quando ignorados os de confiança abaixo da mínima, é possível reduzir a dimensão do bloco.
 
 Esta ação é importante para diminuir possíveis interseções entre os blocos, normalmente causadas por deteções de ruído como texto. A redução destas interseções auxilia outras ações, como união de blocos ou cálculo da ordem de leitura.
 
-%% TODO : ilustracao da aplicacao do metodo com diferentes niveis de treshold para confianca de texto
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/adjust_bounding_boxes_example.png}
+	\caption{Resultado de passo de ajuste de bounding boxes utilizando diferentes valores de \textit{conf}.}
+	\label{fig:adjust_bounding_boxes_example}
+\end{figure}
 
 
 \highlight{Dividir por espaços vazios}
@@ -374,7 +415,6 @@ A ação seguinte tem o intuito de dividir texto separado por um considerável e
 
 Este bloco é conseguido usando o método 'split\_whitespaces'. Os parâmetros de confiança de texto e a razão entre o valor normal de espaço vazio e um válido de separação, são as principais influencias no desempenho deste passo.
 
-%% TODO : ilustracao da aplicacao do passo
 
 
 \highlight{Limpeza de delimitadores}
@@ -383,14 +423,18 @@ Tanto no caso de delimitadores detetados através de métodos de análise de ima
 
 Deste modo, a limpeza destes é um passo recomendado. Esta consegue-se através de um método criado para este propósito da pipeline: 'delimiters\_fix'. Este método analisa os delimitadores e, validadas certas condições, aplica limpezas, ex.: delimitador inserido completamente dentro de texto -> remove delimitador; delimitador a intersetar com texto -> ajusta bounding box do delimitador.
 
-%% TODO : ilustracao da aplicacao do passo
-
 
 \highlight{Limpeza de blocos}
 
 Segue-se o passo de limpeza geral de blocos, tratando casos de interseções, blocos vazios e blocos inseridos em outros. Para isto é usado o método 'block\_bound\_box\_fix'.
 
-%% TODO : ilustracao da aplicacao do passo
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/pipeline_clean_ocr_example.png}
+	\caption{Resultado de aplicação dos passos de limpeza (passos até agora listados) dos resultados OCR.}
+	\label{fig:pipeline_clean_ocr_example}
+\end{figure}
 
 
 %% categorizacao OCR

@@ -681,7 +681,13 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 \textbf{Algoritmo:} Para os blocos de tipo 'text', analisa os seus filhos de nível linha, verificando se poderiam ser categorizados como 'title'. Em caso positivo, utiliza a função de divisão de bloco para separar o bloco 'title' do 'text'. A operação de divisão poderá resultar em 2 blocos, caso o 'title' se encontre no início ou fim do bloco; ou 3, no caso de estar inserido no meio do bloco.
 
-%% TODO : ilustracao : exemplo de encontrar títulos no texto
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/find_titles_blocks.png}
+	\caption{Exemplo de uso de find\_text\_titles com corte vertical.}
+	\label{fig:find_titles_blocks}
+\end{figure}
 
 
 
@@ -690,13 +696,19 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 No caso de documentos de leitura não linear, como é o caso de jornais, a ordem de leitura proposta pelos motores OCR pode muitas vezes ser incorreto.
 
-%% TODO : ilustracao : ordem inicial errada de um jornal
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/journal_wrong_order_example.png}
+	\caption{Exemplo de jornal incorretamente ordenado. Do lado esquerdo está a ordenação (marcado pelas setas azuis, por sua vez ordenadas pela numeração verde) resultante de OCR (tesseract). Do lado direito está a ordenação de leitura correta.}
+	\label{fig:journal_wrong_order_example}
+\end{figure}
+
 
 Foi então desenvolvido um algoritmo geral, baseado em grafos pesados, para calcular a ordem de leitura do corpo de um jornal. Este algoritmo procura, através de um conjunto de regras sobre as características dos blocos dos resultados OCR, como por exemplo: texto inacabado, texto seguido de título; calcular a atração entre blocos de acordo com as suas características e posição relativa (similar a ordenação topológica); e posteriormente ordenar os blocos, procurando agrupar artigos. Um artigo considera-se como um grupo de blocos, em que o primeiro é um título e não pode ter mais títulos dentro do grupo, a não ser que seja diretamente a seguir ao primeiro título (complementares).
 
 Para conseguir este produto final foi então necessário criar uma estrutura de dados do tipo grafo, neste caso pesado; um método para calcular a atração entre nodos do grafo; e o algoritmo que calcula o caminho do grafo.
 
-\highlight{Estrutura de dados graph}[\normalsize]
+\highlight{Estrutura de dados Graph}[\normalsize]
 
 A estrutura de dados representante do grafo é composta pelas classes:
 
@@ -779,13 +791,17 @@ Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco a
 	\item sort\_weight : flag que indica se ordenação é apenas topológica ou usa os pesos do grafo para resolver situações de desempate
 \end{itemize}
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/calculate_reading_order_example.png}
+	\caption{Exemplo de cálculo da ordem de leitura de um jornal (exemplo não linear). Figura esquerda é a ordem original; figura direita é a ordem calculada. Realça-se que do lado esquerdo os ids são indicativos da sequência, não correspondendo ao número total de blocos devido a transformações e limpezas realizadas para um melhor resultado do cálculo da ordem.}
+	\label{fig:calculate_reading_order_example_example}
+\end{figure}
 
 
-%% TODO : ilustracao : calculo da ordem de leitura de alguns jornais
+Os resultados desta ordenação é bastante dependente da qualidade do conteúdo da OCR Tree, sendo que uma OCR Tree com texto muito disperso ou ruidoso irá ter mais chance de  gerar uma ordenação errada. 
 
-Os resultados desta ordenação é bastante dependente da qualidade do conteúdo da OCR Tree, sendo que uma OCR Tree com texto muito disperso ou ruidoso irá provavelmente gerar uma ordenação errada. 
-
-Diferentes jornais podem não ter métodos de leitura tão simples, ou que acomodem estas regras, sendo que esta metodologia não será ubíqua. 
+Diferentes jornais podem não ter métodos de leitura mais complexos, ou que não acomodem estas regras, sendo que esta metodologia não será ubíqua. 
 
 
 
@@ -807,7 +823,12 @@ Artigos podem ser descritos como um título seguido por um excerto de elementos 
 \end{itemize}
 
 
-%% TODO : ilustracao : segmentacao de jornal em artigos
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{images/ilustracoes/extract_articles_example.png}
+	\caption{Exemplo de isolamento de artigos num jornal. Foram encontrados 3 artigos pelo algoritmo, cada um identificado com uma cor única.}
+	\label{fig:extract_articles_example}
+\end{figure}
 
 Métodos para conversão da lista de artigos para texto, markdown e visualização sob uma imagem foram também desenvolvidos.
 
@@ -821,9 +842,16 @@ Um outro ponto de abordagem natural quando se trabalha com OCR, é o tratamento 
 
 Os principais problemas que se procurou abordar neste trabalho em relação ao tratamento de imagens de documento foram: correção automática de rotações do documento em relação ao texto; remoção de sombras de bainha nas bordas do documento; métodos de binarização para documentos antigos e em mau estado; segmentação de documentos, focando em jornais (divisão entre header e body, divisão de colunas); identificação de imagens/ilustrações no documento; identificação de delimitadores/linhas divisórias no documento. 
 
-Além disso, trabalho já realizado para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{cap_osdocr_toolkit_implementacao}).
+Além disso, soluções já existentes para a resolução de problemas como: upscaling, denoising e ajustes na iluminação de imagem; foi reaproveitado, embora maioritariamente para o uso na pipeline desenvolvida (\ref{cap_osdocr_pipeline_implementacao}).
 
-%% TODO : ilustracao : imagens de documentos antigos em mau estado, aplicação de alguns métodos para melhorar estado
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/image_processing_examples.png}
+	\caption{Exemplo de aplicação de métodos de processamento de imagem do toolkit.}
+	\label{fig:image_processing_examples}
+\end{figure}
+
 
 Esta secção irá abordar os métodos desenvolvidos neste sentido.
 
@@ -1085,18 +1113,24 @@ Como se pode observar na figura \ref{fig:get_delimiters_final_example}, embora o
 \highlight{Identificação de imagens no documento}
 \label{contribution_image_document_image_identification}
 
-% imagens
 
 A possibilidade de identificar e isolar elementos de imagem/ilustração em documentos é, por si só, uma ferramenta extremamente útil. Infelizmente nem todos os motores OCR identificam diretamente estes elementos como sendo imagens, por exemplo, no caso do Tesseract imagens são rodeadas com boa precisão porém, no ficheiro resultante de OCR, não é atribuído um identificador para isolar o elemento como uma imagem (de igual modo para os delimitadores). 
 
 Assim sendo, explorou-se abordagens para se obter esta informação de forma mais focada.
-Entre estas explorou-se abordagens apoiadas por Deep Learning, como é o caso de Detectron desenvolvido pela Meta, e o \href{https://layout-parser.readthedocs.io/en/latest/index.html}{Layout Parser} que surge a partir do Detectron. 
+Entre estas optou-se por soluções apoiadas por Deep Learning, como é o caso de Detectron desenvolvido pela Meta, e o \href{https://layout-parser.readthedocs.io/en/latest/index.html}{Layout Parser} que surge a partir do Detectron. Esta, embora apresente bons resultados de forma consistente, apresenta uma instalação complexa.
+
 Uma solução mais simples em termos de dependências/instalação e computação é o uso de um método de segmentação de página disponibilizado pela biblioteca Leptonica (\href{https://tpgit.github.io/Leptonica/livre__pageseg_8c_source.html}{método de segmentação}). 
 Este método identifica, através de múltiplas aplicações de morfologias, bounding boxes para zonas previstas de texto e imagem.
 O código original foi apenas levemente modificado para alterar o destino do output.
 
 
-%% TODO : ilustracao de imagens identificadas
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/identify_images_example.png}
+	\caption{Exemplo de identificação de ilustrações em jornais com diferentes características.}
+	\label{fig:identify_images_example}
+\end{figure}
+
 
 \highlight{identify\_document\_images}[\normalsize]
 
@@ -1133,7 +1167,12 @@ Para este propósito, foram desenvolvidos métodos para identificação de colun
 Similar ao utilizado para a deteção de colunas através dos blocos de resultado de OCR, porém a análise de frequências é sobre a distribuição de pixeis invés das margens dos blocos.
 
 
-%% TODO : ilustracao de divisao de documento em colunas
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/divide_columns_example.png}
+	\caption{Exemplo de uso de divide\_columns numa página de jornal.}
+	\label{fig:divide_columns_example}
+\end{figure}
 
 
 \highlight{segment\_document}[\normalsize]
@@ -1162,7 +1201,12 @@ O footer é assinalado por um delimitador horizontal que segue a seguinte regra:
 $delimiter.bottom \geq 0.7*image.shape[0] \wedge delimiter.width \geq 0.4*image.shape[1]$
 
 
-%% TODO : ilustracao de divisao de documento em segmentos
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{images/ilustracoes/segment_document_example.png}
+	\caption{Exemplo de uso de segment\_document em um jornal. Header encontrado está desenhado a vermelho; o Body foi desenhado a azul.}
+	\label{fig:segment_document_example}
+\end{figure}
 
 
 

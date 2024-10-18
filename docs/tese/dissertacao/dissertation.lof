@@ -30,19 +30,34 @@
 \contentsline {figure}{\numberline {23}{\ignorespaces Divisão de bloco para separar título do texto (aplicou-se também um ajuste de bounding boxes para acentuar a diferença).}}{68}{figure.caption.37}%
 \contentsline {figure}{\numberline {24}{\ignorespaces Exemplo de uso de split\_block com corte horizontal.}}{71}{figure.caption.38}%
 \contentsline {figure}{\numberline {25}{\ignorespaces Exemplo de uso de split\_block com corte vertical.}}{71}{figure.caption.39}%
-\contentsline {figure}{\numberline {26}{\ignorespaces Variação dos resultados de OCR em diferentes níveis de rotação de texto.}}{76}{figure.caption.40}%
-\contentsline {figure}{\numberline {27}{\ignorespaces Exemplo de aplicação do algoritmo. \textbf {1ª} imagem representa a imagem do documento original. \textbf {2ª} imagem representa a identificação dos pixeis á esquerda no documento. \textbf {3ª} apresenta os 3 maiores sets de cada tipo: set de pixeis com mesmo x (azul); set de pixeis counter-clockwise (verde); set de pixeis clockwise (vermelho). \textbf {4ª} mostra o ângulo de rotação calculado a partir do maior set. \textbf {5ª} tem a imagem corrigida.}}{77}{figure.caption.41}%
-\contentsline {figure}{\numberline {28}{\ignorespaces Exemplo de documento com inclinação de texto e sombra de bainha.}}{78}{figure.caption.42}%
-\contentsline {figure}{\numberline {29}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local sem ruído muito acentuado.}}{80}{figure.caption.43}%
-\contentsline {figure}{\numberline {30}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local com muito ruído.}}{80}{figure.caption.44}%
-\contentsline {figure}{\numberline {31}{\ignorespaces Página de jornal com delimitadores identificados (a vermelho).}}{82}{figure.caption.45}%
-\contentsline {figure}{\numberline {32}{\ignorespaces Resultados de identificação de linhas verticais e horizontais.}}{84}{figure.caption.46}%
-\contentsline {figure}{\numberline {33}{\ignorespaces Resultados de identificação de delimitadores, aplicados métodos de redução.}}{85}{figure.caption.47}%
+\contentsline {figure}{\numberline {26}{\ignorespaces Exemplo de uso de find\_text\_titles com corte vertical.}}{72}{figure.caption.40}%
+\contentsline {figure}{\numberline {27}{\ignorespaces Exemplo de jornal incorretamente ordenado. Do lado esquerdo está a ordenação (marcado pelas setas azuis, por sua vez ordenadas pela numeração verde) resultante de OCR (tesseract). Do lado direito está a ordenação de leitura correta.}}{73}{figure.caption.41}%
+\contentsline {figure}{\numberline {28}{\ignorespaces Exemplo de cálculo da ordem de leitura de um jornal (exemplo não linear). Figura esquerda é a ordem original; figura direita é a ordem calculada. Realça-se que do lado esquerdo os ids são indicativos da sequência, não correspondendo ao número total de blocos devido a transformações e limpezas realizadas para um melhor resultado do cálculo da ordem.}}{76}{figure.caption.42}%
+\contentsline {figure}{\numberline {29}{\ignorespaces Exemplo de isolamento de artigos num jornal. Foram encontrados 3 artigos pelo algoritmo, cada um identificado com uma cor única.}}{77}{figure.caption.43}%
+\contentsline {figure}{\numberline {30}{\ignorespaces Exemplo de aplicação de métodos de processamento de imagem do toolkit.}}{78}{figure.caption.44}%
+\contentsline {figure}{\numberline {31}{\ignorespaces Variação dos resultados de OCR em diferentes níveis de rotação de texto.}}{79}{figure.caption.45}%
+\contentsline {figure}{\numberline {32}{\ignorespaces Exemplo de aplicação do algoritmo. \textbf {1ª} imagem representa a imagem do documento original. \textbf {2ª} imagem representa a identificação dos pixeis á esquerda no documento. \textbf {3ª} apresenta os 3 maiores sets de cada tipo: set de pixeis com mesmo x (azul); set de pixeis counter-clockwise (verde); set de pixeis clockwise (vermelho). \textbf {4ª} mostra o ângulo de rotação calculado a partir do maior set. \textbf {5ª} tem a imagem corrigida.}}{80}{figure.caption.46}%
+\contentsline {figure}{\numberline {33}{\ignorespaces Exemplo de documento com inclinação de texto e sombra de bainha.}}{81}{figure.caption.47}%
+\contentsline {figure}{\numberline {34}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local sem ruído muito acentuado.}}{83}{figure.caption.48}%
+\contentsline {figure}{\numberline {35}{\ignorespaces Exemplo de resultado de OCR com diferentes binarizações em local com muito ruído.}}{83}{figure.caption.49}%
+\contentsline {figure}{\numberline {36}{\ignorespaces Página de jornal com delimitadores identificados (a vermelho).}}{85}{figure.caption.50}%
+\contentsline {figure}{\numberline {37}{\ignorespaces Resultados de identificação de linhas verticais e horizontais.}}{87}{figure.caption.51}%
+\contentsline {figure}{\numberline {38}{\ignorespaces Resultados de identificação de delimitadores, aplicados métodos de redução.}}{88}{figure.caption.52}%
+\contentsline {figure}{\numberline {39}{\ignorespaces Exemplo de identificação de ilustrações em jornais com diferentes características.}}{89}{figure.caption.53}%
+\contentsline {figure}{\numberline {40}{\ignorespaces Exemplo de uso de divide\_columns numa página de jornal.}}{90}{figure.caption.54}%
+\contentsline {figure}{\numberline {41}{\ignorespaces Exemplo de uso de segment\_document em um jornal. Header encontrado está desenhado a vermelho; o Body foi desenhado a azul.}}{91}{figure.caption.55}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {34}{\ignorespaces Pipeline - secção pré-processamento}}{93}{figure.caption.48}%
-\contentsline {figure}{\numberline {35}{\ignorespaces Pipeline - secção OCR}}{95}{figure.caption.49}%
-\contentsline {figure}{\numberline {36}{\ignorespaces Pipeline - secção pós-processamento}}{97}{figure.caption.50}%
-\contentsline {figure}{\numberline {37}{\ignorespaces Pipeline - secção output}}{99}{figure.caption.51}%
+\contentsline {figure}{\numberline {42}{\ignorespaces Pipeline - secção pré-processamento}}{98}{figure.caption.56}%
+\contentsline {figure}{\numberline {43}{\ignorespaces Exemplo de diferença de OCR numa secção de texto sem (esquerda) e com (direita) upscaling. Upscaling realizado foi apenas de 2x, utilizando o modelo waifu2x.}}{99}{figure.caption.57}%
+\contentsline {figure}{\numberline {44}{\ignorespaces Exemplo de resultado de passo de remoção das imagens identificadas.}}{100}{figure.caption.58}%
+\contentsline {figure}{\numberline {45}{\ignorespaces Resultado de binarização correspondente a diferentes preenchimentos da zona das ilustrações removidas. Esquerda: preenchido com a cor média da imagem; Meio: preenchido com branco; Direita: preenchido com preto.}}{101}{figure.caption.59}%
+\contentsline {figure}{\numberline {46}{\ignorespaces Resultado de modelo de denoise do waifu2x.}}{101}{figure.caption.60}%
+\contentsline {figure}{\numberline {47}{\ignorespaces Resultado de uso de diferentes modelos de correção de iluminação. Do lado esquerdo de cada modelo tem o resultado de uso sem divisão da imagem, e do lado direito o uso com divisão. Esta é uma imagem de resolução 1103x1612, já demonstrando para alguns modelos irregularidades no patch direito.}}{102}{figure.caption.61}%
+\contentsline {figure}{\numberline {48}{\ignorespaces Pipeline - secção OCR}}{102}{figure.caption.62}%
+\contentsline {figure}{\numberline {49}{\ignorespaces Pipeline - secção pós-processamento}}{104}{figure.caption.63}%
+\contentsline {figure}{\numberline {50}{\ignorespaces Resultado de passo de ajuste de bounding boxes utilizando diferentes valores de \textit {conf}.}}{105}{figure.caption.64}%
+\contentsline {figure}{\numberline {51}{\ignorespaces Resultado de aplicação dos passos de limpeza (passos até agora listados) dos resultados OCR.}}{106}{figure.caption.65}%
+\contentsline {figure}{\numberline {52}{\ignorespaces Pipeline - secção output}}{107}{figure.caption.66}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
