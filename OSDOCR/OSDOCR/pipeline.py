@@ -1006,7 +1006,7 @@ def run_target(target:str,args:argparse.Namespace):
     target = metadata['target_path']
 
     # id boxes
-    ocr_results.id_boxes([2])
+    ocr_results.id_boxes([2],override=False)
 
     if args.debug:
         id_img = draw_bounding_boxes(ocr_results,target,[2],id=True)

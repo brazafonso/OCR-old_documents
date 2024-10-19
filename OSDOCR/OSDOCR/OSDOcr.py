@@ -28,12 +28,12 @@ def run_test():
     print('test','target_image',target_image)
     if target_image:
         # test unite blocks
-        # ocr_results_path = f'{consts.result_path}/{path_to_id(target_image)}/processed/result_united.json'
-        # print('test','ocr_results_path',ocr_results_path)
-        # ocr_results = OCR_Tree(ocr_results_path)
+        ocr_results_path = f'/home/braz/projetos/OCR-old_documents/results/2-1______88a3d1a9c2e7707cb70e8f9afa569005/processed/find_titles.json'
+        print('test','ocr_results_path',ocr_results_path)
+        ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
         # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
-        # get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True)
+        print(get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True))
         #get_columns(ocr_results,method='savgol_filter',logs=True)
         # get_columns(ocr_results,method='WhittakerSmoother',logs=True)
         # get_columns_pixels(target_image,method='WhittakerSmoother',logs=True)
@@ -74,13 +74,13 @@ def run_test():
         # cv2.imwrite('test.png',img)
 
         # run fix illumination
-        models = ['best_SSIM','best_PSNR','LOL-Blur','SICE','SID','w_perc']
-        for i in range(len(models)):
-            model = models[i]
-            img = fix_illumination(target_image,model_weight=model)
-            cv2.imwrite(f'test_{model}_patch.png',img)
-            img = fix_illumination(target_image,model_weight=model,split_image=False)
-            cv2.imwrite(f'test_{model}_nopatch.png',img)
+        # models = ['best_SSIM','best_PSNR','LOL-Blur','SICE','SID','w_perc']
+        # for i in range(len(models)):
+        #     model = models[i]
+        #     img = fix_illumination(target_image,model_weight=model)
+        #     cv2.imwrite(f'test_{model}_patch.png',img)
+        #     img = fix_illumination(target_image,model_weight=model,split_image=False)
+        #     cv2.imwrite(f'test_{model}_nopatch.png',img)
 
         # tesseract to hocr
         # from pytesseract import pytesseract

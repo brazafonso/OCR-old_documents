@@ -653,7 +653,7 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
 
 
 def remove_solo_words(ocr_results:OCR_Tree,conf:int=10,debug:bool=False)->OCR_Tree:
-    '''Remove boxes with single words that are inside of other boxes. Bloxes need to be IDed and typed before calling this function.'''
+    '''Remove boxes with single words that are inside of other boxes.'''
 
     blocks = ocr_results.get_boxes_level(2)
 

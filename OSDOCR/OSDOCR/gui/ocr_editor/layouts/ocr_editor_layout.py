@@ -176,9 +176,12 @@ def ocr_editor_layout()->sg.Window:
                 place(
                 sg.Frame('',layout=[
                         [
-                            sg.Canvas(key='canvas',size=(600,800),expand_x=True,expand_y=True)
+                            sg.Canvas(key='canvas',size=(1,1),expand_x=True,expand_y=True)
                         ],
-                    ]
+                    ],key='canvas_frame',
+                    element_justification='center',
+                    pad=(0,0),
+                    border_width=0
                     )
                 )
             ]
@@ -347,6 +350,10 @@ def ocr_editor_layout()->sg.Window:
                                size=(32,10),auto_size_text=True,autoscroll=True, font=('Calibri', 11)))
         ],
         [
+            place(sg.Text('Mean height:', font=('Calibri', 13))),
+            place(sg.Text('',key='text_mean_height', font=('Calibri', 13))),
+        ],
+        [
             place(sg.Text('Avg. Conf:', font=('Calibri', 13))),
             place(sg.Text('',key='text_avg_conf', font=('Calibri', 13))),
         ],
@@ -509,7 +516,9 @@ def ocr_editor_layout()->sg.Window:
         [
             sg.Column(canvas_body,scrollable=True,
                       expand_x=True,expand_y=True,right_click_menu=context_menu,
-                      size=column_2_size,key='body_canvas'),
+                      size=column_2_size,key='body_canvas',justification='center',
+                      element_justification='c',
+                      pad=(0,0)),
         ],
     ]
 
@@ -531,7 +540,8 @@ def ocr_editor_layout()->sg.Window:
 
             sg.VerticalSeparator(),
 
-            sg.Column(canvas,vertical_alignment='top',expand_x=True,expand_y=True),
+            sg.Column(canvas,vertical_alignment='top',expand_x=True,expand_y=True,
+                      element_justification='c',justification='center'),
 
             sg.VerticalSeparator(),
 
@@ -555,6 +565,7 @@ def ocr_editor_layout()->sg.Window:
                        grab_anywhere_using_control=False
                        )
     window.bind('<Configure>',"Event")
+    window['body_canvas'].expand(True,True,True)
     return window
 
 

@@ -570,9 +570,13 @@ class OCR_Tree:
         if only_type:
             return self.type in ['delimiter']
         
-        if self.type in ['delimiter'] or (self.level == 2 and self.is_empty(conf)):
+        if self.type in ['delimiter']:
+            return True
+    
+        elif (self.level == 2 and self.is_empty(conf)):
             if self.box.width >= self.box.height*4 or self.box.height >= self.box.width*4:
                 return True
+            
         return False
     
     def is_image(self,conf:int=0,text_size:int=0,only_type:bool=False)->bool:

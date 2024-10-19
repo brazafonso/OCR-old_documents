@@ -35,7 +35,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
     line_sizes = []
     # save line sizes
     for line in lines:
-        if not line.is_empty(conf=conf) and not line.is_vertical_text(conf=conf):
+        if not line.is_empty(conf=conf,only_text=True) and not line.is_vertical_text(conf=conf):
             lmh = line.calculate_mean_height(level=5,conf=conf)
             lmh = round(lmh)
             if len(line_sizes) <= lmh:
@@ -44,6 +44,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
             words = [w for w in words if w.text.strip()]
             # frequency is weighted by number of words in the line
             line_sizes[lmh] += 1 + len(words)
+
 
     if line_sizes:
 
@@ -89,6 +90,7 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
         
 
         text_sizes['normal_text_size'] = max(sizes,key=sizes.get)
+
         
         # categorize greater and smaller other text sizes
         lower_peaks = {k:v for k,v in sizes.items() if k < text_sizes['normal_text_size']}
@@ -104,6 +106,10 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
             text_sizes[f'big_text_size_{i}'] = max(higher_peaks,key=higher_peaks.get)
             del higher_peaks[text_sizes[f'big_text_size_{i}']]
             i += 1
+
+        # remove padding
+        padding = round(len(line_sizes)*0.1)
+        text_sizes = {k:v - padding for k,v in text_sizes.items() if v > 0}
         
     return text_sizes
 
@@ -1088,19 +1094,33 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
     # non empty block
     else:
         block_text_size = target_block.calculate_mean_height(level=5,conf=conf)
-        block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,level=5,conf=conf,range=0.1)
+        block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
+                                                       level=5,conf=conf,range=0.1)
+        title_range = not target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
+                                                       level=5,conf=conf,range=0.3)
         blocks_directly_above = target_block.boxes_directly_above(blocks)
 
         if debug:
             print('Block:',target_block.id,'| Text size:',block_text_size)
 
-        if block_is_text_size or target_block.is_vertical_text(conf=conf):
-            # text block
+        if block_is_text_size :
+            if not len([b for b in blocks_directly_above if b.is_image(conf=conf)]):
+                # text block
+                block_type = 'text'
+                if debug:
+                    print('Text block:',target_block.id,f'| Is vertical: {target_block.is_vertical_text(conf=conf)} | Is text size: {block_is_text_size}')
+            else:
+                # caption block
+                block_type = 'caption'
+                if debug:
+                    print('Caption block:',target_block.id,'| Has image above')
+        # vertical text
+        elif target_block.is_vertical_text(conf=conf):
             block_type = 'text'
             if debug:
-                print('Text block:',target_block.id,f'| Is vertical: {target_block.is_vertical_text(conf=conf)} | Is text size: {block_is_text_size}')
+                print('Text block:',target_block.id,f'| Is vertical: True')
         # greater than normal text size
-        elif block_text_size > block_analysis['normal_text_size']:
+        elif block_text_size > block_analysis['normal_text_size'] and title_range:
             words = target_block.get_boxes_level(5,conf=conf)
             words = [w for w in words if w.text.strip()]
             # title block
@@ -1116,7 +1136,8 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
                     print('Hihghlight block:',target_block.id,'| Too many words:',len(words))
 
         # smaller than normal text size and has image or caption directly above
-        elif block_text_size < block_analysis['normal_text_size'] and len([b for b in blocks_directly_above if b.is_image(conf=conf) or b.attribute_is_value('type','caption')]) > 0:
+        elif block_text_size < block_analysis['normal_text_size'] and \
+            len([b for b in blocks_directly_above if b.is_image(conf=conf) or b.attribute_is_value('type','caption')]) > 0:
             # caption block
             block_type = 'caption'
             if debug:
@@ -1126,16 +1147,20 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
         # text characteristics
         block_text = target_block.to_text(conf=conf).strip()
         # if first character is not uppercase or start of dialogue, not starts text
-        if block_text and re.match(r'[a-z]',block_text) and not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text):
+        if block_text and \
+            (re.search(r'[a-z]',block_text) and not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text)):
             target_block.start_text = False
         else:
             target_block.start_text = True
 
         # if last character is punctuation, ends text
-        if block_text[-1] in ['.','!','?','"','\''] or not re.match(r'[a-z]',block_text):
+        if block_text and (re.search(r'(\.|!|\?|"|\')\s*$',block_text) or not re.search(r'[a-z]',block_text)):
             target_block.end_text = True
         else:
             target_block.end_text = False
+
+        if debug:
+            print('Block:',target_block.id,'| Start text:',target_block.start_text,'| End text:',target_block.end_text)
 
     if not block_type:
         if not target_block.is_empty(conf=conf):
@@ -1316,6 +1341,10 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
         if log:
             print('Narrowing parents')
         topologic_graph.narrow_parents()
+    
+    if debug:
+        print('Topologic graph:')
+        topologic_graph.self_print()
 
     order_list = []
     last_node = None
@@ -1326,10 +1355,19 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
         next_node = []
         potential_next_nodes = []
         check_weight = sort_weight
+
+        if debug:
+            print('Order list:',order_list)
+            if last_node:
+                print('Last node:',last_node.id)
+
         if last_node:
             potential_next_nodes = [edge.target for edge in last_node.children_edges \
-                                    if edge.target.id not in order_list and not last_node.is_connected(edge.target.id,only_parents=True)]
+                                    if edge.target.id not in order_list ]
         
+        if debug:
+            print('Potential next nodes:',[node.id for node in potential_next_nodes])
+
         if not potential_next_nodes:
             # apply filter if given
             if next_node_filter:
@@ -1340,6 +1378,8 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
                 potential_next_nodes = [n for n in topologic_graph.nodes if n.id not in order_list]
 
                 
+        if debug:
+            print('Potential next nodes:',[node.id for node in potential_next_nodes])
 
         # get valid next blocks
         for node in potential_next_nodes:
@@ -1355,6 +1395,9 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
                             break
                 if valid:
                     next_node.append(potential_next_node)
+
+        if debug:
+            print('Valid next nodes:',[node.id for node in next_node])
 
 
         # if more than one block, choose block with greatest attraction
@@ -1493,9 +1536,9 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     if debug:
         print('Top blocks:',[b.id for b in top_blocks])
 
-    if (direction in ['below','right'] and child) or (direction in ['above','left'] and not child):
+    if (direction in ['below','right']) or (direction in ['above','left']):
         attraction += 20
-    elif direction in ['above','right'] and child and len(below_blocks) == 0:
+    elif direction in ['above','right'] and len(below_blocks) == 0:
         attraction += 20
         
     if debug:
@@ -1526,8 +1569,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 print('Leftmost block is target block','Attraction:',attraction)
 
         # delimiters
-        below_delimiters = [b for b in below_blocks if b.type == 'delimiter' and\
-                                b.box.get_box_orientation() == 'horizontal']
+        below_delimiters = [b for b in below_blocks if b.type == 'delimiter']
         
         if len(below_delimiters) > 0 and block_area > 0:
             widest_delimiter = max(below_delimiters,key=lambda x: x.box.width)
@@ -1547,8 +1589,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     if right_blocks:
 
         # delimiters
-        right_delimiters = [b for b in right_blocks if b.type == 'delimiter' and\
-                                b.box.get_box_orientation() == 'vertical']
+        right_delimiters = [b for b in right_blocks if b.type == 'delimiter']
         
         if len(right_delimiters) > 0 and block_area > 0:
             widest_delimiter = max(right_delimiters,key=lambda x: x.box.height)
@@ -1575,12 +1616,14 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     elif direction == 'right' or direction == 'left':
         intersection_area = target_block.box.intersect_area_box(block.box,extend_horizontal=True)
 
-    if intersection_area and block_area > 0:
+    target_block_area = target_block.box.area()
+    if intersection_area and target_block_area > 0:
         intersection_area_area = intersection_area.area()
-        attraction += round(20*(intersection_area_area/block_area))
+        ratio = 1 if intersection_area_area >= target_block_area else intersection_area_area/target_block_area
+        attraction += round(20*ratio)
 
         if debug:
-            print('Block intersects target block','Attraction:',attraction)
+            print('Block encompasses target block','Attraction:',attraction)
 
     if below_blocks:
         if target_block in below_blocks:
@@ -1599,18 +1642,36 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             for below_block in below_blocks:
                 if below_block != target_block and below_block.box.within_horizontal_boxes(block.box,range=0.3,only_self=True) and\
                         below_block.box.within_horizontal_boxes(target_block.box,range=0.3,only_self=True):
-                    attraction += 30
+                    attraction += 20
                     if debug:
                         print('Below block encompasses block and target','Attraction:',attraction)
+
+                    # shared child
+                    blocks_above_encopassing_block = below_block.boxes_directly_above(blocks)
+                    if blocks_above_encopassing_block and \
+                        len([b for b in blocks_above_encopassing_block if b.id in [block.id,target_block.id]]) == 2:
+                        attraction += 20
+                        if debug:
+                            print('Block and target block share child','Attraction:',attraction)
                     break
         # top block encompasses both block and target, more attraction
         if top_blocks:
             for top_block in top_blocks:
                 if top_block != target_block and top_block.box.within_horizontal_boxes(block.box,range=0.3,only_self=True) and\
                         top_block.box.within_horizontal_boxes(target_block.box,range=0.3,only_self=True):
-                    attraction += 30
+                    attraction += 20
                     if debug:
                         print('Top block encompasses block and target','Attraction:',attraction)
+
+                    # shared parent
+                    blocks_below_encopassing_block = top_block.boxes_directly_below(blocks)
+                    if blocks_below_encopassing_block and \
+                        len([b for b in blocks_below_encopassing_block if b.id in [block.id,target_block.id]]) == 2:
+                        attraction += 20
+                        if debug:
+                            print('Block and target block share parent','Attraction:',attraction)
+
+
                     break
 
 
@@ -1664,6 +1725,10 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 attraction += 50
                 if debug:
                     print('Block text is not finished and target block text is not started','Attraction:',attraction)
+            elif block.end_text == True and target_block.start_text == True:
+                attraction += 10
+                if debug:
+                    print('Block text is finished and target block text is started','Attraction:',attraction)
 
             if direction == 'below':
                 if debug:

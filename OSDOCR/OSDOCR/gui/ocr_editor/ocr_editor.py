@@ -34,7 +34,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_fix import find_text_titles, split_block,\
                                                 text_bound_box_fix,remove_empty_boxes,\
                                                 unite_blocks,bound_box_fix_image,delimiters_fix
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import categorize_boxes, extract_articles,\
-                                                     order_ocr_tree
+                                                     order_ocr_tree,get_text_sizes
 from OSDOCR.output_module.text import fix_hifenization
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -176,6 +176,7 @@ def choose_window_image_input(values:dict):
         clean_ocr_result_cache()
     
     update_canvas_image(window,values)
+    update_canvas_column(window)
     print('Chose target image')
 
 
@@ -255,12 +256,18 @@ def update_canvas_column(window:sg.Window):
     '''Update canvas column. Uses TKinter canvas for performance'''
     global figure_canvas_agg
     print('Update canvas column')
-    canvas = window['body_canvas'].Widget.canvas
+    canvas_body = window['body_canvas'].Widget.canvas
     w,h = figure_canvas_agg.get_width_height()
     # add some padding
     w += 50
     h += 50
-    canvas.config(scrollregion=(0,0,w,h)) 
+    canvas_body.config(scrollregion=(0,0,w,h))
+    # alter padding to 'canvas_frame' to center of 'body_canvas'
+    canvas_frame = window['canvas_frame'].Widget
+    canvas = window['canvas'].Widget
+    canvas.update_idletasks()
+    pad_x = int((canvas_body.winfo_width()/2 - canvas.winfo_reqwidth()/2))
+    canvas_frame.config(padx=pad_x)
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
@@ -312,6 +319,8 @@ def sidebar_update_block_info():
         window['input_block_text'].update(block_text)
         ### bring scroll to top
         window['input_block_text'].Widget.see('1.0')
+        avg_height = block.calculate_mean_height(level=5,conf=text_confidence)
+        window['text_mean_height'].update(avg_height)
         ## avg conf
         total_conf,total_blocks = block.conf_sum(level=5)
         avg_conf = round(total_conf/total_blocks) if total_blocks > 0 else 0
@@ -572,7 +581,6 @@ def update_canvas_image(window:sg.Window,values:dict):
         window['browse_file'].InitialFolder = browse_file_initial_folder
         # update browse location for 'target_input'
         window['browse_image'].InitialFolder = os.path.dirname(path)
-
         # update user configs
         update_config_user_settings()
 
@@ -1638,6 +1646,10 @@ def apply_ocr_block():
                                        config['base']['text_confidence'])
         
         new_page = ocr_results.get_boxes_level(1)[0]
+        # if upscaled, scale dimensions
+        if config['ocr_pipeline']['upscaling_image'] != 'none':
+            new_page.scale_dimensions(scale_width=0.5,scale_height=0.5)
+
         new_box = new_page.box
         ## move ocr results to position of ocr block
         move_top = box.top - new_box.top - padding
@@ -2724,7 +2736,8 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
         update_canvas_ocr_results(window,values)
         if current_ocr_results:
             add_ocr_result_cache(current_ocr_results)
-            update_canvas_column(window)
+
+        update_canvas_column(window)
 
     # get collapsible sections, and status
     ## elements with key '-collapsible_*-'
