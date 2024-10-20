@@ -57,8 +57,30 @@
 \contentsline {figure}{\numberline {49}{\ignorespaces Pipeline - secção pós-processamento}}{104}{figure.caption.63}%
 \contentsline {figure}{\numberline {50}{\ignorespaces Resultado de passo de ajuste de bounding boxes utilizando diferentes valores de \textit {conf}.}}{105}{figure.caption.64}%
 \contentsline {figure}{\numberline {51}{\ignorespaces Resultado de aplicação dos passos de limpeza (passos até agora listados) dos resultados OCR.}}{106}{figure.caption.65}%
-\contentsline {figure}{\numberline {52}{\ignorespaces Pipeline - secção output}}{107}{figure.caption.66}%
+\contentsline {figure}{\numberline {52}{\ignorespaces Resultado de aplicação do passo de categorização de blocos.}}{106}{figure.caption.66}%
+\contentsline {figure}{\numberline {53}{\ignorespaces Resultado final de pós processamento dos resultados de OCR.}}{107}{figure.caption.67}%
+\contentsline {figure}{\numberline {54}{\ignorespaces Pipeline - secção output}}{108}{figure.caption.68}%
+\contentsline {figure}{\numberline {55}{\ignorespaces Resultado de cálculo da ordem de leitura.}}{108}{figure.caption.69}%
+\contentsline {figure}{\numberline {56}{\ignorespaces Resultado de isolamento de artigos.}}{109}{figure.caption.70}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {57}{\ignorespaces OCR Editor: escolha de inputs. 1 - Input de imagem. 2 - Input de ficheiro OCR Tree}}{113}{figure.caption.71}%
+\contentsline {figure}{\numberline {58}{\ignorespaces OCR Editor: seleção de blocos}}{114}{figure.caption.72}%
+\contentsline {figure}{\numberline {59}{\ignorespaces OCR Editor: mover blocos}}{114}{figure.caption.73}%
+\contentsline {figure}{\numberline {60}{\ignorespaces OCR Editor: redimensionar bloco}}{114}{figure.caption.74}%
+\contentsline {figure}{\numberline {61}{\ignorespaces OCR Editor: atualizar bloco. 1 - Selecionar bloco. 2 - Modificar dados do bloco. 3 - Guardar alterações.}}{115}{figure.caption.75}%
+\contentsline {figure}{\numberline {62}{\ignorespaces OCR Editor: criar novo bloco. 1 - Ferramenta para criar novo bloco (ID 110).}}{115}{figure.caption.76}%
+\contentsline {figure}{\numberline {63}{\ignorespaces OCR Editor: eliminar bloco. 1 - Selecionar bloco. 2 - Eliminar bloco.}}{116}{figure.caption.77}%
+\contentsline {figure}{\numberline {64}{\ignorespaces OCR Editor: aplicar OCR. 1 - Selecionar bloco. 2 - Aplicar OCR. Resultado em cima - bloco único. Resultado em baixo - blocos resultantes.}}{117}{figure.caption.78}%
+\contentsline {figure}{\numberline {65}{\ignorespaces OCR Editor: divisão de bloco.}}{118}{figure.caption.79}%
+\contentsline {figure}{\numberline {66}{\ignorespaces OCR Editor: junção de bloco.}}{119}{figure.caption.80}%
+\contentsline {figure}{\numberline {67}{\ignorespaces OCR Editor: junção de bloco, texto intercalado. Neste exemplo foi removida a palavra "José" do bloco, e criado um novo bloco com essa mesma palavra; posicionou-se o novo bloco na posição pretendida; juntou-se os blocos.}}{119}{figure.caption.81}%
+\contentsline {figure}{\numberline {68}{\ignorespaces OCR Editor: categorização de blocos.}}{120}{figure.caption.82}%
+\contentsline {figure}{\numberline {69}{\ignorespaces OCR Editor: ordenação de blocos.}}{121}{figure.caption.83}%
+\contentsline {figure}{\numberline {70}{\ignorespaces OCR Editor: manipulação de artigos.}}{122}{figure.caption.84}%
+\contentsline {figure}{\numberline {71}{\ignorespaces OCR Editor: divisão de imagem.}}{123}{figure.caption.85}%
+\contentsline {figure}{\numberline {72}{\ignorespaces OCR Editor: output.}}{124}{figure.caption.86}%
+\contentsline {figure}{\numberline {73}{\ignorespaces OCR Editor: operações adicionais.}}{126}{figure.caption.87}%
+\contentsline {figure}{\numberline {74}{\ignorespaces OCR Editor: janela de configurações.}}{127}{figure.caption.88}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

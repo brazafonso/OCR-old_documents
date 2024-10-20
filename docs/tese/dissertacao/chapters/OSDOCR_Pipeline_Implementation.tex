@@ -440,10 +440,15 @@ Segue-se o passo de limpeza geral de blocos, tratando casos de interseções, bl
 %% categorizacao OCR
 \highlight{Categorização de blocos}
 
-O passo de categorização de blocos é essencial para as ações posteriores de união de blocos, procura por títulos e cálculos de atração entre blocos. Não sendo uma ação impactante da OCR Tree, apenas atualizando o atributo 'type', este é um bloco obrigatória na pipeline.
+O passo de categorização de blocos é essencial para as ações posteriores de união de blocos, procura por títulos e cálculos de atração entre blocos. Não sendo uma ação impactante da OCR Tree, apenas atualizando o atributo 'type'. Este é um passo obrigatória na pipeline.
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.3\textwidth]{images/ilustracoes/pipeline_categorize_ocr_example.png}
+	\caption{Resultado de aplicação do passo de categorização de blocos.}
+	\label{fig:pipeline_categorize_ocr_example}
+\end{figure}
 
-%% TODO : ilustracao da aplicacao do passo
 
 
 %% Uniao OCR
@@ -453,7 +458,6 @@ A união de blocos auxilia o passo de cálculo da ordem de leitura, e realiza um
 
 A união de blocos pode realçar posição relativa entre estes e outros que anteriormente não eram expressas, potencializando o cálculo da atração entre blocos.
 
-%% TODO : ilustracao da aplicacao do passo
 
 
 %% Find titles
@@ -466,7 +470,13 @@ Tal permitirá em passos seguintes, de isolamento dos artigos, a identificação
 
 No caso de serem detetados novos títulos, o método 'find\_text\_titles' irá dividir o bloco de texto, gerando o novo bloco título e 1 a 2 (dependendo da posição relativa do título) blocos texto.
 
-%% TODO : ilustracao da aplicacao do passo
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.3\textwidth]{images/ilustracoes/pipeline_final_example.png}
+	\caption{Resultado final de pós processamento dos resultados de OCR.}
+	\label{fig:pipeline_final_example}
+\end{figure}
+
 
 
 \section{Geração de output}
@@ -479,7 +489,7 @@ Os formatos para output final disponíveis são: texto simples; markdown.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1\textwidth]{images/diagramas/arquitetura_pipeline_output.png}
+	\includegraphics[width=0.8\textwidth]{images/diagramas/arquitetura_pipeline_output.png}
 	\caption{Pipeline - secção output}
 	\label{fig:arquitetura_pipeline_output}
 \end{figure}
@@ -497,8 +507,13 @@ Os formatos para output final disponíveis são: texto simples; markdown.
 
 O bloco de cálculo da ordem de leitura pretende, através do cálculo de atração entre blocos - que dependem das características dos blocos assim como posições relativas - do corpo do documento, e de uma ordenação topológica pesada, gerar uma ordenação mais próxima da intendida do que originalmente decidida pelo motor OCR. Como explicitado anteriormente, os algoritmos desenhados têm um foco na ordenação de jornais.
 
-%% TODO : ilustracao da aplicacao do passo
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.3\textwidth]{images/ilustracoes/pipeline_calculate_reading_order_example.png}
+	\caption{Resultado de cálculo da ordem de leitura.}
+	\label{fig:pipeline_calculate_reading_order_example}
+\end{figure}
 
 \highlight{Isolamento de artigos}
 
@@ -507,7 +522,22 @@ O passo de isolamento de artigos procura, dentro da lista de blocos ordenados, s
 
 O resultado final será uma lista de listas OCR Tree do nível bloco, i.e. uma lista de artigos.
 
-%% TODO : ilustracao da aplicacao do passo
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.3\textwidth]{images/ilustracoes/pipeline_isolate_articles_example.png}
+	\caption{Resultado de isolamento de artigos.}
+	\label{fig:pipeline_isolate_articles_example}
+\end{figure}
+
+
+
+\highlight{Output final}
+
+O output final será sempre em formato textual. Este pode ser do tipo markdown ou texto simples, e do tipo documento jornal ou outro. 
+
+No caso de documento jornal, o algoritmo irá utilizar os artigos isolados e, por ordem, transcrevê-los no output. Para outro tipo, apenas transcreve os blocos da forma como foram ordenados.
+
+Em particular para o formato markdown, tendo em conta a possibilidade de incluir imagens neste formato, blocos do tipo imagem identificados durante a pipeline, serão incluídos no output final na posição indicada pela ordem final de blocos/artigos.
 
 
 

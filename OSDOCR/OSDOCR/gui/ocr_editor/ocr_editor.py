@@ -267,7 +267,8 @@ def update_canvas_column(window:sg.Window):
     canvas = window['canvas'].Widget
     canvas.update_idletasks()
     pad_x = int((canvas_body.winfo_width()/2 - canvas.winfo_reqwidth()/2))
-    canvas_frame.config(padx=pad_x)
+    if pad_x > 0:
+        canvas_frame.place(x=pad_x,y=0)
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''
@@ -320,7 +321,7 @@ def sidebar_update_block_info():
         ### bring scroll to top
         window['input_block_text'].Widget.see('1.0')
         avg_height = block.calculate_mean_height(level=5,conf=text_confidence)
-        window['text_mean_height'].update(avg_height)
+        window['text_mean_height'].update('{:.2f}'.format(avg_height))
         ## avg conf
         total_conf,total_blocks = block.conf_sum(level=5)
         avg_conf = round(total_conf/total_blocks) if total_blocks > 0 else 0

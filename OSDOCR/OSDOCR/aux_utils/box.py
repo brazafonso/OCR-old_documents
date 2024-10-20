@@ -208,8 +208,9 @@ class Box:
             self_box.left = 0
             self_box.right = box.right + 1
 
-        if not self.intersects_box(self_box,extend_vertical=extend_vertical,
-                                   extend_horizontal=extend_horizontal,inside=True):
+        intersects = self.intersects_box(box,extend_vertical=extend_vertical,
+                                         extend_horizontal=extend_horizontal,inside=True)
+        if not intersects:
             return area_box
         
         left = 0

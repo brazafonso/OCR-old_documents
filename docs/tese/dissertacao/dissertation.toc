@@ -60,28 +60,28 @@
 \contentsline {section}{\numberline {7.3}OCR}{102}{section.7.3}%
 \contentsline {section}{\numberline {7.4}Pós-processamento de OCR}{104}{section.7.4}%
 \contentsline {section}{\numberline {7.5}Geração de output}{107}{section.7.5}%
-\contentsline {section}{\numberline {7.6}Validação de resultados}{108}{section.7.6}%
-\contentsline {chapter}{\numberline {8}OSDOCR Editor - Implementação}{110}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Sumário}{110}{section.8.1}%
-\contentsline {section}{\numberline {8.2}Funcionalidades}{111}{section.8.2}%
-\contentsline {subsection}{\numberline {8.2.1}Inputs}{111}{subsection.8.2.1}%
-\contentsline {subsection}{\numberline {8.2.2}Manipulação manual de OCR Tree}{111}{subsection.8.2.2}%
-\contentsline {subsection}{\numberline {8.2.3}Aplicação local de OCR}{112}{subsection.8.2.3}%
-\contentsline {subsection}{\numberline {8.2.4}Ferramentas disponíveis}{112}{subsection.8.2.4}%
-\contentsline {subsection}{\numberline {8.2.5}Outputs}{115}{subsection.8.2.5}%
-\contentsline {subsection}{\numberline {8.2.6}Operações adicionais}{115}{subsection.8.2.6}%
-\contentsline {chapter}{\numberline {9}Resultados}{117}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Casos de estudo}{117}{section.9.1}%
-\contentsline {section}{\numberline {9.2}OSDOCR Toolkit}{117}{section.9.2}%
-\contentsline {section}{\numberline {9.3}OSDOCR Pipeline}{117}{section.9.3}%
-\contentsline {section}{\numberline {9.4}OSDOCR Editor}{117}{section.9.4}%
-\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{118}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Conclusões}{118}{section.10.1}%
-\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{118}{section.10.2}%
-\contentsline {chapter}{\numberline {11}Planeamento}{120}{chapter.11}%
-\contentsline {section}{\numberline {11.1}Atividades}{120}{section.11.1}%
-\contentsline {part}{I\hspace {1em}Apêndices}{126}{part.1}%
-\contentsline {chapter}{\numberline {A}Trabalho de apoio}{127}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{128}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Listings}{129}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Ferramentas}{130}{appendix.D}%
+\contentsline {section}{\numberline {7.6}Validação de resultados}{109}{section.7.6}%
+\contentsline {chapter}{\numberline {8}OSDOCR Editor - Implementação}{112}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Sumário}{112}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Funcionalidades}{113}{section.8.2}%
+\contentsline {subsection}{\numberline {8.2.1}Inputs}{113}{subsection.8.2.1}%
+\contentsline {subsection}{\numberline {8.2.2}Manipulação manual de OCR Tree}{114}{subsection.8.2.2}%
+\contentsline {subsection}{\numberline {8.2.3}Aplicação local de OCR}{116}{subsection.8.2.3}%
+\contentsline {subsection}{\numberline {8.2.4}Ferramentas disponíveis}{117}{subsection.8.2.4}%
+\contentsline {subsection}{\numberline {8.2.5}Outputs}{123}{subsection.8.2.5}%
+\contentsline {subsection}{\numberline {8.2.6}Operações adicionais}{124}{subsection.8.2.6}%
+\contentsline {chapter}{\numberline {9}Resultados}{128}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Casos de estudo}{128}{section.9.1}%
+\contentsline {section}{\numberline {9.2}OSDOCR Toolkit}{128}{section.9.2}%
+\contentsline {section}{\numberline {9.3}OSDOCR Pipeline}{128}{section.9.3}%
+\contentsline {section}{\numberline {9.4}OSDOCR Editor}{128}{section.9.4}%
+\contentsline {chapter}{\numberline {10}Conclusões e trabalho futuro}{129}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Conclusões}{129}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Perspetiva de trabalho futuro}{129}{section.10.2}%
+\contentsline {chapter}{\numberline {11}Planeamento}{131}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Atividades}{131}{section.11.1}%
+\contentsline {part}{I\hspace {1em}Apêndices}{137}{part.1}%
+\contentsline {chapter}{\numberline {A}Trabalho de apoio}{138}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{139}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Listings}{140}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Ferramentas}{141}{appendix.D}%

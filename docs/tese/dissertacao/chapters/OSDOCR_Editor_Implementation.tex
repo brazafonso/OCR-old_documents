@@ -15,13 +15,13 @@ Esta interface gráfica foi criada utilizando para a parte visual e controlo das
 
 Segue-se uma listagem das funcionalidades que serão realçadas:
 
-\begin{itemize}\setlength\itemsep{-0.8em}
-	
+\begin{itemize}\setlength\itemsep{-0.9em}
 	\item Inputs
 	\item Manipulação manual de OCR Tree 
 	\item Aplicação local de OCR
 	\item Ferramentas disponíveis
-		\begin{itemize}\setlength\itemsep{-0.8em}
+	\begin{itemize}\setlength\itemsep{-0.9em}
+			\vspace{-1em}
 			\item Divisão de blocos
 			\item Junção de blocos
 			\item Categorização de blocos
@@ -46,7 +46,12 @@ Realça-se que a imagem e a OCR Tree podem não corresponder, sendo responsabili
 A tela resultará na OCR Tree sobreposta na imagem de input. Se estes estiverem propriamente pareados, os blocos desenhados estarão corretamente alinhados com o texto respetivo na imagem.
 
 
-%% TODO : ilustracao de editor com inputs escolhidos. talvez apontar para botoes de escolha dos inputs
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/ocr_editor_inputs.png}
+	\caption{OCR Editor: escolha de inputs. 1 - Input de imagem. 2 - Input de ficheiro OCR Tree}
+	\label{fig:ocr_editor_inputs}
+\end{figure}
 
 
 
@@ -59,49 +64,89 @@ Segue-se o propósito principal da criação do editor gráfico, a facilitação
 
 Utilizando o OSDOCR Editor é possível:
 
-\textbf{Selecionar blocos} clicando nestes usando o rato. Múltiplos blocos podem ser selecionados e consequentemente manipulados em simultâneo. Para desselecionar um bloco, basta clicar neste novamente.
+\textbf{Selecionar blocos} clicando nestes usando o rato. Múltiplos blocos podem ser selecionados - mantendo premido a tecla 'ctrl' ou clicando e arrastando por cima de uma área -  e, consequentemente, manipulados em simultâneo. Para desselecionar um bloco, basta clicar neste novamente ou selecionar uma zona sem blocos.
 
-%% TODO : ilustracao de selecionar blocos: selecionar 1, multiplos, desselecionar
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.1\textwidth]{images/ilustracoes/ocr_editor_select.png}
+	\caption{OCR Editor: seleção de blocos}
+	\label{fig:ocr_editor_select}
+\end{figure}
 
 
 \textbf{Mover blocos} selecionando um ou múltiplos blocos e, com o botão do rato pressionado, mover o cursor para o local desejado.
 
-%% TODO : ilustracao de mover blocos selecionados
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{images/ilustracoes/ocr_editor_move.png}
+	\caption{OCR Editor: mover blocos}
+	\label{fig:ocr_editor_move}
+\end{figure}
 
 
 \textbf{Redimensionar blocos} selecionando um ou múltiplos blocos e, clicando no vértice para pivô de redimensionamento, mover conforme desejado.
 
-%% TODO : ilustracao de redimensionar blocos
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{images/ilustracoes/ocr_editor_resize.png}
+	\caption{OCR Editor: redimensionar bloco}
+	\label{fig:ocr_editor_resize}
+\end{figure}
 
 \textbf{Atualizar texto do bloco} manualmente, ao selecionar um bloco e, na aba da direita com a informação do bloco, atualizar o texto de acordo e clicar em salvar. No caso de múltiplos blocos serem selecionados, apenas o último selecionado é modificável.
 
 Realça-se que a edição manual do texto leva a perda de alguma informação, nomeadamente as dimensões dos níveis mais profundos dentro do bloco, visto que requerer ao utilizador que delimite as coordenadas e nível de confiança de texto das linhas, palavras ou parágrafos editados iria contra o propósito da edição de OCR Tree facilitada. Estes níveis terão aos suas dimensões repartidas de forma uniforme de forma a encaixarem dentro do bloco pai e a confiança de texto será considerada como total (100).
 
-%% TODO : ilustracao de atualizar texto do bloco
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/ocr_editor_update.png}
+	\caption{OCR Editor: atualizar bloco. 1 - Selecionar bloco. 2 - Modificar dados do bloco. 3 - Guardar alterações.}
+	\label{fig:ocr_editor_update}
+\end{figure}
 
 \textbf{Adicionar um novo bloco} clicando no botão do meio do rato no local desejado, ou utilizando o botão com o mesmo efeito.
 
-%% TODO : ilustracao de criar novo bloco
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/ocr_editor_new_block.png}
+	\caption{OCR Editor: criar novo bloco. 1 - Ferramenta para criar novo bloco (ID 110).}
+	\label{fig:ocr_editor_new_block}
+\end{figure}
 
 
-\textbf{Remover um bloco} selecionando o bloco a remover e clicando no botão para o efeito. No caso de múltiplos blocos selecionados, apenas o último será removido.
+\textbf{Remover um bloco} selecionando o bloco a remover e clicando no botão (ou utilizando a tecla 'delete') para o efeito. No caso de múltiplos blocos selecionados, todos serão removidos.
 
-%% TODO : ilustracao de remover um bloco
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/ocr_editor_delete_block.png}
+	\caption{OCR Editor: eliminar bloco. 1 - Selecionar bloco. 2 - Eliminar bloco.}
+	\label{fig:ocr_editor_delete_block}
+\end{figure}
 
 
 
 \subsection{Aplicação local de OCR}
 
-Em instâncias em que apenas porções da OCR Tree apresentem resultados não satisfatórios, ou se pretenda criar novos blocos de texto, a habilidade de aplicar OCR no local afetado pode ser mais eficiente do que transcrever o texto manualmente por completo.
+Em instâncias em que apenas porções da OCR Tree apresentem resultados não satisfatórios, ou se pretenda criar novos blocos de texto, a habilidade de aplicar OCR no local afetado é mais prática do que transcrever o texto manualmente por completo.
 
-Isto consegue-se aplicando as primeiras duas secções da pipeline : pré-processamento e OCR. Nas configurações do editor é possível costumizar o pré-processamento realizado (se qualquer) e a binarização aplicada para OCR e as opções para o motor OCR.
+Isto consegue-se aplicando a OSDOCR Pipeline. Nas configurações do editor é possível costumizar os parâmetros da pipeline a utilizar, por exemplo: não aplicar pós processamento e no pré processamento não realizar upscaling.
 
-A utilização da implementação da pipeline implica que é necessário transformar os outputs desta, transformando a OCR Tree resultante numa de nível 2 e, atualizar as suas coordenadas para fazerem sentido à posição do bloco no input do editor.
+A utilização da implementação da pipeline implica que é necessário transformar os outputs desta, transformando a OCR Tree resultante numa de nível 2 e, atualizar as suas coordenadas para fazerem sentido à posição do bloco no input do editor, assim como a escala das dimensões caso necessário.
+
+Uma configuração própria desta funcionalidade, é a escolha entre os resultados serem comprimidos em um único bloco, ou serem inseridos novos blocos de acordo com os resultados da pipeline. Deste modo, é também possível realizar OCR numa imagem inteira, ampliando esta ferramenta.
 
 Para utilizar esta funcionalidade própria do editor, basta selecionar o bloco alvo e clicar no botão de OCR na aba lateral direita.
 
 
-%% TODO : ilustracao de utilizacao de aplicacao de OCR num bloco
+\begin{figure}[H]
+	\centering
+	\hspace*{-1.8cm}
+	\includegraphics[width=1.2\textwidth]{images/ilustracoes/ocr_editor_apply_ocr.png}
+	\caption{OCR Editor: aplicar OCR. 1 - Selecionar bloco. 2 - Aplicar OCR. Resultado em cima - bloco único. Resultado em baixo - blocos resultantes.}
+	\label{fig:ocr_editor_apply_ocr}
+\end{figure}
+
+
 
 
 \subsection{Ferramentas disponíveis}
@@ -120,16 +165,21 @@ Esta funcionalidade não está diretamente disponível na pipeline - embora o to
 
 Tendo selecionado um bloco para realizar um corte e, em seguida, clicado na funcionalidade de corte, o editor irá entrar no estado especial de recorte. Este é caracterizado por uma linha de corte aparecer sob o bloco selecionado, servindo como auxílio para a divisão do bloco em 2.
 
-%% TODO : ilustracao de estado especial de corte
 
 Clicando no botão esquerdo do rato neste estado realizará o corte de acordo com a linha visível. O texto será também divido entre os dois blocos de acordo com a linha de corte escolhida. Naturalmente, a divisão do texto segue na realidade as coordenadas da linha de corte e da OCR Tree respetiva ao bloco, sendo que se a bounding box não estiver propriamente alinhada com o texto respetivo, esta divisão poderá não fazer sentido visualmente.
 
-%% TODO : ilustracao de texto divido entre os dois blocos
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/ocr_editor_split_block.png}
+	\caption{OCR Editor: divisão de bloco.}
+	\label{fig:ocr_editor_split_block}
+\end{figure}
+
 
 
 \highlight{Divisão por espaços vazios}[\normalsize]
 
-Esta funcionalidade é semelhante à disponibilizada na pipeline com o mesmo nome.
+Esta funcionalidade é semelhante à disponibilizada na pipeline com o mesmo nome, que por sua vez provém do toolkit.
 
 A distinção principal neste cenário é que pode ser utilizada num ambiente mais controlado, apenas afetando, caso desejado, os blocos selecionados.
 
@@ -137,7 +187,6 @@ Caso nenhum bloco esteja selecionado, todos os blocos serão afetados.
 
 Devido à característica de análise estatística do algoritmo para verificação das razões dos espaços vazios, mesmo no caso de haverem blocos selecionados, será introduzido no método a OCR Tree geral.
 
-%% TODO : ilustracao de divisão por espaços vazios em blocos selecionados
 
 
 \highlight{Junção de blocos}
@@ -146,9 +195,23 @@ Utilizando métodos de junção de múltiplas OCR Tree, tal como na pipeline no 
 
 Existem, como discutido no Toolkit, duas formas principais de junção de blocos, horizontal ou vertical.
 
-No caso do Editor, basta selecionar dois ou mais blocos para junção e clicar na ferramenta. O algoritmo de junção irá tentar automaticamente unir os dois textos de modo tendo em conta as suas coordenadas, podendo ficar com linhas intercaladas.
+No caso do Editor, basta selecionar dois ou mais blocos para junção e clicar na ferramenta. O algoritmo de junção irá automaticamente unir os dois textos tendo em conta as suas coordenadas, podendo ficar com linhas intercaladas.
 
-%% TODO : ilustracao de juncao de blocos, com e sem resultado de linhas intercaladas
+\begin{figure}[H]
+	\centering
+	\hspace*{-1.8cm}
+	\includegraphics[width=1.2\textwidth]{images/ilustracoes/ocr_editor_join_blocks.png}
+	\caption{OCR Editor: junção de bloco.}
+	\label{fig:ocr_editor_join_blocks}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-1.8cm}
+	\includegraphics[width=1.2\textwidth]{images/ilustracoes/ocr_editor_join_blocks_2.png}
+	\caption{OCR Editor: junção de bloco, texto intercalado. Neste exemplo foi removida a palavra "José" do bloco, e criado um novo bloco com essa mesma palavra; posicionou-se o novo bloco na posição pretendida; juntou-se os blocos.}
+	\label{fig:ocr_editor_join_blocks_2}
+\end{figure}
 
 
 \highlight{Categorização de blocos}
@@ -159,11 +222,14 @@ Desta forma, a possibilidade de realizar uma categorização manual, para maior 
 
 Tal pode ser conseguido selecionando um bloco e, na aba de edição do bloco, escolher o tipo deste. Por fim, é necessário clicar para guardar as modificações no bloco.
 
-%% TODO : ilustracao de tipar um bloco
-
 Por defeito, o editor não ilustra os tipos dos blocos, sendo necessário escolher a opção para os diferentes tipos de blocos serem coloridos.
 
-%% TODO : ilustracao de cores de diferentes tipos de blocos
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/ocr_editor_block_types.png}
+	\caption{OCR Editor: categorização de blocos.}
+	\label{fig:ocr_editor_block_types}
+\end{figure}
 
 \highlight{Ordenação de blocos}
 
@@ -171,15 +237,18 @@ O algoritmo que mais beneficia da possibilidade de correções manuais é o de o
 
 Deste modo, o editor permite correções, ou ordenações completas dos blocos, de forma simples. Existem 2 formas de realizar a reordenação de um bloco selecionado: simplesmente escrevendo o lugar do bloco na ordem, embora tal tenha restrições de tempo entre cada número do id premido; na aba de edição do bloco, alterar o id para o desejado e guardar as alterações.
 
-%% TODO : ilustracao de alterar o id do bloco
 
 O lugar na ordem dos blocos, serve também como id do bloco, sendo que, para ambos os métodos, no caso de haver conflito entre o id dos blocos, estes serão imediatamente ajustados.
 
-%% TODO : ilustracao de alterar o id do bloco e ajuste imediato dos ids dos blocos
+Ao mesmo tempo, também é possível usar o método do Toolkit - também usado na pipeline -, para cálculo automático da ordem de leitura. Caso estejam blocos selecionados no uso desta ferramenta, o seu comportamento será mais simples, apenas reordenando os seus ids de acordo com a ordem de seleção e o id do primeiro bloco selecionado.
 
-Ao mesmo tempo, também é possível usar o método do Toolkit - também usado na pipeline -, para cálculo automático da ordem de leitura.
 
-%% TODO : ilustracao de funcao de calculo da ordem de leitura
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/ilustracoes/ocr_editor_change_block_id.png}
+	\caption{OCR Editor: ordenação de blocos.}
+	\label{fig:ocr_editor_change_block_id}
+\end{figure}
 
 
 \highlight{Segmentação de blocos em artigos}
@@ -193,25 +262,22 @@ Várias operações estão relacionados com a manipulação de artigos:
 
 \textbf{Segmentação da OCR Tree em artigos} utilizando o método semelhante ao discutido para a pipeline.
 
-%% TODO : ilustracao de método de divisão em artigos
 
 \textbf{Adicionar ou remover blocos de um artigo}, selecionando o artigo, o que irá atualizar a lista de blocos selecionados com os pertencentes ao artigo. Selecionar blocos não pertencentes ao artigo, no caso de se querer adicionar blocos; ou clicar em blocos dentro dos selecionados, para remover blocos do artigo. Por fim, atualiza-se o artigo para guardar as alterações.
 
-%% TODO : ilustracao de adicionar um bloco ao artigo
-
-%% TODO : ilustracao de remover um bloco ao artigo
-
 \textbf{Adicionar um artigo}, ao selecionar bloco(s) e carregar para adicionar um artigo.
 
-%% TODO : ilustracao de adicionar um artigo
 
 \textbf{Remover um artigo}, selecionando o artigo e clicando para o remover.
 
-%% TODO : ilustracao de remover um artigo
-
 \textbf{Alterar ordem dos artigos}, ao selecionar um artigo e no botão para subir ou descer o seu lugar na ordem de artigos. Esta ordem tem influência na ordem em que os artigos aparecerão no output.
 
-%% TODO : ilustracao de alterar ordem de um artigo
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{images/ilustracoes/ocr_editor_articles.png}
+	\caption{OCR Editor: manipulação de artigos.}
+	\label{fig:ocr_editor_articles}
+\end{figure}
 
 
 \highlight{Divisão de imagem}
@@ -220,13 +286,19 @@ De forma a facilitar a criação de resultados OCR em locais específicos de uma
 
 Esta funciona de forma semelhante ao corte de um bloco, onde será realizado um corte que será visualmente representado por uma linha.
 
-%% TODO : ilustracao de estado de corte de imagem
 
 Antes de o corte ser realizado, será questionado qual das partes da imagem se pretende manter.
 
 Realizado o corte, uma nova imagem (recortada da original) será criada, e os nodos da OCR Tree inseridos na área recortada serão adicionados na OCR Tree correspondente a esta imagem. Realça-se que apenas os nodos que apresentem uma bounding box completamente dentro da área serão incluídos, sendo que será recorrente pedaços significativos de texto percam o seu respetivo bloco, no caso de este texto ter continuação numa área fora do recorte.
 
-%% TODO : ilustracao do resultado do recorte
+\begin{figure}[H]
+	\centering
+	\hspace*{-1.8cm}
+	\includegraphics[width=1.2\textwidth]{images/ilustracoes/ocr_editor_split_image.png}
+	\caption{OCR Editor: divisão de imagem.}
+	\label{fig:ocr_editor_split_image}
+\end{figure}
+
 
 
 \subsection{Outputs}
@@ -235,14 +307,19 @@ O editor permite ainda a geração de outputs textuais semelhantes aos da pipeli
 
 É possível a geração de ficheiros do tipo \textit{txt} ou \textit{markdown}, para documentos do tipo jornal - criando artigos caso não existam - ou simples. O tipo de documento pode ser modificado através das configurações do editor.
 
-%% TODO : ilustracao de geração de output
-
 Este output textual é opcional, ao contrário da pipeline.
 
 A OCR Tree utilizada como input será modificada - caso operações sob ela sejam aplicadas -, sendo portanto um output resultante da utilização do editor. 
 
 Utilizando o método de divisão de imagem, o recorte da imagem também será também guardado como uma nova imagem, pareado com o respetivo ficheiro OCR Tree.
 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{images/ilustracoes/ocr_editor_output.png}
+	\caption{OCR Editor: output.}
+	\label{fig:ocr_editor_output}
+\end{figure}
 
 
 \subsection{Operações adicionais}
@@ -253,24 +330,27 @@ Serve esta última secção para descrever outras funcionalidades do editor, que
 
 Como na generalidade dos editores, este não é exceção na habilidade de retroceder e reconstruir operações. Tal permite desfazer ou refazer ações rapidamente, tornando o editor uma ferramenta ainda mais útil para a manipulação destes tipos de dados que podem ser consideravelmente densos.
 
-%% TODO : ilustracao de retroceder uma operacao
 
 Esta funcionalidade é possível através do uso de uma cache que vai sendo atualizada após a realização de cada operação.
 
 O tamanho desta cache está por defeito definido para 10, mas pode ser alterado nas configurações do editor.
 
-%% TODO : ilustracao de atualizacao do tamanho da cache
-
-
 
 \highlight{Filtro de blocos}
 
-A habilidade de filtragem é sempre bem vinda em qualquer contexto e, neste caso ela é disponibilizada através do tipo dos blocos.
+A capacidade de filtragem em ferramentas de edição traz proveito para a sua utilização, através da permissão de maior controlo e focagem de conteúdos interessantes.
 
-Sendo que existem certos tipos essenciais para a criação de outputs especiais, como é o caso do "title" para a geração de artigos, a possibilidade para facilmente distinguir quais os blocos deste tipo existentes é essencial. 
+Exemplo disto é a existência de tipos essenciais para a criação de outputs especiais, como é o caso do "title" para a geração de artigos. A possibilidade para facilmente distinguir quais os blocos deste tipo existentes é essencial. 
 
+De forma sucinta, os filtros disponíveis são:
 
-%% TODO : ilustracao de filtragem por tipo de bloco
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item Nível de bloco
+	\item Tipo de bloco
+	\item Id de bloco
+	\item Texto de bloco
+	\item Coordenadas de bloco
+\end{itemize}
 
 
 
@@ -280,12 +360,7 @@ A disponibilização de um referencial de altura para os blocos permite a resolu
 
 Nestes casos, se não houver distinção da altura entre estes, não será possível selecionar o pretendido entre os dois.
 
-
-%% TODO : ilustracao de blocos um em cima do outro
-
 No entanto, selecionando um dos blocos e, alterando a sua altura, torna-se possível criar distinção entre os dois para mais facilmente selecionar aquele que anteriormente não era diretamente selecionável.
-
-%% TODO : ilustracao de alteração da altura de um bloco
 
 
 
@@ -293,7 +368,33 @@ No entanto, selecionando um dos blocos e, alterando a sua altura, torna-se poss�
 
 O editor permite ainda a realização de redimensionamento da imagem de input para facilitar a visualização e edição local da respetiva parte da OCR Tree nesta. A OCR Tree é automaticamente deslocada sempre que um redimensionamento ocorre.
 
-%% TODO : ilustracao de redimensionamento do input
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{images/ilustracoes/ocr_editor_aditional_operations.png}
+	\caption{OCR Editor: operações adicionais.}
+	\label{fig:ocr_editor_aditional_operations}
+\end{figure}
+
+
+\highlight{Configurações do editor}
+
+De forma a poder alterar a utilização do editor, uma janela de configurações foi disponibilizada. Esta é composta por 3 abas principais: configurações gerais do editor; configurações das ferramentas; configurações da pipeline.
+
+As \textbf{configurações gerais}, abrangem definições visuais do editor, como zoom inicial, cor e grossura das bounding boxes; e definições do output, como o formato, tipo e tratamento de texto.
+
+As \textbf{configurações das ferramentas}, permitem modificar o comportamento de algumas das ferramentas, por exemplo: definir se no split de imagem, se mantém todas as caixas que intersetam ou estão dentro da zona escolhida, ou apenas as que estão completamente dentro.
+
+As \textbf{configurações da pipeline}, são uma versão reduzida das configurações da OSDOCR Pipeline. Estas são na realidade também configurações de uma ferramenta mas, sendo a quantidade de opções considerável, torna-se mais simples para o utilizador ter uma janela dedicada a esta ferramenta.
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{images/ilustracoes/ocr_editor_configurations.png}
+	\caption{OCR Editor: janela de configurações.}
+	\label{fig:ocr_editor_configurations}
+\end{figure}
+
 
 
 

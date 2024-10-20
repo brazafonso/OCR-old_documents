@@ -516,8 +516,7 @@ def ocr_editor_layout()->sg.Window:
         [
             sg.Column(canvas_body,scrollable=True,
                       expand_x=True,expand_y=True,right_click_menu=context_menu,
-                      size=column_2_size,key='body_canvas',justification='center',
-                      element_justification='c',
+                      size=column_2_size,key='body_canvas',
                       pad=(0,0)),
         ],
     ]
@@ -540,8 +539,7 @@ def ocr_editor_layout()->sg.Window:
 
             sg.VerticalSeparator(),
 
-            sg.Column(canvas,vertical_alignment='top',expand_x=True,expand_y=True,
-                      element_justification='c',justification='center'),
+            sg.Column(canvas,vertical_alignment='top',expand_x=True,expand_y=True),
 
             sg.VerticalSeparator(),
 
