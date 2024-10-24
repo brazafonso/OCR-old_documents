@@ -149,7 +149,7 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=Fa
                 right_margins += [0] * (right - len(right_margins) + 1)
             right_margins[right] += 1 + len(words)
 
-    if left_margins:
+    if len(left_margins) > 2:
 
         # add 10% to lists (because of smoothing might not catch peaks on edges)
         left_margins += [0] * round(len(left_margins)*0.1)

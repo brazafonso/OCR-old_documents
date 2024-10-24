@@ -216,8 +216,8 @@ class CustomAction_calibrate(argparse.Action):
 
         # check and fix pipeline config path (second value)
         ## if single value is given, second value is default pipeline config folder
-        if len(values) == 1:
+        if len(values) == 0:
             pipeline_configs_folder = f'{file_path}/../validation/pipeline_options'
-            values = [values[0],pipeline_configs_folder]
+            values = [pipeline_configs_folder]
 
         setattr(namespace, self.dest, values)

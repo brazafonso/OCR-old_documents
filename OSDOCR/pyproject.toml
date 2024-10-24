@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "OSDOCR"
-version = "0.2.1.6"
+version = "0.3"
 description = "Toolkit for ocr of old structured documents"
 authors = ["Gonçalo Afonso <brazafonso2001@gmail.com>"]
 #readme = "README.md"
@@ -30,6 +30,7 @@ pytesseract = "*"
 scikit-learn = "*"
 whittaker_eilers = "*"
 networkx = "*"
+pyperclip = "*"
 
 
 [build-system]

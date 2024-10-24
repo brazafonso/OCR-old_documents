@@ -1,13 +1,47 @@
 \chapter{Conclusões e trabalho futuro}
 \label{cap_conclusao}
 
-Neste capítulo será feito um sumário do trabalho e estudo realizado e uma introspeção sobre o trabalho futuro.
+Neste capítulo será feito um sumário do trabalho e estudo realizado, tiradas conclusões sobre o projeto concebido, e uma introspeção sobre perspetivas de trabalho futuro.
+
+\section{O Trabalho}
+
+A dissertação propôs como seu objetivo global, a criação de uma solução que pode-se ser acoplada ao processo de reconhecimento ótico de caracteres, tanto antes e depois deste, para a melhoria dos seus resultados. 
+
+Através do estudo do problema, focado essencialmente em jornais antigos - devido à sua mutabilidade de estrutura e geral estado deteriorado que afetam a transcrição máquina -, foi possível delimitar a solução em componentes distintas. Estas foram : um Toolkit ou conjunto de métodos que permitam realizar transformações, sobretudo nos resultados de OCR mas também incluindo processamento de imagem e texto, em via de reduzir erros na transcrição e facilitar a sua manipulação e análise dos resultados OCR; uma pipeline, estrutura semelhante à maioria de problemas que abordam este tema, e que permite a aplicação e consequente validação do Toolkit; um editor gráfico de resultados OCR que disponibilize um meio de manipulação de resultados OCR facilitada, assim como depuração facilitada - pelo seu aspeto visual - das duas anteriores componentes.
+
+Estas 3 componentes tiveram em comum a necessidade de analisar e manipular resultados OCR, o que resultou na criação de uma estrutura universal para estes, OCR Tree.
+
+Discutida a implementação deste modelo e componentes, foram também analisados os seus resultados quando aplicados em diferentes contextos, com especial atenção para a pipeline, sendo esta a mais permissiva de métricas objetivas.
 
 \section{Conclusões}
 
-O projeto atual, propõe a concretização de uma ferramenta para melhorar os resultados de softwares de reconhecimento de caracteres em documentos estruturados antigos, em particular, jornais. Para isto, nesta primeira fase, foram definidos os objetivos principais do trabalho, assim como algumas vias de expansão consoante o desenrolar da sua implementação. Além disso, foi realizado um estudo sobre o estado da arte com base em dois aspetos principais: softwares \acrshort{ocr} e práticas comuns na sua utilização; e exploração sobre trabalhos relacionados a este tema ou técnicas relevantes para a proposta. Com isto, foi possível entender os desafios mais relevantes que se apresentam ao reconhecimento de caracteres, assim como os procedimentos \textit{standard} para os abordar, nomeadamente: pré processamento de imagem, pós processamento de texto, segmentação e métricas de validação; e algumas soluções focadas em tarefas similares ao do atual trabalho. Por último, realizou-se um compilado de algumas tarefas de implementação já realizadas que auxiliaram na perceção dos desafios impostos no tema e ao mesmo tempo uma melhor perceção sobre o funcionamento e capacidade da tecnologia \acrshort{ocr}.
+Concluído o trabalho, é possível comparar a sua visão inicial do estado atual. Num primeiro desenho do projeto, apenas se expectava a implementação de um conjunto de métodos independentes e, incontornavelmente, o modelo OCR Tree.
+
+Este conjunto de ferramentas sucedeu na criação de uma estrutura de dados complexa, mas de compreensiva manipulação e análise, tendo sido esta área o seu ponto forte. Além disso, na área de tratamento e análise de imagem, ferramentas de correção de anomalias de imagem e identificação de elementos de documento como delimitadores e colunas, que foram aplicados nas outras partes da solução. Porém, com o desenvolvimento desta componente entendeu-se a necessidade de um ambiente de teste da mesma. 
+
+Daqui nasce a pipeline, nova componente que, embora já desde inícios do trabalho pensada, inevitavelmente obrigou a divisão dos esforços na primeira componente, tendo essa pecado principalmente em aspetos de tratamento de texto.
+A pipeline, como aplicação do Toolkit, foi também aproveitada para abranger aspetos que este não iria abordar, como o upscaling de imagem. Utilizando a pipeline, é possível a observação direta do efeito do Toolkit na transcrição máquina, permitindo ainda, métricas objetivas através do módulo de validação nesta implementada.
+
+% TODO: falar dos resultados da pipeline
+
+Na presença de questões mais minuciosas que a pipeline não foi capaz de lidar, como: ordens de leitura muito complexos, trechos de texto demasiado danificados para transcrição automática, segmentação insatisfatória do motor OCR; e também a dificuldade em visualizar o estado da OCR Tree durante as diferentes etapas da Pipeline ou manipulações pelo Toolkit, gerou-se a oportunidade de incluir um editor visual. Este foi a última e mais tardia componente a ser incluída na solução mas, possivelmente, a mais útil. Esta componente permitiu uma suavização no uso da OCR Tree que, consideravelmente, habilitou a compensação de problemas ignorados ou não totalmente tratados pela Pipeline, assim como a potencialização do Toolkit, fazendo uso de partes dele até então desusadas. Adicionalmente, este meio de visualizar a manipulação permitida pelas anteriores componentes, permitiu mais facilmente detetar defeitos nelas ou possíveis melhorias, recursivamente melhorando-se ao simplificar o refinamento delas.
+
+O compilado de todas as componentes foi essencial para um aprofundamento do conhecimento sobre a área pré, e particularmente, pós processamento de OCR, modularização de soluções e, no caso do Editor, trabalho sobre interfaces gráficas e editor de modelos.
 
 \section{Perspetiva de trabalho futuro}
 
-Partindo do estado atual do projeto, onde uma base de conhecimento do tema já foi concebida, os futuros passos seguirão maioritariamente na componente prática proposta, i.e. a construção das ferramentas para extração de conteúdo de jornais. Como mencionado nos objetivos, abre-se ainda a possibilidade para um aprofundamento na área de criação de léxicos entre versões de uma mesma linguagem para possibilitar a modernização do conteúdo extraído pela ferramenta principal. 
+Apesar de satisfeito e enriquecido com a realização do projeto, seria ingénuo ignorar os refinamentos que este poderia ser sujeito. 
+
+Como já referido, a área em que o Toolkit mais tem espaço para enriquecer trata-se do tratamento de texto, mais especificamente no ato de criação de output. Tal, como os tempos têm mostrado haver um maior potencial, daria-se provavelmente na exploração de Large Language Models para a realização de correções de texto, que possivelmente também poderiam permitir a restauração de texto não detetado/transcrito. Naturalmente, heurísticas mais determinísticas para tratamento de texto também seriam bem-vindas, por exemplo as técnicas exploradas no estado da arte, de correção de palavras fazendo uso de léxicos conhecidos.
+
+Do mesmo modo, embora neste caso já levemente explorado, o processamento de imagem fazendo uso de inteligência artificial seria inevitável, nomeadamente para: correção de distorções de imagens como curvaturas do texto ou inclinações internas; restauro de texto. De forma mais complexa, e como também foi mencionado no estado da arte, acoplar a visão máquina com os mecanismos criados para cálculo de ordem de leitura, categorização de texto e isolamento de artigos tem o potencial de aumentar a adaptabilidade destes. As restrições temporais e de recursos não permitiram porém divergência neste sentido, podendo por si só este ramo tornar-se num projeto único.
+
+A estrutura OCR Tree poderá ser tornada mais 'universal' para OCR relaxando a responsabilidade dos níveis de blocos, visto pressupor atualmente na maioria dos cenários que o nível 2 é representativo de um bloco como um todo, e o 5 como o local de texto. Por exemplo, na procura de texto, poderia ser possível incluir texto em blocos superiores, reduzindo a necessidade de sempre iterar às folhas para o obter; ou no caso de análise de texto, utilizar como base o nível fornecido ao invés de assumir os níveis 4 (linha) e 5 (palavra) como essenciais.
+
+O módulo de output teria bem-vinda a conversão para um formato que mantivesse mais fielmente a estrutura original do documento, como pdf ou html. A existência de conversores de hocr para estes terá diminuído a sua prioridade.
+
+
+Por último, a exploração de diferentes motores OCR seria relevante para prova do potencialidade OCR Tree como módulo para resultados OCR, e possibilitando mais uso de todas as componentes da solução.
+
+
 		

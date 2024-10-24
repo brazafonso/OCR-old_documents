@@ -28,7 +28,8 @@ def ocr_editor_layout()->sg.Window:
     upper_row = [
         [
                 sg.Push(),
-                place(sg.FileBrowse(file_types=(("IMG Files", "*.*"),),button_text="Image",
+                place(sg.FileBrowse(file_types=(("IMG Files", ["*.png","*.jpg","*.jpeg","*.bmp","*.tiff"]),),
+                                    button_text="Image",
                                     key='browse_image',target='target_input',initial_folder=os.getcwd(),
                                     font=("Calibri", 15),enable_events=True)),
                 place(sg.Input(default_text=browse_img_input_value,key='target_input',
@@ -181,7 +182,9 @@ def ocr_editor_layout()->sg.Window:
                     ],key='canvas_frame',
                     element_justification='center',
                     pad=(0,0),
-                    border_width=0
+                    border_width=0,
+                    expand_x=True,
+                    expand_y=True
                     )
                 )
             ]

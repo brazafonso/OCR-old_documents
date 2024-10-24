@@ -7,11 +7,12 @@ A digitalização de documentos permitiu uma nova forma de salvaguardar informa�
 
 Documentos mais antigos, em especial jornais por apresentarem estruturas mais complexas, apresentam por este motivo resultados que diferem bastante do seu conteúdo original; tanto a nível do texto reconhecido, como da sua organização para os diferentes outputs disponíveis (ex.: txt simples). A tarefa de extrair informação destes documentos, como por exemplo o isolamento e extração de artigos, torna-se assim complexa e propensa a erros. 
 
-Este trabalho propõe então a criação de uma ferramenta ou um conjunto de ferramentas que permitam auxiliar o processo de extração de conteúdo de documentos, primeiramente mas não exclusivamente, mais antigos e estruturados, com especial foco em jornais. A pipeline do projeto pretende então ser capaz de detetar e lidar com os diferentes pontos de risco nestes documentos: qualidade da imagem, erros nos resultados de \acrshort{ocr}, segmentação e organização do documento, criação do output organizado. 
+Este trabalho propõe então a criação de uma ferramenta ou um conjunto de ferramentas que permitam auxiliar o processo de extração de conteúdo de documentos, primeiramente mas não exclusivamente, mais antigos e estruturados, com especial foco em jornais. A solução do projeto pretende então ser capaz de detetar e lidar com os diferentes pontos de risco nestes documentos: qualidade da imagem, erros nos resultados de \acrshort{ocr}, segmentação e organização do documento, criação do output organizado. 
 
-Diferentes alternativas para \acrshort{ocr} assim como métodos de tratamento destes problemas serão estudados, comparados, e implementados, de forma a encontrar a melhor solução para a resolução deste problema. O produto final implementado será composto por uma ferramenta utilizável num formato \acrshort{gui} ou comando de consola. 
+Diferentes alternativas para \acrshort{ocr} assim como métodos de tratamento destes problemas serão estudados, comparados, e implementados, de forma a encontrar a melhor solução para a resolução deste problema. O produto final implementado será composto por 3 componentes principais: um Toolkit com ênfase na manipulação de resultados OCR, mas também de tratamento de imagem; uma aplicação do Toolkit na forma de pipeline de OCR, que também explora ferramentas externas; um Editor de resultados OCR, também aplicação do Toolkit, que facilite a manipulação destes devido ao seu aspeto visual, e o teste das outras componentes. 
 
-Para documentos antigos a linguagem, como mencionado, pode afetar os resultados de \acrshort{ocr}. Deste modo, como objetivo secundário, propõe-se a criação de uma ferramenta que facilite a criação de um dicionário para diferentes iterações de uma linguagem para: fornecer ao motor \acrshort{ocr} um léxico mais apropriado; modernizar o conteúdo extraído.
+Na base desta solução, tem o módulo OCR Tree que procura servir como representação universal dos resultados de OCR
+
 
 \paragraph{Palavras-chave} OCR, Digitalização, Documentos estruturados, Documentos antigos, Segmentação de documentos, Tratamento de imagem, Modernização de texto
 
@@ -26,9 +27,9 @@ Extracting information from these documents, for example, the isolation and extr
 
 Therefore, this work aims to create a tool, or a toolkit, that can assist in the process of content extraction from documents, primarily though not exclusively, that are older and structured, specializing in newspapers. The proposed pipeline should then be able to detect and fix potential problems in these documents: image quality, \acrshort{ocr} results errors, segmentation and document organization, restructured output generation.
 
-Different \acrshort{ocr} alternatives, as well as different methods of dealing with these problems, will be studied, compared, and implemented, to find the best solution for the task at hand. The final product will be composed of a tool usable in both a \acrshort{gui} and bash command format.
+Different \acrshort{ocr} alternatives, as well as different methods of dealing with these problems, will be studied, compared, and implemented, to find the best solution for the task at hand. The final product will be composed of 3 main components: a Toolkit with emphasis on the manipulation of OCR results, but also image processing; an application of said Toolkit in the shape of an OCR pipeline, which will also explore other external tools; an OCR results Editor, also an application of the Toolkit, which eases the manipulation of these thanks to its visual approach, as well as the testing of the other components.
 
-For old documents, its language, as mentioned, may affect the \acrshort{ocr}'s performance. Therefore, as a secondary objective, it’s proposed the development of a tool that allows for the creation of dictionaries for different versions of a given language that can be used to: supply the \acrshort{ocr} engine with a more appropriate lexicon; modernize the extracted content.
+The basis of this solution is the OCR Tree module, which aims to serve as an universal representation of OCR results.
 
 
 \paragraph{Keywords} OCR, Digitalization, Structured documents, Old documents, Document segmentation, Image treatment, Text modernization

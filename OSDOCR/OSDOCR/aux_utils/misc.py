@@ -24,8 +24,8 @@ def create_base_folders():
     # const files
     consts_files_folder = pkg_resources.files('OSDOCR').joinpath('consts')
     for f in os.listdir(consts_files_folder):
-        if not os.path.exists(f'{consts.consts_path}/{f}') and os.path.isfile(f):
-            shutil.copy(f,f'{consts.consts_path}/{f}')
+        if not os.path.exists(f'{consts.consts_path}/{f}') and os.path.isfile(f'{consts_files_folder}/{f}'):
+            shutil.copy(f'{consts_files_folder}/{f}',f'{consts.consts_path}/{f}')
 
 
 def path_to_id(path: str):

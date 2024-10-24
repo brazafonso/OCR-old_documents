@@ -256,6 +256,9 @@ def update_canvas_column(window:sg.Window):
     '''Update canvas column. Uses TKinter canvas for performance'''
     global figure_canvas_agg
     print('Update canvas column')
+    if figure_canvas_agg is None:
+        return
+    
     canvas_body = window['body_canvas'].Widget.canvas
     w,h = figure_canvas_agg.get_width_height()
     # add some padding
@@ -267,8 +270,12 @@ def update_canvas_column(window:sg.Window):
     canvas = window['canvas'].Widget
     canvas.update_idletasks()
     pad_x = int((canvas_body.winfo_width()/2 - canvas.winfo_reqwidth()/2))
-    if pad_x > 0:
-        canvas_frame.place(x=pad_x,y=0)
+    # if pad_x > 0:
+    #     print('pad_x:',pad_x)
+    #     canvas_frame.place(x=pad_x,y=0)
+    #     canvas.config(size=(w,h))
+    #     canvas_frame.update_idletasks()
+
 
 def update_canvas(window:sg.Window,figure):
     '''Update canvas'''

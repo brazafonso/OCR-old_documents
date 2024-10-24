@@ -699,7 +699,8 @@ No caso de documentos de leitura não linear, como é o caso de jornais, a ordem
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.6\textwidth]{images/ilustracoes/journal_wrong_order_example.png}
-	\caption{Exemplo de jornal incorretamente ordenado. Do lado esquerdo está a ordenação (marcado pelas setas azuis, por sua vez ordenadas pela numeração verde) resultante de OCR (tesseract). Do lado direito está a ordenação de leitura correta.}
+	\caption{Exemplo de jornal incorretamente ordenado.}
+	\subcaption{Do lado esquerdo está a ordenação (marcado pelas setas azuis, por sua vez ordenadas pela numeração verde) resultante de OCR (tesseract). Do lado direito está a ordenação de leitura correta.}
 	\label{fig:journal_wrong_order_example}
 \end{figure}
 
@@ -794,7 +795,8 @@ Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco a
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\textwidth]{images/ilustracoes/calculate_reading_order_example.png}
-	\caption{Exemplo de cálculo da ordem de leitura de um jornal (exemplo não linear). Figura esquerda é a ordem original; figura direita é a ordem calculada. Realça-se que do lado esquerdo os ids são indicativos da sequência, não correspondendo ao número total de blocos devido a transformações e limpezas realizadas para um melhor resultado do cálculo da ordem.}
+	\caption{Exemplo de cálculo da ordem de leitura de um jornal (exemplo não linear).}
+	\subcaption{Figura esquerda é a ordem original; figura direita é a ordem calculada. Realça-se que do lado esquerdo os ids são indicativos da sequência, não correspondendo ao número total de blocos devido a transformações e limpezas realizadas para um melhor resultado do cálculo da ordem.}
 	\label{fig:calculate_reading_order_example_example}
 \end{figure}
 
@@ -881,7 +883,8 @@ Para ajustes mais minuciosos, também é aplicado o método de ajuste de rotaç�
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=1\textwidth]{images/ilustracoes/rotation_algorithm_example.png}
-	\caption{Exemplo de aplicação do algoritmo. 
+	\caption{Exemplo de aplicação do algoritmo.}
+	\subcaption{
 		\textbf{1ª} imagem representa a imagem do documento original. \textbf{2ª} imagem representa a identificação dos pixeis á esquerda no documento. \textbf{3ª} apresenta os 3 maiores sets de cada tipo: set de pixeis com mesmo x (azul); set de pixeis counter-clockwise (verde); set de pixeis clockwise (vermelho). \textbf{4ª} mostra o ângulo de rotação calculado a partir do maior set. \textbf{5ª} tem a imagem corrigida.}
 	\label{fig:rotation_algorithm_example}
 \end{figure}
@@ -1204,7 +1207,8 @@ $delimiter.bottom \geq 0.7*image.shape[0] \wedge delimiter.width \geq 0.4*image.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.4\textwidth]{images/ilustracoes/segment_document_example.png}
-	\caption{Exemplo de uso de segment\_document em um jornal. Header encontrado está desenhado a vermelho; o Body foi desenhado a azul.}
+	\caption{Exemplo de uso de segment\_document em um jornal.}
+	\subcaption{Header encontrado está desenhado a vermelho; o Body foi desenhado a azul.}
 	\label{fig:segment_document_example}
 \end{figure}
 

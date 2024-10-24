@@ -1,11 +1,13 @@
 import json
 import os
+import re
 import shutil
 import sys
 import hashlib
 import OSDOCR.aux_utils.consts as consts
 from argparse import Namespace
 from OSDOCR.aux_utils.misc import path_to_id
+from OSDOCR.aux_utils.parse_args import CustomAction_skip_method
 from OSDOCR.parse_args import process_args,preprocessing_methods,posprocessing_methods
 from OSDOCR.pipeline import run_target
 from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
@@ -13,6 +15,7 @@ from OSDOCR.ocr_tree_module.ocr_tree_analyser import extract_articles
 from OSDOCR.preprocessing.image import identify_document_images
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document_image_utils.image import divide_columns
+
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -27,10 +30,22 @@ def prepare_pipeline_config(pipeline_config:str,target_image:str,default_args:st
     for key in options:
         pipeline_args.__setattr__(key,options[key])
 
+    skip_methods = []
+    if pipeline_args.__getattribute__('skip_method'):
+        skip_methods = pipeline_args.__getattribute__('skip_method')
+        action = CustomAction_skip_method('skip_method','skip_method')
+        action(None,pipeline_args,skip_methods,None)
+
     pipeline_args.__setattr__('logs',logs)
     pipeline_args.__setattr__('debug',debug)
     pipeline_args.__setattr__('target',target_image)
-    pipeline_args.__setattr__('output_type',['txt_simple'])
+    output_type = pipeline_args.__getattribute__('output_type')
+    if not output_type:
+        output_type = ['txt_simple']
+    else:
+        output_type += ['txt_simple']
+    
+    pipeline_args.__setattr__('output_type',output_type)
     
     # results folder for config
     consts.result_path = results_folder
@@ -100,6 +115,11 @@ def compare_results(results_folder:str,option:str,
     # check text results
     text_results_path = metadata['output']['txt_simple']
     text_result = open(text_results_path,'r',encoding='utf-8').read()
+    ## clean text
+    ### leave only words; reduce to lower case; reduce whitespaces
+    text_result = re.sub(r'[^\w\d\s]',' ',text_result)
+    text_result = re.sub(r'[ \t\r\v\f]+',' ',text_result)
+    text_result = text_result.lower()
 
 
     ## compare with complete ground truth
@@ -109,7 +129,13 @@ def compare_results(results_folder:str,option:str,
             print('Checking text results with ground truth...')
 
         ### overall similarity using cosine similarity
-        documents = [open(ground_truth_file,'r',encoding='utf-8').read(),text_result]
+        gt_text = open(ground_truth_file,'r',encoding='utf-8').read()
+        #### clean text
+        ##### leave only words; reduce to lower case; reduce whitespaces
+        gt_text = re.sub(r'[^\w\d\s]',' ',gt_text)
+        gt_text = re.sub(r'[ \t\r\v\f]+',' ',gt_text)
+        gt_text = gt_text.lower()
+        documents = [gt_text,text_result]
         tfidf = TfidfVectorizer().fit_transform(documents)
         pairwise_similarity = tfidf * tfidf.T
         similarity = pairwise_similarity.toarray()[0][1]
@@ -118,12 +144,48 @@ def compare_results(results_folder:str,option:str,
 
         comparison['ground_truth']['word_count'] = len([w for w in text_result.split() if w.strip()])
 
+        ### unique words count
+        gt_words = gt_text.replace('\n',' ').split()
+        gt_words_count = {}
+        for w in gt_words:
+            if w in gt_words_count:
+                gt_words_count[w] += 1
+            else:
+                gt_words_count[w] = 1
+        text_words = text_result.replace('\n',' ').split()
+        text_words_count = {}
+        for w in text_words:
+            if w in text_words_count:
+                text_words_count[w] += 1
+            else:
+                text_words_count[w] = 1
+        
+        ### compare unique words
+        accuracy_ratios = []
+        unique_words_count = 0
+        for w in gt_words_count:
+            if w in text_words_count:
+                accuracy_ratios.append(text_words_count[w] / gt_words_count[w])
+                unique_words_count += 1
+            else:
+                accuracy_ratios.append(0)
+
+        accuracy = sum(accuracy_ratios) / len(accuracy_ratios)
+        comparison['validation']['text']['words_accuracy'] = accuracy
+        comparison['validation']['text']['unique_words_ratio'] = unique_words_count / len(gt_words_count)
+
     ## compare with partial ground truth
     if partial_ground_truth_file:
         if logs:
             print('Checking text results with partial ground truth...')
 
-        partial_ground_truth = open(partial_ground_truth_file,'r',encoding='utf-8').readlines()
+        partial_ground_truth = open(partial_ground_truth_file,'r',encoding='utf-8').read()
+        ### clean text
+        ### leave only words; reduce to lower case; reduce whitespaces
+        partial_ground_truth = re.sub(r'[^\w\d\s]',' ',partial_ground_truth)
+        partial_ground_truth = re.sub(r'[ \t\r\v\f]+',' ',partial_ground_truth)
+        partial_ground_truth = partial_ground_truth.lower()
+        partial_ground_truth = partial_ground_truth.splitlines()
         partial_ground_truth = [p.strip() for p in partial_ground_truth if p.strip()]
         
         text_results_lines = [line.strip() for line in text_result.splitlines()]
@@ -139,7 +201,8 @@ def compare_results(results_folder:str,option:str,
         comparison['validation']['text']['partial_ground_truth_hit_rate']  = total_hits/len(partial_ground_truth)
         comparison['validation']['text']['partial_ground_truth_hit_count'] = total_hits
         comparison['partial_ground_truth']['number_lines'] = len(partial_ground_truth)
-
+        comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = 0
+        comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_count'] = 0
         ### check if lines found are in the correct order in text
         if found_lines:
             n_correct_order = 0
@@ -161,7 +224,8 @@ def compare_results(results_folder:str,option:str,
                     true_other_line_index = found_lines.index(other_line)
                     if line == other_line:
                         continue
-                    elif (true_line_index < true_other_line_index and line_index > other_line_index) or (true_line_index > true_other_line_index and line_index < other_line_index):
+                    elif (true_line_index < true_other_line_index and line_index > other_line_index) or \
+                        (true_line_index > true_other_line_index and line_index < other_line_index):
                         correct_order = False
                         break
 
@@ -199,7 +263,7 @@ def compare_results(results_folder:str,option:str,
 
         if 'number_articles' in expected_results:
             ocr_results = OCR_Tree(metadata['ocr_results_path'])
-            articles = extract_articles(target_path,ocr_results,ignore_delimiters=option_args.ignore_delimiters)
+            _,articles = extract_articles(target_path,ocr_results,ignore_delimiters=option_args.ignore_delimiters)
             comparison['validation']['image']['number_articles'] = len(articles)
             comparison['image']['number_articles'] = expected_results['number_articles']
 
@@ -262,6 +326,12 @@ def config_preprocessing_score(results:dict,logs:bool=False)->float:
         expected_words = results['ground_truth']['word_count']
         identified_words = results['validation']['ocr']['number_text_blocks']
         preprocessing_score += 2 * min(expected_words,identified_words)/max(expected_words,identified_words)
+
+        # GT word accuracy (max score is 4)
+        preprocessing_score += 4 * results['validation']['text']['words_accuracy']
+
+        # GT unique word count ratio (max score is 2)
+        preprocessing_score += 2 * results['validation']['text']['unique_words_ratio']
 
     # Partial GT tests
     if 'partial_ground_truth' in results:
@@ -396,6 +466,7 @@ def choose_best_pipeline_options(results_folder:str,logs:bool=False,debug:bool=F
         ## option identify document images (target_old_document)
         ### compare image identification
         if best_pipeline_options['results']['score']['image_identification'] < results_json['score']['image_identification']:
+            if 'target_old_document' in pipeline_config_json:
                 best_pipeline_options['config']['target_old_document'] = pipeline_config_json['target_old_document']
 
     return best_pipeline_options['config']

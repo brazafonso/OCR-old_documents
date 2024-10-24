@@ -103,10 +103,11 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
 
 def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespace):
     '''Create default output'''
+    metadata = get_target_metadata(args.target)
 
     fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
 
-    if 'txt' in args.output_type:
+    if 'txt' in args.output_type or 'txt_simple' in args.output_type:
         with open(f'{results_path}.txt','w',encoding='utf-8') as f:
             txt = ''
             for block in blocks:
@@ -116,6 +117,9 @@ def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespac
                 txt = fix_hifenization(txt)
 
             f.write(txt)
+
+        metadata['output']['txt'] = f'{results_path}.txt'
+        metadata['output']['txt_simple'] = f'{results_path}.txt'
                 
             
     if 'markdown' in args.output_type:
@@ -133,6 +137,11 @@ def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespac
                 txt = fix_hifenization(txt)
 
             f.write(txt)
+
+        metadata['output']['markdown'] = f'{results_path}.md'
+
+
+    save_target_metadata(args.target,metadata)
 
 
 def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
@@ -176,9 +185,6 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
         blocks = sorted(blocks,key=lambda x: x.id)
 
     # divide output according to output segments
-    if 'all' in output_segments:
-        output_default(blocks,f'{results_path}/output',args)
-
     if 'header' in output_segments and header:
         header_area_blocks = ocr_results.get_boxes_in_area(areas[0])
         header_blocks = [block for block in blocks if block in header_area_blocks]
@@ -194,6 +200,8 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
         footer_blocks = [block for block in blocks if block in footer_area_blocks]
         output_default(footer_blocks,f'{results_path}/footer',args)
 
+    if 'all' in output_segments:
+        output_default(blocks,f'{results_path}/output',args)
 
 
 

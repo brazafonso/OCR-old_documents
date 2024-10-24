@@ -17,13 +17,15 @@ Estas dependências são especialmente notórias quando se envolvem documentos m
 Estes documentos antigos são mais comummente, mas não exclusivamente, reconhecidos como anteriores à era digital, sendo que o foco de trabalho será maioritariamente dirigido a documentos desta época, como jornais, revistas e outros, do século passado ou anteriores. 
 Em especial documentos com estruturas complexas, como é o caso de jornais, onde é possível a segmentação em diferentes partes com conteúdo e propósito distinto e, ao mesmo tempo, uma ordem de leitura complexa i.e., não segue apenas regras simples de posição do conteúdo (texto da esquerda antes do texto da direita e cima antes de baixo), exigindo também noção das características e relação do conteúdo. 
 
-Mesmo para ficheiros do tipo \textbf{hOCR} ou \textbf{PDF}, que já passaram por um processo de reconhecimento de texto, a complexidade da estrutura dos documentos originais ou problemas nos elementos que contém o texto (como por exemplo elementos sobrepostos ou que se intersetam) dificultam a extração e interpretação do seu conteúdo, podendo ser facilmente perdida a lógica original.
+Mesmo para ficheiros do tipo \textbf{hOCR} ou \textbf{PDF} que já passaram por um processo de reconhecimento de texto, a complexidade da estrutura dos documentos originais ou problemas nos elementos que contém o texto (como por exemplo elementos sobrepostos ou que se intersetam) dificultam a extração e interpretação do seu conteúdo, podendo ser facilmente perdida a lógica original.
 
-Por estas razões, seria útil uma ferramenta que permita uma deteção e tratamento destes documentos de forma automática e de uso simples, permitindo um certo nível de configuração para adaptação entre tipos de documentos com características bem definidas e distintas. 
+A base desta tese será então a criação de um Toolkit, ou conjunto de métodos independentes, que habilite a manipulação e análise de dados envolvidos no processo de OCR e, assim, melhorar o resultado final da transcrição.
 
-O presente documento pretende então servir como um estudo dos desafios apresentados por estes tipos de documentos perante \acrshort{ocr}, assim como a procura de soluções para a melhoria dos resultados na deteção  e extração de texto e assim criar uma ferramenta que torne o processo de extração de informação destes tipos de documentos mais simples e fiável. 
+Complementando esta componente, duas outras serão implementadas através duma sua aplicação: uma pipeline de OCR, permitindo a utilização direta do Toolkit e assim observar a sua efetividade; um editor de resultados OCR que, aplicando diferentes métodos do Toolkit, permitia uma minuciosa manipulação dos resultados, assim como teste do trabalho desenvolvido. 
 
-Como trabalho complementar, é proposta a implementação de um método de modernização do conteúdo extraído, envolvendo a criação de uma ferramenta capaz de criar dicionários entre diferentes iterações de uma mesma linguagem. 
+O presente documento pretende então servir como um estudo dos desafios apresentados por estes tipos de documentos perante \acrshort{ocr}, assim como a procura e implementação de soluções para a melhoria dos resultados na deteção  e extração de texto e assim criar uma ferramenta que torne o processo de extração de informação destes tipos de documentos mais simples e fiável. 
+
+Todo o trabalho desenvolvido estará disponibilizado nos repositórios: \href{https://github.com/brazafonso/OCR-old_documents}{OSDOCR} (repositório geral) e \href{https://github.com/brazafonso/document_image_processing}{document\_image\_utils} (tratamento de imagem).
 
 \section{Objetivos}
 \label{section_objetivos}
@@ -39,11 +41,9 @@ Especificando, os objetivos do trabalho são:
     \item Estudar o trabalho desenvolvido sobre a área de tratamento de imagem, identificação de tipo de documento, segmentação de documentos, algoritmos de cálculo da ordem de leitura, melhoria de resultados de \acrshort{ocr} e métricas de validação de resultado \acrshort{ocr}.
     \item Estudar trabalhos com âmbito similar ou relacionado ao presente.
     \item Implementação de um conjunto de ferramentas dirigidas à solução dos problemas propostos.
-    \item Implementação de uma ferramenta em formato \acrshort{gui} e comando de consola que aplique uma pipeline cujo input seria um ficheiro - imagem, pdf, hOCR -, identifique e trate de problemas deste se necessário para melhorar os resultados de \acrshort{ocr} e, por fim, devolva um output que mantenha a lógica e conteúdo do documento original.
-    \item Secundário : ferramenta para criação de dicionário de diferentes versões de uma linguagem para: modernização de texto; léxico de motor \acrshort{ocr}. Ferramenta tem como input duas versões de um documento na mesma linguagem mas iterações diferentes e dá como output um dicionário entre as versões.
-    \begin{itemize}
-        \item Estudo sobre criação de léxicos e alinhamento de documentos.
-    \end{itemize}
+    \item Implementação de uma ferramenta de comando de consola que aplique uma pipeline cujo input seria um ficheiro - imagem, json, hOCR -, e trate de problemas deste se necessário para melhorar os resultados de \acrshort{ocr} e, por fim, devolva um output que mantenha a lógica e conteúdo do documento original.
+    \item Implementação de um editor gráfico que permita, além de manipular resultados de \acrshort{ocr}, visualizar e consequentemente depurar as outras componentes da solução.
+    \item Avaliar os resultados da solução implementada.
 \end{itemize}
 
 Englobando todo o trabalho prático desenvolvido, a solução implementada será nomeada "Old Structured Documents OCR" (\textbf{OSDOCR}).
@@ -58,14 +58,16 @@ Esta dissertação segue a seguinte estrutura:
     \item Capítulo \ref{cap_introducao}: Breve contextualização sobre o tema proposto, as dificuldades impostas por documentos estruturados e com digitalizações ou condições físicas degradadas, nos resultados \acrshort{ocr}, e a utilidade de uma ferramenta para o tratamento destas. Além disso foram listados os objetivos do trabalho.
 
     \item Capítulo \ref{cap_estado_arte}: Estudo sobre o estado da arte nos tópicos relacionados ao tema da dissertação, as suas dificuldades e soluções destas; estudo de trabalho anteriormente realizado com âmbito similar ao atual ou técnicas relevantes para a construção da solução do problema.
+    
+    \item Capítulo \ref{cap_osdocr_filosofia}: Discussão sobre o problema e desenho da solução e propostas desta.
 
-    \item Capítulo \ref{cap_problema}: Listagem dos diferentes problemas que a solução irá abranger e os desafios que estes apresentam. Apresentação do desenho da solução.
-
-    \item Capítulo \ref{cap_contribuicao}: Descrição da solução e ferramentas implementadas.
-
-    \item Capítulo \ref{cap_aplicacoes}: Apresentação e estudo dos resultados do trabalho realizado.
-
-    \item Capítulo \ref{cap_conclusao}: Reflexão sobre o trabalho realizado, os resultados e a experiência obtida, assim como uma breve exploração de caminhos para trabalho futuro do projeto. 
-
-    \item Capítulo \ref{cap_planeamento}: No último capítulo é explicado o plano de desenvolvimento da dissertação.
+    \item Capítulo \ref{cap_osdocr_toolkit_implementacao}:Descrição da componente de Toolkit da solução.
+    
+    \item Capítulo \ref{cap_osdocr_pipeline_implementacao}:Descrição da componente de Pipeline da solução.
+    
+    \item Capítulo \ref{cap_osdocr_editor_implementacao}:Descrição da componente de Editor da solução.
+    
+    \item Capítulo \ref{cap_results}: Capítulo de discussão e análise dos resultados das diferentes componentes da solução.
+    
+    \item Capítulo \ref{cap_conclusao}: Reflexão sobre o trabalho realizado, os resultados da solução como um tudo, e a experiência obtida, assim como uma breve exploração de caminhos para trabalho futuro do projeto. 
 \end{itemize}

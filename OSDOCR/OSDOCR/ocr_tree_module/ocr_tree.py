@@ -728,7 +728,8 @@ class OCR_Tree:
                 if self.box.intersects_box(area,inside=inside):
                     if area_ratio > 0:
                         intersect_area = self.box.intersect_area_box(area)
-                        if intersect_area and intersect_area.area()/self.box.area() >= area_ratio:
+                        if intersect_area and \
+                            ((self_area:=self.box.area() == 0) or intersect_area.area()/self_area >= area_ratio):
                             boxes.append(self)
                     else:
                         boxes.append(self)
@@ -946,7 +947,7 @@ class OCR_Tree:
 
     def join_trees(self,tree:'OCR_Tree',orientation:str='vertical'):
         '''Join trees of the same level'''
-        if self.level == tree.level:
+        if self.level == tree.level and self.children:
             if orientation not in ['vertical','horizontal','auto']:
                 raise ValueError('orientation must be vertical or horizontal')
             if orientation == 'auto':
