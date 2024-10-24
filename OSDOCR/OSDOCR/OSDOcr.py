@@ -204,7 +204,7 @@ def run_main(args:argparse.Namespace):
         for target in targets:
             if args.calibrate:
                 calibrate_foder = target
-                pipeline_configs_path = args.calibrate_pipeline[0]
+                pipeline_configs_path = args.calibrate[0]
                 calibrate_reuse = args.calibrate_no_reuse == False
                 run_calibrate(calibration_folder=calibrate_foder,pipeline_configs_path=pipeline_configs_path,
                               reuse_results=calibrate_reuse,logs=args.logs,debug=args.debug)

@@ -729,7 +729,7 @@ class OCR_Tree:
                     if area_ratio > 0:
                         intersect_area = self.box.intersect_area_box(area)
                         if intersect_area and \
-                            ((self_area:=self.box.area() == 0) or intersect_area.area()/self_area >= area_ratio):
+                            ((self_area:=self.box.area()) == 0 or intersect_area.area()/self_area >= area_ratio):
                             boxes.append(self)
                     else:
                         boxes.append(self)

@@ -34,7 +34,6 @@ def path_to_id(path: str):
     if os.name == 'nt':
         path = path.replace('\\\\','\\')
         path = path.replace('\\','/')
-
     file_name = path.split('/')[-1].split('.')[0]
     path_hash = hashlib.md5('/'.join(path.split('/')[:-1]).encode('utf-8')).hexdigest()
 

@@ -101,9 +101,9 @@ def output_articles(o_target:str,ocr_results:OCR_Tree,results_path:str,args:argp
 
 
 
-def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespace):
+def output_default(og_target:str,blocks:list[OCR_Tree],results_path:str,args:argparse.Namespace):
     '''Create default output'''
-    metadata = get_target_metadata(args.target)
+    metadata = get_target_metadata(og_target)
 
     fix_hifenization_flag = 'fix_hifenization' not in args.skip_method
 
@@ -141,7 +141,7 @@ def output_default(blocks:list[OCR_Tree],results_path:str,args:argparse.Namespac
         metadata['output']['markdown'] = f'{results_path}.md'
 
 
-    save_target_metadata(args.target,metadata)
+    save_target_metadata(og_target,metadata)
 
 
 def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse.Namespace):
@@ -188,20 +188,20 @@ def save_output(ocr_results:OCR_Tree,o_target:str,results_path:str,args:argparse
     if 'header' in output_segments and header:
         header_area_blocks = ocr_results.get_boxes_in_area(areas[0])
         header_blocks = [block for block in blocks if block in header_area_blocks]
-        output_default(header_blocks,f'{results_path}/header',args)
+        output_default(o_target,header_blocks,f'{results_path}/header',args)
 
     if 'body' in output_segments and body:
         body_area_blocks = ocr_results.get_boxes_in_area(areas[1])
         body_blocks = [block for block in blocks if block in body_area_blocks]
-        output_default(body_blocks,f'{results_path}/body',args)
+        output_default(o_target,body_blocks,f'{results_path}/body',args)
 
     if 'footer' in output_segments and footer:
         footer_area_blocks = ocr_results.get_boxes_in_area(areas[2])
         footer_blocks = [block for block in blocks if block in footer_area_blocks]
-        output_default(footer_blocks,f'{results_path}/footer',args)
+        output_default(o_target,footer_blocks,f'{results_path}/footer',args)
 
     if 'all' in output_segments:
-        output_default(blocks,f'{results_path}/output',args)
+        output_default(o_target,blocks,f'{results_path}/output',args)
 
 
 
