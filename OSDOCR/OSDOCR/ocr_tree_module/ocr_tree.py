@@ -352,7 +352,7 @@ class OCR_Tree:
         conf_str = f'x_wconf {self.conf}' if self.conf != -1 else ''
         title_str = 'title="' +';'.join([bbox_str,conf_str]) + '"'
         type_str = f'type="{self.type}"' if self.type else ''
-        id_str = f'id="{element_type}_1_{self.id}"' if self.id else f'id="{element_type}_1_0"'
+        id_str = f'id="{element_type}_1_{self.id}"' if self.id is not None else f'id="{element_type}_1_0"'
         hocr += f'{indent_level*" "}<{tag} class="{tree_class}" {id_str} {title_str} {type_str}>'
 
         if self.children:
@@ -855,7 +855,6 @@ class OCR_Tree:
 
         # get blocks below block
         below_blocks = [b for b in blocks if b.box.top > self.box.top and not b.box.is_inside_box(self.box) and b.box.intersects_box(block_extended)]
-        # print('below blocks',[b.id for b in below_blocks])
 
 
         ## clean directly below blocks

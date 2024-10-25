@@ -35,6 +35,9 @@ def prepare_pipeline_config(pipeline_config:str,target_image:str,default_args:st
         skip_methods = pipeline_args.__getattribute__('skip_method')
         action = CustomAction_skip_method('skip_method','skip_method')
         action(None,pipeline_args,skip_methods,None)
+        # need to remove 'output' from skip_method
+        if 'output' in pipeline_args.skip_method:
+            pipeline_args.skip_method.remove('output')
 
     pipeline_args.__setattr__('logs',logs)
     pipeline_args.__setattr__('debug',debug)
@@ -201,6 +204,7 @@ def compare_results(results_folder:str,option:str,
         comparison['validation']['text']['partial_ground_truth_hit_rate']  = total_hits/len(partial_ground_truth)
         comparison['validation']['text']['partial_ground_truth_hit_count'] = total_hits
         comparison['partial_ground_truth']['number_lines'] = len(partial_ground_truth)
+        comparison['validation']['text']['partial_ground_truth_correct_order_ratio'] = 0
         comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = 0
         comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_count'] = 0
         ### check if lines found are in the correct order in text
@@ -232,6 +236,7 @@ def compare_results(results_folder:str,option:str,
                 if correct_order:
                     n_correct_order += 1
 
+            comparison['validation']['text']['partial_ground_truth_correct_order_ratio'] = total_hits/len(partial_ground_truth)
             comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = n_correct_order/len(found_lines)
             comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_count'] = n_correct_order
 

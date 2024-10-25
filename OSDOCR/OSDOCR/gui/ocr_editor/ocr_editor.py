@@ -550,11 +550,17 @@ def update_canvas_image(window:sg.Window,values:dict):
         default_edge_color,config,current_image,config
     if values['target_input']:
         path = values['target_input']
+        file_name = os.path.basename(path)
+        print('Path:',path)
+        print(config['base']['use_pipeline_results'])
         if config['base']['use_pipeline_results']:
-            results_path = f'{consts.result_path}/{path_to_id(path)}'
+            results_path = f'{consts.result_path}/{path_to_id(file_name)}'
         else:
             results_path = path
-        metadata = get_target_metadata(path)
+
+        print('Results path:',results_path)
+        metadata = get_metadata(results_path)
+        print(metadata)
         browse_file_initial_folder = None
 
         if not metadata or not config['base']['use_pipeline_results']:
@@ -2171,12 +2177,14 @@ def adjust_bounding_boxes_method():
     '''Adjust bounding boxes method. 
     Adjusts bounding boxes according with inside text and text confidence.
     If no highlighted blocks, apply on all blocks. Else, apply on highlighted blocks.'''
-    global current_ocr_results,bounding_boxes,highlighted_blocks,config
+    global current_ocr_results,bounding_boxes,highlighted_blocks,config,current_image
     text_confidence = config['base']['text_confidence']
 
     if highlighted_blocks:
         # apply fix
         tree = current_ocr_results.copy()
+        tree = bound_box_fix_image(tree,current_image,level=5,
+                                   text_confidence=text_confidence,debug=True)
         tree = text_bound_box_fix(tree,text_confidence=text_confidence,debug=True)
         for highlighted_block in highlighted_blocks:
             block = highlighted_block['block']
@@ -2189,6 +2197,8 @@ def adjust_bounding_boxes_method():
         refresh_highlighted_blocks()
     elif current_ocr_results:
         # apply fix
+        bound_box_fix_image(current_ocr_results,current_image,level=5,
+                                   text_confidence=text_confidence,debug=True)
         text_bound_box_fix(current_ocr_results,text_confidence=text_confidence,debug=True)
 
         # update assets

@@ -30,6 +30,9 @@ def remove_empty_boxes(ocr_results:OCR_Tree,text_confidence:int=10,find_delimite
     ## if no flags for finding delimiters or images are set, remove all empty blocks
     image_box = ocr_results.get_boxes_level(0)[0].box
     image_area = image_box.area()
+
+    delimiters_only_type = find_delimiters == False
+    images_only_type = find_images == False
     for i,block in enumerate(blocks):
         if block.is_empty(conf=text_confidence,only_text=True):
             if block.box.area() >= image_area*0.8:
@@ -39,12 +42,11 @@ def remove_empty_boxes(ocr_results:OCR_Tree,text_confidence:int=10,find_delimite
                 blocks.pop(i)
                 continue
 
-            if not find_delimiters:
-                if block.is_delimiter(conf=text_confidence,only_type=True):
-                    continue
+            if block.is_delimiter(conf=text_confidence,only_type=delimiters_only_type):
+                continue
             
             if not find_images:
-                if block.is_image(conf=text_confidence,only_type=True):
+                if block.is_image(conf=text_confidence,only_type=images_only_type):
                     continue
 
             if debug:
@@ -67,6 +69,10 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     Returns:
         OCR_Tree: ocr results cleaned
     '''
+
+    if debug:
+        print(f'''Block bound box fix | text_confidence: {text_confidence} | find_delimiters: {find_delimiters} | find_images: {find_images}''')
+    
     i = 0
     current_box = None
     ocr_results.id_boxes(level=[2],override=False)
@@ -99,7 +105,8 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
         if current_box and blocks[i].id != current_box.id:
             compare_box = blocks[i]
             # compared box inside current box
-            if (compare_box_empty:=compare_box.is_empty(conf=text_confidence)) and compare_box.box.is_inside_box(current_box.box):
+            if (compare_box_empty:=compare_box.is_empty(conf=text_confidence)) and\
+                  compare_box.box.is_inside_box(current_box.box):
                 if debug:
                     print(f'Removing Box : {compare_box.id} is inside {current_box.id}')
                 ocr_results.remove_box_id(compare_box.id)
@@ -107,16 +114,19 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                 if compare_box.id in boxes_to_check: 
                     del boxes_to_check[compare_box.id]
             # current box inside compared box
-            elif (current_box_empty:=current_box.is_empty(conf=text_confidence)) and current_box.box.is_inside_box(compare_box.box):
+            elif (current_box_empty:=current_box.is_empty(conf=text_confidence)) and\
+                  current_box.box.is_inside_box(compare_box.box):
                 if debug:
                     print(f'Removing Box : {current_box.id} is inside {compare_box.id}')
                 ocr_results.remove_box_id(current_box.id)
                 blocks = [b for b in blocks if b.id != current_box.id]
                 current_box = None
-            # boxes not empty and mostly or completly overlap
-            elif (not compare_box_empty and not current_box_empty):
-                if current_box.box.intersects_box(compare_box.box,inside=True) and\
-                    ((box_area:=current_box.box.area())>0) and current_box.box.intersect_area_box(compare_box.box).area()/box_area >= 0.7:
+            elif current_box.box.intersects_box(compare_box.box):
+                # boxes not empty and mostly or completly overlap
+                if (not compare_box_empty and not current_box_empty) and\
+                    current_box.box.intersects_box(compare_box.box,inside=True) and\
+                    ((box_area:=current_box.box.area())>0) and\
+                          current_box.box.intersect_area_box(compare_box.box).area()/box_area >= 0.7:
                     # join boxes
                     if debug:
                         print(f'Merging Boxes : {current_box.id} and {compare_box.id}')
@@ -125,8 +135,10 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                     blocks.pop(i)
                     if compare_box.id in boxes_to_check: 
                         del boxes_to_check[compare_box.id]
-                elif compare_box.box.intersects_box(current_box.box,inside=True) and\
-                    ((box_area:=compare_box.box.area())>0) and compare_box.box.intersect_area_box(current_box.box).area()/box_area >= 0.7:
+                elif (not compare_box_empty and not current_box_empty) and\
+                    compare_box.box.intersects_box(current_box.box,inside=True) and\
+                    ((box_area:=compare_box.box.area())>0) and\
+                          compare_box.box.intersect_area_box(current_box.box).area()/box_area >= 0.7:
                     # join boxes
                     if debug:
                         print(f'Merging Boxes : {compare_box.id} and {current_box.id}')
@@ -134,23 +146,28 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
                     ocr_results.remove_box_id(current_box.id)
                     blocks = [b for b in blocks if b.id != current_box.id]
                     current_box = None
-
-            # boxes intersect (with same level, so as to be able to merge seamlessly)
-            elif current_box.box.intersects_box(compare_box.box):
-                # update boxes so that they don't intersect
-                # smaller box is reduced
-                if current_box.box.box_is_smaller(compare_box.box):
-                    intersect_area = compare_box.box.intersect_area_box(current_box.box)
-                    #print(f'Box {current_box.id} is smaller than {compare_box.id}')
-                    current_box.box.remove_box_area(intersect_area)
-                    # update current box's children
-                    current_box.prune_children_area()
                 else:
+
+                    # boxes intersect (with same level, so as to be able to merge seamlessly)
+                    if debug:
+                        print(f'Intersecting Boxes : {current_box.id} and {compare_box.id}| Adjusting boxes')
+                    # update boxes so that they don't intersect
+                    # box with smaller intersection ratio is adjustesd
                     intersect_area = current_box.box.intersect_area_box(compare_box.box)
-                    #print(f'Box {compare_box.id} is smaller than {current_box.id}')
-                    compare_box.box.remove_box_area(intersect_area)
-                    # update compare box's children
-                    compare_box.prune_children_area()
+                    current_box_intersect_ratio = intersect_area.area()/current_box.box.area() \
+                                                        if current_box.box.area() > 0 else 0
+                    compare_box_intersect_ratio = intersect_area.area()/compare_box.box.area() \
+                                                        if compare_box.box.area() > 0 else 0
+                    if current_box_intersect_ratio < compare_box_intersect_ratio:
+                        #print(f'Box {current_box.id} is smaller than {compare_box.id}')
+                        current_box.box.remove_box_area(intersect_area)
+                        # update current box's children
+                        current_box.prune_children_area()
+                    else:
+                        #print(f'Box {compare_box.id} is smaller than {current_box.id}')
+                        compare_box.box.remove_box_area(intersect_area)
+                        # update compare box's children
+                        compare_box.prune_children_area()
             else:
                 if compare_box.id not in checked_boxes and compare_box.id not in boxes_to_check:
                     boxes_to_check[compare_box.id] = compare_box
@@ -187,14 +204,14 @@ def block_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,find_delimit
     return ocr_results
 
 
-def text_bound_box_fix(ocr_results:OCR_Tree,text_confidence:int=10,debug:bool=False)->OCR_Tree:
+def text_bound_box_fix(ocr_results:OCR_Tree,level:int=2,text_confidence:int=10,debug:bool=False)->OCR_Tree:
     '''Fix bound boxes of blocks with text by reducing their sides when confidence of side text is too low.'''
 
     if debug:
         print('Fixing text bound box')
         print(f'Text confidence: {text_confidence}')
 
-    blocks = ocr_results.get_boxes_level(2)
+    blocks = ocr_results.get_boxes_level(level)
     text_blocks = [b for b in blocks if b.to_text(conf=text_confidence).strip()]
 
     for b in text_blocks:
@@ -354,9 +371,6 @@ def bound_box_fix_image(ocr_results:OCR_Tree,target_image:Union[str,cv2.typing.M
             if new_left == new_right:
                 new_right += 1
 
-            if debug:
-                print(f'Updating box {b.id} with left {new_left} and right {new_right} and top {new_top} and bottom {new_bottom} width {new_right - new_left} and height {new_bottom - new_top}| Old box: {b.box}')
-
             b.update_box(left=new_left,right=new_right,top=new_top,bottom=new_bottom,invert=False)
 
     return ocr_results
@@ -377,8 +391,8 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,debu
     # get all blocks
     ocr_results.id_boxes(level=[2],override=False)
     blocks = ocr_results.get_boxes_level(2)
-    non_visited = [b.id for b in blocks if b.id]
-    available_blocks = [b for b in blocks if b.id]
+    non_visited = [b.id for b in blocks if b.id is not None]
+    available_blocks = [b for b in blocks if b.id is not None]
     # get first block
     target_block_id = non_visited.pop(0)
     # iterate over all blocks
@@ -423,8 +437,10 @@ def unite_blocks(ocr_results:OCR_Tree,conf:int=10,horizontal_join:bool=True,debu
                 joined_area.join(below_block.box)
                 # check if joined area conflicts with other blocks
                 ## if conflicts with other blocks, continue
-                if len([b for b in ocr_results.get_boxes_intersect_area(joined_area,level=2)\
-                        if b.id not in [target_block.id,below_block.id]]) > 0:
+                new_area_intersecting_blocks = ocr_results.get_boxes_intersect_area(joined_area,level=2,area_ratio=0.1)
+                new_area_intersecting_blocks = [b for b in new_area_intersecting_blocks if b.id != target_block.id and b.id != below_block.id]
+                if len(new_area_intersecting_blocks) > 0:
+                    print('Conflicts with other blocks:',[b.id for b in new_area_intersecting_blocks])
                     pass
                 else:
                     # remove bellow block
@@ -541,24 +557,28 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                     extended_delimiter_box.left = block.box.left
                     extended_delimiter_box.right = block.box.right
                     ## get text above and below
+                    ### id text
+                    block.id_boxes(level=[5])
                     above_area = block.box.copy()
                     above_area.bottom = current_delimiter_box.top
                     above_text_blocks = block.get_boxes_intersect_area(above_area,level=5,conf=conf)
+                    above_text_blocks_ids = set([b.id for b in above_text_blocks])
                     below_area = block.box.copy()
                     below_area.top = current_delimiter_box.bottom
                     below_text_blocks = block.get_boxes_intersect_area(below_area,level=5,conf=conf)
                     ## remove from below_text_blocks blocks that are in above_text_blocks
-                    below_text_blocks = [b for b in below_text_blocks if b not in above_text_blocks]
+                    below_text_blocks = [b for b in below_text_blocks if b.id not in above_text_blocks_ids]
 
                     side_blocks = block.get_boxes_intersect_area(extended_delimiter_box,level=5,conf=conf,area_ratio=0.4)
                     if len(side_blocks) == 0 and len(above_text_blocks) > 0 and len(below_text_blocks) > 0:
                         if debug:
                             print(f'Splitting block {block.id} into two')
-
-                        split_blocks = split_block(block,current_delimiter_box,orientation='horizontal',
+                        
+                        split_blocks = split_block(block.copy(),current_delimiter_box,orientation='horizontal',
                                                    conf=conf,keep_all=True,debug=debug)
 
                         if len(split_blocks) > 1:
+                            block.update(split_blocks[0])
                             block_2 = split_blocks[1]
                             # add new blocks
                             page = ocr_results.get_boxes_level(1)[0]
@@ -567,6 +587,9 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                             blocks.append(block_2)
                             # id boxes again
                             ocr_results.id_boxes(level=[2],override=False)
+                        else:
+                            if debug:
+                                print(f'Could not split block {block.id}')
 
                     ## remove delimiter
                     else:

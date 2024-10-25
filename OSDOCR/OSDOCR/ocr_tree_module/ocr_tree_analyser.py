@@ -1097,7 +1097,7 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
         block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
                                                        level=5,conf=conf,range=0.1)
         title_range = not target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
-                                                       level=5,conf=conf,range=0.3)
+                                                       level=5,conf=conf,range=1)
         blocks_directly_above = target_block.boxes_directly_above(blocks)
 
         if debug:
@@ -1145,7 +1145,10 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
 
 
         # text characteristics
-        block_text = target_block.to_text(conf=conf).strip()
+        ## for characteristics, needs to use minimum text confidence - 50 
+        ##(avoid noise considered as dots, and other small errors)
+        min_text_conf = max(50,conf)
+        block_text = target_block.to_text(conf=min_text_conf).strip()
         # if first character is not uppercase or start of dialogue, not starts text
         if block_text and \
             (re.search(r'[a-z]',block_text) and not block_text[0].isupper() and not re.match(r'^(-|"|\')\s*[A-Z"]',block_text)):
@@ -1262,9 +1265,6 @@ def topologic_graph(ocr_results:OCR_Tree,area:Box=None,clean_graph:bool=True,deb
         potential_before_blocks = []
         right_blocks = current_block.boxes_directly_right(non_delimiters)
         below_blocks = current_block.boxes_directly_below(non_delimiters)
-        ## leave only leftmost of below blocks
-        below_blocks.sort(key=lambda x: x.box.left)
-        below_blocks = [below_blocks[0]] if below_blocks else []
 
         potential_before_blocks += right_blocks
         potential_before_blocks += below_blocks
@@ -1338,7 +1338,7 @@ def sort_topologic_order(topologic_graph:Graph,sort_weight:bool=False,next_node_
 
     # clean graph (narrow parents by removing edges with lower attraction; reduces blocks' dependencies)
     if sort_weight:
-        if log:
+        if debug:
             print('Narrowing parents')
         topologic_graph.narrow_parents()
     
@@ -1634,7 +1634,13 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
         if direction in ['right','above']:
             attraction += 40
             if debug:
-                print(f'Direction: {direction}','Attraction:',attraction)
+                print(f'Direction: {direction} - No below blocks','Attraction:',attraction)
+
+            # if target block has no above blocks, more attraction
+            if not target_block.boxes_directly_above(blocks):
+                attraction += 20
+                if debug:
+                    print('Target block has no above blocks','Attraction:',attraction)
     
     if direction in ['below','right']:
         # if below block's width encompasses both block and target, more attraction
@@ -1671,8 +1677,8 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                         if debug:
                             print('Block and target block share parent','Attraction:',attraction)
 
-
                     break
+
 
 
     # title
@@ -1682,21 +1688,22 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     if block.type == 'title':
         if debug:
             print('Block is title','Attraction:',attraction)
+
+        if direction == 'below':
+            attraction += 20
+            if debug:
+                print('Target block is below','Attraction:',attraction)
+                
         if target_block.type != 'title':
-            if target_block.type == 'text':
-                if target_block.start_text == True:
-                    attraction += 30
-                    if debug:
-                        print('Target block is text and text is started','Attraction:',attraction)
-            else:
-                attraction += 20
+            attraction += 20
             if debug:
                 print('Target block is not title','Attraction:',attraction)
-        else:
-            if target_block in below_blocks:
-                attraction += 20
-                if debug:
-                    print('Target block is below','Attraction:',attraction)
+
+            if target_block.type == 'text':
+                if direction == 'below' and target_block.start_text == True:
+                    attraction += 10
+                    if debug:
+                        print('Target block is text and text is started','Attraction:',attraction)
             
     # image
     ## images are very atracted to caption blocks
@@ -1709,23 +1716,25 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
                 print('Target block is caption','Attraction:',attraction)
     
     # text
+    ## for more than one line of text
     ## text is dependent on its content
     ## unfinished text is more atracted to unstarted text
     ## text is more attracted to text below it
     ### text to the right is more attracted if below block is delimiter
     ## unfineshed text is less atracted to non text block
     elif block.type == 'text':
+        n_lines = len(block.get_boxes_level(4))
         if debug:
             print('Block is text',block.start_text,block.end_text,'Attraction:',attraction)
         if target_block.type =='text':
             if debug:
                 print('Target block is text',target_block.start_text,target_block.end_text,'Attraction:',attraction)
             
-            if block.end_text == False and target_block.start_text == False:
+            if n_lines > 1 and block.end_text == False and target_block.start_text == False:
                 attraction += 50
                 if debug:
                     print('Block text is not finished and target block text is not started','Attraction:',attraction)
-            elif block.end_text == True and target_block.start_text == True:
+            elif n_lines > 1 and block.end_text == True and target_block.start_text == True:
                 attraction += 10
                 if debug:
                     print('Block text is finished and target block text is started','Attraction:',attraction)
@@ -1749,7 +1758,7 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
             
 
         ## unfineshed text is less atracted to not non-started text block
-        elif block.end_text == False and (target_block.type != 'text'or target_block.start_text == True):
+        elif n_lines > 1 and block.end_text == False and (target_block.type != 'text'or target_block.start_text == True):
             attraction -= 20
             if debug:
                 print('Target block is not text and block text is not finished','Attraction:',attraction)
@@ -1909,7 +1918,7 @@ def extract_articles(image_path:str,ocr_results:OCR_Tree,ignore_delimiters:bool=
 
 
     # isolate articles
-    articles = graph_isolate_articles(t_graph,order_list=order_list,logs=logs)
+    articles = graph_isolate_articles(t_graph,order_list=order_list,logs=debug)
 
 
     return order_list,articles
