@@ -534,8 +534,6 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                     ocr_results.remove_box_id(current_delimiter_id,level=2)
                     break
                 else:
-                    if debug:
-                        print(f'Block text: {block.to_text(conf=conf)[:20]}')
                     # inside text block
                     ## if within area with no text and has text above and below, and 
                     ## no text to the left or right, split block horizontally in two and keep delimiter
@@ -553,7 +551,6 @@ def delimiters_fix(ocr_results:OCR_Tree,conf:int=10,logs:bool=False,debug:bool=F
                     below_text_blocks = [b for b in below_text_blocks if b not in above_text_blocks]
 
                     side_blocks = block.get_boxes_intersect_area(extended_delimiter_box,level=5,conf=conf,area_ratio=0.4)
-                    print(f'Side blocks: {side_blocks}')
                     if len(side_blocks) == 0 and len(above_text_blocks) > 0 and len(below_text_blocks) > 0:
                         if debug:
                             print(f'Splitting block {block.id} into two')
@@ -743,7 +740,6 @@ def find_text_titles(ocr_results:OCR_Tree,conf:int=10,id_blocks:bool=True,catego
                 new_blocks = split_block(block,title_block.box,orientation='horizontal',conf=conf,debug=debug)
 
                 if len(new_blocks) > 1:
-                    print(new_blocks[1].to_text(conf=conf))
                     # add new block
                     new_block = new_blocks[-1]
                     new_block.id = last_id

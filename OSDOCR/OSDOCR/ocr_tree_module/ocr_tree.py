@@ -1060,6 +1060,10 @@ class OCR_Tree:
             # join boxes
             self.box.join(tree.box)
 
+        elif self.level == tree.level:
+            self.children += tree.children
+            self.box.join(tree.box)
+
 
 
     def update_children_metadata(self,reference_block:int,reference_par:int):

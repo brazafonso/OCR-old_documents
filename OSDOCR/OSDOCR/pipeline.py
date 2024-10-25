@@ -538,6 +538,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
         column_ocr = OCR_Tree(f'{results_path}/ocr_results.json')
         columns_ocr.append(column_ocr)
 
+
     # Merge ocr_trees
 
     ## update position of header to match real position in target
@@ -553,9 +554,8 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
         column = columns_ocr[i]
         column:OCR_Tree
         # value to add according to columns to left of this column
-        add_left = -padding_horizontal
-        if i > 0:
-            add_left = columns[i].left - padding_horizontal
+        add_left = columns[i].left - padding_horizontal
+
 
         if args.logs:
             print(f'update position of column {i} to {add_left} + {add_top}')
@@ -570,6 +570,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
 
     ## merge all ocr_trees
     results_ocr = OCR_Tree()
+    
 
     if header:
         results_ocr.join_trees(header_ocr)
@@ -579,6 +580,7 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
 
     if footer:
         results_ocr.join_trees(footer_ocr)
+
 
     # save png
     img = draw_bounding_boxes(results_ocr,target_image)
@@ -930,11 +932,18 @@ def find_title_blocks(ocr_results:OCR_Tree,o_target:str,results_path:str,args:ar
     json.dump(ocr_results.to_json(),result_dict_file,indent=4)
     result_dict_file.close()
 
+
     # save metadata
     metadata = get_target_metadata(o_target)
+    target_img = metadata['target_path']
     metadata['ocr_results_path'] = f'{results_path}/find_titles.json'
     metadata['transformations'].append('find_title_blocks')
     save_target_metadata(o_target,metadata)
+
+
+    image = draw_bounding_boxes(ocr_results,target_img,[2],id=True)
+    cv2.imwrite(f'{results_path}/find_titles.png',image)
+
 
     return ocr_results
 
