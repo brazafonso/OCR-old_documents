@@ -77,8 +77,8 @@
 \contentsline {section}{\numberline {9.1}O Trabalho}{138}{section.9.1}%
 \contentsline {section}{\numberline {9.2}Conclusões}{139}{section.9.2}%
 \contentsline {section}{\numberline {9.3}Perspetiva de trabalho futuro}{140}{section.9.3}%
-\contentsline {part}{I\hspace {1em}Apêndices}{145}{part.1}%
-\contentsline {chapter}{\numberline {A}Trabalho de apoio}{146}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{147}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Listings}{154}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Ferramentas}{155}{appendix.D}%
+\contentsline {part}{I\hspace {1em}Apêndices}{146}{part.1}%
+\contentsline {chapter}{\numberline {A}Trabalho de apoio}{147}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{148}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Listings}{155}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Ferramentas}{156}{appendix.D}%
