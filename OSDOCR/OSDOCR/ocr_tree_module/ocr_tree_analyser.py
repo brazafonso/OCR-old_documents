@@ -66,50 +66,53 @@ def get_text_sizes(ocr_results:OCR_Tree,method:str='WhittakerSmoother',conf:int=
         line_sizes_smooth = line_sizes_smooth[:len(line_sizes)] # filter adds to x axis length
 
         peaks_smooth,_ = find_peaks(line_sizes_smooth,prominence=0.1*max(line_sizes_smooth))
-        if logs:
-            # print peaks
-            print('peaks:',peaks)
-            print('frequency:',[line_sizes[peak] for peak in peaks])
 
-            # turn line sizes into numpy array
-            log_line_sizes = np.array(line_sizes)
-            log_line_sizes_smooth = np.array(line_sizes_smooth)
-            # create 2 plots
-            plt.subplot(1, 2, 1)
-            plt.plot(peaks, log_line_sizes[peaks], "ob"); plt.plot(log_line_sizes); plt.legend(['prominence'])
-            plt.subplot(1, 2, 2)
-            plt.plot(peaks_smooth, log_line_sizes_smooth[peaks_smooth], "ob"); plt.plot(log_line_sizes_smooth); plt.legend(['prominence'])
+        if peaks_smooth.any():
 
-            plt.show()
+            if logs:
+                # print peaks
+                print('peaks:',peaks)
+                print('frequency:',[line_sizes[peak] for peak in peaks])
 
-        peaks_smooth:np.ndarray
-        peaks_smooth = peaks_smooth.tolist()
-        frequencies = [line_sizes_smooth[peak] for peak in peaks_smooth]
+                # turn line sizes into numpy array
+                log_line_sizes = np.array(line_sizes)
+                log_line_sizes_smooth = np.array(line_sizes_smooth)
+                # create 2 plots
+                plt.subplot(1, 2, 1)
+                plt.plot(peaks, log_line_sizes[peaks], "ob"); plt.plot(log_line_sizes); plt.legend(['prominence'])
+                plt.subplot(1, 2, 2)
+                plt.plot(peaks_smooth, log_line_sizes_smooth[peaks_smooth], "ob"); plt.plot(log_line_sizes_smooth); plt.legend(['prominence'])
 
-        sizes = {k:v for k,v in zip(peaks_smooth,frequencies)}
-        
+                plt.show()
 
-        text_sizes['normal_text_size'] = max(sizes,key=sizes.get)
+            peaks_smooth:np.ndarray
+            peaks_smooth = peaks_smooth.tolist()
+            frequencies = [line_sizes_smooth[peak] for peak in peaks_smooth]
 
-        
-        # categorize greater and smaller other text sizes
-        lower_peaks = {k:v for k,v in sizes.items() if k < text_sizes['normal_text_size']}
-        higher_peaks = {k:v for k,v in sizes.items() if k > text_sizes['normal_text_size']}
-        i = 0
-        while lower_peaks:
-            text_sizes[f'small_text_size_{i}'] = max(lower_peaks,key=lower_peaks.get)
-            del lower_peaks[text_sizes[f'small_text_size_{i}']]
-            i += 1
+            sizes = {k:v for k,v in zip(peaks_smooth,frequencies)}
+            
 
-        i = 0
-        while higher_peaks:
-            text_sizes[f'big_text_size_{i}'] = max(higher_peaks,key=higher_peaks.get)
-            del higher_peaks[text_sizes[f'big_text_size_{i}']]
-            i += 1
+            text_sizes['normal_text_size'] = max(sizes,key=sizes.get)
 
-        # remove padding
-        padding = round(len(line_sizes)*0.1)
-        text_sizes = {k:v - padding for k,v in text_sizes.items() if v > 0}
+            
+            # categorize greater and smaller other text sizes
+            lower_peaks = {k:v for k,v in sizes.items() if k < text_sizes['normal_text_size']}
+            higher_peaks = {k:v for k,v in sizes.items() if k > text_sizes['normal_text_size']}
+            i = 0
+            while lower_peaks:
+                text_sizes[f'small_text_size_{i}'] = max(lower_peaks,key=lower_peaks.get)
+                del lower_peaks[text_sizes[f'small_text_size_{i}']]
+                i += 1
+
+            i = 0
+            while higher_peaks:
+                text_sizes[f'big_text_size_{i}'] = max(higher_peaks,key=higher_peaks.get)
+                del higher_peaks[text_sizes[f'big_text_size_{i}']]
+                i += 1
+
+            # remove padding
+            padding = round(len(line_sizes)*0.1)
+            text_sizes = {k:v - padding for k,v in text_sizes.items() if v > 0}
         
     return text_sizes
 
@@ -139,7 +142,7 @@ def get_columns(ocr_results:OCR_Tree,method:str='WhittakerSmoother',logs:bool=Fa
             words = block.get_boxes_level(5)
             words = [w for w in words if w.text.strip()]
 
-            left = round(block.box.left)
+            left = round(block.box.left) if block.box.left > 0 else 0
             if len(left_margins) <= left:
                 left_margins += [0] * (left - len(left_margins) + 1)
             left_margins[left] += 1 + len(words)
@@ -399,6 +402,7 @@ def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
     - <other text sizes>* : other text sizes of the document if any (need to be found as peaks by get_text_sizes)
     - columns: list of columns as Box class\n
     - average_word_distance: average distance between words
+    - average_character_width: average character width
     '''
     analyze_results = {}
 
@@ -420,6 +424,18 @@ def analyze_text(ocr_results:OCR_Tree,conf:int=10)->dict:
         analyze_results['average_word_distance'] = distance_sum/distance_count
     else:
         analyze_results['average_word_distance'] = 0
+
+    # average character width
+    width_sum = 0
+    width_count = 0
+    words = ocr_results.get_boxes_level(5,conf=conf)
+    for word in words:
+        width_sum += word.box.width
+        width_count += len(word.text)
+    if width_count:
+        analyze_results['average_character_width'] = width_sum/width_count
+    else:
+        analyze_results['average_character_width'] = 0
 
 
     return analyze_results
@@ -1094,14 +1110,17 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
     # non empty block
     else:
         block_text_size = target_block.calculate_mean_height(level=5,conf=conf)
+        block_text_width = target_block.calculate_character_mean_width(conf=conf)
         block_is_text_size = target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
                                                        level=5,conf=conf,range=0.1)
         title_range = not target_block.is_text_size(block_analysis['normal_text_size'],mean_height=block_text_size,
-                                                       level=5,conf=conf,range=1)
+                                                       level=5,conf=conf,range=1.0) or \
+                    not target_block.is_text_width(block_analysis['average_character_width'],mean_width=block_text_width,
+                                                   conf=conf,range=0.5)
         blocks_directly_above = target_block.boxes_directly_above(blocks)
 
         if debug:
-            print('Block:',target_block.id,'| Text size:',block_text_size)
+            print('Block:',target_block.id,'| Text size:',block_text_size ,'| Text width:',block_text_width)
 
         if block_is_text_size :
             if not len([b for b in blocks_directly_above if b.is_image(conf=conf)]):
@@ -1552,7 +1571,8 @@ def calculate_block_attraction(block:OCR_Tree,target_block:OCR_Tree,blocks:list[
     ### exception, no below blocks (probably prefers upper block)
     border_point = {'above':'top','below':'bottom','left':'left','right':'right'}[direction]
     distance = block.box.distance_to(target_block.box,border=border_point)
-    distance = abs((distance-min_distance)/(max_distance-min_distance))
+    distance_range = max_distance - min_distance
+    distance = abs((distance-min_distance)/(distance_range)) if distance_range > 0 else 0
 
     ## more atraction to blocks below
     ## or right blocks in conditional cases

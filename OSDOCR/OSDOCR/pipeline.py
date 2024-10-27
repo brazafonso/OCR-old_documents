@@ -396,8 +396,13 @@ def image_preprocess(o_target:str,results_path:str,args:argparse.Namespace):
             split_image = args.light_correction_split_image
             light_corrected = False
 
-            light_corrected_img = fix_illumination(processed_image_path,model_weight=model_weight,
+            try:
+                light_corrected_img = fix_illumination(processed_image_path,model_weight=model_weight,
                                                    split_image=split_image,logs=args.debug)
+            except Exception as e:
+                print(e)
+                light_corrected_img = None
+
             if light_corrected_img is not None:
                 cv2.imwrite(processed_image_path,light_corrected_img)
                 light_corrected = True
@@ -468,6 +473,14 @@ def run_target_split(o_target:str,results_path:str,args:argparse.Namespace)->OCR
 
     header = header if header.valid() and target_header else None
     footer = footer if footer.valid() and target_footer else None
+
+    # if not header, body top is top of image 
+    if not header:
+        body.top = 0
+
+    # if not footer, body bottom is bottom of image
+    if not footer:
+        body.bottom = target_image.shape[0]
 
     image_body = target_image[body.top:body.bottom,body.left:body.right]
     image_header = target_image[header.top:header.bottom,header.left:header.right] if header else None

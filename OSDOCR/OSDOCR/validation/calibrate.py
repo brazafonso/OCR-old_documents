@@ -104,11 +104,14 @@ def compare_results(results_folder:str,option:str,
     ocr_results = OCR_Tree(ocr_results_path)
     ocr_totaltext_conf, ocr_number_text_blocks = ocr_results.conf_sum(level=5)
     ocr_average_text_conf = ocr_totaltext_conf / ocr_number_text_blocks
-    ocr_text_blocks = [t for t in ocr_results.get_boxes_level(level=5)]
+    ocr_text_blocks_2 = [t for t in ocr_results.get_boxes_level(level=2)]
+    ocr_text_blocks_5 = [t for t in ocr_results.get_boxes_level(level=5)]
+
 
     comparison['validation']['ocr'] = {
         'average_text_conf': ocr_average_text_conf,
-        'number_text_blocks': len(ocr_text_blocks)
+        'number_text_blocks' : len(ocr_text_blocks_2),
+        'number_word_blocks': len(ocr_text_blocks_5),
     }
 
     if not ground_truth_file and not partial_ground_truth_file:
@@ -602,7 +605,17 @@ def run_calibrate(calibration_folder:str,pipeline_configs_path:str,results_folde
     # for each pipeline option
     ## run pipeline and compare results with ground truth
     ## save comparison results
-    for config in sorted(os.listdir(pipeline_configs_path)):
+    pipeline_configs = []
+    if not os.path.exists(pipeline_configs_path):
+        print(f'Pipeline configs not found: {pipeline_configs_path}')
+        return
+    elif not os.path.isdir(pipeline_configs_path):
+        pipeline_configs = [os.path.basename(pipeline_configs_path)]
+        pipeline_configs_path = os.path.split(pipeline_configs_path)[0]
+    else:
+        pipeline_configs = os.listdir(pipeline_configs_path)
+
+    for config in sorted(pipeline_configs):
         if config.endswith('.json'):
             config_path = f'{pipeline_configs_path}/{config}'
             config_results_folder = f'{results_folder}/{config}'

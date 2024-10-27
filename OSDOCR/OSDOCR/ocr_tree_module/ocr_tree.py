@@ -529,14 +529,14 @@ class OCR_Tree:
     
     def calculate_mean_height(self,level:int=5,conf:int=-1)->float:
         '''Get mean height of group boxes'''
-        line_sum = 0
+        sum = 0
         count = 0
         boxes_level = self.get_boxes_level(level,conf=conf)
         for box in boxes_level:
-            line_sum += box.box.height
+            sum += box.box.height
             count += 1
         
-        return line_sum/count if count > 0 else 0
+        return sum/count if count > 0 else 0
     
     def is_text_size(self,text_size:float,mean_height:float=None,range:float=0.3,level:int=5,conf:int=-1):
         '''Check if text size is in range'''
@@ -544,6 +544,26 @@ class OCR_Tree:
         if not mean_height:
             mean_height = self.calculate_mean_height(level,conf=conf)
         if mean_height >= text_size*(1-range) and mean_height <= text_size*(1+range):
+            return True
+        return False
+    
+    def calculate_character_mean_width(self,conf:int=-1)->float:
+        '''Get mean width of group boxes'''
+        sum = 0
+        count = 0
+        boxes_level = self.get_boxes_level(5,conf=conf)
+        for box in boxes_level:
+            sum += box.box.width
+            count += len(box.text)
+        
+        return sum/count if count > 0 else 0
+    
+    def is_text_width(self,text_size:float,mean_width:float=None,range:float=0.3,conf:int=-1):
+        '''Check if text width is in range'''
+        mean_width = mean_width
+        if not mean_width:
+            mean_width = self.calculate_character_mean_width(conf)
+        if mean_width >= text_size*(1-range) and mean_width <= text_size*(1+range):
             return True
         return False
     

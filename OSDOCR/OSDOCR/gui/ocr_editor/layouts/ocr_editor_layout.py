@@ -357,6 +357,10 @@ def ocr_editor_layout()->sg.Window:
             place(sg.Text('',key='text_mean_height', font=('Calibri', 13))),
         ],
         [
+            place(sg.Text('Mean Char width:', font=('Calibri', 13))),
+            place(sg.Text('',key='text_mean_char_width', font=('Calibri', 13))),
+        ],
+        [
             place(sg.Text('Avg. Conf:', font=('Calibri', 13))),
             place(sg.Text('',key='text_avg_conf', font=('Calibri', 13))),
         ],

@@ -329,6 +329,8 @@ def sidebar_update_block_info():
         window['input_block_text'].Widget.see('1.0')
         avg_height = block.calculate_mean_height(level=5,conf=text_confidence)
         window['text_mean_height'].update('{:.2f}'.format(avg_height))
+        char_width = block.calculate_character_mean_width(conf=text_confidence)
+        window['text_mean_char_width'].update('{:.2f}'.format(char_width))
         ## avg conf
         total_conf,total_blocks = block.conf_sum(level=5)
         avg_conf = round(total_conf/total_blocks) if total_blocks > 0 else 0
@@ -2723,20 +2725,22 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     config = read_ocr_editor_configs_file()
     update_config_dependent_variables()
 
-    try:
-        if config['user']['image_input_path'] != input_image_path:
-            input_image_path = config['user']['image_input_path']
-            img = cv2.imread(input_image_path)
-            cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    except Exception as e:
-        input_image_path = None
+    if not input_image_path:
+        try:
+            if config['user']['image_input_path'] != input_image_path:
+                input_image_path = config['user']['image_input_path']
+                img = cv2.imread(input_image_path)
+                cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        except Exception as e:
+            input_image_path = None
 
-    try:
-        if config['user']['ocr_results_input_path'] != input_ocr_results_path:
-            input_ocr_results_path = config['user']['ocr_results_input_path']
-            OCR_Tree(input_ocr_results_path)
-    except Exception as e:
-        input_ocr_results_path = None
+    if not input_ocr_results_path:
+        try:
+            if config['user']['ocr_results_input_path'] != input_ocr_results_path:
+                input_ocr_results_path = config['user']['ocr_results_input_path']
+                OCR_Tree(input_ocr_results_path)
+        except Exception as e:
+            input_ocr_results_path = None
 
 
     last_window_size = window.size
