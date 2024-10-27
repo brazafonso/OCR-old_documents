@@ -29,6 +29,9 @@ A solução engloba ainda 2 outras componentes que, como base, fazem uso deste m
 \section{OSDOCR Pipeline}
 
 
+\subsection{Metodologia}
+
+
 A pipeline de aplicação de OCR é, das 3 componentes da solução, a que mais facilmente pode ser objetivamente discutida. Esta é das 3 a que se assemelha mais aos trabalhos envolvendo aplicação de OCR, onde se tem um resultado direto e comparável com um valor inicial, i.e. texto real de um documento (ground truth), do qual se podem obter diferentes métricas, comparado com o texto resultante da aplicação de OCR numa imagem.
 
 Seguindo um processo semelhante, obter-se-ão então resultados da aplicação desta componente sob diferentes casos de teste. 
@@ -52,15 +55,15 @@ Tal deve-se á escolha do módulo de validação da pipeline para obtenção e c
 As métricas que nos focaremos para a tabulação de resultados serão:
 
 \begin{itemize}\setlength\itemsep{-0.9em}
-	\item Variação da confiança de texto
-	\item Similaridade do texto (similaridade de coseno)
-	\item Comparação entre aparições de palavras na GT e no resultado
-	\item Comparação entre palavras únicas na GT e no resultado
-	\item Presença dos excertos da GT parcial no resultado
-	\item Ordem dos excertos da GT parcial no resultado
-	\item Ordem geral final no resultado \footnote{* - manualmente analisada}
-	\item Número de artigos encontrados
+	\item Confiança média de texto
+	\item Similaridade do texto (similaridade de cosseno)
+	\item Rácio de aparições de palavras na GT e no resultado
+	\item Rácio de palavras únicas na GT e no resultado
+	\item Rácio de acerto da GT parcial no resultado
+	\item Ordem geral da GT parcial no resultado
+	\item Rácio de número de blocos de texto no resultado
 \end{itemize}
+
 
 
 \begin{figure}[H]
@@ -78,20 +81,253 @@ Como base, será usada uma configuração de pipeline que não fará uso de nenh
 As outras configurações são, de forma sucinta:
 
 \begin{enumerate}\setlength\itemsep{-0.9em}
-	\item Pipeline completa: utilizada para testar uma sequência de todos os módulos implementados.
-	\item Pipeline completa sem ordenação: possibilitando a comparação da ordenação original com a aplicação dos módulos.
-	\item Apenas pré-processamento: permitindo a avaliação dos módulos de imagem na transcrição
-	\item Apenas pós-processamento: afetando principalmente a capacidade de melhorar a leitura da transcrição geral
-	\item Pipeline geral: configuração que, ao longo do trabalho, se avaliou como sendo mais ubíquo (relativamente)
+	\item \textbf{Pipeline completa}: utilizada para testar uma sequência de todos os módulos implementados.
+	\item \textbf{Pipeline completa sem ordenação}: possibilitando a comparação da ordenação original com a aplicação dos módulos.
+	\item \textbf{Apenas pré-processamento}: permitindo a avaliação dos módulos de imagem na transcrição
+	\item \textbf{Apenas pós-processamento}: afetando principalmente a capacidade de melhorar a leitura da transcrição geral
+	\item \textbf{Pipeline geral}: configuração que, ao longo do trabalho, se avaliou como sendo mais ubíquo (relativamente)
+	\item \textbf{Segmentação de imagem (e configuração geral)}: útil principalmente para casos de muito ruído ou texto compactado, procurando auxiliar a segmentação dos blocos.
 \end{enumerate}
 
-Como características gémeas entre estas configurações, temos que todas utilizam o tesseract como motor de OCR, utilizando a configuração de linguagem 'por' para português visto ser esta a linguagem dos casos de teste. No caso de ser realizado upscaling da imagem, procura-se aumentar os dpi para 150, assumindo uma dimensão de folha A3, ocorrendo para a generalidade dos casos o upscaling (exceção a categoria moderna).
+Como características gémeas entre estas configurações, temos que todas utilizam o tesseract como motor de OCR, utilizando a configuração de linguagem 'por' para português visto ser esta a linguagem dos casos de teste. No caso de ser realizado upscaling da imagem, procura-se aumentar os dpi para 150, assumindo uma dimensão de folha A3, ocorrendo para a generalidade dos casos o upscaling (exceção a categoria moderna). Por último, todas utilizam confiança de texto mínima 10.
 
-No total, serão analisadas 210 (6 configurações x 35 páginas) execuções da pipeline.
+No total, serão analisadas 245 (7 configurações x 35 páginas) execuções da pipeline.
 
 
 
 Todos os preparativos para esta análise (jornais, ground truths e configurações de pipeline), assim como os resultados pré tabulados, estão disponíveis \href{https://drive.google.com/drive/u/0/folders/1DW-AIuSxjEyv6ioq7jX8P1xruy03Sxo9}{aqui}.
+
+
+\subsection{Resultados}
+
+Segue-se uma redução dos resultados das métricas escolhidas para análise da componente. Estes serão apresentados na forma de gráficos de barras, sendo que, como mencionado, a totalidade dos dados está também disponibilizada com métricas extra não aqui focadas.
+
+Versões ampliadas dos gráficos estão disponíveis na secção de apêndices.
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_avg_text_conf.png}
+	\caption{Valores de confiança média de texto das diferentes pipelines.}
+	\label{fig:graph_avg_text_conf}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 85.296 				   \\ \hline
+		completa & 84.847 				   \\ \hline
+		completa (sem ordenação) & 84.847  \\ \hline
+		apenas pré-proc. & 83.513 		   \\ \hline
+		apenas pós-proc. & 86.335 		   \\ \hline
+		geral & 85.859 					   \\ \hline
+		segmentação & 84.759 			   \\ \hline
+	\end{tabular}
+	\caption{Média geral de confiança de texto das pipelines.}
+\end{table}
+
+
+Analisando os dados desta métrica, verifica-se que, na generalidade, não houve grandes oscilações na confiança média de texto, sendo que a pipeline geral e a de pós processamento obtiveram o melhor resultado médio, seguidos pela simples. Estas duas pipelines fazem dotam-se de fazer uso controlado, ou nenhum de processamento de imagem, aproveitando os processos de limpeza do toolkit para remover texto sem confiança, acoplado com melhorias de imagem.
+
+Por outro lado, tendo a pior média e maior oscilação a pipeline de pré processamento, realça-se a questão que já se tinha anteriormente estudado neste trabalho, que a utilização indiscriminada de ferramentas de processamento de imagem não é benéfica, sendo preferível estas serem adaptadas para cada documento. 
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_gt_similiraty_cosine.png}
+	\caption{Valores de similaridade do texto (similaridade por cosseno) com GT das diferentes pipelines.}
+	\label{fig:graph_gt_similiraty_cosine}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 0.959 				   \\ \hline
+		completa & 0.939 				   \\ \hline
+		completa (sem ordenação) & 0.940   \\ \hline
+		apenas pré-proc. & 0.945 		   \\ \hline
+		apenas pós-proc. & 0.949 		   \\ \hline
+		geral & 0.941 					   \\ \hline
+		segmentação & 0.924 			   \\ \hline
+	\end{tabular}
+	\caption{Média geral de similaridade do texto com GT.}
+\end{table}
+
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_gt_word_hit_ratio.png}
+	\caption{Rácios de aparição total de palavras da GT das diferentes pipelines.}
+	\label{fig:graph_gt_word_hit_ratio}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 0.855 				   \\ \hline
+		completa & 0.787 				   \\ \hline
+		completa (sem ordenação) & 0.797   \\ \hline
+		apenas pré-proc. & 0.829 		   \\ \hline
+		apenas pós-proc. & 0.806 		   \\ \hline
+		geral & 0.808 					   \\ \hline
+		segmentação & 0.787 			   \\ \hline
+	\end{tabular}
+	\caption{Média geral de rácios de aparição total de palavras da GT.}
+\end{table}
+
+
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_gt_unique_word_hit_ratio.png}
+	\caption{Rácios de aparição de palavras distintas da GT das diferentes pipelines.}
+	\label{fig:graph_gt_unique_word_hit_ratio}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 0.860 				   \\ \hline
+		completa & 0.801 				   \\ \hline
+		completa (sem ordenação) & 0.809   \\ \hline
+		apenas pré-proc. & 0.839 		   \\ \hline
+		apenas pós-proc. & 0.814 		   \\ \hline
+		geral & 0.820 					   \\ \hline
+		segmentação & 0.797 			   \\ \hline
+	\end{tabular}
+	\caption{Média geral de rácios de aparição de palavras distintas da GT.}
+\end{table}
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_text_block_ratio.png}
+	\caption{Rácios de número de blocos de texto relativo à pipeline simples.}
+	\label{fig:graph_text_block_ratio}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		completa & 0.635 				   \\ \hline
+		completa (sem ordenação) & 0.635   \\ \hline
+		apenas pré-proc. & 1.175 		   \\ \hline
+		apenas pós-proc. & 0.487 		   \\ \hline
+		geral & 0.658 					   \\ \hline
+		segmentação & 0.747 			   \\ \hline
+	\end{tabular}
+	\caption{Média de rácio de número de blocos de texto comparado com pipeline simples.}
+\end{table}
+
+
+
+
+Verificando as métricas respetivas á ground truth, nota-se que em geral os resultados são mais favoráveis para o uso da template simples no que toca a métricas de similaridade simples de texto. Localmente, no entanto, podemos verificar que em certas instâncias, por exemplo, no documento 'o\_portuguez\_3', o rácio de palavras únicas detetadas melhorou cerca de 11\% com a pipeline geral relativamente ao OCR simples, e 12\% de acerto geral das palavras, com a generalidade das pipelines sendo melhor do que a base.
+
+Por outro lado, assumindo que, embora na generalidade inferior, as diferentes configurações se assemelhem à base, nota-se a diferença na capacidade de reduzir a quantidade de dados da OCR Tree, i.e. quantidade de blocos nos resultados finais. Isto apenas se nota, naturalmente, nas pipelines que apresentam pós processamento. A diminuição da quantidade de blocos finais constitui uma redução da complexidade do resultado, permitindo uma análise mais fácil deste.
+
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_pgt_hit_ratio.png}
+	\caption{Rácios de aparição de linhas da Partial GT das diferentes pipelines.}
+	\label{fig:graph_pgt_hit_ratio}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 0.618 				   \\ \hline
+		completa & 0.446 				   \\ \hline
+		completa (sem ordenação) & 0.445   \\ \hline
+		apenas pré-proc. & 0.505 		   \\ \hline
+		apenas pós-proc. & 0.618 		   \\ \hline
+		geral & 0.521 					   \\ \hline
+		segmentação & 0.450 			   \\ \hline
+	\end{tabular}
+	\caption{Média de rácio de acerto das linhas da Partial GT.}
+\end{table}
+
+
+
+\begin{figure}[H]
+	\centering
+	\hspace*{-2cm}
+	\includegraphics[width=1.2\textwidth]{images/resultados/graph_pgt_correct_order_ratio.png}
+	\caption{Rácios de acerto da ordem das linhas da Partial GT das diferentes pipelines.}
+	\label{fig:graph_pgt_correct_order_ratio}
+\end{figure}
+
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		\textbf{Pipeline} & \textbf{Média} \\ \hline
+		simples & 0.598 				   \\ \hline
+		completa & 0.296 				   \\ \hline
+		completa (sem ordenação) & 0.445   \\ \hline
+		apenas pré-proc. & 0.5046 		   \\ \hline
+		apenas pós-proc. & 0.322 		   \\ \hline
+		geral & 0.351 					   \\ \hline
+		segmentação & 0.294 			   \\ \hline
+	\end{tabular}
+	\caption{Média de rácio de ordem das linhas da Partial GT.}
+\end{table}
+
+
+
+No caso da GT parcial, maioritariamente dedicada à verificação de localização de algumas frases completas e da sua ordem no resultado final, observa-se novamente que na generalidade o OCR simples é superior. A primeira métrica é dependente da semelhança do texto com a GT e, como já supramencionado, na generalidade o OCR simples obteve também melhores resultados.  A segunda métrica é dependente da primeira, sendo portanto expectável esta correlação. 
+
+
+\section{Conclusão}
+
+Na generalidade, é possível concluir que, pelo menos dentro das configurações testadas, não houve nenhuma que excedesse os resultados de OCR simples, especialmente a aplicação total de técnicas de pré processamento (com uma configuração também para estas específica).
+
+Em casos particulares, no entanto, podemos observar vários cenários de melhoria dos resultados.
+Seguem-se exemplos:
+
+\begin{itemize}
+	\item Para o documento 'coimbra\_2' tem-se taxas semelhantes em termos de texto detetado pelas diferentes pipelines, no entanto, a taxa de acerto da partial GT para o OCR simples é o mais baixo, com a de pré processamento tendo total acerto, inclusive na ordenação da GT parcial.
+	
+	\item Para os documento 'a\_final\_8' e 'a\_final\_9' temos que o rácio de acerto da ordem das linhas da GT parcial não é de 1, sendo no máximo 0.5 para o primeiro. Porém, analisando os resultados localmente, temos que a ordem calculado para os dois é completamente correta para GT parcial (e quase totalmente para a GT), não sendo mais alta no gráfico apenas porque as linhas não foram todas detetadas devido a pequenos erros, como acentos ou pontuação errada. Ex.: "que usaste sempre dé tanta" (resultado) vs "que, usaste sempre de tanta" (GT)
+	
+\end{itemize}
+
+
+
+Concluindo, os testes realizados permitem entender que a pipeline, no seu estado atual, tem o potencial para, quando devidamente configurada, melhorar os resultados relativamente ao uso base de OCR. Como esperava, também se verificou que a criação de uma configuração universal será difícil de alcançar. 
+
+Deste modo, uma perspetiva de evolução passaria pela permissão de adaptação interna da pipeline, ou de uma aplicação semelhante do Toolkit, que procure adaptar de forma inteligente as suas configurações de acordo com o input. Além disso, contrastou-se o potencial da introdução de módulos de correção de texto, através da análise das GT parciais.
+
+
+
 
 % aplicacao da pipeline nos casos de estudo
 %% realcar situacoes particulares de sucesso ou de problemas
@@ -139,7 +375,11 @@ A avaliação seguida baseia-se então na apresentação das capacidades e adapt
 	\item Realizar OCR num bloco : servindo para melhorar texto e a sua confiança por transcrição máquina.
 	
 	\item Realizar OCR num segmento da imagem: gera, de acordo com a segmentação do motor OCR, múltiplos blocos com uma só ferramenta.
+	
+	\item Aplicar pipeline localmente: permite adaptar o OCR realizado configurando a pipeline para lidar com o segmento da imagem escolhido. Ex.: pipeline com upscaling numa imagem inteira pode não detetar com tanta precisão texto de um título específico, comparado com a aplicação da mesma pipeline localmente (usualmente produto de dpi assumido pelo tesseract).
+	
 	\item (Re)ordenar blocos através da modificação do seu ID: modificação direta ou com ferramentas do Toolkit.
+	
 	
 	\item Gerar OCR Tree numa imagem sem resultados.
 	\item Visualizar resultados da OSDOCR Pipeline: útil para contexto de debugging e desenvolvimento.

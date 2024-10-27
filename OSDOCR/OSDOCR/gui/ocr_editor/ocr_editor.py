@@ -1663,7 +1663,8 @@ def apply_ocr_block():
         
         new_page = ocr_results.get_boxes_level(1)[0]
         # if upscaled, scale dimensions
-        if config['ocr_pipeline']['upscaling_image'] != 'none':
+        if config['ocr_pipeline']['posprocess'] and \
+            config['ocr_pipeline']['upscaling_image'] != 'none':
             new_page.scale_dimensions(scale_width=0.5,scale_height=0.5)
 
         new_box = new_page.box

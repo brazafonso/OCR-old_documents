@@ -1122,7 +1122,7 @@ def categorize_box(target_block:OCR_Tree,blocks:list[OCR_Tree],block_analysis:di
         if debug:
             print('Block:',target_block.id,'| Text size:',block_text_size ,'| Text width:',block_text_width)
 
-        if block_is_text_size :
+        if block_is_text_size and not title_range:
             if not len([b for b in blocks_directly_above if b.is_image(conf=conf)]):
                 # text block
                 block_type = 'text'

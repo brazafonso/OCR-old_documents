@@ -69,13 +69,16 @@
 \contentsline {chapter}{\numberline {8}Resultados}{125}{chapter.8}%
 \contentsline {section}{\numberline {8.1}OSDOCR Toolkit}{125}{section.8.1}%
 \contentsline {section}{\numberline {8.2}OSDOCR Pipeline}{126}{section.8.2}%
-\contentsline {section}{\numberline {8.3}OSDOCR Editor}{128}{section.8.3}%
-\contentsline {chapter}{\numberline {9}Conclusões e trabalho futuro}{131}{chapter.9}%
-\contentsline {section}{\numberline {9.1}O Trabalho}{131}{section.9.1}%
-\contentsline {section}{\numberline {9.2}Conclusões}{132}{section.9.2}%
-\contentsline {section}{\numberline {9.3}Perspetiva de trabalho futuro}{133}{section.9.3}%
-\contentsline {part}{I\hspace {1em}Apêndices}{138}{part.1}%
-\contentsline {chapter}{\numberline {A}Trabalho de apoio}{139}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{140}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Listings}{141}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Ferramentas}{142}{appendix.D}%
+\contentsline {subsection}{\numberline {8.2.1}Metodologia}{126}{subsection.8.2.1}%
+\contentsline {subsection}{\numberline {8.2.2}Resultados}{128}{subsection.8.2.2}%
+\contentsline {section}{\numberline {8.3}Conclusão}{134}{section.8.3}%
+\contentsline {section}{\numberline {8.4}OSDOCR Editor}{135}{section.8.4}%
+\contentsline {chapter}{\numberline {9}Conclusões e trabalho futuro}{138}{chapter.9}%
+\contentsline {section}{\numberline {9.1}O Trabalho}{138}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Conclusões}{139}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Perspetiva de trabalho futuro}{140}{section.9.3}%
+\contentsline {part}{I\hspace {1em}Apêndices}{145}{part.1}%
+\contentsline {chapter}{\numberline {A}Trabalho de apoio}{146}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Detalhes dos resultados}{147}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Listings}{154}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Ferramentas}{155}{appendix.D}%
