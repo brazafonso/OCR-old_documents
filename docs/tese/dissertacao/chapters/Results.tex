@@ -34,9 +34,11 @@ A solução engloba ainda 2 outras componentes que, como base, fazem uso deste m
 
 A pipeline de aplicação de OCR é, das 3 componentes da solução, a que mais facilmente pode ser objetivamente discutida. Esta é das 3 a que se assemelha mais aos trabalhos envolvendo aplicação de OCR, onde se tem um resultado direto e comparável com um valor inicial, i.e. texto real de um documento (ground truth), do qual se podem obter diferentes métricas, comparado com o texto resultante da aplicação de OCR numa imagem.
 
-Seguindo um processo semelhante, obter-se-ão então resultados da aplicação desta componente sob diferentes casos de teste. 
+Seguindo um processo semelhante, obter-se-ão então resultados da aplicação desta componente sob diferentes casos de teste. Para isto, será feito uso do módulo de validação de resultados da pipeline (\ref{sec:pipeline_validation}).
 
 Relativamente aos casos de teste escolhidos, estes constam um total de 18 diferentes jornais, para um total de 35 páginas a serem testadas. O número amostras é inferior ao ideal sendo limitado pelo escopo do projeto - com uma solução envolvendo 3 componentes, todas de considerável dimensão -; à necessidade de, na generalidade dos casos, ser necessária uma cuidada e manual transcrição das amostras escolhidas; e múltiplas utilizações de cada amostra para diferentes resultados.
+
+As amostras forma obtidas das hemerotecas públicas da \href{https://www.csarmento.uminho.pt/site/s/hemeroteca-bpb/page/hemeroteca-digital-da-bpb}{casa de sarmento} e da \href{https://hemerotecadigital.lisboa.pt/publicacoes}{câmara municipal de Lisboa}.
 
 As amostras escolhidas apresentam, de modo a testar diferentes capacidades da pipeline, características particulares que as permitem caracterizar em :
 
@@ -50,7 +52,7 @@ As amostras escolhidas apresentam, de modo a testar diferentes capacidades da pi
 \end{itemize}
 
 Para cada um destes documentos, uma transcrição foi preparada manualmente, assim como ficheiros adicionais com transcrição parcial, e com características do documento como o número de artigos, imagens e colunas. 
-Tal deve-se á escolha do módulo de validação da pipeline para obtenção e comparação de resultados. Este, como descrito na secção correspondente, procura comparar através de diferentes métricas uma verdade de um documento (ground truth) com os resultados obtidos de diferentes configurações da pipeline.
+Estes serão usados como input do módulo de validação da pipeline. Este, como descrito na secção correspondente, procura comparar, através de diferentes métricas, a verdade de um documento (ground truth) com os resultados obtidos de diferentes configurações da pipeline.
 
 As métricas que nos focaremos para a tabulação de resultados serão:
 

@@ -13,6 +13,15 @@ Estas 3 componentes tiveram em comum a necessidade de analisar e manipular resul
 
 Discutida a implementação deste modelo e componentes, foram também analisados os seus resultados quando aplicados em diferentes contextos, com especial atenção para a pipeline, sendo esta a mais permissiva de métricas objetivas.
 
+O código desenvolvido e ficheiros de resultados pode ser encontrado em:
+\begin{itemize}
+	\item \href{https://github.com/brazafonso/OCR-old_documents}{Repositório principal}
+	\item \href{https://github.com/brazafonso/document_image_processing}{Repositório auxiliar com métodos para tratamento de imagem}
+	\item \href{https://drive.google.com/drive/u/0/folders/1DW-AIuSxjEyv6ioq7jX8P1xruy03Sxo9}{Ficheiros de resultados}
+\end{itemize}
+
+
+
 \section{Conclusões}
 
 Concluído o trabalho, é possível comparar a sua visão inicial do estado atual. Num primeiro desenho do projeto, apenas se expectava a implementação de um conjunto de métodos independentes e, incontornavelmente, o modelo OCR Tree.
@@ -22,11 +31,13 @@ Este conjunto de ferramentas sucedeu na criação de uma estrutura de dados comp
 Daqui nasce a pipeline, nova componente que, embora já desde inícios do trabalho pensada, inevitavelmente obrigou a divisão dos esforços na primeira componente, tendo essa pecado principalmente em aspetos de tratamento de texto.
 A pipeline, como aplicação do Toolkit, foi também aproveitada para abranger aspetos que este não iria abordar, como o upscaling de imagem. Utilizando a pipeline, é possível a observação direta do efeito do Toolkit na transcrição máquina, permitindo ainda, métricas objetivas através do módulo de validação nesta implementada.
 
-Esta foi testada utilizando um conjunto de casos de teste, os quais foram executados com diferentes configurações de características fundamentalmente diferentes, não adaptadas para nenhum caso em particular. Concluí-se a partir destes teste que a pipeline é mais útil quando a configuração fornecida é adaptada aos problemas de um documento, sendo que não obteve na globalidade resultados notórios utilizando as configurações generalizadas. Por outro lado, em casos particulares certas configurações, mesmo gerais, obtiveram melhorias consideráveis em relação a OCR base. Além disso, notou-se a utilidade da secção de pós processamento para diminuição da complexidade dos resultados OCR, e a oportunidade que uma evolução no módulo de tratamento de texto poderia trazer para o output final.
+Esta foi testada utilizando um conjunto de casos de teste - utilizando o próprio módulo de validação da pipeline- , os quais foram executados com diferentes configurações de características fundamentalmente diferentes, não adaptadas para nenhum caso em particular. Concluiu-se a partir destes teste que a pipeline é mais útil quando a configuração fornecida é adaptada aos problemas de um documento, sendo que não obteve na globalidade resultados notórios utilizando as configurações generalizadas. Por outro lado, em casos pontuais certas configurações, mesmo generalizadas, obtiveram melhorias consideráveis em relação a OCR base, demonstrando-se o seu potencial. Além disso, notou-se a utilidade da secção de pós processamento para diminuição da complexidade dos resultados OCR, e a oportunidade que uma evolução no módulo de tratamento de texto poderia trazer para o output final.
 
 Na presença de questões mais minuciosas que a pipeline não foi capaz de lidar, como: ordens de leitura muito complexos, trechos de texto demasiado danificados para transcrição automática, segmentação insatisfatória do motor OCR; e também a dificuldade em visualizar o estado da OCR Tree durante as diferentes etapas da Pipeline ou manipulações pelo Toolkit, gerou-se a oportunidade de incluir um editor visual. Este foi a última e mais tardia componente a ser incluída na solução mas, possivelmente, a mais útil. Esta componente permitiu uma suavização no uso da OCR Tree que, consideravelmente, habilitou a compensação de problemas ignorados ou não totalmente tratados pela Pipeline, assim como a potencialização do Toolkit, fazendo uso de partes dele até então desusadas. Adicionalmente, este meio de visualizar a manipulação permitida pelas anteriores componentes, permitiu mais facilmente detetar defeitos nelas ou possíveis melhorias, recursivamente melhorando-se ao simplificar o refinamento delas.
 
-O compilado de todas as componentes foi essencial para um aprofundamento do conhecimento sobre a área pré, e particularmente, pós processamento de OCR, modularização de soluções e, no caso do Editor, trabalho sobre interfaces gráficas e editor de modelos.
+O compilado de todas as componentes foi essencial para um aprofundamento do conhecimento sobre a área de pré, e particularmente, pós processamento de OCR, modularização de soluções e, no caso do Editor, trabalho sobre interfaces gráficas e editor de modelos.
+
+
 
 \section{Perspetiva de trabalho futuro}
 
@@ -39,6 +50,8 @@ Do mesmo modo, embora neste caso já levemente explorado, o processamento de ima
 A estrutura OCR Tree poderá ser tornada mais 'universal' para OCR relaxando a responsabilidade dos níveis de blocos, visto pressupor atualmente na maioria dos cenários que o nível 2 é representativo de um bloco como um todo, e o 5 como o local de texto. Por exemplo, na procura de texto, poderia ser possível incluir texto em blocos superiores, reduzindo a necessidade de sempre iterar às folhas para o obter; ou no caso de análise de texto, utilizar como base o nível fornecido ao invés de assumir os níveis 4 (linha) e 5 (palavra) como essenciais.
 
 O módulo de output teria bem-vinda a conversão para um formato que mantivesse mais fielmente a estrutura original do documento, como pdf ou html. A existência de conversores de hocr para estes terá diminuído a sua prioridade.
+
+Como discutido durante a análise de resultados, o estudo de uma pipeline auto configurável seria interessante para a criação de um solução adaptável a documentos de diferentes características. 
 
 
 Por último, a exploração de diferentes motores OCR seria relevante para prova do potencialidade OCR Tree como módulo para resultados OCR, e possibilitando mais uso de todas as componentes da solução.

@@ -82,7 +82,7 @@ Deste modo, surgiu a oportunidade de adicionar ao \textit{toolkit} funcionalidad
 Esta secção trata particularmente de funcionalidades aplicadas sobre os resultados de OCR, i.e. após a aplicação de reconhecimento de caracteres, não tendo influencia no input desse procedimento.
 
 
-\highlight{Conversão de resultados OCR}
+\subsection{Conversão de resultados OCR}
 \label{ocr_results_conversion}
 
 Como base para a manipulação dos dados, como mencionado anteriormente, foi utilizada a estrutura de dados OCR Tree. Consequentemente, um conjunto de conversores desta classe foram desenvolvidos, nomeadamente:
@@ -160,8 +160,7 @@ Outros métodos criados, mais circunstanciais, permitem o desenho do template de
 \end{figure}
 
 
-
-\highlight{Análise de texto}
+\subsection{Análise de texto}
 \label{contribution_text_analyses}
 
 A análise de texto dos resultados OCR permite inferir características sobre o documento que não estão à partida disponíveis na OCR Tree. Foi desenvolvido um conjunto de métodos que cada um infere uma das seguintes métricas a partir da OCR Tree principal:
@@ -169,6 +168,7 @@ A análise de texto dos resultados OCR permite inferir características sobre o 
 \begin{itemize}
 	\item Tamanho de texto normal : método \textbf{get\_text\_sizes}
 	\item Espaçamento médio de palavras : método \textbf{analyze\_text}
+	\item Largura média de letra : método \textbf{analyze\_text}
 	\item Colunas do documento : método \textbf{get\_columns}
 \end{itemize}
 
@@ -252,7 +252,7 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 
 
 
-\highlight{Limpeza de OCR Tree}
+\subsection{Limpeza de OCR Tree}
 \label{contribution_clean_ocr}
 
 Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar texto com espaço vazio pronunciado; ajustar dimensões das bounding boxes, etc..
@@ -266,14 +266,12 @@ Como já descrito anteriormente, com a norma dos resultados da aplicação de OC
 \end{figure}
 
 
-
-
 Descrevem-se então alguns dos métodos propostos para resolver alguns destes problemas.
 
 
 \highlight{block\_bound\_box\_fix}[\normalsize]
 
-\textbf{Descrição:} Ajuste de bounding boxes para eliminar interseções.
+\textbf{Descrição:} Ajuste de bounding boxes de nível 2 para eliminar interseções. Procura: remover caixas vazias dentro de caixas de texto; eliminar interseções entre caixas de texto, ajustando de forma a alterar a caixa menos impactada; unir blocos de texto dentro de outros.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
@@ -285,7 +283,49 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 \textbf{Algoritmo:}
 
-%% TODO : escrever algoritmo, depois de dar refactoring na funcao
+\begin{breakablealgorithm}
+	\caption{Correção de interseções}
+	\begin{algorithmic}[1]
+
+		\State blocks $\leftarrow$ obtém nodos de nível 2
+		\State boxes\_to\_check = {}
+		\State checked\_boxes = []
+		\State i = 0
+		\State current\_box = None
+		\State \textit{// Cada bloco será comparado por interseções com todos os outros}
+		\While{i < len(blocks)}
+			\If{not current\_box and block[i] not in checked\_boxes}
+				\If{block não é vazio ou é delimitador}
+					\State current\_box = block[i]
+					\State i += 1
+				\Else
+					\State ocr\_results, blocks $\leftarrow$ remove bloco vazio
+				\EndIf
+			\EndIf
+			\If{current\_box and blocks[i].id != current\_box.id}
+				\State compare\_box = blocks[i]
+				\If{compare\_box vazia dentro de current\_box ou vice-versa}
+					\State ocr\_results, blocks $\leftarrow$ remove bloco vazio
+				\ElsIf{caixas intersetam-se}
+					\If{ambas as caixas têm texto, e intersetam-se em mais de 70\% da sua área}
+						\State \textit{// Une os dois blocos utilizando join\_trees. Usa como base o bloco que tem maior rácio da sua área em interseção}
+						\State ocr\_results, blocks $\leftarrow$ remove bloco não usado como base
+					\EndIf
+				\Else
+					\State \textit{// Remove área de interseção do bloco com menor rácio de área intersetada, usando o método remove\_box\_area}
+				\EndIf
+			\EndIf
+			\State i += 1
+			\If{está a verificar último bloco e ainda faltam verificar mais, ou não tem current\_box}
+				\State \textit{// Escolhe próximo bloco a analisar}
+				\State  \State \textit{// Escolhe bloco ainda não verificado, não vazio}
+				\If{current\_box is not None}
+					\State i = 0
+				\EndIf
+			\EndIf
+		\EndWhile
+	\end{algorithmic}
+\end{breakablealgorithm}
 
 
 \begin{figure}[H]
@@ -340,6 +380,30 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 	\label{fig:text_bound_box_fix_blocks}
 \end{figure}
 
+
+\highlight{block\_bound\_box\_fix\_image}[\normalsize]
+
+\textbf{Descrição:} Ajuste de bounding boxes realizando análise da imagem correspondente. Para cada bloco procura na correspondente zona da imagem, reduzir as suas dimensões de acordo com os primeiro pixeis pretos encontrados.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a ajustar
+	\item target\_iamge : imagem correspondente á OCR Tree
+	\item level : nível de bloco a ajustar
+	\item text\_confidence : confiança de texto mínima. Utilizado para filtrar blocos de texto confiáveis
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+Para cada aresta de um bloco, procura, na zona correspondente à bounding box, na imagem analisar, seguindo uma direção dependente da aresta, a ocorrência do primeiro pixel preto que tem seu vizinho nessa mesma direção outro pixel preto.
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/bound_box_fix_image.png}
+	\caption{Exemplo de uso de bound\_box\_fix\_image (10 de confiança de texto mínima).}
+	\label{fig:bound_box_fix_image}
+\end{figure}
 
 
 \highlight{remove\_solo\_words}[\normalsize]
@@ -484,7 +548,58 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 \end{figure}
 
 
-\highlight{Categorização de blocos}
+
+
+\highlight{delimiters\_fix}[\normalsize]
+
+\textbf{Descrição:} Correções de blocos de tipo 'delimiter'. Especialmente útil para limpezas finais de blocos resultantes do método 'get\_document\_delimiters'. Remove delimitadores dentro de potenciais imagens; Divide texto com delimitador dentro ou quase totalmente dentro deste, se divisão for válida. Ajusta bounding boxes de delimitadores para remover interseções com blocos de texto.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item ocr\_results : OCR Tree a limpar
+	\item conf : confiança de texto utilizada para verificação de blocos vazios e análise de texto
+\end{itemize}
+
+\textbf{Algoritmo:}
+
+\begin{breakablealgorithm}
+	\caption{Limpeza de um delimitador}
+	\footnotesize
+	\begin{algorithmic}[1]
+		\State delimitador $\leftarrow$ delimitador a ser verificado
+		\State block $\leftarrow$ bloco a ser comparado
+		
+		\If{delimitador dentro ou quase completamente (70\%) dentro do bloco}
+			\If{bloco não tem texto}
+				\State \textit{// remove delimitador}
+			\Else
+				\If{divisão do bloco válida pelo delimitador, i.e.: delimitador não interseta, de acordo com a sua orientação, nenhum texto do bloco no seu eixo de divisão, e áreas resultantes do corte têm texto}
+					\State block $\leftarrow$ divide o bloco em 2 utilizando o delimitador como linha de corte
+				\Else
+					\State \textit{// remove delimitador}
+				\EndIf
+			\EndIf
+		\ElsIf{delimitador interseta bloco}
+			\If{se divisão válida possível}
+				\State block $\leftarrow$ divide o bloco em 2 utilizando o delimitador como linha de corte
+			\Else
+				\State delimitador $\leftarrow$ ajusta bb do delimitador
+			\EndIf
+		\EndIf
+	\end{algorithmic}
+\end{breakablealgorithm}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/delimiter_fix.png}
+	\caption{Exemplo de uso de delimiters\_fix.}
+	\label{fig:delimiter_fix}
+\end{figure}
+
+
+
+\subsection{Categorização de blocos}
 \label{contribution_categorize_blocks}
 
 De forma a poder segmentar com maior precisão documentos, informação adicional sobre os blocos reconhecidos é necessária. Por exemplo, para ser possível identificar um artigo de um jornal, seria expectável agrupar um título e pelo menos uma caixa de texto. Desta forma uma tokenização dos blocos de nível 2 seguindo heurísticas foi desenvolvida.
@@ -495,7 +610,7 @@ A tokenização segue as seguintes regras:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
 	\item \textbf{text} 		: bloco com texto, de tamanho dentro do tamanho normal de texto (margem de 10\%), ou que não verificou nenhuma das outras regras para blocos de texto
-	\item \textbf{title} 	: bloco com texto, não vertical, com menos de 10 palavras e tamanho maior do que o tamanho normal de texto
+	\item \textbf{title} 	: bloco com texto, não vertical, com menos de 10 palavras e tamanho, no mínimo, duas vezes maior do que o tamanho normal de texto, ou largura de letra no mínimo 50\% superior à largura média
 	\item \textbf{highlight} : bloco com texto, semelhante a "title", mas com maior número de palavras
 	\item \textbf{caption} 	: bloco com texto, de tamanho menor do que tamanho normal de texto e está diretamente abaixo de uma imagem ou de um bloco do tipo "caption"
 	\item \textbf{delimiter} : bloco sem texto e que verifica a regra: $box.width >= 4*box.height \vee box.height >= 4*box.width$
@@ -506,11 +621,11 @@ Blocos de tipo "delimiter" ou "image" são também possíveis de identificar uti
 
 No caso de categorização de blocos de texto, são também verificadas certas características:
 \begin{itemize}\setlength\itemsep{-0.3em}
-	\item \textbf{start\_text} : texto foi iniciado, i.e. começa com uma letra maiúscula ou com início de diálogo (sinais: ",',-) seguido de uma letra maiúscula.
-	\item \textbf{ends\_text} : texto foi terminado, termina com um sinal de pontuação que finaliza uma frase, ou fim de diálogo (".","?","!",""","'")
+	\item \textbf{start\_text} : texto foi iniciado, i.e. começa com uma letra maiúscula ou com início de diálogo (sinais: ",',-) seguido de uma letra maiúscula; e tem pelo menos uma letra minúscula no texto.
+	\item \textbf{ends\_text} : texto foi terminado, termina com um sinal de pontuação que finaliza uma frase, ou fim de diálogo (".","?","!",""","'"); e tem pelo menos uma letra minúscula no texto.
 \end{itemize}
 
-Estas características de texto guardam informação relevante utilizada em métodos de cálculos de atração entre blocos.
+Estas características de texto guardam informação relevante utilizada em métodos de cálculos de atração entre blocos. Nota-se que estas características são calculadas utilizando um valor mínimo de confiança de texto no valor de 40, dado a facilidade de OCR assumir ruído como pontuação.
 
 
 
@@ -523,7 +638,7 @@ Estas características de texto guardam informação relevante utilizada em mét
 
 
 
-\highlight{Divisão de blocos}
+\subsection{Divisão de blocos}
 \label{contribution_divide_blocks}
 
 Uma funcionalidade de extrema utilidade para a manipulação dos produtos de OCR é a capacidade de dividir um bloco em dois, cada um destes novos ficando com parte dos conteúdos do bloco original. Tal operação facilita a remoção de partes ruidosas de um bloco, ou a segmentação de bloco quando este foi incorretamente unido pelo software de OCR. Exemplo: bloco de texto cuja primeira linha tem potencial de ser título, permite facilmente dividir o bloco em o título e restante texto.
@@ -574,58 +689,28 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 		\State blocks\_1 = []
 		\State blocks\_2 = []
 		
-		\State \textit{// corte horizontal}
-		\State \textit{// obtém todas as linhas e verifica a que área pertencem}
-		\State \textit{// reconstrói parágrafos no fim}
-		\If{orientation == "horizontal"}
-			\State lines $\leftarrow$ obtém nodos de nível 4
-			\State area\_1\_lines, area\_2\_lines = []
-			\For{line in lines}
-				\If{line dentro de area\_1}
-					\State area\_1\_lines.append(line)
-				\ElsIf{line dentro de area\_2}
-					\State area\_2\_lines.append(line)
+		\State \textit{// obtém todas as linhas e para cada uma verifica que palavras pertencem a qual área}
+		\State block $\leftarrow$ da id às palavras,linhas e parágrafos para as conseguir remover diretamente
+		\State blocks\_1 $\leftarrow$ copia paragrafos pertence ao bloco
+		\State blocks\_2 $\leftarrow$ copia paragrafos pertence ao bloco
+		\For{paragrafo in block}
+			\State par\_words $\leftarrow$ obtém palavras do parágrafo
+			\For{word in par\_words}
+				\If{word dentro de area\_1}
+					\State blocks\_2 $\leftarrow$ remove palavra da area 2
+				\ElsIf{word dentro de area\_2}
+					\State blocks\_1 $\leftarrow$ remove palavra da area 1
 				\ElsIf{keep\_all}
-					\If{line está mais incluída dentro da área 1}
-						\State area\_1\_lines.append(line)
+					\If{word está mais incluída dentro da área 1}
+						\State blocks\_2 $\leftarrow$ remove palavra da area 2
 					\Else
-						\State area\_2\_lines.append(line)
+						\State blocks\_1 $\leftarrow$ remove palavra da area 1
 					\EndIf
 				\EndIf
 			\EndFor
-			
-			\If{area\_1\_lines}
-				\State blocks\_1 $\leftarrow$ reconstrói parágrafos de acordo com a metadata (par\_num) dos nodos linha
-			\EndIf
-			
-			\If{area\_2\_lines}
-			\State blocks\_2 $\leftarrow$ reconstrói parágrafos de acordo com a metadata (par\_num) dos nodos linha
-			\EndIf
-		
-		\Else
-			\State \textit{// corte vertical}
-			\State \textit{// obtém todas as linhas e para cada uma verifica que palavras pertencem a qual área}
-			\State block $\leftarrow$ da id às palavras para as conseguir remover diretamente
-			\State blocks\_1 $\leftarrow$ copia paragrafos pertence ao bloco
-			\State blocks\_2 $\leftarrow$ copia paragrafos pertence ao bloco
-			\For{paragrafo in block}
-				\State par\_words $\leftarrow$ obtém palavras do parágrafo
-				\For{word in par\_words}
-					\If{word dentro de area\_1}
-						\State blocks\_2 $\leftarrow$ remove palavra da area 2
-					\ElsIf{word dentro de area\_2}
-						\State blocks\_1 $\leftarrow$ remove palavra da area 1
-					\ElsIf{keep\_all}
-						\If{word está mais incluída dentro da área 1}
-							\State blocks\_2 $\leftarrow$ remove palavra da area 2
-						\Else
-							\State blocks\_1 $\leftarrow$ remove palavra da area 1
-						\EndIf
-					\EndIf
-				\EndFor
-				\State \textit{// atualiza BB dos parágrafos para representar as modificações}
-			\EndFor
-		\EndIf
+			\State \textit{// remove linhas sem palavras dos parágrafos}
+			\State \textit{// atualiza BB dos parágrafos para representar as modificações}
+		\EndFor
 		
 		\If{blocks\_1}
 			\State block.children = blocks\_1
@@ -691,7 +776,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 
 
-\highlight{Cálculo de ordem de leitura}
+\subsection{Cálculo de ordem de leitura}
 \label{contribution_reading_order}
 
 No caso de documentos de leitura não linear, como é o caso de jornais, a ordem de leitura proposta pelos motores OCR pode muitas vezes ser incorreto.
@@ -717,7 +802,7 @@ A estrutura de dados representante do grafo é composta pelas classes:
 	\item Graph : representante do grafo geral
 	
 		Possuí as funcionalidades principais:
-		\begin{itemize}\setlength\itemsep{-0.3em}
+		\begin{itemize}\setlength\itemsep{-0.8em}
 			\item verificações de existência de um nodo
 			\item verificação de existência de caminho entre nodos
 			\item limpeza de caminhos transitivos no grafo
@@ -725,7 +810,7 @@ A estrutura de dados representante do grafo é composta pelas classes:
 		\end{itemize}
 	\item Node : representante de um nodo do grafo
 		Possuí as funcionalidades principais:
-		\begin{itemize}\setlength\itemsep{-0.3em}
+		\begin{itemize}\setlength\itemsep{-0.8em}
 			\item conjunto de pais
 			\item conjunto de filhos
 			\item atualizar pais e filhos
@@ -743,28 +828,30 @@ O cálculo da atração entre dois blocos tem em conta as características dos d
 Sendo o conjunto de verificações relativamente extenso, segue-se um compilado das condições verificadas, por ordem de relevância:
 
 \textbf{Atração}
-\begin{itemize}\setlength\itemsep{-0.3em}
+\begin{itemize}\setlength\itemsep{-0.8em}
 	\item bloco 'image' tem muita atração a bloco 'caption' (vice-versa)
-	\item bloco 'title' é muito atraído a bloco não 'title'
-	\item bloco 'text' inacabado é muito atraído por bloco 'text' não começado diretamente por baixo dele
-	\item bloco é bastante atraído para blocos à sua direita
-	\item bloco 'text' inacabado é bastante atraído por bloco 'text' não começado diretamente à direita dele
-	\item bloco 'title' é bastante atraído por bloco 'text' com texto começado
+	\item bloco 'text' inacabado é muito atraído por bloco 'text' não começado, se este tiver mais de uma linha
+	\item bloco é bastante atraído para blocos não em baixo se por baixo tiver um delimitador (relativo a quanto o delimitador engloba o bloco)
+	\item bloco é bastante atraído para blocos não à direita se à direita tiver um delimitador (relativo a quanto o delimitador engloba o bloco)
 	\item bloco é atraído por blocos abaixo dele
-	\item bloco é atraído por bloco à direita se bloco diretamente abaixo abrange os dois blocos
+	\item bloco é atraído por bloco se bloco acima engloba os dois blocos 
+	\item bloco é atraído por bloco se bloco acima tem os dois blocos diretamente abaixo dele 
+	\item bloco é atraído por bloco se bloco abaixo engloba os dois blocos 
+	\item bloco é atraído por bloco se bloco abaixo tem os dois blocos diretamente acima dele 
+	\item bloco é atraído por bloco que o englobe (relativo ao rácio de área englobada)
 	\item bloco 'title' é atraído por bloco não 'title'
-	\item bloco 'title' é atraído por bloco 'title' apenas se estiver diretamente abaixo dele
-	\item bloco 'text' é atraído por bloco abaixo mais esquerda
+	\item bloco 'title' é atraído por bloco abaixo
 	\item bloco 'text' é atraído por bloco abaixo
+	\item bloco 'title' é um pouco atraído por bloco 'text' com texto começado por baixo dele
 	\item bloco é um pouco atraído pelo bloco por baixo mais à esquerda
-	\item bloco é um pouco atraído pelo bloco à direita se o bloco mais à esquerda abaixo não tiver texto
+	\item bloco 'text' é um pouco atraído pelo bloco à direita se não tiver blocos de texto diretamente por baixo
 \end{itemize}
 
 \textbf{Repulsão}
-\begin{itemize}\setlength\itemsep{-0.3em}
-	\item bloco não é um pouco atraído pelo bloco abaixo se o bloco mais à esquerda abaixo não tiver texto
-	\item bloco 'text' não acabado não é atraído por bloco não 'text'
-	\item bloco 'text' não acabado não é atraído por bloco 'text' começado
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item bloco não é bastante atraído por bloco à direita se tiver um delimitador diretamente à direita (relativo a quanto o delimitador engloba o bloco)
+	\item bloco não é bastante atraído por bloco abaixo se tiver um delimitador diretamente abaixo (relativo a quanto o delimitador engloba o bloco)
+	\item bloco 'text' não acabado não é atraído por bloco 'text' começado, se este tiver mais de uma linha 
 \end{itemize}
 
 O método responsável por este cálculo é \textbf{calculate\_block\_attraction}.
@@ -784,12 +871,13 @@ O método responsável por este cálculo é \textbf{calculate\_block\_attraction
 
 O cálculo da ordem de leitura é realizado pelo método \textbf{sort\_topologic\_order} que utiliza um algoritmo de ordenação topológica que utiliza os pesos das arestas para resolver conflitos.
 
-Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco atual, utiliza o método next\_top\_block que procura dentro de uma lista de potências próximos blocos, o mais apropriado - normalmente o com menor distância ao canto superior esquerdo. 
+Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco atual, utiliza o método next\_top\_block que procura dentro de uma lista de potências próximos blocos, o mais apropriado - normalmente o com menor distância ao canto superior esquerdo. Um filtro diferente pode ser fornecido a este método para a escolha deste próximo bloco, como é exemplo através da opção da pipeline de dar prioridade a títulos.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
 	\item topologic\_graph : Graph com as ligações dos blocos da OCR Tree a ordenar
 	\item sort\_weight : flag que indica se ordenação é apenas topológica ou usa os pesos do grafo para resolver situações de desempate
+	\item next\_node\_filter : filtro que pode ser fornecido para alterar o método de escolha do próximo quando não se possui uma âncora
 \end{itemize}
 
 \begin{figure}[H]
@@ -807,7 +895,7 @@ Diferentes jornais podem não ter métodos de leitura mais complexos, ou que nã
 
 
 
-\highlight{Segmentação de resultados}
+\subsection{Segmentação de resultados}
 \label{contribution_result_segmentation}
 
 No caso de jornais, como já discutido anteriormente, o elemento base da informação nestes contido são os artigos. 
@@ -858,7 +946,7 @@ Além disso, soluções já existentes para a resolução de problemas como: ups
 Esta secção irá abordar os métodos desenvolvidos neste sentido.
 
 
-\highlight{Correção de ângulo de rotação}
+\subsection{Correção de ângulo de rotação}
 \label{contribution_image_rotation_correction}
 
 Para imagens de alta definição, i.e. normalmente com dpi elevado e, portanto, mais favorável para realização de OCR, notou-se que mesmo pequenas inclinações no texto podem resultar em resultados de OCR extremamente ruidosos e desorganizados.
@@ -912,7 +1000,7 @@ Se possível, aplica o método \textit{pixFindSkewAndDeskew} de leptonica para c
 	\item auto\_crop : flag para aplicação do método de cropping de possível bainha na imagem. Estas quando presentes afetam consideravelmente o algoritmo pois não costumam estar alinhadas com o texto.
 \end{itemize}
 
-\highlight{Corte de sombra nas margens}
+\subsection{Corte de sombra nas margens}
 \label{contribution_image_cut_argin_shadow}
 
 No caso de documentos com múltiplas folhas, como livros ou jornais, é comum a presença de uma sombra nas margens das páginas. Esta pode, como mencionado anteriormente, impactar a solução para correção de rotação de documento, mas também, quando aplicado OCR, esta sombra poderá ser detetada como um elemento (um tipo de delimitador ou figura) que na realidade gera ruído extra. Pode ser então útil a remoção desta secção da imagem.
@@ -939,7 +1027,7 @@ O algoritmo de remoção segue uma lógica semelhante aos métodos de análise d
 \end{itemize}
 
 
-\highlight{Binarização de imagem}
+\subsection{Binarização de imagem}
 \label{contribution_image_binarization}
 
 Como foi discutido no estado da arte sobre o processamento de imagens, não existe um método de binarização que funcione de forma geral para qualquer tipo de documento, visto que muitas vezes estes são adaptativos e diferentes distribuições dentro da imagem vão gerar resultados diferentes.
@@ -1005,7 +1093,7 @@ Em seguida ajusta-se os níveis dos valores pretos e brancos da imagem de forma 
 Por fim, ajusta-se o gamma da imagem para a escurecer.
 
 
-\highlight{Identificação de delimitadores}
+\subsection{Identificação de delimitadores}
 \label{contribution_image_delimiter_identification}
 
 Para documentos estruturados como jornais, certos elementos são utilizados de forma geral para realçar a dada estrutura, como é o caso de delimitadores.
@@ -1113,7 +1201,7 @@ Os que foram desenvolvidos foram:
 Como se pode observar na figura \ref{fig:get_delimiters_final_example}, embora os métodos de redução filtrem de forma considerável a quantidade de delimitadores identificados, o resultado ainda contém elementos que não devia. Vários destes são resultados de texto de maior grossura, sendo portanto possível ainda realizar uma limpeza posterior onde, tendo em conta os resultados de OCR, se resolvem conflitos de delimitadores inseridos em blocos de texto. Um método deste tipo está disponível no Toolkit (delimiters\_fix).
 
 
-\highlight{Identificação de imagens no documento}
+\subsection{Identificação de imagens no documento}
 \label{contribution_image_document_image_identification}
 
 
@@ -1147,7 +1235,7 @@ O código original foi apenas levemente modificado para alterar o destino do out
 \end{itemize}
 
 
-\highlight{Segmentação de documento}
+\subsection{Segmentação de documento}
 \label{contribution_image_segmentation}
 
 Como discutido na secção de métodos aplicados sob os resultados de OCR, a segmentação de um documento tem diversas aplicações. No entanto, como também foi mencionado, a segmentação utilizando os resultados de OCR é muito dependente da qualidade destes, sendo preferível procurar realizar esta diretamente através da imagem.
@@ -1217,10 +1305,38 @@ $delimiter.bottom \geq 0.7*image.shape[0] \wedge delimiter.width \geq 0.4*image.
 \section{Processamento de texto}
 \label{contribution_text_processing}
 
-% resoluçao de hifenização
+O último conjunto de ferramentas do toolkit dizem respeito à criação de output e, consequentemente, tratamento de texto. 
 
 
-\highlight{Geração de output}
+\subsection{Correção de hifenização}
+
+Especialmente no caso de documentos multi-colunas, é comum a presença de palavras separadas entre duas linhas através da hifenização. Além disso, é também observável, devido a má formatações de texto ou erros de OCR, a ocorrência de espaços vazios em palavras compostas. Ambos estes cenários podem ser facilmente resolvidos com heurísticos, no toolkit sendo aplicadas pelo método fix\_hifenization.
+
+\highlight{fix\_hifenization}[\normalsize]
+
+\textbf{Descrição:} Une palavras separadas entre linhas através de hifenização. Remove espaços vazios extra em palavras compostas.
+
+\textbf{Argumentos:}
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item text : texto a corrigir
+\end{itemize}
+
+\textbf{Algoritmo:} Aplicação de substituição através das expressões regulares:
+
+\begin{itemize}\setlength\itemsep{-0.3em}
+	\item $'(\textbackslash w)[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*-(\textbackslash s*\textbackslash n\textbackslash s*-*)([a-z0-9\_])'$ : procura de palavras separadas entre linhas através de hifenização
+	\item $'(\textbackslash w)[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*-[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*([a-z0-9\_])'$ : procura de palavras compostas com espaços vazios.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{images/ilustracoes/fix_hifenization.png}
+	\caption{Exemplo de uso de fix\_hifenization em um excerto de texto.}
+	\label{fig:fix_hifenization}
+\end{figure}
+
+
+\subsection{Geração de output}
 
 A criação de outputs finais de fácil visualização é uma função essencial do trabalho produzido, permitindo uma digestão dos resultados de OCR mais simples.
 

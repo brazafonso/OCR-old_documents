@@ -13,31 +13,35 @@ Como discutido no estudo da solução, os blocos que compõem a pipeline são, s
 
 Além disso, dependendo do modo de utilização da pipeline, output extra pode ser requisitado. Utilizando a flag de debug ('-d' ou '--debug') cada um dos blocos da pipeline irá guardar o seu resultado na forma de um ficheiro situado na diretoria de resultados do input respetivo. 
 
-\section{Sumário}
+\section{Configuração}
 
 O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes opções de utilização:
 
 \begin{itemize}\setlength\itemsep{-0.8em}
 	\item \textbf{target} 
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : t
 			\item \textbf{descrição} : ficheiro de imagem a ser processado pela pipeline.
 		\end{itemize}
 		
 	\item \textbf{file}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : f
 			\item \textbf{descrição} : ficheiro de texto que lista um target por linha.
 		\end{itemize}
 		
 	\item \textbf{target\_ocr\_results} 
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : tocr
 			\item \textbf{descrição} : ficheiro de resultados OCR. Pode ser de tipo hocr ou json. Se fornecido, não será realizado pré processamento de imagem ou OCR.
 		\end{itemize}
 		
 	\item \textbf{output\_folder}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : of
 			\item \textbf{descrição} : caminho para guardar os resultados
 		\end{itemize}
@@ -45,6 +49,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{segmented\_ocr}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : sgocr
 			\item \textbf{descrição} : flag para aplicação de OCR no target será realizada em cada um dos segmentos, invés de na imagem inteira. Cada uma das partes é posteriormente unida para criar uma única OCR Tree de resultados.
 			\item \textbf{valor default} : False
@@ -52,14 +57,25 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 		
 	\item \textbf{target\_segments}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : ts
 			\item \textbf{descrição} : segmentos a calcular no target. Segmento body é sempre obtido. O body é ainda repartido nas suas colunas.
 			\item \textbf{opções} : 'header', 'body', 'footer'
 			\item \textbf{valor default} : 'header','body'
 		\end{itemize}
 		
+	\item \textbf{output\_segments}
+	\begin{itemize}\setlength\itemsep{-0.5em}
+		\vspace{-1em}
+		\item \textbf{alternativo} : os
+		\item \textbf{descrição} : indica os output a criar, de acordo com os segmentos fornecidos. Cria um output para cada segmento, se a área para este calculado tiver resultados (nodos da OCR Tree).
+		\item \textbf{opções} : 'all','header', 'body', 'footer'
+		\item \textbf{valor default} : 'all'
+	\end{itemize}
+		
 	\item \textbf{force\_ocr}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : focr
 			\item \textbf{descrição} : flag que ignora possíveis ficheiros em cache de resultados OCR, consequentes de iterações anteriores do target. Força aplicação de na imagem.
 			\item \textbf{valor default} : False
@@ -67,12 +83,14 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 		
 	\item \textbf{tesseract\_config}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{descrição} : flags para serem passadas ao Tesseract no momento de aplicação de OCR. Estas estão disponíveis na documentação do Tesseract. Cada argumento tem de ter como prefixo '\_\_' para permitir o seu processamento.
 			\item \textbf{valor default} : \_\_l por
 		\end{itemize}
 	
 	\item \textbf{text\_confidence}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : tc
 			\item \textbf{descrição} : valor de confiança de texto que pipeline irá usar.
 			\item \textbf{valor default} : 10
@@ -81,6 +99,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{split\_whitespace}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : sw
 			\item \textbf{descrição} : valor utilizado como razão entre um espaço branco num bloco de texto e a média pesada dos espaçamentos entre palavras, para este ser considerado válido como ponto de divisão de um bloco.
 			\item \textbf{valor default} : 3
@@ -88,6 +107,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{fix\_rotation}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : fr
 			\item \textbf{descrição} : opções usadas para a correção de rotação de documento.
 			\item \textbf{opções} : 'auto','clockwise','counter-clockwise'
@@ -96,6 +116,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{upscaling\_image}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : upi
 			\item \textbf{descrição} : opções usadas para o upscaling de imagem. Se opção 'autoscale' do modelo 'waifu2x' for escolhido, aplica upscaling da imagem até esta chegar ao dpi alvo (opção target\_dpi).
 			\item \textbf{opções} : 'waifu2x' -> 'scale2x', 'scale4x', 'autoscale'
@@ -104,6 +125,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{target\_dpi}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : tdpi
 			\item \textbf{descrição} : valor do dpi alvo
 			\item \textbf{valor default} : 300
@@ -111,6 +133,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{target\_dimensions}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : tdim
 			\item \textbf{descrição} : valor das dimensões físicas a usar para cálculo do dpi da imagem. Opções estão disponíveis no ficheiro 'dimensions.json' no projeto, podendo ser atualizado.
 			\item \textbf{opções} : 'A5', 'A4', 'A3', 'A2', 'A1', 'A0', '2A0'
@@ -119,6 +142,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{denoise\_image}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : di
 			\item \textbf{descrição} : opções usadas para o denoising de imagem.
 			\item \textbf{opções} : 'waifu2x' -> '-1' - '3'
@@ -127,6 +151,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{light\_correction}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : lc
 			\item \textbf{descrição} : opções usadas para a correção de iluminação de uma imagem.
 			\item \textbf{opções} : 'best\_SSIM', 'best\_PSNR', 'LOL-Blur', 'SICE', 'SID', 'w\_perc'
@@ -135,6 +160,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 		
 	\item \textbf{light\_correction\_split\_image}
 	\begin{itemize}\setlength\itemsep{-0.5em}
+		\vspace{-1em}
 		\item \textbf{alternativo} : lcs
 		\item \textbf{descrição} : flag para aplicação de correção de iluminação da imagem em patches, invés de na totalidade, de modo a melhorar tempo de processamento. Para certos modelos, resulta em contrastes consideráveis entre os patches.
 		\item \textbf{valor default} : True
@@ -142,6 +168,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{binarize\_image}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : bi
 			\item \textbf{descrição} : opções usadas para a binarização de imagem para aplicação de OCR.
 			\item \textbf{opções} : 'fax', 'otsu'
@@ -150,6 +177,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{remove\_document\_images}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : bi
 			\item \textbf{descrição} : método utilizado para remoção de imagens.
 			\item \textbf{opções} : 'leptonica', 'layoutparser'
@@ -158,6 +186,7 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{target\_old\_document}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : tod
 			\item \textbf{descrição} : flag para indicar que target é um documento antigo. Utilizado quando método 'layoutparser' é escolhido, de forma a escolher o modelo mais apropriado
 			\item \textbf{valor default} : True
@@ -165,13 +194,23 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{ignore\_delimiters}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{alternativo} : igd
 			\item \textbf{descrição} : flag para ignorar delimitadores. Se ativada, estes não serão tidos em conta como indicadores do layout do documento no cálculo da ordem de leitura.
+			\item \textbf{valor default} : False
+		\end{itemize}
+		
+	\item \textbf{title\_priority}
+		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
+			\item \textbf{alternativo} : tp
+			\item \textbf{descrição} : flag dar prioridade a títulos na escolha de blocos (quando não há âncora) durante cálculo de ordem de leitura.
 			\item \textbf{valor default} : False
 		\end{itemize}
 	
 	\item \textbf{skip\_method}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{descrição} : métodos/passos da pipeline a ignorar.
 			\item \textbf{opções} : 'leptonica', 'layoutparser'
 			\item \textbf{valor default} : 'all', 'auto\_rotate', 'noise\_removal', 'blur\_removal', 'light\_correction', 'image\_preprocess', 'remove\_document\_margins', 'remove\_document\_images', 'image\_upscaling', 'identify\_document\_delimiters', 'binarize\_image', 'clean\_ocr', 'split\_whitespace', 'unite\_blocks', 'calculate\_reading\_order', 'extract\_articles', 'posprocessing'
@@ -179,23 +218,21 @@ O comando de invocação da pipeline é 'osdocr'. Este apresenta as seguintes op
 	
 	\item \textbf{calibrate}
 		\begin{itemize}\setlength\itemsep{-0.5em}
-			\item \textbf{descrição} : aplicar modo de calibração de pipeline. Usado para encontrar melhor configuração de pipeline para um dado target. Pode ser dado um diretório onde estarão disponíveis os ficheiros necessários para calibração, e onde ficarão os resultados de calibração; e um diretório com configurações de pipeline a testar. Por defeito, o diretório procurado dá-se por 'calibration' no local onde o comando foi corrido, e são usadas configurações de pipeline disponíveis no projeto. 
+			\vspace{-1em}
+			\item \textbf{descrição} : aplicar modo de calibração de pipeline. Usado para encontrar melhor configuração de pipeline para um dado target, ou testar uma configuração. Espera ser fornecido um diretório com configurações da pipeline, ou um caminho para a configuração.
 		\end{itemize}
 	
 	\item \textbf{calibrate\_no\_reuse}
 		\begin{itemize}\setlength\itemsep{-0.5em}
-			\item \textbf{descrição} : flag para não utilizar cache existente.
+			\vspace{-1em}
+			\item \textbf{descrição} : flag para não utilizar cache existente nos resultados de calibração.
 			\item \textbf{valor default} : False
 		\end{itemize}
 	
 	\item \textbf{pipeline\_config}
 		\begin{itemize}\setlength\itemsep{-0.5em}
+			\vspace{-1em}
 			\item \textbf{descrição} : ficheiro do tipo JSON com configuração de pipeline a usar. Pode ser usado como alternativa a aplicar argumentos no terminal de comandos.
-		\end{itemize}
-		
-	\item \textbf{gui}
-		\begin{itemize}\setlength\itemsep{-0.5em}
-			\item \textbf{descrição} : aplicar modo de interface gráfica. Interface gráfica simples que pode ser utilizada para experimentar algumas das funcionalidades disponíveis. Maioritariamente usada para debugging.
 		\end{itemize}
 \end{itemize}
 
@@ -508,7 +545,9 @@ Os formatos para output final disponíveis são: texto simples; markdown.
 
 \highlight{Cálculo da ordem de leitura}
 
-O bloco de cálculo da ordem de leitura pretende, através do cálculo de atração entre blocos - que dependem das características dos blocos assim como posições relativas - do corpo do documento, e de uma ordenação topológica pesada, gerar uma ordenação mais próxima da intendida do que originalmente decidida pelo motor OCR. Como explicitado anteriormente, os algoritmos desenhados têm um foco na ordenação de jornais.
+O bloco de cálculo da ordem de leitura pretende, através do cálculo de atração entre blocos - que dependem das características dos blocos assim como posições relativas - do documento, e de uma ordenação topológica pesada, gerar uma ordenação mais próxima da intendida do que originalmente decidida pelo motor OCR. Como explicitado anteriormente, os algoritmos desenhados têm um foco na ordenação de jornais.
+
+Pode ser utilizada a opção 'title\_priority' para escolher a utilização de um filtro por títulos no momento de escolha do próximo bloco da ordenação (quando não existe uma âncora prévia).
 
 
 \begin{figure}[H]
@@ -542,30 +581,59 @@ No caso de documento jornal, o algoritmo irá utilizar os artigos isolados e, po
 
 Em particular para o formato markdown, tendo em conta a possibilidade de incluir imagens neste formato, blocos do tipo imagem identificados durante a pipeline, serão incluídos no output final na posição indicada pela ordem final de blocos/artigos.
 
+Opções de segmentação podem ser dadas na pipeline de forma a ser gerada mais do que um output, nomeadamente fornecendo os segmentos desejados de output, como 'header' e 'body' os quais serão calculadas as áreas e, se válidas, serão processados para conceberem apenas os blocos que as incluem.
+
 
 
 \section{Validação de resultados}
+\label{sec:pipeline_validation}
 
 O comando que aciona a pipeline apresenta ainda uma aplicação alternativa. Esta outra aplicação é dedicada à verificação/validação dos resultados da utilização da pipeline e, consequentemente, calibrar a mesma.
 
 Esta utilização, ao contrário da pipeline, não é de independente do utilizador, necessitando que este provisione recursos extra além da imagem de input inicial. Estes recursos extra são respetivos a resultados esperados do output: ground truth total; ground truth parcial; ficheiro de resultados esperadas. Destes, pelo menos uma das ground truth deve ser fornecida. Além disso, pelo menos uma pipeline tem de ser fornecida para serem analisados os seus resultados no input.
 
-O caso de uso esperado é a de, para uma coleção de um dado jornal, em que as diferentes edições têm características semelhantes, o utilizador forneça para uma destas estes recursos para comparação, assim como uma lista compreensiva de diferentes pipelines com diferentes configurações que serão comparadas e, entre estas, serão escolhidas as opções que melhores resultados obtiveram.
+O caso de uso esperado é: dada para uma coleção de um dado jornal, em que as diferentes edições têm características semelhantes, o utilizador forneça ,para uma destas, estes recursos para comparação, assim como uma lista compreensiva de diferentes pipelines com diferentes configurações que serão comparadas e, entre estas, serão escolhidas as opções que melhores resultados obtiveram. Será resultado da execução um ficheiro de configuração de pipeline que englobe as opções que melhor resultado obtiveram.
+
+Além disso, este módulo permite uma apreciação objetiva do uso da pipeline, sendo que será utilizado para a obtenção de resultados desta mesma componente da solução global.
 
 Os métodos utilizados nesta funcionalidade são, na generalidade, dedicados à mesma, não tendo sido implementados com a mesma filosofia de independência do toolkit.
 
+
 \highlight{Ground truth total}
 
-A ground truth total trata-se de uma transcrição completa do texto do documento.
+A ground truth total trata-se de uma transcrição completa do texto do documento. Utilizada para uma comparação direta do output textual final, no formato simples, da pipeline com o real.
 
+Deste é obtido os dados: 
+
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item número total de palavras
+	\item conjunto de palavras únicas
+	\item número de aparições de cada palavra única
+\end{itemize}
 
 \highlight{Ground truth parcial}
 
-A ground truth parcial trata-se de uma transcrição de apenas alguns trechos do documento, que devem estar ordenados corretamente, ex.: uma frase de cada uma dos artigos do jornal.
+A ground truth parcial trata-se de uma transcrição de apenas alguns trechos do documento, que devem estar ordenados corretamente, ex.: uma frase de cada uma dos artigos do jornal. Tal permite simultaneamente verificar a precisão de acerto de palavras do OCR, assim como do algoritmo de ordenação utilizado.
+
+Deste é obtido os dados: 
+
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item número de linhas
+	\item ordem das linhas
+\end{itemize}
+
 
 \highlight{Ficheiro de resultados esperados}
 
 O ficheiro de resultados contém informação além do output textual final. Este pode conter: o número de artigos que o output final deve ter; número de ilustrações que o documento contém; número de colunas do jornal.
+
+Deste é obtido os dados: 
+
+\begin{itemize}\setlength\itemsep{-0.8em}
+	\item número de colunas esperadas
+	\item número de imagens esperadas
+	\item número de artigos esperados
+\end{itemize}
 
 
 \highlight{Comparação dos resultados e calibração da pipeline}
@@ -576,19 +644,23 @@ Dada um conjunto de pipelines para serem comparadas, para cada uma seguirá o se
 
 \textbf{Apuramento dos resultados} da pipeline, nomeadamente: 
 
-\begin{itemize}\setlength\itemsep{-0.3em}
+\begin{itemize}\setlength\itemsep{-0.8em}
 	\item nível médio da confiança do texto
 	\item número de palavras
+	\item número de blocos com texto
 	\item similaridade de cosseno entre o texto e a ground truth total
-	\item número de linhas iguais entre ground truth parcial e o texto
-	\item número de linhas iguais entre ground truth parcial e o texto na ordem certa
+	\item número e rácio de linhas iguais entre ground truth parcial e o texto
+	\item número de palavras únicas detetadas
+	\item rácio de número de aparição de cada palavra relativamente à ground truth
+	\item número e rácio de linhas iguais entre ground truth parcial e o texto na ordem certa
+	\item rácio geral de ordem da ground truth parcial
 	\item número de colunas detetadas
 	\item número de ilustrações detetadas
 	\item número de artigos detetados
 \end{itemize}
 
 
-\textbf{Atribuição de uma classificação} numérica a cada secção da pipeline ao comparar os resultados obtidos com os recursos dos resultados esperados. As secções classificadas são o pré processamento e o pós processamento.
+\textbf{Atribuição de uma classificação} numérica a cada secção da pipeline - pré e pós processamento - ao comparar os resultados obtidos com os recursos dos resultados esperados. 
 
 \textbf{Calibração da pipeline} ao comparar os diferentes classificações das pipelines e, escolhendo para cada secção as configurações da pipeline (respetivas à dada secção) que nela teve melhor classificação.
 
