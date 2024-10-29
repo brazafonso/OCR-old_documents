@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from OSDOCR.gui.ocr_editor.ocr_editor import run_gui
+
 
 run_path = os.getcwd()
 
@@ -18,6 +18,7 @@ def process_args()->argparse.Namespace:
 
 
 def main():
+    from OSDOCR.gui.ocr_editor.ocr_editor import run_gui
 
     args = process_args()
 

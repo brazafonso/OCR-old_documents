@@ -8,7 +8,6 @@ from .ocr_tree_module.ocr_tree_fix import bound_box_fix_image,text_bound_box_fix
 from .parse_args import process_args
 from .aux_utils.misc import *
 from .aux_utils import consts
-from .gui.osdocr_gui.osdocr_gui import run_gui
 from .ocr_tree_module.ocr_tree import *
 from .preprocessing.image import *
 from .pipeline import run_target,run_target_split
@@ -239,6 +238,7 @@ def main():
 
     # gui mode
     elif args.gui:
+        from .gui.osdocr_gui.osdocr_gui import run_gui
         run_gui()
 
     # normal mode

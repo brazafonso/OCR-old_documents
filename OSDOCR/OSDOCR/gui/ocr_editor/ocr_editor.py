@@ -2667,39 +2667,13 @@ def test_method():
     if current_ocr_results:
         print('Test button')
 
-        # get block order
-        ## get body area using delimiters
-        delimiters = [b.box for b in current_ocr_results.get_boxes_type(level=2,types=['delimiter'])]
-        target_segments = config['methods']['target_segments']
-        body_area = segment_document_delimiters(image=current_image_path,delimiters=delimiters,
-                                                target_segments=target_segments)[1]
-        ## blocks returned are only part of the body of the image
-        next_block_filter = lambda node: node if node.value.type == 'title' else None
-        ordered_blocks = order_ocr_tree(image_path=current_image_path,ocr_results=current_ocr_results,
-                                        next_node_filter=next_block_filter,area=body_area,
-                                        debug=config['base']['debug'])
-        ordered_block_ids = [b.id for b in ordered_blocks]
-        # update ids values
-        last_id = len(ordered_blocks) - 1
-        for b in bounding_boxes.values():
-            if b['id'] not in ordered_block_ids:
-                # block not in order
-                ## update id to be after last_id
-                b['id'] = last_id
-                b['block'].id = b['id']
-                b['id_text'].set_text(f'{b["id"]}')
-                last_id += 1
-            else:
-                # block in order
-                ## update id to be position in order list
-                new_id = ordered_block_ids.index(b['id'])
-                b['id'] = new_id
-                b['block'].id = b['id']
-                b['id_text'].set_text(f'{b["id"]}')
-
+        delimiters_fix(current_ocr_results,conf=config['base']['text_confidence'],debug=True)
+        for b in current_ocr_results.get_boxes_level(2):
+            create_ocr_block_assets(b)
         refresh_blocks_ids()
 
         add_ocr_result_cache(ocr_result=current_ocr_results)
+        toggle_ocr_results_block_type(get_bounding_boxes(),toogle=True)
 
         
 
