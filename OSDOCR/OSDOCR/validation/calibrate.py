@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import hashlib
+import jellyfish
 import OSDOCR.aux_utils.consts as consts
 from argparse import Namespace
 from OSDOCR.aux_utils.misc import path_to_id
@@ -13,8 +14,10 @@ from OSDOCR.pipeline import run_target
 from OSDOCR.ocr_tree_module.ocr_tree import OCR_Tree
 from OSDOCR.ocr_tree_module.ocr_tree_analyser import extract_articles
 from OSDOCR.preprocessing.image import identify_document_images
+from OSDOCR.output_module.text import fix_hifenization
 from sklearn.feature_extraction.text import TfidfVectorizer
 from document_image_utils.image import divide_columns
+
 
 
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -126,6 +129,7 @@ def compare_results(results_folder:str,option:str,
     text_result = re.sub(r'[^\w\d\s]',' ',text_result)
     text_result = re.sub(r'[ \t\r\v\f]+',' ',text_result)
     text_result = text_result.lower()
+    text_result = fix_hifenization(text_result)
 
 
     ## compare with complete ground truth
@@ -141,6 +145,8 @@ def compare_results(results_folder:str,option:str,
         gt_text = re.sub(r'[^\w\d\s]',' ',gt_text)
         gt_text = re.sub(r'[ \t\r\v\f]+',' ',gt_text)
         gt_text = gt_text.lower()
+        gt_text = fix_hifenization(gt_text)
+
         documents = [gt_text,text_result]
         tfidf = TfidfVectorizer().fit_transform(documents)
         pairwise_similarity = tfidf * tfidf.T
@@ -191,18 +197,27 @@ def compare_results(results_folder:str,option:str,
         partial_ground_truth = re.sub(r'[^\w\d\s]',' ',partial_ground_truth)
         partial_ground_truth = re.sub(r'[ \t\r\v\f]+',' ',partial_ground_truth)
         partial_ground_truth = partial_ground_truth.lower()
+        partial_ground_truth = fix_hifenization(partial_ground_truth)
         partial_ground_truth = partial_ground_truth.splitlines()
         partial_ground_truth = [p.strip() for p in partial_ground_truth if p.strip()]
         
         text_results_lines = [line.strip() for line in text_result.splitlines()]
 
-        ### check if lines in partial ground truth are in text result
+        ### check if lines in partial ground truth are in text result (90% similarity)
         total_hits = 0
         found_lines = []
         for line in partial_ground_truth:
-            if line in text_results_lines:
-                total_hits += 1
-                found_lines.append(line)
+            found = False
+            for l in text_results_lines:
+                if jellyfish.jaro_winkler_similarity(line, l) >= 0.9:
+                    total_hits += 1
+                    found_lines.append((line,l))
+                    found = True
+                    break
+
+            if found:
+                continue
+
 
         comparison['validation']['text']['partial_ground_truth_hit_rate']  = total_hits/len(partial_ground_truth)
         comparison['validation']['text']['partial_ground_truth_hit_count'] = total_hits
@@ -217,18 +232,21 @@ def compare_results(results_folder:str,option:str,
             #### get line indexes in text
             line_text_indexes = {}
             for i,line in enumerate(text_results_lines):
-                if line in found_lines:
-                    line_text_indexes[hashlib.md5(line.encode('utf-8')).hexdigest()] = i
+                for j,pgt_line in enumerate(found_lines):
+                    if line == pgt_line[1]:
+                        line_text_indexes[hashlib.md5(pgt_line[0].encode('utf-8')).hexdigest()] = i
 
-            for line in found_lines:
-                line_index = line_text_indexes[hashlib.md5(line.encode('utf-8')).hexdigest()]
-                true_line_index = found_lines.index(line)
+            for pair in found_lines:
+                pgt_line,line = pair
+                line_index = line_text_indexes[hashlib.md5(pgt_line.encode('utf-8')).hexdigest()]
+                true_line_index = found_lines.index(pair)
 
                 ##### check if line is in correct order relative to other lines
                 correct_order = True
-                for other_line in found_lines:
-                    other_line_index = line_text_indexes[hashlib.md5(other_line.encode('utf-8')).hexdigest()]
-                    true_other_line_index = found_lines.index(other_line)
+                for other_pair in found_lines:
+                    pgt_other_line,other_line = other_pair
+                    other_line_index = line_text_indexes[hashlib.md5(pgt_other_line.encode('utf-8')).hexdigest()]
+                    true_other_line_index = found_lines.index(other_pair)
                     if line == other_line:
                         continue
                     elif (true_line_index < true_other_line_index and line_index > other_line_index) or \
@@ -242,6 +260,7 @@ def compare_results(results_folder:str,option:str,
             comparison['validation']['text']['partial_ground_truth_correct_order_ratio'] = total_hits/len(partial_ground_truth)
             comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_ratio'] = n_correct_order/len(found_lines)
             comparison['validation']['text']['partial_ground_truth_matched_lines_correct_order_count'] = n_correct_order
+
 
     ## compare with other metrics
     if expected_results_path:
