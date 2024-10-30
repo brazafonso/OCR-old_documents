@@ -13,6 +13,7 @@ Estas ferramentas são então pertinentes para os diversos passos do processo co
 	\item Processamento de resultados OCR \ref{contribution_ocr_posprocessing}
 	
 	\begin{itemize}\setlength\itemsep{-0.3em}
+		\vspace{-0.5em}
 		\item Conversão de resultados OCR \ref{ocr_results_conversion}
 		\item Debugging \ref{contribution_debugging}
 		\item Análise de texto \ref{contribution_text_analyses}
@@ -25,6 +26,7 @@ Estas ferramentas são então pertinentes para os diversos passos do processo co
 	
 	\item Processamento de imagem \ref{contribution_image_processing}
 	\begin{itemize}\setlength\itemsep{-0.3em}
+		\vspace{-0.5em}
 		\item Correção de ângulos de rotação
 		\item Corte de sombra nas margens
 		\item Binarização de imagem
@@ -35,6 +37,7 @@ Estas ferramentas são então pertinentes para os diversos passos do processo co
 	
 	\item Processamento de texto \ref{contribution_text_processing}
 	\begin{itemize}\setlength\itemsep{-0.3em}
+		\vspace{-0.5em}
 		\item Limpeza de hifenização
 		\item Geração de output
 	\end{itemize}
@@ -47,7 +50,7 @@ Estas ferramentas são então pertinentes para os diversos passos do processo co
 \label{contribution_ocr_posprocessing}
 
 
-O resultado da aplicação de OCR em imagens de baixa qualidade ou complexas como é o caso de jornais, é na generalidade propício a um output ruidoso e com vários defeitos em diferentes níveis, quer seja nas bounding boxes dos blocos, texto reconhecido com erros, ruído reconhecido como texto, blocos que deveriam ser separados, etc. 
+O resultado da aplicação de OCR em imagens de baixa qualidade ou complexas como é o caso de jornais, é na generalidade propício a um output ruidoso e com vários defeitos em diferentes níveis. Alguns destes são: imprecisões nas bounding boxes dos blocos; texto reconhecido com erros; ruído identificado como texto; blocos que deveriam ser separados. 
 
 
 
@@ -106,6 +109,7 @@ Uma das características fundamentais de OCR é a sua capacidade para visualiza�
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree com os blocos a desenhar
 	\item img : imagem a ser modificada
 	\item draw\_levels : lista dos níveis de nodos a desenhar
@@ -128,6 +132,7 @@ Outros métodos criados, mais circunstanciais, permitem o desenho do template de
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item journal\_data : dicionário com entradas dos segmentos de um jornal (header, columns, footer). Cada um com um objeto do tipo Box que dita a bounding box do elemento. No caso das colunas é uma lista de Box.
 	\item img : imagem a ser modificada
 \end{itemize}
@@ -148,6 +153,7 @@ Outros métodos criados, mais circunstanciais, permitem o desenho do template de
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item articles : lista de listas de OCR Tree. Assume-se que cada lista de OCR Tree é um artigo. Cada OCR Tree será um nodo de nível 2
 	\item img : imagem a ser modificada
 \end{itemize}
@@ -189,6 +195,7 @@ Devolve pelo menos um tamanho de letra : normal\_text\_size.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a analisar
 	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
 	\item conf : confiança de texto mínima. Restringe as palavras utilizadas para o cálculo do tamanho das linhas
@@ -241,6 +248,7 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a analisar
 	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
 	\item conf : confiança de texto mínima. Restringe as palavras utilizadas para o peso das frequências das margens
@@ -255,7 +263,7 @@ Este método é bastante dependente da qualidade dos blocos reconhecidos, sendo 
 \subsection{Limpeza de OCR Tree}
 \label{contribution_clean_ocr}
 
-Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza" geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar texto com espaço vazio pronunciado; ajustar dimensões das bounding boxes, etc..
+Como já descrito anteriormente, com a norma dos resultados da aplicação de OCR em documentos antigos, surge a oportunidade de criar um conjunto de métodos que ajudem numa "limpeza"  geral dos resultados, de forma a, por exemplo: remover elementos de ruído; unir blocos com características semelhantes; separar texto com espaço vazio pronunciado; ajustar dimensões das bounding boxes, etc..
 
 
 \begin{figure}[H]
@@ -275,6 +283,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a limpar
 	\item text\_confidence : confiança de texto mínima. Utilizado para verificar se blocos são vazios
 	\item find\_delimiters : flag que indica se verificação por delimitadores é realizada apenas por verificação do atributo "type" ou utilizando o método "is\_delimiter" de OCR\_Tree
@@ -343,6 +352,7 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a ajustar
 	\item text\_confidence : confiança de texto mínima. Utilizado para filtrar blocos de texto confiáveis
 \end{itemize}
@@ -383,10 +393,11 @@ Descrevem-se então alguns dos métodos propostos para resolver alguns destes pr
 
 \highlight{block\_bound\_box\_fix\_image}[\normalsize]
 
-\textbf{Descrição:} Ajuste de bounding boxes realizando análise da imagem correspondente. Para cada bloco procura na correspondente zona da imagem, reduzir as suas dimensões de acordo com os primeiro pixeis pretos encontrados.
+\textbf{Descrição:} Ajuste de bounding boxes realizando análise da imagem correspondente. Para cada bloco procura, na correspondente zona da imagem, reduzir as suas dimensões de acordo com os primeiro pixeis pretos encontrados.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a ajustar
 	\item target\_iamge : imagem correspondente á OCR Tree
 	\item level : nível de bloco a ajustar
@@ -412,6 +423,7 @@ Para cada aresta de um bloco, procura, na zona correspondente à bounding box, n
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a limpar
 	\item conf : confiança de texto utilizada para análise a nível das palavras
 \end{itemize}
@@ -423,6 +435,7 @@ Para cada aresta de um bloco, procura, na zona correspondente à bounding box, n
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a limpar
 	\item conf : confiança de texto utilizada para verificação de blocos vazios
 \end{itemize}
@@ -477,6 +490,7 @@ Para cada aresta de um bloco, procura, na zona correspondente à bounding box, n
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a limpar
 	\item conf : confiança de texto utilizada para verificação de blocos vazios e análise de texto
 	\item dif\_ratio : ratio de espaço entre palavras para realizar divisão
@@ -556,6 +570,7 @@ Para cada aresta de um bloco, procura, na zona correspondente à bounding box, n
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a limpar
 	\item conf : confiança de texto utilizada para verificação de blocos vazios e análise de texto
 \end{itemize}
@@ -609,6 +624,7 @@ O método que realiza esta tokenização é \textbf{categorize\_box}. O método 
 A tokenização segue as seguintes regras:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item \textbf{text} 		: bloco com texto, de tamanho dentro do tamanho normal de texto (margem de 10\%), ou que não verificou nenhuma das outras regras para blocos de texto
 	\item \textbf{title} 	: bloco com texto, não vertical, com menos de 10 palavras e tamanho, no mínimo, duas vezes maior do que o tamanho normal de texto, ou largura de letra no mínimo 50\% superior à largura média
 	\item \textbf{highlight} : bloco com texto, semelhante a "title", mas com maior número de palavras
@@ -621,6 +637,7 @@ Blocos de tipo "delimiter" ou "image" são também possíveis de identificar uti
 
 No caso de categorização de blocos de texto, são também verificadas certas características:
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item \textbf{start\_text} : texto foi iniciado, i.e. começa com uma letra maiúscula ou com início de diálogo (sinais: ",',-) seguido de uma letra maiúscula; e tem pelo menos uma letra minúscula no texto.
 	\item \textbf{ends\_text} : texto foi terminado, termina com um sinal de pontuação que finaliza uma frase, ou fim de diálogo (".","?","!",""","'"); e tem pelo menos uma letra minúscula no texto.
 \end{itemize}
@@ -664,6 +681,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item block : OCR Tree a dividir
 	\item delimiter : Box representante do corte a ser feito
 	\item orientation : orientação do corte a realizar. Opções: "horizontal", "vertical".
@@ -760,6 +778,7 @@ Uma aplicação direta desta funcionalidade será discutida sobre o editor OCR, 
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item ocr\_results : OCR Tree a analisar
 	\item conf : confiança de texto mínima.
 \end{itemize}
@@ -799,6 +818,7 @@ Para conseguir este produto final foi então necessário criar uma estrutura de 
 A estrutura de dados representante do grafo é composta pelas classes:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item Graph : representante do grafo geral
 	
 		Possuí as funcionalidades principais:
@@ -858,6 +878,7 @@ O método responsável por este cálculo é \textbf{calculate\_block\_attraction
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item block : OCR Tree cuja atração por target\_block será calculada
 	\item target\_block : OCR Tree a comparar
 	\item blocks : lista de OCR Tree para servirem de contexto de vizinhança
@@ -875,6 +896,7 @@ Para escolher o primeiro bloco, ou quando não há mais blocos abaixo do bloco a
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item topologic\_graph : Graph com as ligações dos blocos da OCR Tree a ordenar
 	\item sort\_weight : flag que indica se ordenação é apenas topológica ou usa os pesos do grafo para resolver situações de desempate
 	\item next\_node\_filter : filtro que pode ser fornecido para alterar o método de escolha do próximo quando não se possui uma âncora
@@ -908,6 +930,7 @@ Artigos podem ser descritos como um título seguido por um excerto de elementos 
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item graph : Graph com as ligações dos blocos da OCR Tree
 	\item order\_list : list de ordem de leitura dos blocos da OCR Tree
 \end{itemize}
@@ -983,6 +1006,7 @@ Para ajustes mais minuciosos, também é aplicado o método de ajuste de rotaç�
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem do documento a analisar
 	\item line\_quantetization : valor de quantetização do eixo y da imagem a usar (para a análise dos pixeis) 
 \end{itemize}
@@ -994,6 +1018,7 @@ Se possível, aplica o método \textit{pixFindSkewAndDeskew} de leptonica para c
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem do documento a analisar
 	\item line\_quantetization : valor de quantetização do eixo y da imagem a usar (para a análise dos pixeis) 
 	\item direction : direção da rotação. 'counter-clockwise', 'clockwise' ou 'auto'. Se auto, aplica o método acima para calcular a direção.
@@ -1022,6 +1047,7 @@ O algoritmo de remoção segue uma lógica semelhante aos métodos de análise d
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem do documento a analisar
 	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito), savgol\_filter
 \end{itemize}
@@ -1062,6 +1088,7 @@ Um método para cada uma destas binarizações foi desenvolvido.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a binarizar
 	\item denoise\_strength : valor de intensidade a utilizar para denoising
 	\item invert : flag para inverter cor de binarização
@@ -1074,6 +1101,7 @@ Um método para cada uma destas binarizações foi desenvolvido.
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a binarizar
 	\item g\_kernel\_size : tamanho do kernel gaussiano utilizado para o cálculo da imagem desfocada
 	\item g\_sigma : valor de sigma do kernel gaussiano utilizado para o cálculo da imagem desfocada
@@ -1117,6 +1145,7 @@ Estes delimitadores são, por norma, linhas verticais ou horizontais, podendo se
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a analisar
 	\item tmp\_dir : diretório usado para armazenar ficheiros temporários
 	\item min\_length\_h : valor de comprimento mínimo para um delimitador horizontal válido
@@ -1186,6 +1215,7 @@ Diferentes valores de parâmetros para o algoritmo de Hough variam estes resulta
 Os que foram desenvolvidos foram:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item \textbf{remover interseções} : se 2 delimitadores com diferente orientação intersetam, remove o menor
 	\item \textbf{une delimitadores} : une delimitadores de igual orientação e suficientemente próximos
 	\item \textbf{remover linhas com demasiadas componentes ligadas} : linhas com muitas componentes ligadas, são provavelmente texto, ruído ou outro tipo de elemento, sendo portanto removidas
@@ -1230,6 +1260,7 @@ O código original foi apenas levemente modificado para alterar o destino do out
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a binarizar
 	\item tmp\_dir : diretório para armazenar ficheiros temporários
 \end{itemize}
@@ -1249,6 +1280,7 @@ Para este propósito, foram desenvolvidos métodos para identificação de colun
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a binarizar
 	\item method : método de smoothing. Opções : WhittakerSmoother (por defeito).
 \end{itemize}
@@ -1273,6 +1305,7 @@ Similar ao utilizado para a deteção de colunas através dos blocos de resultad
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item image : imagem a binarizar
 	\item remove\_images : flag para aplicar método de remoção de imagens
 	\item tmp\_dir : diretoria de ficheiros temporários
@@ -1318,12 +1351,14 @@ Especialmente no caso de documentos multi-colunas, é comum a presença de palav
 
 \textbf{Argumentos:}
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item text : texto a corrigir
 \end{itemize}
 
 \textbf{Algoritmo:} Aplicação de substituição através das expressões regulares:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item $'(\textbackslash w)[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*-(\textbackslash s*\textbackslash n\textbackslash s*-*)([a-z0-9\_])'$ : procura de palavras separadas entre linhas através de hifenização
 	\item $'(\textbackslash w)[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*-[\textbackslash r\textbackslash t\textbackslash f\textbackslash v  ]*([a-z0-9\_])'$ : procura de palavras compostas com espaços vazios.
 \end{itemize}
@@ -1343,6 +1378,7 @@ A criação de outputs finais de fácil visualização é uma função essencial
 Fundamentalmente, existem dois métodos principais de geração de output:
 
 \begin{itemize}\setlength\itemsep{-0.3em}
+	\vspace{-0.5em}
 	\item A partir de uma OCR Tree, chamar o método da classe "to\_text" para transformar a árvore numa única string de texto. A ordem do texto seguirá a ordem dos filhos de cada nodo. Delimitadores personalizados para cada um dos níveis podem ser distribuídos através do fornecimento de um dicionário.
 	\item A partir da classe Article, invocar o método "to\_text" para transformar a árvore interna processada numa string simples do título seguido do corpo do artigo. 
 	

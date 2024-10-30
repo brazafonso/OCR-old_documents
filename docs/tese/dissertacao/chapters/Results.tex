@@ -36,7 +36,7 @@ A pipeline de aplicação de OCR é, das 3 componentes da solução, a que mais 
 
 Seguindo um processo semelhante, obter-se-ão então resultados da aplicação desta componente sob diferentes casos de teste. Para isto, será feito uso do módulo de validação de resultados da pipeline (\ref{sec:pipeline_validation}).
 
-Relativamente aos casos de teste escolhidos, estes constam um total de 18 diferentes jornais, para um total de 35 páginas a serem testadas. O número amostras é inferior ao ideal sendo limitado pelo escopo do projeto - com uma solução envolvendo 3 componentes, todas de considerável dimensão -; à necessidade de, na generalidade dos casos, ser necessária uma cuidada e manual transcrição das amostras escolhidas; e múltiplas utilizações de cada amostra para diferentes resultados.
+Relativamente aos casos de teste escolhidos, foram escolhidos 18 diferentes jornais, totalizando 35 páginas a serem testadas (de cada jornal foram escolhidas em média 2 páginas). O número amostras é inferior ao ideal sendo limitado pelo escopo do projeto - com uma solução envolvendo 3 componentes, todas de considerável dimensão -; à necessidade de, na generalidade dos casos, ser necessária uma cuidada e manual transcrição das amostras escolhidas; e múltiplas utilizações de cada amostra para diferentes resultados.
 
 As amostras forma obtidas das hemerotecas públicas da \href{https://www.csarmento.uminho.pt/site/s/hemeroteca-bpb/page/hemeroteca-digital-da-bpb}{casa de sarmento} e da \href{https://hemerotecadigital.lisboa.pt/publicacoes}{câmara municipal de Lisboa}.
 
@@ -91,7 +91,7 @@ As outras configurações são, de forma sucinta:
 	\item \textbf{Segmentação de imagem (e configuração geral)}: útil principalmente para casos de muito ruído ou texto compactado, procurando auxiliar a segmentação dos blocos.
 \end{enumerate}
 
-Como características gémeas entre estas configurações, temos que todas utilizam o tesseract como motor de OCR, utilizando a configuração de linguagem 'por' para português visto ser esta a linguagem dos casos de teste. No caso de ser realizado upscaling da imagem, procura-se aumentar os dpi para 150, assumindo uma dimensão de folha A3, ocorrendo para a generalidade dos casos o upscaling (exceção a categoria moderna). Por último, todas utilizam confiança de texto mínima 10.
+Como características comuns entre estas configurações, todas utilizam o tesseract como motor de OCR, utilizando a configuração de linguagem 'por' para português visto ser esta a linguagem dos casos de teste. No caso de ser realizado upscaling da imagem, procura-se aumentar os dpi para 150, assumindo uma dimensão de folha A3, ocorrendo para a generalidade dos casos o upscaling (exceção a categoria moderna). Por último, todas utilizam confiança de texto mínima 10.
 
 No total, serão analisadas 245 (7 configurações x 35 páginas) execuções da pipeline.
 
@@ -102,14 +102,14 @@ Todos os preparativos para esta análise (jornais, ground truths e configuraçõ
 
 \subsection{Resultados}
 
-Segue-se uma redução dos resultados das métricas escolhidas para análise da componente. Estes serão apresentados na forma de gráficos de barras, sendo que, como mencionado, a totalidade dos dados está também disponibilizada com métricas extra não aqui focadas.
+Segue-se uma redução dos resultados das métricas escolhidas para análise da componente. Estes serão apresentados na forma de gráficos de barras, sendo que, como mencionado, a totalidade dos dados está também disponibilizada com métricas extra não aqui focadas. Nestes gráficos o sujeito principal de comparação será a configuração simples, barra amarela, sempre a primeira para cada um dos documentos.
 
 Versões ampliadas dos gráficos estão disponíveis na secção de apêndices.
 
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_avg_text_conf.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_avg_text_conf.png}
 	\caption{Valores de confiança média de texto das diferentes pipelines.}
 	\label{fig:graph_avg_text_conf}
 \end{figure}
@@ -117,6 +117,7 @@ Versões ampliadas dos gráficos estão disponíveis na secção de apêndices.
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -140,7 +141,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_gt_similiraty_cosine.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_gt_similiraty_cosine.png}
 	\caption{Valores de similaridade do texto (similaridade por cosseno) com GT das diferentes pipelines.}
 	\label{fig:graph_gt_similiraty_cosine}
 \end{figure}
@@ -148,6 +149,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -167,7 +169,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_gt_word_hit_ratio.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_gt_word_hit_ratio.png}
 	\caption{Rácios de aparição total de palavras da GT das diferentes pipelines.}
 	\label{fig:graph_gt_word_hit_ratio}
 \end{figure}
@@ -175,6 +177,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -195,7 +198,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_gt_unique_word_hit_ratio.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_gt_unique_word_hit_ratio.png}
 	\caption{Rácios de aparição de palavras distintas da GT das diferentes pipelines.}
 	\label{fig:graph_gt_unique_word_hit_ratio}
 \end{figure}
@@ -203,6 +206,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -221,7 +225,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_text_block_ratio.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_text_block_ratio.png}
 	\caption{Rácios de número de blocos de texto relativo à pipeline simples.}
 	\label{fig:graph_text_block_ratio}
 \end{figure}
@@ -229,6 +233,7 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -247,6 +252,22 @@ Por outro lado, tendo a pior média e maior oscilação, tem-se a pipeline de pr
 
 Verificando as métricas respetivas á ground truth, nota-se que em geral os resultados são mais favoráveis para o uso da template simples no que toca a métricas de similaridade simples de texto. Localmente, no entanto, podemos verificar que em certas instâncias, por exemplo, no documento 'o\_portuguez\_3', o rácio de palavras únicas detetadas melhorou cerca de 11\% com a pipeline geral relativamente ao OCR simples, e 14\% de acerto geral das palavras, com a generalidade das pipelines sendo melhor do que a base.
 
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/resultados/local_example_gt_unique_word_hit_ratio_1.png}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/resultados/local_example_gt_word_hit_ratio_1.png}
+	\end{subfigure}
+	
+	\caption{Resultados locais de 'o\_portuguez\_3' para rácio de palavras totais e distintas.}
+	\label{fig:local_example_1}
+\end{figure}
+
+
 Por outro lado, assumindo que, embora na generalidade inferior, as diferentes configurações se assemelhem à base, nota-se a diferença na capacidade de reduzir a quantidade de dados da OCR Tree, i.e. quantidade de blocos nos resultados finais. Isto apenas se nota, naturalmente, nas pipelines que apresentam pós processamento. A diminuição da quantidade de blocos finais constitui uma redução da complexidade do resultado, permitindo uma análise mais fácil deste.
 
 
@@ -254,7 +275,7 @@ Por outro lado, assumindo que, embora na generalidade inferior, as diferentes co
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_pgt_hit_ratio.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_pgt_hit_ratio.png}
 	\caption{Rácios de aparição de linhas da Partial GT das diferentes pipelines.}
 	\label{fig:graph_pgt_hit_ratio}
 \end{figure}
@@ -262,6 +283,7 @@ Por outro lado, assumindo que, embora na generalidade inferior, as diferentes co
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -281,7 +303,7 @@ Por outro lado, assumindo que, embora na generalidade inferior, as diferentes co
 \begin{figure}[H]
 	\centering
 	\hspace*{-2cm}
-	\includegraphics[width=1.1\textwidth]{images/resultados/graph_pgt_correct_order_ratio.png}
+	\includegraphics[width=1.25\textwidth]{images/resultados/graph_pgt_correct_order_ratio.png}
 	\caption{Rácios de acerto da ordem das linhas da Partial GT das diferentes pipelines.}
 	\label{fig:graph_pgt_correct_order_ratio}
 \end{figure}
@@ -289,6 +311,7 @@ Por outro lado, assumindo que, embora na generalidade inferior, as diferentes co
 
 \begin{table}[H]
 	\centering
+	\small
 	\begin{tabular}{|l|c|}
 		\hline
 		\textbf{Pipeline} & \textbf{Média} \\ \hline
@@ -305,11 +328,20 @@ Por outro lado, assumindo que, embora na generalidade inferior, as diferentes co
 
 
 
-No caso da GT parcial, maioritariamente dedicada à verificação de localização de algumas frases da GT e da sua ordem no resultado final, pode-se inferir que a aplicação de cálculo da ordem de leitura do Toolkit não é benéfica na generalidade. Porém, observando individualmente, podem-se observar múltiplos casos em que este melhorou notavelmente os resultados em relação ao OCR simples como: 'a\_final\_8' (5x melhor); 'a\_capital\_2' (~5.6x); 'o\_portuguez\_3' (~1.6x).
+No caso da GT parcial, maioritariamente dedicada à verificação de localização de algumas frases da GT e da sua ordem no resultado final, pode-se inferir que a aplicação de cálculo da ordem de leitura do Toolkit não é benéfica na generalidade, enfatizado pela diferença entre a média de rácio de ordem correta entre as configurações 'completa' e 'completa (sem ordenação)'. 
+
+Porém, observando individualmente, podem-se observar múltiplos casos em que este melhorou notavelmente os resultados em relação ao OCR simples como: 'a\_final\_8' (5x melhor); 'a\_capital\_2' (~5.6x); 'o\_portuguez\_3' (~1.6x).
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/resultados/local_example_pgt_correct_order_ratio_1.png}
+	\caption{Resultados locais de casos de melhoria na ordenação da GT parcial.}
+	\label{fig:local_example_pgt_correct_order_ratio_1}
+\end{figure}
 
 
 
-\section{Conclusão}
+\subsection{Conclusão}
 
 Na generalidade, é possível concluir que, pelo menos dentro das configurações testadas, não houve nenhuma que excedesse os resultados de OCR simples.
 
@@ -319,7 +351,21 @@ Seguem-se exemplos:
 \begin{itemize}
 	\item Melhorias substâncias nas taxas de acerto da GT parcial no jornal 'a\_capital\_2' relativamente a OCR simples.
 	
-	\item Para os documento 'argus\_8','a\_final\_8','a\_final\_9' e 'o\_sarilho\_8' com total acerto na ordenação da GT parcial por uma das configurações, sendo que OCR simples não o conseguiu e até teve resultados muito inferiores em alguns dos casos.
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.6\textwidth]{images/resultados/local_example_pgt_hit_ratio_1.png}
+		\caption{Exemplo de melhoria substancial de melhoria de acerto na GT parcial.}
+		\label{fig:local_example_pgt_hit_ratio_1}
+	\end{figure}
+	
+	\item Para os documento 'argus\_8','a\_final\_8','a\_final\_9' e 'o\_sarilho\_2' com total acerto na ordenação da GT parcial por uma das configurações, sendo que OCR simples não o conseguiu e até teve resultados muito inferiores em alguns dos casos.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{images/resultados/local_example_pgt_correct_order_ratio_2.png}
+		\caption{Exemplos de acerto total de ordenação da GT parcial.}
+		\label{fig:local_example_pgt_correct_order_ratio_2}
+	\end{figure}
 	
 \end{itemize}
 

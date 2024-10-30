@@ -1,17 +1,26 @@
 \chapter*{Resumo}
+\vspace{-2em}
 
 \newacronym{ocr}{OCR}{reconhecimento óptico de caracteres}
 \newacronym{gui}{GUI}{graphic user interface}
 
 A digitalização de documentos permitiu uma nova forma de salvaguardar informação para a posteridade, evitando a sua perda pelo deterioramento físico destes. De forma a posteriormente transcrever estes documentos, permitindo uma consulta, processamento e manipulação mais simples, o uso de software de \acrshort{ocr} é essencial. Esta tecnologia é, no entanto, dependente em diferentes níveis das características do seu alvo, nomeadamente: qualidade da imagem, complexidade da estrutura do documento, linguagem do texto. 
 
-Documentos mais antigos, em especial jornais por apresentarem estruturas mais complexas, apresentam por este motivo resultados que diferem bastante do seu conteúdo original; tanto a nível do texto reconhecido, como da sua organização para os diferentes outputs disponíveis (ex.: txt simples). A tarefa de extrair informação destes documentos, como por exemplo o isolamento e extração de artigos, torna-se assim complexa e propensa a erros. 
+Documentos mais antigos, em especial jornais por possuírem estruturas complexas, apresentam por este motivo resultados que diferem bastante do seu conteúdo original; tanto a nível do texto reconhecido, como da sua organização para os diferentes outputs disponíveis (ex.: txt simples). A tarefa de extrair informação destes documentos, como o isolamento e extração de artigos, torna-se assim complexa e propensa a erros. 
 
-Este trabalho propõe então a criação de uma ferramenta ou um conjunto de ferramentas que permitam auxiliar o processo de extração de conteúdo de documentos, primeiramente mas não exclusivamente, mais antigos e estruturados, com especial foco em jornais. A solução do projeto pretende então ser capaz de detetar e lidar com os diferentes pontos de risco nestes documentos: qualidade da imagem, erros nos resultados de \acrshort{ocr}, segmentação e organização do documento, criação do output organizado. 
+Este trabalho propõe então a criação de uma solução, focada neste tipo de documentos, que afetando os dados que rodeiam o processo de \acrshort{ocr}, i.e. imagem, resultados de \acrshort{ocr} e texto; permita resolver problemas que este apresente, particularmente na dimensão dos resultados de \acrshort{ocr}, e assim proporcione formas de melhorar a transcrição final. 
 
-Diferentes alternativas para \acrshort{ocr} assim como métodos de tratamento destes problemas serão estudados, comparados, e implementados, de forma a encontrar a melhor solução para a resolução deste problema. O produto final implementado será composto por 3 componentes principais: um Toolkit com ênfase na manipulação de resultados OCR, mas também de tratamento de imagem; uma aplicação do Toolkit na forma de pipeline de OCR, que também explora ferramentas externas; um Editor de resultados OCR, também aplicação do Toolkit, que facilite a manipulação destes devido ao seu aspeto visual, e o teste das outras componentes. 
+Na base da solução, está o modelo \textbf{OCR Tree} que procura servir como representação universal dos resultados de OCR ou, por outras palavras, serve como árvore de estrutura e conteúdo documental.
 
-Na base desta solução, tem o módulo OCR Tree que procura servir como representação universal dos resultados de OCR
+A solução é composta por 3 componentes principais:
+\begin{itemize}\setlength\itemsep{-0.5em}
+	\vspace{-0.5em}
+	\item \textbf{Toolkit}: com ferramentas para análise e tratamento de imagem; processamento de texto; e especial foco na análise e manipulação de OCR Tree.
+	\item \textbf{Pipeline}: aplicação do Toolkit e ferramentas auxiliares numa linha de uso de \acrshort{ocr}, configurável. Permitirá obter resultados objetivos sobre o Toolkit.
+	\item \textbf{Editor Gráfico de OCR Tree}: interface gráfica que permita a manipulação manual facilitada de OCR Tree. Faz uso do Toolkit e da Pipeline nas operações que disponibiliza.
+\end{itemize}
+
+
 
 
 \paragraph{Palavras-chave} OCR, Digitalização, Documentos estruturados, Documentos antigos, Segmentação de documentos, Tratamento de imagem, Editor gráfico
@@ -20,18 +29,25 @@ Na base desta solução, tem o módulo OCR Tree que procura servir como represen
 
 \chapter*{Abstract}
 
-The digitization of documents has opened a new way of preserving information for posterity, avoiding its loss through their physical decay. To allow the transcription of these documents, enabling an easier search, indexation and manipulation of them, the use of \acrshort{ocr} software is essential. This technology is, however, dependent in many ways of the characteristics of its target, namely: the quality of the image, the complexity of the document's structure, the text's language. 
+The digitization of documents has opened a new way of preserving information for posterity, avoiding its loss through their physical decay. To allow the transcription of these documents, enabling an easier search, indexation and manipulation of them, the use of \acrshort{ocr} software is essential. This technology is, however, dependent in many ways on the characteristics of its target, namely: the quality of the image, the complexity of the document's structure, the text's language. 
 
 Older documents, especially newspapers for having complex structures, result in poor transcriptions that differ from their original content, both in the recognized text, and in the organization of the available final outputs (ex.: simple txt).
-Extracting information from these documents, for example, the isolation and extraction of articles, becomes thus a complex and error prone task. 
+Extracting information from these documents, such as the segmentation and extraction of articles, becomes thus a complex and error prone task. 
 
-Therefore, this work aims to create a tool, or a toolkit, that can assist in the process of content extraction from documents, primarily though not exclusively, that are older and structured, specializing in newspapers. The proposed pipeline should then be able to detect and fix potential problems in these documents: image quality, \acrshort{ocr} results errors, segmentation and document organization, restructured output generation.
-
-Different \acrshort{ocr} alternatives, as well as different methods of dealing with these problems, will be studied, compared, and implemented, to find the best solution for the task at hand. The final product will be composed of 3 main components: a Toolkit with emphasis on the manipulation of OCR results, but also image processing; an application of said Toolkit in the shape of an OCR pipeline, which will also explore other external tools; an OCR results Editor, also an application of the Toolkit, which eases the manipulation of these thanks to its visual approach, as well as the testing of the other components.
-
-The basis of this solution is the OCR Tree module, which aims to serve as an universal representation of OCR results.
+This work proposes  a solution, focused on these documents, which by targeting the data that encompasses  the process of \acrshort{ocr}, i.e. image, \acrshort{ocr} results and text; can solve problems that arise in this process, particularly on the issue of \acrshort{ocr} results, thus providing ways to enhance the final transcript.
 
 
-\paragraph{Keywords} OCR, Digitalization, Structured documents, Old documents, Document segmentation, Image treatment, Graphical Editor
+The basis of this solution is the OCR Tree module, which aims to serve as an universal representation of \acrshort{ocr} results or, in other words, serves represents the structural and content tree of a document.
+
+The solution is composed by 3 main components:
+\begin{itemize}\setlength\itemsep{-0.5em}
+	\vspace{-0.5em}
+	\item \textbf{Toolkit}: with tools for analysis and image treatment; text processing; and special focus on the analysis and manipulation of OCR Tree.
+	\item \textbf{Pipeline}: an application  of the Toolkit and auxiliary tools in the form of a configurable pipeline surrounding the use of OCR. Will as a result allow gathering objective  metrics of the Toolkit.
+	\item \textbf{OCR Tree Graphical Editor}: graphical interface that allows for an easy manual manipulation of the OCR Tree. Makes use of the Toolkit and the Pipeline in the provided functionalities.
+\end{itemize}
+
+
+\paragraph{Keywords} OCR, Digitalization, Structured documents, Old documents, Document segmentation, Image processing, Graphical Editor
 
 \cleardoublepage

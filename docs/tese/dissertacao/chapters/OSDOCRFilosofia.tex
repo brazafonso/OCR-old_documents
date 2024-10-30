@@ -1,4 +1,4 @@
-\chapter{OSDOCR Filsofia}
+\chapter{OSDOCR Filosofia}
 \label{cap_osdocr_filosofia}
 
 Neste capítulo é realizada uma reflexão sobre o problema e as consequentes propostas que são deste retiradas. Serão descritas decisões e modelos fundamentais da solução, assim como a arquitetura desta. 
@@ -7,11 +7,11 @@ Neste capítulo é realizada uma reflexão sobre o problema e as consequentes pr
 
 Na sua essência, o problema abordado pode ser descrito como a aquisição de resultados não satisfatórios na aplicação de OCR sob documentos antigos com texto estruturado. 
 
-Como se analisou no capítulo \ref{cap_estado_arte}, estes resultados podem ser melhorados através de múltiplas interações em múltiplas partes do processo do reconhecimento de texto: quer seja antes deste ser realizado, através de processamento de imagem; durante a deteção de texto, através da configuração proposta ao motor OCR; ou após através do tratamento dos resultados e do texto.
+Como se analisou no capítulo \ref{cap_estado_arte}, estes resultados podem ser melhorados através de múltiplas interações em diferentes partes do processo do reconhecimento de texto: quer seja antes deste ser realizado OCR, através de processamento de imagem; durante a deteção de texto, na configuração proposta ao motor OCR; ou após com o tratamento dos resultados e do texto.
 
-Estas diferentes interações são, na generalidade, aplicações sobre um input inicial de forma a transformá-lo, consequentemente resolvendo particularidades deste. Exemplos disto são: aplicação de técnicas de binarização que reduzem ruído ou imperfeições numa imagem; melhoria de resolução de uma imagem; correções ortográficas de texto; etc. 
+Estas diferentes interações são, na generalidade, aplicações sob um input inicial, de forma a transformá-lo e para resolver particularidades deste. Exemplos disto são: aplicação de técnicas de binarização que reduzem ruído ou imperfeições numa imagem; melhoria de resolução de uma imagem; correções ortográficas de texto; etc. 
 
-Estas interações, podem então ser consideradas como um conjunto de ferramentas que podem ser aplicadas ao input do nosso problema de forma a abordar diferentes defeitos deste de acordo com as suas características; até porque, como também foi descrito para algumas destas, a sua utilização indiscriminada pode deteriorar, ao invés de melhorar, o produto final. As ferramentas comummente utilizadas não são explicitamente dedicadas ao problema de OCR em concreto, aumentando a sua utilidade e adaptabilidade para outras situações.
+Estas interações podem então ser consideradas como um conjunto de ferramentas que podem ser aplicadas ao input do nosso problema de forma a abordar diferentes defeitos deste de acordo com as suas características; até porque, como também foi descrito para algumas destas, a sua utilização indiscriminada pode deteriorar, ao invés de melhorar, o produto final. As ferramentas comummente utilizadas não são explicitamente dedicadas ao problema de OCR em concreto, aumentando a sua utilidade e adaptabilidade para outras situações.
 Tal reforça o intuito base do trabalho, da criação de um toolkit que proporcione um conjunto de funcionalidades independentes, com a intenção final de procurar melhorar os resultados da transcrição de texto.
 
 Dentro destas ferramentas, é notável a escassez de oferta dirigida para a análise e manipulação dos resultados OCR, mais especificamente, os dados entre a realização de OCR e output do texto reconhecido.
@@ -22,7 +22,7 @@ Podemos então declarar aqui as primeira proposta:
 
 \highlight{Proposta 2: O Toolkit deverá abordar os desafios do contexto de OCR, nomeadamente: processamento de imagem; processamento de texto; e especial ênfase no processamento de resultados OCR.}[\normalsize]
 
-Durante a análise do estado da arte, notou-se que para soluções para o problema de melhorar a aplicação de OCR, um processo com 3 partes principais pode ser identificado, sendo estas: pré-processamento de OCR, composto por processamento do input para realização de OCR, usualmente uma imagem; OCR, configurando o motor de OCR de acordo com as características do input, como a linguagem esperada do texto ou o dpi da imagem; pós-processamento de OCR, aplicando transformações nos resultados como, remover blocos de ruído, ordenar blocos identificados ou aplicar correções no texto. 
+Durante a análise do estado da arte, notou-se que para soluções que procuram melhorar a aplicação de OCR, um processo com 3 partes principais pode ser identificado, sendo estas: pré-processamento de OCR, composto por processamento do input para realização de OCR, usualmente uma imagem; OCR, configurando o motor de OCR de acordo com as características do input, como a linguagem esperada do texto ou o dpi da imagem; pós-processamento de OCR, aplicando transformações nos resultados como, remover blocos de ruído, ordenar blocos identificados ou aplicar correções no texto. 
 
 \begin{figure}[H]
      \centering
@@ -58,7 +58,7 @@ Seguindo o estudo realizado, esta pipeline será composta por 3 partes principai
 \highlight{Proposta 4: A pipeline desenvolvida deve ser composta por 3 partes principais: pré-processamento de OCR, OCR e pós-processamento de OCR.}[\normalsize]
  
  
-Como discutido, o uso de ferramentas independentes é interessante devido ao facto que diferentes inputs irão necessitar de tratamentos distintos de forma a obter os melhores resultados. Desta forma, é interessante que a pipeline desenvolvida não seja totalmente sequencial, de modo a aumentar a sua utilidade.
+Como discutido, o uso de ferramentas independentes é interessante visto que diferentes inputs irão necessitar de tratamentos distintos de forma a obter os melhores resultados. Desta forma, é interessante que a pipeline desenvolvida não seja totalmente sequencial, de modo a aumentar a sua utilidade.
 
 
 
@@ -73,17 +73,22 @@ Como discutido, o uso de ferramentas independentes é interessante devido ao fac
 
 \highlight{Proposta 5: A pipeline deverá ser configurável. Permitirá, dentro dos blocos disponíveis, escolher aqueles que são aplicados.}[\normalsize]
 
+
 Esta pipeline, seguindo a estrutura explicada de aplicação de OCR, apresentará 3 partes principais onde, a primeira - pré-OCR - irá lidar com um input do tipo imagem e terá como output uma imagem; a segunda - OCR - terá como input uma imagem e devolverá os resultados de OCR; e a última - pós-OCR - irá ter como input os resultados de OCR, e terá como output a transcrição do texto da imagem.
 
-Nota-se uma ambiguidade no output da 2º parte e no input da 3º, os resultados de OCR. Tal, deve-se ao facto de motores OCR, como o Tesseract, permitirem vários tipos de output. É então relevante a criação de um estrutura de dados universal para a representação de resultados OCR.
+Através deste último output, podem ser obtidas métricas objetivas sobre os resultados da pipeline quando comparados com uma \acrshort{ground truth} que, indiretamente, serão também avaliações do Toolkit. A implementação de um módulo dedicado a esta avaliação demonstra a sua utilidade através da sua possibilidade de apreciação dos resultados e depuração das ferramentas.
+
+Nota-se uma ambiguidade no output da 2º parte e no input da 3º, os resultados de OCR. Tal, deve-se ao facto de motores OCR, como o Tesseract, permitirem vários tipos de output. É então relevante a criação de uma estrutura de dados universal para a representação de resultados OCR.
 
 Como estudado no capítulo \ref{cap_estado_arte}, tais representações já possuem um standard um formato de ficheiro, como \textbf{HOCR}, portanto a estrutura de dados escolhida deve ser baseado nestes, ou ser convertível para o standard.
 
+
+\highlight{Proposta 6: A pipeline deverá incluir um módulo de validação, de modo a permitir apreciar os resultados desta e apoiar a depuração do Toolkit.}[\normalsize]
+
 % proposta de estrutura de dados unica para a represantacao de resultados OCR
+\highlight{Proposta 7: Criação de uma estrutura de dados universal para a representação dos resultados de OCR.}[\normalsize]
 
-\highlight{Proposta 6: Criação de uma estrutura de dados universal para a representação dos resultados de OCR.}[\normalsize]
-
-\highlight{Proposta 7: A estrutura de dados universal para a representação dos resultados de OCR deve ser baseada ou convertível num formato standard.}[\normalsize]
+\highlight{Proposta 8: A estrutura de dados universal para a representação dos resultados de OCR deve ser baseada ou convertível num formato standard.}[\normalsize]
 
 
 No estudo do estado da arte, foi possível compreender que a criação de algoritmos ubíquos para todos os tipos de documentos é um empreendimento com diminutas chances de sucesso, sendo que para muitos problemas, como por exemplo o cálculo da ordem de leitura, mesmo focando num só tipo de documento como jornais, os resultados podem não ser satisfatórios devido à diversidade de estruturas existentes. Consequentemente, é esperado que a pipeline não seja sempre suficiente na resolução do problema. 
@@ -95,7 +100,7 @@ Além do refinamento através de uma manipulação mais minuciosa, este editor f
 
 % proposta de editor de estrutura de dados para realizacao de afinações manuais
 
-\highlight{Proposta 8: A solução do problema deverá possuir um editor gráfico dos resultados de OCR, que permita aplicar ferramentas propostas pelo toolkit.}[\normalsize]
+\highlight{Proposta 9: A solução do problema deverá possuir um editor gráfico dos resultados de OCR, que permita aplicar ferramentas propostas pelo toolkit.}[\normalsize]
 
 
 % apanhado das proposta
@@ -108,6 +113,7 @@ Em suma, as propostas definidas para o desenho da solução são:
 	\item A solução para o problema deve possuir uma pipeline de aplicação de OCR que faça uso da toolkit desenvolvida.
 	\item A pipeline desenvolvida deve ser composta por 3 partes principais: pré-processamento de OCR, OCR e pós-processamento de OCR.
 	\item A pipeline deverá ser configurável. Permitirá, dentro dos blocos disponíveis, escolher aqueles que são aplicados.
+	\item A pipeline deverá incluir um módulo de validação, de modo a permitir apreciar os resultados desta e apoiar a depuração do Toolkit.
 	\item Criação de uma estrutura de dados universal para a representação dos resultados de OCR.
 	\item A estrutura de dados universal para a representação dos resultados de OCR deve ser baseada ou convertível num formato standard.
 	\item A solução do problema deverá possuir um editor gráfico dos resultados de OCR, que permita aplicar ferramentas propostas pelo toolkit.

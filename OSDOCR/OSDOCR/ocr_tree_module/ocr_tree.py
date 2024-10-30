@@ -548,7 +548,7 @@ class OCR_Tree:
         return False
     
     def calculate_character_mean_width(self,conf:int=-1)->float:
-        '''Get mean width of group boxes'''
+        '''Get mean width of characters in Tree'''
         sum = 0
         count = 0
         boxes_level = self.get_boxes_level(5,conf=conf)
@@ -1035,7 +1035,7 @@ class OCR_Tree:
                                     # insert in the middle
                                     self.children = self_children[:i] + [child] + self_children[i:]
                                     joined = True
-                                # if intercept, will have to use recursive join
+                                # if intersect, will have to use recursive join
                                 elif self_children[i].box.intersects_box(child.box,inside=True,extend_horizontal=True):
                                     intersect_area = self_children[i].box.intersect_area_box(child.box,extend_horizontal=True)
                                     intersect_height = intersect_area.height

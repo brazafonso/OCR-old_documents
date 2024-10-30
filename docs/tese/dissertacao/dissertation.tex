@@ -272,6 +272,12 @@ BoldFont=NewsGotTBold.ttf
 \phantomsection
 \tableofcontents
 
+% Acronyms
+\printglossary[type=\acronymtype,nonumberlist, title={Acrónimos}]
+
+% Glossary
+\printglossary[title={Glossário}, nonumberlist]
+
 \cleardoublepage
 \listoffigures
 
@@ -279,11 +285,7 @@ BoldFont=NewsGotTBold.ttf
 \listoftables
 \clearpage
 
-% Acronyms
-\printglossary[type=\acronymtype,nonumberlist, title={Acrónimos}]
 
-% Glossary
-\printglossary[title={Glossário}, nonumberlist]
 
 \cleardoublepage
 \pagenumbering{arabic}
@@ -309,9 +311,9 @@ BoldFont=NewsGotTBold.ttf
 \appendix
 \renewcommand\chaptername{Apêndice}
 
-\input{appendices/SupportWork}
+%\input{appendices/SupportWork}
 \input{appendices/DetailsOfResults}
-\input{appendices/Listings}
+%\input{appendices/Listings}
 \input{appendices/Tooling}
 
 \input{covers/BackCover}
