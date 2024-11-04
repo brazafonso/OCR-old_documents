@@ -127,7 +127,7 @@ class Box:
     def area(self):
         return self.width * self.height
     
-    def within_vertical_boxes(self,box: 'Box',range:float=0):
+    def within_vertical_boxes(self,box: 'Box',range:float=0,only_self:bool=False):
         '''Check if boxes are within each other vertically, considering a range (0-1)'''
         
         # check if box is within self with range
@@ -135,7 +135,7 @@ class Box:
             return True
         
         # check if self is within box with range
-        if (box.top - box.height*range <= self.top and box.bottom + box.height*range >= self.bottom):
+        if not only_self and (box.top - box.height*range <= self.top and box.bottom + box.height*range >= self.bottom):
             return True
 
 
@@ -195,7 +195,7 @@ class Box:
 
         return False
 
-    def intersect_area_box(self,box:'Box',extend_vertical:bool=False,extend_horizontal:bool=False):
+    def intersect_area_box(self,box:'Box',extend_vertical:bool=False,extend_horizontal:bool=False)->Union['Box',None]:
         '''Get intersect area box between two boxes'''
         area_box = Box(0,0,0,0)
 
