@@ -8,6 +8,7 @@
 !**/ocr_editor/assets/*.png
 !**/dissertacao/**/*.png
 *.json
+!assets/*
 docs/jornais/*
 results
 docs/tese/progresso.txt
