@@ -10,6 +10,11 @@ Besides the **Toolkit**, two applications of it are here available:
 * a **Pipeline** for applying OCR; 
 * a **OCR Tree Editor** which allows for easy manipulation of **OCR Tree** through a graphical editor;
 
+## **Main commands**
+
+* **OSDOCR** : to invoke the pipeline
+* **ocr_editor** : to invoke the OCR Tree graphical editor
+
 
 ## **Auxiliary repositories**
 
@@ -338,6 +343,8 @@ If multiple configurations are given, returns a configuration that mixes the par
 # **OCR Tree Editor**
 
 This component delivers a **graphical interface** to **manipulate** instances of **OCR Tree**.
+
+The command to use the pipeline is **ocr_editor**, and its arguments can be checked by calling **-h**.
 
 ![image](assets/ocr_editor.png)
 
