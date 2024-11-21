@@ -11,7 +11,6 @@ import matplotlib.patches
 import matplotlib.pyplot as plt
 import PySimpleGUI as sg
 import matplotlib.text
-import matplotlib.typing
 import numpy as np
 from .layouts.ocr_editor_layout import *
 from ..aux_utils.utils import *
@@ -550,7 +549,7 @@ def update_canvas_image(window:sg.Window,values:dict):
     '''Update canvas image element. Creates new plot with image'''
     global image_plot,figure,figure_canvas_agg,current_image_path,ppi,\
         default_edge_color,config,current_image,config
-    if values['target_input']:
+    if values['target_input'] and os.path.exists(values['target_input']):
         path = values['target_input']
         file_name = os.path.basename(path)
         print('Path:',path)
@@ -603,12 +602,12 @@ def update_canvas_image(window:sg.Window,values:dict):
 def update_canvas_ocr_results(window:sg.Window,values:dict):
     '''Update canvas ocr_results element. Creates new plot with ocr_results'''
     global current_ocr_results,current_ocr_results_path,current_image_path,config
-    if values['ocr_results_input'] and current_image_path:
+    if values['ocr_results_input'] and current_image_path and current_ocr_results_path != values['ocr_results_input']:
         current_ocr_results_path = values['ocr_results_input']
 
         if not os.path.exists(current_ocr_results_path):
-            # message to OCR image first
-            sg.popup('Please rerun OCR on target image first')
+            # # message to OCR image first
+            # sg.popup('Please rerun OCR on target image first')
             return
         
         # read ocr results

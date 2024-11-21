@@ -19,6 +19,7 @@ default_config = {
         'output_path' : os.getcwd(),
         'fix_hifenization' : True,
         'calculate_reading_order' : False,
+        'use_pipeline_results' : True,
         'cache_size' : 10,
         'ppi' : 300,
         'interaction_range' : 10,
@@ -55,7 +56,6 @@ default_config = {
         'override_type_categorize_blocks' : True,
         'title_priority_calculate_reading_order' : False,
         'target_segments' : ['header', 'body'],
-        'use_pipeline_results' : True,
         'image_split_keep_all' : False
     },
     'user' : {
@@ -82,6 +82,9 @@ def read_ocr_editor_configs_file()->dict:
                 config = json.load(f)
         except Exception as e:
             config = deepcopy(default_config)
+    else:
+        with open(config_file_path, 'w') as f:
+            json.dump(config, f, indent=4)
 
     # update config to have all keys in default config
     config = fill_dict(config, default_config)
@@ -201,8 +204,8 @@ def refresh_config_window(window:sg.Window, config:dict):
     window['input_output_path'].update(refresh_conf['base']['output_path'])
     window['-CHECKBOX-checkbox_fix_hifenization'].update(checked if refresh_conf['base']['fix_hifenization'] else unchecked)
     window['-CHECKBOX-checkbox_fix_hifenization'].metadata = refresh_conf['base']['fix_hifenization']
-    window['-CHECKBOX-checkbox_calculate_reading_order'].update(checked if refresh_conf['methods']['calculate_reading_order'] else unchecked)
-    window['-CHECKBOX-checkbox_calculate_reading_order'].metadata = refresh_conf['methods']['calculate_reading_order']
+    window['-CHECKBOX-checkbox_calculate_reading_order'].update(checked if refresh_conf['base']['calculate_reading_order'] else unchecked)
+    window['-CHECKBOX-checkbox_calculate_reading_order'].metadata = refresh_conf['base']['calculate_reading_order']
     window['-CHECKBOX-checkbox_use_pipeline_results'].update(checked if refresh_conf['base']['use_pipeline_results'] else unchecked)
     window['-CHECKBOX-checkbox_use_pipeline_results'].metadata = refresh_conf['base']['use_pipeline_results']
     window['-CHECKBOX-checkbox_debug_mode'].update(checked if refresh_conf['base']['debug'] else unchecked)

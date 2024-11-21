@@ -12,6 +12,8 @@ def create_base_folders():
         os.makedirs(consts.osdocr_path)
     if not os.path.exists(consts.config_folder_path):
         os.makedirs(consts.config_folder_path)
+    if not os.path.exists(consts.consts_path):
+        os.makedirs(consts.consts_path)
     if not os.path.exists(consts.result_path):
         os.makedirs(consts.result_path)
     if not os.path.exists(consts.tmp_path):
