@@ -31,8 +31,8 @@ def run_test():
         print('test','ocr_results_path',ocr_results_path)
         ocr_results = OCR_Tree(ocr_results_path)
         # # Frequency tests
-        # get_text_sizes(ocr_results,method='savgol_filter',logs=True)
-        print(get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True))
+        get_text_sizes(ocr_results,method='savgol_filter',logs=True)
+        # print(get_text_sizes(ocr_results,method='WhittakerSmoother',logs=True))
         #get_columns(ocr_results,method='savgol_filter',logs=True)
         # get_columns(ocr_results,method='WhittakerSmoother',logs=True)
         # get_columns_pixels(target_image,method='WhittakerSmoother',logs=True)

@@ -26,6 +26,7 @@ results/*
 study_cases
 OSDOCR/OSDOCR/models/DE_GAN_old_docs/
 OSDOCR/OSDOCR/models/nunif/
+OSDOCR/OSDOCR/preprocessing/models/HVI_CIDNet
 packages/iopath/
 calibrate
 **/tmp

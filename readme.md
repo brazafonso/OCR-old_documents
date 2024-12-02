@@ -15,6 +15,10 @@ Besides the **Toolkit**, two applications of it are here available:
 * **OSDOCR** : to invoke the pipeline
 * **ocr_editor** : to invoke the OCR Tree graphical editor
 
+## **Installation**
+
+    pip install OSDOCR
+
 
 ## **Auxiliary repositories**
 

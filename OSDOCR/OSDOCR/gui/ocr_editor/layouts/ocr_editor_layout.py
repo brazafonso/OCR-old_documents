@@ -36,7 +36,7 @@ def ocr_editor_layout()->sg.Window:
                                enable_events=True,font=("Calibri", 15),size=(25,1))),
 
                 place(sg.FileBrowse(file_types=(("OCR Files", ["*.json","*.hocr"]),),
-                                    button_text="OCR Results",key='browse_file',target='ocr_results_input',
+                                    button_text="OCR Tree",key='browse_file',target='ocr_results_input',
                                     initial_folder=os.getcwd(),font=("Calibri", 15),enable_events=True)),
                 place(sg.Input(default_text=browse_file_input_value,key='ocr_results_input',
                                enable_events=True,font=("Calibri", 15),size=(25,1))),
@@ -46,7 +46,18 @@ def ocr_editor_layout()->sg.Window:
                                key='configurations_button',enable_events=True,
                                tooltip='Settings',
                                )
-                    )
+                    ),
+                    
+                place(sg.Text('?',key='help_text',font=("Calibri", 35,"bold"),text_color='#046380',tooltip='''hold "ctrl" -> select multiple blocks
+"ctrl + a" -> select all blocks
+"ctrl + z" -> undo
+"ctrl + shift + z" -> redo
+"ctrl + c" -> copy block text
+"ctrl + +" -> zoom in
+"ctrl + -" -> zoom out
+"middle click" -> create new block
+"delete" -> delete block
+number keys -> update block id''')),
         ],
         [
             sg.HorizontalSeparator()
