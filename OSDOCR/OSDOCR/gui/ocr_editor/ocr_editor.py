@@ -88,6 +88,7 @@ id_text_size = 10
 SYMBOL_UP =    '▲'
 SYMBOL_DOWN =  '▼'
 block_types = ['delimiter','title','caption','text','image','other','highlight']
+scale = None
 
 
 ################################################
@@ -100,7 +101,7 @@ block_types = ['delimiter','title','caption','text','image','other','highlight']
 def update_config_dependent_variables():
     '''Update config dependent variables'''
     global config,ppi,vertex_radius,edge_thickness,id_text_size,\
-        default_edge_color,window,current_image
+        default_edge_color,window,current_image,scale
     print('Update config dependent variables')
     changed = False
     try:
@@ -138,9 +139,14 @@ def update_config_dependent_variables():
             id_text_size = config['base']['id_text_size']
     except:
         pass
+    try:
+        if config['base']['gui_scale'] != scale:
+            changed = True if scale else False
+            scale = config['base']['gui_scale']
+    except:
+        pass
 
     return changed
-
 
 def update_config_user_settings():
     '''Update config user settings'''
@@ -1827,7 +1833,8 @@ def split_image_method(x:int,y:int):
             # cut image
             if orientation == 'horizontal':
                 option = popup_window(title='Area to keep',message='Choose area to keep',
-                                      options=('top','bottom'),location=popup_location,modal=True)
+                                      options=('top','bottom'),location=popup_location,modal=True,
+                                      scale=config['base']['gui_scale'])
                 if option == 'top':
                     img = img[0:split_delimiter.top,0:width]
                     image_area = Box({'left':0,'right':width,
@@ -1841,7 +1848,8 @@ def split_image_method(x:int,y:int):
                     
             elif orientation == 'vertical':
                 option = popup_window(title='Area to keep',message='Choose area to keep',
-                                      options=('left','right'),location=popup_location,modal=True) 
+                                      options=('left','right'),location=popup_location,modal=True,
+                                      scale=config['base']['gui_scale']) 
                 if option == 'left':
                     img = img[0:height,0:split_delimiter.left]
                     image_area = Box({'left':0,'right':split_delimiter.left,
@@ -1912,8 +1920,6 @@ def split_image_method(x:int,y:int):
                             cut_blocks= split_block(block,cut_line,cut_orientation,
                                                     conf=-1,keep_all=True)
                             
-                            print(intersect_edge,cut_orientation)
-                            print('cut blocks',cut_blocks)
                             if cut_blocks:
                                 # final block depends on edge and cut orientation
                                 if cut_orientation == 'vertical':
@@ -2693,10 +2699,11 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
     create_base_folders()
     clean_editor_tmp_folder()
     
-    window = ocr_editor_layout()
-
-    # read config and update dependent variables
     config = read_ocr_editor_configs_file()
+
+    window = ocr_editor_layout(scale=config['base']['gui_scale'])
+
+    # update dependent variables
     update_config_dependent_variables()
 
     if not input_image_path:
@@ -3047,7 +3054,7 @@ def run_gui(input_image_path:str=None,input_ocr_results_path:str=None):
             toggle_block_id = not toggle_block_id
         # configurations button
         elif event == 'configurations_button':
-            config = run_config_gui(window.current_location())
+            config = run_config_gui(scale=config['base']['gui_scale'],position=window.current_location())
             update_config_dependent_variables()
         # collapsible section
         elif event.startswith('-OPEN collapse_'):

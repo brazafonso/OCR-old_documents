@@ -13,6 +13,7 @@ config_file_path = f'{config_folder_path}/conf.json'
 # default configuration
 default_config = {
     'base': {
+        'gui_scale' : 1.0,
         'text_confidence' : 0,
         'output_type' : ['newspaper'],
         'output_format' : 'markdown',
@@ -96,6 +97,12 @@ def read_config_window(window:sg.Window,values:dict)->dict:
     config = read_ocr_editor_configs_file()
 
     # base values
+    try:
+        config['base']['gui_scale'] = float(values['input_gui_scale'])
+        if config['base']['gui_scale'] <= 0:
+            config['base']['gui_scale'] = 1
+    except:
+        pass
     config['base']['text_confidence'] = values['slider_text_confidence']
     config['base']['output_format'] = values['list_output_format']
     config['base']['output_type'] = values['list_output_type']
@@ -198,6 +205,7 @@ def refresh_config_window(window:sg.Window, config:dict):
     refresh_conf = update_dict(refresh_conf, config)
 
     # base values
+    window['input_gui_scale'].update(refresh_conf['base']['gui_scale'])
     window['slider_text_confidence'].update(refresh_conf['base']['text_confidence'])
     window['list_output_format'].update(refresh_conf['base']['output_format'])
     window['list_output_type'].update(refresh_conf['base']['output_type'])
@@ -264,10 +272,10 @@ def save_config_file(config:dict):
 
 
 
-def run_config_gui(position:tuple=None):
+def run_config_gui(scale:float=1.0,position:tuple=None):
     '''Run ocr editor'''
     global default_config
-    config_window = configurations_layout(position=position)
+    config_window = configurations_layout(scale=scale,position=position)
     config = read_ocr_editor_configs_file()
     refresh_config_window(config_window, config)
 
