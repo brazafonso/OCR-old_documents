@@ -1527,7 +1527,7 @@ def save_ocr_block_changes(values:dict):
                 rectangle.set_edgecolor(color)
 
         # change block id
-        if block_id and block_id.isdigit() and block_id != block.id:
+        if block_id and block_id.isdigit() and int(block_id) != int(block.id):
             change_block_id(block.id,int(block_id))
 
         add_ocr_result_cache(current_ocr_results)
