@@ -1936,6 +1936,13 @@ def split_image_method(x:int,y:int):
                         if block:
                             # add block
                             page.add_child(block.copy())
+
+                # move blocks if "bottom" or "right", so they adapt to new image area
+                if option == 'bottom':
+                    page.update_position(top=-image_area.top)
+                elif option == 'right':
+                    page.update_position(left=-image_area.left)
+
                     
                 # save ocr results
                 ocr_results_path = f'{image_path}_ocr_results.json'
