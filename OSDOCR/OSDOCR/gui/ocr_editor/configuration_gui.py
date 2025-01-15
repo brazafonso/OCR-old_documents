@@ -2,7 +2,7 @@ import collections
 import re
 from .layouts.ocr_editor_layout import configurations_layout,checked,unchecked
 from copy import deepcopy
-import PySimpleGUI as sg
+import FreeSimpleGUI  as sg
 import json
 import os
 import OSDOCR.aux_utils.consts as consts

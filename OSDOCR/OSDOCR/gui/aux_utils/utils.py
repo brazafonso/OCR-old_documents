@@ -1,5 +1,5 @@
 from typing import Union
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import cv2
 import numpy as np
 

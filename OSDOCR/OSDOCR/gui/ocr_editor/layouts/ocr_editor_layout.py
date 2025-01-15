@@ -1,5 +1,5 @@
 import os
-import PySimpleGUI as sg
+import FreeSimpleGUI  as sg
 from ...aux_utils.utils import place,collapse
 from OSDOCR.aux_utils import consts
 

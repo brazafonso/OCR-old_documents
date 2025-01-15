@@ -9,7 +9,7 @@ import pyperclip
 import matplotlib
 import matplotlib.patches
 import matplotlib.pyplot as plt
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import matplotlib.text
 import numpy as np
 from .layouts.ocr_editor_layout import *
