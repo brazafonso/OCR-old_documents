@@ -212,6 +212,7 @@ def add_ocr_result_cache(ocr_result:OCR_Tree):
     
     if len(cache_ocr_results) >= config['base']['cache_size'] and len(cache_ocr_results) > 0:
         cache_ocr_results.pop(0)
+        current_cache_ocr_results_index -= 1
 
     if current_cache_ocr_results_index+1 > len(cache_ocr_results)-1:
         cache_ocr_results.append(ocr_result.copy())
@@ -860,7 +861,6 @@ def canvas_on_button_press(event):
         create_new_ocr_block(x=click_x,y=click_y)
         add_ocr_result_cache(current_ocr_results)
 
-    last_activity_time = time.time()
 
 
 
@@ -1004,7 +1004,6 @@ def canvas_on_mouse_move(event):
         sidebar_update_block_info()
 
     last_mouse_position = (event.xdata,event.ydata)
-    last_activity_time = time.time()
 
 
 def canvas_on_key_press(event):
